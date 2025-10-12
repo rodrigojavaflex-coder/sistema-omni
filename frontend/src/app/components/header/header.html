@@ -1,0 +1,105 @@
+<header class="app-header">
+  <div class="header-left">
+    <button class="menu-toggle" (click)="toggleMenu()">
+      <span>☰</span>
+    </button>
+    
+    <span class="app-title">Sistema OMNI</span>
+  </div>
+  <div class="header-right">
+    <div *ngIf="currentUser$ | async as user" class="user-profile">
+      <span class="user-name">{{ user.nome }}</span>
+      
+      <!-- Dropdown do usuário -->
+      <div class="user-dropdown-container">
+        <div class="user-avatar" (click)="toggleUserDropdown()">
+          <span>{{ user.nome | slice:0:1 }}</span>
+        </div>
+        
+        <!-- Dropdown Menu -->
+        <div class="user-dropdown" [class.show]="showUserDropdown">
+          <div class="dropdown-header">
+            <div class="user-info">
+              <div class="user-name-horizontal">{{ user.nome }}</div>
+              <div class="user-email">{{ user.email }}</div>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <!-- Alterar Senha -->
+          <div class="dropdown-section">
+            <button class="dropdown-item change-password-btn" (click)="changePassword()">
+              <i class="fas fa-key"></i>
+              Alterar Senha
+            </button>
+          </div>
+          <div class="dropdown-divider"></div>
+          <!-- Seleção de Tema -->
+          <div class="dropdown-section">
+            <span class="dropdown-section-title">Selecione o tema:</span>
+            <div class="theme-options">
+              <button 
+                class="theme-option" 
+                [class.active]="(currentTheme$ | async) === 'light'"
+                (click)="setTheme('light')"
+                title="Tema Claro"
+              >
+                Claro
+              </button>
+              <button 
+                class="theme-option" 
+                [class.active]="(currentTheme$ | async) === 'dark'"
+                (click)="setTheme('dark')"
+                title="Tema Escuro"
+              >
+                Escuro
+              </button>
+            </div>
+          </div>
+          
+          <div class="dropdown-divider"></div>
+          
+          <!-- Logout -->
+          <button class="dropdown-item logout-item" (click)="logout()">
+            Sair do Sistema
+          </button>
+        </div>
+      </div>
+      
+      <!-- Overlay para fechar dropdown -->
+      <div 
+        class="dropdown-overlay" 
+        [class.show]="showUserDropdown"
+        (click)="closeUserDropdown()"
+      ></div>
+    </div>
+  </div>
+</header>
+
+<!-- Modal de confirmação de logout -->
+<app-confirmation-modal
+  [isVisible]="showLogoutModal"
+  title="Confirmar"
+  message="Tem certeza que deseja sair do sistema?"
+  confirmText="Sair"
+  cancelText="Cancelar"
+  (confirmed)="confirmLogout()"
+  (cancelled)="cancelLogout()"
+></app-confirmation-modal>
+
+<!-- Modal de alteração de senha -->
+<app-change-password-modal
+  [isVisible]="showChangePasswordModal"
+  [userId]="(currentUser$ | async)?.id || ''"
+  (closed)="onChangePasswordClosed()"
+  (passwordChanged)="onPasswordChanged()"
+  (successMessage)="onSuccessMessage($event)"
+  (errorMessage)="onErrorMessage($event)"
+></app-change-password-modal>
+
+<!-- Notificações Toast -->
+<app-toast-notification
+  [isVisible]="showToast"
+  [message]="toastMessage"
+  [type]="toastType"
+  (closed)="onToastClosed()"
+></app-toast-notification>

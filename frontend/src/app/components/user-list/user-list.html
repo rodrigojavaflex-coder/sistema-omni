@@ -1,0 +1,160 @@
+<div class="user-list-container">
+  <div class="header">
+    <h2>Lista de Usuários</h2>
+    @if (canCreateUser()) {
+      <button class="btn btn-primary" (click)="createUser()">
+        Novo Usuário
+      </button>
+    }
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters">
+    <div class="filter-group">
+      <input 
+        type="text" 
+        placeholder="Filtrar por nome"
+        [(ngModel)]="nameFilter"
+        (input)="onFilterChange()"
+        class="form-control"
+      >
+    </div>
+    <div class="filter-group">
+      <input 
+        type="email" 
+        placeholder="Filtrar por email"
+        [(ngModel)]="emailFilter"
+        (input)="onFilterChange()"
+        class="form-control"
+      >
+    </div>
+    <button class="btn btn-secondary" (click)="clearFilters()">
+      Limpar Filtros
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (loading) {
+    <div class="loading">
+      Carregando usuários...
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error) {
+    <div class="alert alert-error">
+      {{ error }}
+    </div>
+  }
+
+  <!-- Tabela de usuários -->
+  @if (!loading && !error) {
+    <div class="table-container">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Criado em</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+  <tr *ngFor="let user of items">
+          <td>{{ user.nome }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+            <span [class]="user.ativo ? 'status-active' : 'status-inactive'">
+              {{ user.ativo ? 'Ativo' : 'Inativo' }}
+            </span>
+          </td>
+          <td>{{ user.criadoEm | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            @if (canEditUser()) {
+              <button class="btn btn-small btn-primary" (click)="editUser(user)">
+                Editar
+              </button>
+            }
+            @if (canPrintUser()) {
+              <button class="btn btn-small btn-info" (click)="printUser(user)">
+                Imprimir
+              </button>
+            }
+            @if (canDeleteUser()) {
+              <button class="btn btn-small btn-danger" (click)="deleteUser(user)">
+                Excluir
+              </button>
+            }
+            @if (canAuditUser()) {
+              <button class="btn btn-small btn-secondary" (click)="openAuditHistory(user)">
+                Auditoria
+              </button>
+            }
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Mensagem quando não há usuários -->
+  @if (items.length === 0) {
+      <div class="no-users">
+        Nenhum usuário encontrado.
+      </div>
+    }
+  </div>
+  }
+
+  <!-- Paginação -->
+  @if (totalPages > 1) {
+    <div class="pagination">
+    <button 
+      class="btn btn-secondary" 
+      (click)="onPageChange(currentPage - 1)"
+      [disabled]="currentPage <= 1"
+    >
+      Anterior
+    </button>
+    
+    <span class="page-info">
+      Página {{ currentPage }} de {{ totalPages }} 
+      ({{ totalItems }} usuários)
+    </span>
+    
+    <button 
+      class="btn btn-secondary" 
+      (click)="onPageChange(currentPage + 1)"
+      [disabled]="currentPage >= totalPages"
+    >
+      Próxima
+    </button>
+    </div>
+  }
+</div>
+
+<!-- Modal de confirmação de exclusão -->
+<app-confirmation-modal
+  [isVisible]="showDeleteModal"
+  [title]="deleteModalTitle"
+  [message]="deleteModalMessage"
+  confirmText="Excluir"
+  cancelText="Cancelar"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()"
+></app-confirmation-modal>
+
+<!-- Modal de histórico de auditoria -->
+<app-historico-auditoria
+  *ngIf="selectedUserForAudit"
+  [entidade]="'usuarios'"
+  [entidadeId]="selectedUserForAudit.id"
+  [fieldLabels]="{
+    nome: 'Nome',
+    email: 'Email',
+    ativo: 'Status',
+    senha: 'Senha',
+    permissoes: 'Permissões'
+  }"
+  [showModal]="showAuditModal"
+  (modalClosed)="closeAuditModal()">
+</app-historico-auditoria>

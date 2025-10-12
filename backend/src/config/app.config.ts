@@ -1,0 +1,12 @@
+import { registerAs } from '@nestjs/config';
+
+export default registerAs('app', () => ({
+  port: parseInt(process.env.PORT || '3000', 10),  // Porta 3000 padrão para servidor local
+  environment: process.env.NODE_ENV || 'development',
+  jwtSecret: process.env.JWT_SECRET || 'fallback-secret-key',
+  swagger: {
+    title: process.env.SWAGGER_TITLE || 'Sistema OMNI - API Documentation',
+    description: process.env.SWAGGER_DESCRIPTION || 'API do Sistema OMNI',
+    version: process.env.SWAGGER_VERSION || '1.0',
+  },
+}));

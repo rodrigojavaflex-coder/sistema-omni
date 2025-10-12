@@ -1,0 +1,135 @@
+<div class="user-form-container">
+  <div class="form-header">
+    <h2>{{ isEditMode ? 'Editar Usuário' : 'Novo Usuário' }}</h2>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    Carregando dados do usuário...
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="alert alert-error">
+    {{ error }}
+  </div>
+
+  <!-- Formulário -->
+  <form *ngIf="!loading" [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form">
+    
+    <!-- Nome -->
+    <div class="form-group">
+      <label for="name" class="form-label">Nome *</label>
+      <input
+        id="name"
+        type="text"
+        formControlName="name"
+        class="form-control"
+        [class.error]="name?.invalid && name?.touched"
+        placeholder="Digite o nome completo"
+      >
+      <div *ngIf="name?.invalid && name?.touched" class="error-message">
+        {{ getErrorMessage('name') }}
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="form-group">
+      <label for="email" class="form-label">Email *</label>
+      <input
+        id="email"
+        type="email"
+        formControlName="email"
+        class="form-control"
+        [class.error]="email?.invalid && email?.touched"
+        placeholder="usuario@exemplo.com"
+      >
+      <div *ngIf="email?.invalid && email?.touched" class="error-message">
+        {{ getErrorMessage('email') }}
+      </div>
+    </div>
+
+    <!-- Senha -->
+    <div class="form-group">
+      <label for="password" class="form-label">
+        Senha {{ isEditMode ? '(deixe em branco para não alterar)' : '*' }}
+      </label>
+      <input
+        id="password"
+        type="password"
+        formControlName="password"
+        class="form-control"
+        [class.error]="password?.invalid && password?.touched"
+        [placeholder]="isEditMode ? 'Nova senha (opcional)' : 'Digite uma senha segura'"
+      >
+      <div *ngIf="password?.invalid && password?.touched" class="error-message">
+        {{ getErrorMessage('password') }}
+      </div>
+      <div class="form-help">
+        A senha deve ter pelo menos 6 caracteres
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="form-group">
+      <div class="checkbox-group">
+        <input
+          id="isActive"
+          type="checkbox"
+          formControlName="isActive"
+          class="form-checkbox"
+        >
+        <label for="isActive" class="checkbox-label">
+          Usuário ativo
+        </label>
+      </div>
+      <div class="form-help">
+        Usuários inativos não podem acessar o sistema
+      </div>
+    </div>
+
+    <!-- Perfil -->
+    <div class="form-group">
+      <label for="perfilId" class="form-label">Perfil *</label>
+      <select
+        id="perfilId"
+        class="form-control"
+        formControlName="perfilId"
+        [attr.disabled]="isSubmitting ? '' : null"
+      >
+        <option value="" disabled>Selecione um perfil</option>
+        <option *ngFor="let perfil of availableProfiles" [value]="perfil.id">
+          {{ perfil.nomePerfil }}
+        </option>
+      </select>
+      <div *ngIf="userForm.get('perfilId')?.invalid && userForm.get('perfilId')?.touched" class="error-message">
+        Perfil é obrigatório
+      </div>
+    </div>
+
+    <!-- Botões -->
+    <div class="form-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="onCancel()"
+        [disabled]="isSubmitting"
+      >
+        Cancelar
+      </button>
+      
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="userForm.invalid || isSubmitting"
+      >
+        <span *ngIf="isSubmitting">
+          {{ isEditMode ? 'Atualizando...' : 'Salvando...' }}
+        </span>
+        <span *ngIf="!isSubmitting">
+          {{ isEditMode ? 'Atualizar Usuário' : 'Criar Usuário' }}
+        </span>
+      </button>
+    </div>
+
+  </form>
+</div>
