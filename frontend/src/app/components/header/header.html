@@ -7,15 +7,16 @@
     <span class="app-title">Sistema OMNI</span>
   </div>
   <div class="header-right">
-    <div *ngIf="currentUser$ | async as user" class="user-profile">
+    @if (currentUser$ | async; as user) {
+    <div class="user-profile">
       <span class="user-name">{{ user.nome }}</span>
-      
+
       <!-- Dropdown do usuário -->
       <div class="user-dropdown-container">
         <div class="user-avatar" (click)="toggleUserDropdown()">
           <span>{{ user.nome | slice:0:1 }}</span>
         </div>
-        
+
         <!-- Dropdown Menu -->
         <div class="user-dropdown" [class.show]="showUserDropdown">
           <div class="dropdown-header">
@@ -37,16 +38,16 @@
           <div class="dropdown-section">
             <span class="dropdown-section-title">Selecione o tema:</span>
             <div class="theme-options">
-              <button 
-                class="theme-option" 
+              <button
+                class="theme-option"
                 [class.active]="(currentTheme$ | async) === 'light'"
                 (click)="setTheme('light')"
                 title="Tema Claro"
               >
                 Claro
               </button>
-              <button 
-                class="theme-option" 
+              <button
+                class="theme-option"
                 [class.active]="(currentTheme$ | async) === 'dark'"
                 (click)="setTheme('dark')"
                 title="Tema Escuro"
@@ -55,23 +56,24 @@
               </button>
             </div>
           </div>
-          
+
           <div class="dropdown-divider"></div>
-          
+
           <!-- Logout -->
           <button class="dropdown-item logout-item" (click)="logout()">
             Sair do Sistema
           </button>
         </div>
       </div>
-      
+
       <!-- Overlay para fechar dropdown -->
-      <div 
-        class="dropdown-overlay" 
+      <div
+        class="dropdown-overlay"
         [class.show]="showUserDropdown"
         (click)="closeUserDropdown()"
       ></div>
     </div>
+    }
   </div>
 </header>
 

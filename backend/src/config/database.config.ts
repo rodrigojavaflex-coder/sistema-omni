@@ -14,10 +14,7 @@ export default registerAs('database', () => ({
     process.env.DATABASE_LOGGING === 'true'
       ? true
       : ['error', 'warn'],
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: false, // Desabilitar SSL para compatibilidade com PostgreSQL local
   timezone: 'UTC',
   // ✅ Configurações adicionais para produção
   connectTimeoutMS: 60000,

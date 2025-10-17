@@ -1,4 +1,4 @@
-export const environment = {
+﻿export const environment = {
   production: true,
-  apiUrl: 'http://192.168.1.100:3000/api'  // Altere para o IP do seu servidor
+  apiUrl: 'http://10.244.4.241:8080/api'
 };

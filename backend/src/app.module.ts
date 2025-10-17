@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -21,6 +23,14 @@ import { Configuracao } from './modules/configuracao/entities/configuracao.entit
       load: [databaseConfig, appConfig],
       envFilePath: '.env',
     }),
+    
+    // Servir arquivos estáticos do frontend
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'frontend', 'browser'),
+      serveRoot: '/',  // Serve na raiz da aplicação
+      exclude: ['/api*'],  // Exclui rotas da API
+    }),
+    
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({

@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+﻿import { NestFactory } from '@nestjs/core';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
@@ -19,22 +19,20 @@ async function bootstrap() {
     }
   });
 
-  //configurações pra gerar versão de produção do front-end
+  //configuraÃ§Ãµes pra gerar versÃ£o de produÃ§Ã£o do front-end
   // Usar process.cwd() para garantir compatibilidade com Render
-  // Corrigir para apontar para a subpasta 'browser', onde está o index.html
+  // Corrigir para apontar para a subpasta 'browser', onde estÃ¡ o index.html
   // Corrigir caminho para subir um nível na estrutura
   const angularDistPath = join(
     process.cwd(),
     '..',
-    'frontend',
-    'dist',
     'frontend',
     'browser',
   );
   app.useStaticAssets(angularDistPath);
   app.setBaseViewsDir(angularDistPath);
 
-  // Middleware para servir index.html do Angular em rotas não-API
+  // Middleware para servir index.html do Angular em rotas nÃ£o-API
   app.use((req: Request, res: Response, next) => {
     if (
       req.method === 'GET' &&
@@ -47,7 +45,7 @@ async function bootstrap() {
       res.sendFile(indexPath, (err) => {
         if (err) {
           console.error('Erro ao servir index.html:', indexPath, err);
-          res.status(404).send('index.html não encontrado');
+          res.status(404).send('index.html nÃ£o encontrado');
         }
       });
     } else {
@@ -55,13 +53,13 @@ async function bootstrap() {
     }
   });
 
-  // Servir arquivos estáticos da pasta uploads
+  // Servir arquivos estÃ¡ticos da pasta uploads
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
   const configService = app.get(ConfigService);
 
-  // Configuração global de validação
+  // ConfiguraÃ§Ã£o global de validaÃ§Ã£o
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -70,21 +68,23 @@ async function bootstrap() {
     }),
   );
 
-  // Filtro global de exceções genérico
+  // Filtro global de exceÃ§Ãµes genÃ©rico
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Configuração de CORS
+  // ConfiguraÃ§Ã£o de CORS
   app.enableCors({
     origin: process.env.NODE_ENV === 'production' 
       ? [
-          'http://192.168.1.100:4200',  // IP do servidor onde o frontend vai rodar
-          'http://192.168.1.100:80',    // Porta 80 se for servir via nginx/apache
-          'http://localhost:4200',      // Para desenvolvimento local
-          'http://localhost:3000'       // Para testes locais
+          'http://10.244.4.241:8080',   // IP do servidor principal na porta 8080
+          'http://10.244.4.241',        // IP sem porta
         ]
       : [
-          'http://localhost:4200',
-          'http://localhost:3000'
+          'http://localhost:4200',      // Angular dev server
+          'http://localhost:3000',      // Backend dev
+          'http://localhost:8080',      // Backend dev alternativo
+          'http://127.0.0.1:4200',      // Alternativa localhost
+          'http://127.0.0.1:3000',
+          'http://127.0.0.1:8080'
         ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
@@ -93,7 +93,7 @@ async function bootstrap() {
   // Prefixo global para todas as rotas
   app.setGlobalPrefix('api');
 
-  // Configuração do Swagger
+  // ConfiguraÃ§Ã£o do Swagger
   const swaggerConfig = configService.get('app.swagger');
   const config = new DocumentBuilder()
     .setTitle(swaggerConfig.title)
@@ -105,12 +105,25 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || configService.get('app.port') || 10000;
+  // Debug do ambiente
+  console.log(`ðŸ” NODE_ENV: "${process.env.NODE_ENV}"`);
+  console.log(`ðŸ” Ambiente detectado: ${process.env.NODE_ENV === 'production' ? 'PRODUÃ‡ÃƒO' : 'DESENVOLVIMENTO'}`);
+  
+  const isProduction = process.env.NODE_ENV === 'production';
+  const port = isProduction ? 8080 : (process.env.PORT || configService.get('app.port') || 3000);
+  
   await app.listen(port, '0.0.0.0');
-  console.log(`🚀 Aplicação rodando na porta ${port}`);
-  console.log(
-    `📚 Documentação Swagger disponível em: http://localhost:${port}/api/docs`,
-  );
+  console.log(`ðŸš€ AplicaÃ§Ã£o rodando na porta ${port}`);
+  
+  if (isProduction) {
+    console.log(`ðŸ“± Frontend: http://10.244.4.241:${port}`);
+    console.log(`ðŸ”§ API: http://10.244.4.241:${port}/api`);
+    console.log(`ðŸ“š DocumentaÃ§Ã£o Swagger: http://10.244.4.241:${port}/api/docs`);
+  } else {
+    console.log(`ðŸ“± Frontend: http://localhost:${port}`);
+    console.log(`ðŸ”§ API: http://localhost:${port}/api`);
+    console.log(`ðŸ“š DocumentaÃ§Ã£o Swagger: http://localhost:${port}/api/docs`);
+  }
 }
 
 bootstrap();
