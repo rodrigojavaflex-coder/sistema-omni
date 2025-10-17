@@ -119,7 +119,7 @@ function Install-NSSM {
 # =============================================================================
 # FUNCAO: CONFIGURAR FIREWALL
 # =============================================================================
-function Configure-Firewall {
+function Set-Firewall {
     Write-Host "Verificando firewall..." -ForegroundColor Cyan
     
     try {
@@ -132,21 +132,21 @@ function Configure-Firewall {
         # Continua se nao encontrar a regra
     }
     
-    Write-Host "  Configurando firewall (porta 8080)..." -ForegroundColor Yellow
+    Write-Host "  Configurando firewall (porta 80)..." -ForegroundColor Yellow
     
     try {
-        New-NetFirewallRule -DisplayName "OMNI Sistema" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow | Out-Null
+        New-NetFirewallRule -DisplayName "OMNI Sistema" -Direction Inbound -Protocol TCP -LocalPort 80 -Action Allow | Out-Null
         Write-Host "  OK: Firewall configurado!" -ForegroundColor Green
     } catch {
         Write-Host "  AVISO: Nao foi possivel configurar firewall automaticamente" -ForegroundColor Yellow
-        Write-Host "     Configure manualmente: porta 8080 TCP" -ForegroundColor Yellow
+        Write-Host "     Configure manualmente: porta 80 TCP" -ForegroundColor Yellow
     }
 }
 
 # =============================================================================
 # FUNCAO: VERIFICAR ESTRUTURA DE DIRETORIOS
 # =============================================================================
-function Ensure-Directories {
+function Initialize-Directories {
     Write-Host "Verificando diretorios..." -ForegroundColor Cyan
     
     $deployPath = "C:\Deploy\OMNI"
@@ -207,7 +207,7 @@ function Install-BackendDependencies {
 # =============================================================================
 # FUNCAO: VERIFICAR E CONFIGURAR SERVICO
 # =============================================================================
-function Configure-Service {
+function Set-OMNIService {
     Write-Host "Verificando servico Windows..." -ForegroundColor Cyan
     
     try {
@@ -287,16 +287,16 @@ Install-NodeJS
 Install-NSSM
 
 # 3. Configurar firewall
-Configure-Firewall
+Set-Firewall
 
 # 4. Garantir estrutura de diretorios
-Ensure-Directories
+Initialize-Directories
 
 # 5. Instalar dependencias do backend (se aplicacao ja foi deployada)
 Install-BackendDependencies
 
 # 6. Configurar e iniciar servico Windows
-Configure-Service
+Set-OMNIService
 
 # =============================================================================
 # RESUMO FINAL
@@ -312,7 +312,7 @@ try {
     $serviceStatus = nssm status $ServiceName 2>$null
     if ($serviceStatus -eq "SERVICE_RUNNING") {
         Write-Host "OK: Sistema OMNI esta rodando!" -ForegroundColor Green
-        Write-Host "Acesse: http://10.244.4.241:8080" -ForegroundColor Cyan
+        Write-Host "Acesse: http://10.6.48.159:80" -ForegroundColor Cyan
     } else {
         Write-Host "AVISO: Sistema instalado, mas servico nao esta rodando" -ForegroundColor Yellow
         Write-Host "   Para iniciar: nssm start $ServiceName" -ForegroundColor White

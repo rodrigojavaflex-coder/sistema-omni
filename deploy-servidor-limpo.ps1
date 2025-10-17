@@ -4,9 +4,9 @@
 # =============================================================================
 
 param(
-    [string]$ServerIP = "10.244.4.241",
+    [string]$ServerIP = "10.6.48.159",
     [string]$ServiceName = "OMNI-Sistema",
-    [string]$Port = "8080"
+    [string]$Port = "80"
 )
 
 Write-Host "DEPLOY SISTEMA OMNI PARA SERVIDOR" -ForegroundColor Green
@@ -200,9 +200,9 @@ nssm status "OMNI-Sistema"
 C:\Deploy\OMNI\remove-service.bat
 
 ## URLs de Acesso
-- Sistema: http://10.244.4.241:8080
-- API: http://10.244.4.241:8080/api
-- Swagger: http://10.244.4.241:8080/api/docs
+- Sistema: http://$ServerIP:$Port
+- API: http://$ServerIP:$Port/api
+- Swagger: http://$ServerIP:$Port/api/docs
 
 ## Logs
 - Stdout: C:\Deploy\OMNI\logs\omni-stdout.log
@@ -226,7 +226,7 @@ PowerShell -ExecutionPolicy Bypass .\install-omni.ps1
 ## Troubleshooting
 - Verificar logs em C:\Deploy\OMNI\logs\
 - Verificar se PostgreSQL esta rodando
-- Verificar se porta 8080 esta livre
+- Verificar se porta $Port esta livre
 - Verificar permissoes da pasta C:\Deploy\OMNI
 '@
 $readme | Out-File -FilePath "$deployPath\README.md" -Encoding UTF8

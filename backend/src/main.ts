@@ -75,14 +75,16 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.NODE_ENV === 'production' 
       ? [
-          'http://10.244.4.241:8080',   // IP do servidor principal na porta 8080
-          'http://10.244.4.241',        // IP sem porta
+          'http://10.6.48.159:80',   // IP do servidor principal na porta 80
+          'http://10.6.48.159',      // IP sem porta
+          'http://gestaodetransporte.com:80',     
+          'http://gestaodetransporte.com',      
         ]
       : [
-          'http://localhost:4200',      // Angular dev server
-          'http://localhost:3000',      // Backend dev
-          'http://localhost:8080',      // Backend dev alternativo
-          'http://127.0.0.1:4200',      // Alternativa localhost
+          'http://localhost:4200',    // Angular dev server
+          'http://localhost:3000',    // Backend dev
+          'http://localhost:8080',    // Backend dev alternativo
+          'http://127.0.0.1:4200',    // Alternativa localhost
           'http://127.0.0.1:3000',
           'http://127.0.0.1:8080'
         ],
@@ -110,15 +112,15 @@ async function bootstrap() {
   console.log(`ðŸ” Ambiente detectado: ${process.env.NODE_ENV === 'production' ? 'PRODUÃ‡ÃƒO' : 'DESENVOLVIMENTO'}`);
   
   const isProduction = process.env.NODE_ENV === 'production';
-  const port = isProduction ? 8080 : (process.env.PORT || configService.get('app.port') || 3000);
+  const port = isProduction ? 80 : (process.env.PORT || configService.get('app.port') || 3000);
   
   await app.listen(port, '0.0.0.0');
   console.log(`ðŸš€ AplicaÃ§Ã£o rodando na porta ${port}`);
   
   if (isProduction) {
-    console.log(`ðŸ“± Frontend: http://10.244.4.241:${port}`);
-    console.log(`ðŸ”§ API: http://10.244.4.241:${port}/api`);
-    console.log(`ðŸ“š DocumentaÃ§Ã£o Swagger: http://10.244.4.241:${port}/api/docs`);
+    console.log(`ðŸ“± Frontend: http://10.6.48.159:${port}`);
+    console.log(`ðŸ”§ API: http://10.6.48.159:${port}/api`);
+    console.log(`ðŸ“š DocumentaÃ§Ã£o Swagger: http://10.6.48.159:${port}/api/docs`);
   } else {
     console.log(`ðŸ“± Frontend: http://localhost:${port}`);
     console.log(`ðŸ”§ API: http://localhost:${port}/api`);
