@@ -33,6 +33,11 @@ export class AuthService {
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
+  // Controle de validação para evitar múltiplas chamadas
+  private lastValidationTime = 0;
+  private validationThrottleMs = 2000; // 2 segundos entre validações
+  private isRefreshing = false; // Flag para evitar múltiplos refreshs simultâneos
+
   constructor() {
     // Verificar se há token salvo no localStorage
     this.checkStoredAuth();
@@ -85,12 +90,19 @@ export class AuthService {
    * Refresh do token de acesso
    */
   async refreshToken(): Promise<string | null> {
+    // Evitar múltiplos refreshs simultâneos
+    if (this.isRefreshing) {
+      return null;
+    }
+
     const refreshToken = localStorage.getItem('refresh_token');
     
     if (!refreshToken) {
       this.clearAuthData(true);
       return null;
     }
+
+    this.isRefreshing = true;
 
     try {
       const response = await firstValueFrom(
@@ -105,6 +117,8 @@ export class AuthService {
       // Se refresh falhar, fazer logout
       this.clearAuthData(true);
       return null;
+    } finally {
+      this.isRefreshing = false;
     }
   }
 
@@ -122,8 +136,11 @@ export class AuthService {
    */
   hasPermission(permission: Permission): boolean {
     const user = this.currentUserSubject.value;
-    // Permissões agora vêm do perfil do usuário
-    return user?.perfil?.permissoes?.includes(permission) || false;
+    if (!user) return false;
+
+    const userPermissions = (user as any).perfil?.permissoes || (user as any).permissions || [];
+
+    return userPermissions.includes(permission) || false;
   }
 
   /**
@@ -158,6 +175,15 @@ export class AuthService {
    * Verifica se token ainda é válido no servidor
    */
   async validateToken(): Promise<boolean> {
+    const now = Date.now();
+    
+    // Throttle: evitar múltiplas validações muito próximas
+    if (now - this.lastValidationTime < this.validationThrottleMs) {
+      return this.isAuthenticated();
+    }
+    
+    this.lastValidationTime = now;
+    
     const token = this.getAccessToken();
     
     if (!token) {
@@ -170,23 +196,27 @@ export class AuthService {
       this.currentUserSubject.next(user);
       this.isAuthenticatedSubject.next(true);
       return true;
-    } catch (error) {
-      // Se falhar, tenta refresh token
-      const newToken = await this.refreshToken();
-      
-      if (newToken) {
-        try {
-          const user = await this.getProfile();
-          this.currentUserSubject.next(user);
-          this.isAuthenticatedSubject.next(true);
-          return true;
-        } catch (refreshError) {
-          this.clearAuthData(true);
-          return false;
+    } catch (error: any) {
+      // Se for 401 e não estivermos já fazendo refresh, tentar refresh
+      if (error.status === 401 && !this.isRefreshing) {
+        const newToken = await this.refreshToken();
+        
+        if (newToken) {
+          try {
+            const user = await this.getProfile();
+            this.currentUserSubject.next(user);
+            this.isAuthenticatedSubject.next(true);
+            return true;
+          } catch (refreshError) {
+            // Se ainda assim falhar, limpar dados mas não redirecionar aqui
+            this.clearAuthData(false);
+            return false;
+          }
         }
       }
       
-      this.clearAuthData(true);
+      // Para outros erros ou se refresh falhou, limpar dados mas não redirecionar
+      this.clearAuthData(false);
       return false;
     }
   }
@@ -208,13 +238,14 @@ export class AuthService {
         // Inicializar tema com preferência do usuário (forçar reset no refresh)
         this.themeService.initializeTheme(user.id, user.tema, true);
         
-        // Validar token no servidor em background
+        // Validar token no servidor em background com delay maior para evitar múltiplas validações
         setTimeout(async () => {
           const isValid = await this.validateToken();
           if (!isValid) {
-            // Token expirado - será tratado pelo guard
+            // Token expirado - o guard ou a aplicação irá tratar
+            console.warn('Token validado como inválido em background');
           }
-        }, 100);
+        }, 1000); // Delay de 1 segundo para permitir que a aplicação carregue
         
       } catch (error) {
         // Se der erro ao parsear, limpar dados
@@ -239,6 +270,9 @@ export class AuthService {
   }
 
   private clearAuthData(shouldRedirect: boolean = false): void {
+    // Evitar redirecionamentos desnecessários se já estamos na página de login
+    const isAlreadyOnLogin = this.router.url.includes('/login');
+    
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
@@ -246,10 +280,14 @@ export class AuthService {
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
     
+    // Resetar flags de controle
+    this.isRefreshing = false;
+    this.lastValidationTime = 0;
+    
     // Resetar o tema para permitir nova inicialização no próximo login
     this.themeService.resetTheme();
     
-    if (shouldRedirect && !this.router.url.includes('/login')) {
+    if (shouldRedirect && !isAlreadyOnLogin) {
       this.router.navigate(['/login']);
     }
   }

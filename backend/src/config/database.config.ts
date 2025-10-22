@@ -16,6 +16,11 @@ export default registerAs('database', () => ({
       : ['error', 'warn'],
   ssl: false, // Desabilitar SSL para compatibilidade com PostgreSQL local
   timezone: 'UTC',
+  // ✅ Configurações de charset UTF-8 para PostgreSQL
+  extra: {
+    charset: 'utf8',
+    client_encoding: 'UTF8',
+  },
   // ✅ Configurações adicionais para produção
   connectTimeoutMS: 60000,
   acquireTimeoutMS: 60000,

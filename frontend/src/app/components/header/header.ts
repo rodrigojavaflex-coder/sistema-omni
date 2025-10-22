@@ -118,6 +118,7 @@ export class HeaderComponent {
   onToastClosed() {
     this.showToast = false;
   }
+  
   toggleTheme() {
     this.themeService.toggleTheme();
   }

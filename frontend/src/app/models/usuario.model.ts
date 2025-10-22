@@ -5,11 +5,7 @@ export enum Permission {
   USER_READ = 'user:read',
   USER_UPDATE = 'user:update',
   USER_DELETE = 'user:delete',
-  USER_PRINT = 'user:print',
   USER_AUDIT = 'user:audit',
-
-  // Administração
-  ADMIN_FULL = 'admin:full',
 
   // Sistema
   SYSTEM_CONFIG = 'system:config',
@@ -28,6 +24,20 @@ export enum Permission {
   PROFILE_READ = 'perfil:read',
   PROFILE_UPDATE = 'perfil:update',
   PROFILE_DELETE = 'perfil:delete',
+  
+  // Veículos
+  VEICULO_CREATE = 'veiculo:create',
+  VEICULO_READ = 'veiculo:read',
+  VEICULO_UPDATE = 'veiculo:update',
+  VEICULO_DELETE = 'veiculo:delete',
+  VEICULO_AUDIT = 'veiculo:audit',
+  
+  // Motoristas
+  MOTORISTA_CREATE = 'motorista:create',
+  MOTORISTA_READ = 'motorista:read',
+  MOTORISTA_UPDATE = 'motorista:update',
+  MOTORISTA_DELETE = 'motorista:delete',
+  MOTORISTA_AUDIT = 'motorista:audit',
 }
 
 export interface PermissionGroup {

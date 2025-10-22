@@ -105,9 +105,246 @@ export class UserListComponent extends BaseListComponent<Usuario> {
   createUser(): void {
     this.router.navigate(['/users/new']);
   }
+
   /** Imprimir informações do usuário */
   printUser(user: Usuario): void {
-    window.open(`${environment.apiUrl}/users/${user.id}/print`, '_blank');
+    // Buscar dados completos do usuário antes de imprimir
+    this.userService.getUserById(user.id).subscribe({
+      next: (userData: Usuario) => {
+        this.generatePrintReport(userData);
+      },
+      error: (error: any) => {
+        console.error('Erro ao buscar dados do usuário:', error);
+        alert('Erro ao gerar relatório. Tente novamente.');
+      }
+    });
+  }
+
+  private generatePrintReport(user: Usuario): void {
+    // Gerar HTML do relatório
+    const permissionsList = user.perfil && user.perfil.permissoes && user.perfil.permissoes.length > 0
+      ? user.perfil.permissoes.map(p => `<li>${this.formatPermission(p)}</li>`).join('')
+      : '<li style="color: #666; font-style: italic;">Nenhuma permissão atribuída</li>';
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Relatório de Usuário - ${user.nome}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+          }
+          .header h1 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 24px;
+          }
+          .header p {
+            color: #666;
+            font-size: 14px;
+          }
+          .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+          }
+          .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 8px;
+          }
+          .info-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          .info-label {
+            font-weight: bold;
+            width: 200px;
+            color: #555;
+            flex-shrink: 0;
+          }
+          .info-value {
+            flex: 1;
+            color: #333;
+          }
+          .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+          }
+          .status-active {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+          }
+          .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+          }
+          .permissions-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+          }
+          .permissions-list li {
+            padding: 6px 0 6px 25px;
+            position: relative;
+            color: #333;
+            line-height: 1.6;
+          }
+          .permissions-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+            font-size: 16px;
+          }
+          .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+            page-break-inside: avoid;
+          }
+          @media print {
+            body { padding: 10px; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Relatório de Usuário</h1>
+          <p>Sistema OMNI - Gestão de Transporte</p>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Informações Pessoais</div>
+          <div class="info-row">
+            <span class="info-label">Nome:</span>
+            <span class="info-value">${user.nome}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">E-mail:</span>
+            <span class="info-value">${user.email}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span class="info-value">
+              <span class="status-badge ${user.ativo ? 'status-active' : 'status-inactive'}">
+                ${user.ativo ? 'Ativo' : 'Inativo'}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Perfil e Permissões</div>
+          <div class="info-row">
+            <span class="info-label">Perfil:</span>
+            <span class="info-value">${user.perfil ? user.perfil.nomePerfil : 'Não atribuído'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Total de Permissões:</span>
+            <span class="info-value">${user.perfil && user.perfil.permissoes ? user.perfil.permissoes.length : 0}</span>
+          </div>
+          <div class="info-row" style="flex-direction: column;">
+            <span class="info-label" style="margin-bottom: 10px;">Permissões:</span>
+            <ul class="permissions-list">
+              ${permissionsList}
+            </ul>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Informações do Sistema</div>
+          <div class="info-row">
+            <span class="info-label">Data de Criação:</span>
+            <span class="info-value">${new Date(user.criadoEm).toLocaleString('pt-BR')}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Última Atualização:</span>
+            <span class="info-value">${new Date(user.atualizadoEm).toLocaleString('pt-BR')}</span>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p><strong>Relatório gerado em:</strong> ${new Date().toLocaleString('pt-BR')}</p>
+          <p>Sistema OMNI - Gestão de Transporte</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Criar blob e abrir em nova aba
+    const blob = new Blob([printContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, '_blank');
+    
+    if (printWindow) {
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+          URL.revokeObjectURL(url);
+        }, 250);
+      };
+    }
+  }
+
+  private formatPermission(permission: string): string {
+    // Converter permissão em texto legível
+    const permissionMap: { [key: string]: string } = {
+      'user:create': 'Criar usuários',
+      'user:read': 'Visualizar usuários',
+      'user:update': 'Editar usuários',
+      'user:delete': 'Excluir usuários',
+      'user:audit': 'Visualizar auditoria de usuários',
+      'perfil:create': 'Criar perfis',
+      'perfil:read': 'Visualizar perfis',
+      'perfil:update': 'Editar perfis',
+      'perfil:delete': 'Excluir perfis',
+      'veiculo:create': 'Criar veículos',
+      'veiculo:read': 'Visualizar veículos',
+      'veiculo:update': 'Editar veículos',
+      'veiculo:delete': 'Excluir veículos',
+      'veiculo:audit': 'Auditar veículos',
+      'motorista:create': 'Criar motoristas',
+      'motorista:read': 'Visualizar motoristas',
+      'motorista:update': 'Editar motoristas',
+      'motorista:delete': 'Excluir motoristas',
+      'motorista:audit': 'Auditar motoristas',
+      'audit:view': 'Visualizar auditoria',
+      'audit:manage': 'Gerenciar auditoria',
+      'reports:view': 'Visualizar relatórios',
+      'reports:export': 'Exportar relatórios',
+      'system:config': 'Configurar sistema',
+      'system:logs': 'Visualizar logs do sistema',
+      'configuracao:access': 'Acessar configurações'
+    };
+    
+    return permissionMap[permission] || permission;
   }
 
   // Métodos para verificar permissões
@@ -117,10 +354,6 @@ export class UserListComponent extends BaseListComponent<Usuario> {
 
   canReadUser(): boolean {
     return this.authService.hasPermission(Permission.USER_READ);
-  }
-
-  canPrintUser(): boolean {
-    return this.authService.hasPermission(Permission.USER_PRINT);
   }
 
   canEditUser(): boolean {

@@ -74,8 +74,11 @@ export class AuthService {
   async login(loginDto: LoginDto, req?: any): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
 
-    // Buscar usuário pelo email
-    const user = await this.userRepository.findOneBy({ email });
+    // Buscar usuário pelo email (com perfil)
+    const user = await this.userRepository.findOne({
+      where: { email },
+      relations: ['perfil'],
+    });
     if (!user) {
       if (await this.shouldAuditAction(AuditAction.LOGIN_FAILED)) {
         await this.auditoriaService.createLog({
@@ -117,7 +120,7 @@ export class AuthService {
       throw new UnauthorizedException('Email ou senha inválidos');
     }
 
-    // Gerar tokens
+  // Gerar tokens
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
@@ -140,29 +143,31 @@ export class AuthService {
       });
     }
 
+    // Retornar usuário sem senha e incluindo perfil
+    const safeUser = {
+      id: user.id,
+      nome: user.nome,
+      email: user.email,
+      ativo: user.ativo,
+      perfil: user.perfil,
+      tema: user.tema || 'Claro',
+      criadoEm: user.criadoEm,
+      atualizadoEm: user.atualizadoEm,
+    } as unknown as Usuario;
+
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
       token_type: 'Bearer',
       expires_in: 3600, // 1 hora em segundos
-      user: {
-        id: user.id,
-        name: user.nome,
-        email: user.email,
-        isActive: user.ativo,
-        // Permissões agora vêm do perfil associado
-        permissions: user.perfil?.permissoes || [],
-        tema: user.tema || 'Claro',
-        criadoEm: user.criadoEm,
-        atualizadoEm: user.atualizadoEm,
-      },
+      user: safeUser,
     };
   }
 
   async refreshToken(refreshToken: string): Promise<AuthResponseDto> {
     try {
-      const payload = this.jwtService.verify(refreshToken);
-      const user = await this.userRepository.findOneBy({ id: payload.sub });
+    const payload = this.jwtService.verify(refreshToken);
+    const user = await this.userRepository.findOne({ where: { id: payload.sub }, relations: ['perfil'] });
 
       if (!user || !user.ativo) {
         // Auditar tentativa de refresh com token inválido
@@ -187,7 +192,7 @@ export class AuthService {
         });
       }
 
-      return this.login({ email: user.email, password: user.senha });
+    return this.login({ email: user.email, password: user.senha });
     } catch (error) {
       // Auditar falha geral no refresh
       if (await this.shouldAuditAction(AuditAction.READ)) {
@@ -202,7 +207,7 @@ export class AuthService {
   }
 
   async validateUserById(userId: string): Promise<Usuario | null> {
-    const user = await this.userRepository.findOneBy({ id: userId });
+    const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['perfil'] });
     if (user && user.ativo) {
       return user;
     }
@@ -210,7 +215,7 @@ export class AuthService {
   }
 
   async getProfile(userId: string): Promise<Usuario> {
-    const user = await this.userRepository.findOneBy({ id: userId });
+  const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['perfil'] });
     if (!user) {
       // Auditar tentativa de acesso a perfil inexistente
       if (await this.shouldAuditAction(AuditAction.READ)) {

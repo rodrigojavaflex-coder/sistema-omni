@@ -110,25 +110,78 @@ Write-Host "`n4. Atualizando backend..." -ForegroundColor Cyan
 $envExists = Test-Path "$backendPath\.env"
 if ($envExists) {
     Write-Host "  INFO: .env existente sera preservado" -ForegroundColor Yellow
+    # Fazer backup do .env
+    Copy-Item "$backendPath\.env" "$backendPath\.env.backup" -Force
 }
 
-Write-Host "  Copiando arquivos do backend..." -ForegroundColor Yellow
-Get-ChildItem "$sourceBackend" | Where-Object { 
-    # Sempre excluir .env nas atualizacoes para nao sobrescrever
-    if ($_.Name -eq ".env") {
-        return $false
-    }
-    return $true
+Write-Host "  Removendo arquivos antigos do backend (exceto .env)..." -ForegroundColor Yellow
+# Remover tudo exceto .env e .env.backup
+Get-ChildItem "$backendPath" | Where-Object { 
+    $_.Name -ne ".env" -and $_.Name -ne ".env.backup" -and $_.Name -ne "node_modules"
 } | ForEach-Object {
-    Copy-Item $_.FullName "$backendPath\$($_.Name)" -Recurse -Force
+    Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-if (-not $envExists) {
+Write-Host "  Copiando novos arquivos do backend..." -ForegroundColor Yellow
+
+# Contador de arquivos
+$fileCount = 0
+$dirCount = 0
+
+# Copiar todos os arquivos exceto .env (para não sobrescrever configurações)
+Get-ChildItem "$sourceBackend" -Recurse | ForEach-Object {
+    $targetPath = $_.FullName.Replace($sourceBackend, $backendPath)
+    
+    # Pular .env para não sobrescrever
+    if ($_.Name -eq ".env") {
+        return
+    }
+    
+    if ($_.PSIsContainer) {
+        # Criar diretório se não existir
+        if (!(Test-Path $targetPath)) {
+            New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
+            $dirCount++
+        }
+    } else {
+        # Copiar arquivo
+        Copy-Item $_.FullName $targetPath -Force
+        $fileCount++
+    }
+}
+
+Write-Host "  -> $fileCount arquivos e $dirCount diretorios copiados" -ForegroundColor Gray
+
+# Verificar se arquivos críticos foram copiados
+Write-Host "  Verificando arquivos criticos..." -ForegroundColor Yellow
+$criticalFiles = @(
+    "$backendPath\dist\main.js",
+    "$backendPath\package.json"
+)
+
+$allCriticalPresent = $true
+foreach ($file in $criticalFiles) {
+    if (!(Test-Path $file)) {
+        Write-Host "  ERRO: Arquivo critico nao encontrado: $file" -ForegroundColor Red
+        $allCriticalPresent = $false
+    }
+}
+
+if ($allCriticalPresent) {
+    Write-Host "  OK: Todos os arquivos criticos presentes" -ForegroundColor Green
+}
+
+# Restaurar .env se existia
+if ($envExists -and (Test-Path "$backendPath\.env.backup")) {
+    Copy-Item "$backendPath\.env.backup" "$backendPath\.env" -Force
+    Remove-Item "$backendPath\.env.backup" -Force
+    Write-Host "  OK: Backend atualizado (.env preservado)!" -ForegroundColor Green
+} elseif (-not $envExists) {
     Write-Host "  AVISO: .env nao encontrado no servidor!" -ForegroundColor Red
     Write-Host "  Copie manualmente de ArquivosBackend\.env e configure!" -ForegroundColor Yellow
+} else {
+    Write-Host "  OK: Backend atualizado!" -ForegroundColor Green
 }
-
-Write-Host "  OK: Backend atualizado (.env preservado)!" -ForegroundColor Green
 
 # =============================================================================
 # 5. ATUALIZAR FRONTEND

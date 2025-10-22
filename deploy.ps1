@@ -46,11 +46,18 @@ Write-Host "`n2. Gerando builds de producao..." -ForegroundColor Cyan
 Write-Host "   Building frontend..." -ForegroundColor Yellow
 Set-Location frontend
 
-# Limpar build anterior
+# Limpar build anterior e cache
+Write-Host "   Limpando cache e builds anteriores do frontend..." -ForegroundColor Gray
 if (Test-Path "dist") {
-    Write-Host "   Removendo build anterior..." -ForegroundColor Gray
     Remove-Item "dist" -Recurse -Force
 }
+if (Test-Path ".angular") {
+    Remove-Item ".angular" -Recurse -Force
+}
+if (Test-Path "node_modules\.cache") {
+    Remove-Item "node_modules\.cache" -Recurse -Force
+}
+Write-Host "   OK: Cache e builds anteriores removidos" -ForegroundColor Green
 
 npm install --silent
 npm run build -- --configuration production --base-href /omni/
@@ -63,6 +70,17 @@ Write-Host "   OK: Frontend build concluido com base-href /omni/" -ForegroundCol
 # Build do backend
 Write-Host "   Building backend..." -ForegroundColor Yellow
 Set-Location ..\backend
+
+# Limpar build anterior e cache
+Write-Host "   Limpando cache e builds anteriores do backend..." -ForegroundColor Gray
+if (Test-Path "dist") {
+    Remove-Item "dist" -Recurse -Force
+}
+if (Test-Path "node_modules\.cache") {
+    Remove-Item "node_modules\.cache" -Recurse -Force
+}
+Write-Host "   OK: Cache e builds anteriores removidos" -ForegroundColor Green
+
 npm install --silent
 npm run build --silent
 if ($LASTEXITCODE -ne 0) {
@@ -321,6 +339,12 @@ Write-Host "   OK: Documentacao criada" -ForegroundColor Green
 Write-Host "`nDEPLOY CONCLUIDO!" -ForegroundColor Green
 Write-Host "==================" -ForegroundColor Green
 Write-Host "Pasta de deploy: $deployPath" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "LIMPEZA REALIZADA:" -ForegroundColor Cyan
+Write-Host "  ✓ Cache do frontend (.angular, node_modules\.cache)" -ForegroundColor Green
+Write-Host "  ✓ Build anterior do frontend (dist)" -ForegroundColor Green
+Write-Host "  ✓ Cache do backend (node_modules\.cache)" -ForegroundColor Green
+Write-Host "  ✓ Build anterior do backend (dist)" -ForegroundColor Green
 Write-Host ""
 Write-Host "ESTRUTURA CRIADA:" -ForegroundColor Cyan
 Write-Host "  $deployPath\" -ForegroundColor White

@@ -24,7 +24,7 @@ export interface HistoricoAuditoriaItem extends Auditoria {
       <div class="historico-auditoria-overlay" (click)="closeModal()"></div>
       <div class="historico-auditoria-content">
         <div class="historico-auditoria-header">
-          <h3>Histórico de Alterações</h3>
+          <h3>Histórico de Alterações - {{ displayName }}</h3>
           <div class="header-actions">
             <button type="button" class="print-btn" (click)="printReport()" title="Imprimir Relatório">
               🖨️ Imprimir
@@ -98,12 +98,23 @@ export interface HistoricoAuditoriaItem extends Auditoria {
 export class HistoricoAuditoriaComponent implements OnInit, OnChanges {
   @Input() entidade!: string;
   @Input() entidadeId!: string;
+  @Input() entityDisplayName?: string;
   @Input() fieldLabels: Record<string, string> = {};
   @Input() showModal = false;
   @Output() modalClosed = new EventEmitter<void>();
 
   auditItems: HistoricoAuditoriaItem[] = [];
   loading = false;
+
+  get displayName(): string {
+    return this.entityDisplayName || this.formatEntityName(this.entidade);
+  }
+
+  private formatEntityName(name: string): string {
+    return name
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
+  }
 
   constructor(private auditoriaService: AuditoriaService) {}
 
@@ -278,7 +289,7 @@ export class HistoricoAuditoriaComponent implements OnInit, OnChanges {
   }
 
   private generateReportHTML(): string {
-    const entityName = this.getEntityDisplayName();
+    const entityName = this.displayName;
     const currentDate = new Date().toLocaleString('pt-BR');
 
     let html = `
@@ -354,15 +365,6 @@ export class HistoricoAuditoriaComponent implements OnInit, OnChanges {
     `;
 
     return html;
-  }
-
-  private getEntityDisplayName(): string {
-    const entityNames: Record<string, string> = {
-      'usuarios': 'Usuário',
-      'configuracao': 'Configuração',
-      'perfil': 'Perfil'
-    };
-    return entityNames[this.entidade] || this.entidade.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
 
   private getChangeTypeLabel(type: string): string {

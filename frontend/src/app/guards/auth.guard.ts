@@ -12,13 +12,19 @@ export const authGuard: CanActivateFn = async (route, state) => {
     return false;
   }
 
-  // Verificar se o token ainda é válido no servidor
-  const isTokenValid = await authService.validateToken();
-  
-  if (!isTokenValid) {
-    router.navigate(['/login']);
-    return false;
-  }
+  // Verificar se o token ainda é válido no servidor (apenas se necessário)
+  try {
+    const isTokenValid = await authService.validateToken();
+    
+    if (!isTokenValid) {
+      router.navigate(['/login']);
+      return false;
+    }
 
-  return true;
+    return true;
+  } catch (error) {
+    // Em caso de erro de rede, permitir acesso se o token local existe
+    console.warn('Erro ao validar token, permitindo acesso com token local:', error);
+    return authService.isAuthenticated();
+  }
 };

@@ -124,28 +124,6 @@ export class UsuariosController {
     return this.usuariosService.findOne(id);
   }
 
-  @Get(':id/print')
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(Permission.USER_PRINT)
-  @ApiOperation({
-    summary: 'Buscar dados do usuário formatados para impressão',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Dados do usuário para impressão',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Usuário não encontrado',
-  })
-  @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'Sem permissão para imprimir usuários',
-  })
-  getPrintData(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usuariosService.getPrintData(id);
-  }
-
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions(Permission.USER_UPDATE)

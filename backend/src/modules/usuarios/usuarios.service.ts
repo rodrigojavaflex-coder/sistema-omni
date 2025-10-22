@@ -16,7 +16,6 @@ import {
   PaginatedResponseDto,
   PaginationMetaDto,
 } from '../../common/dto/paginated-response.dto';
-import { PERMISSION_GROUPS } from '../../common/enums/permission.enum';
 
 @Injectable()
 export class UsuariosService {
@@ -270,57 +269,6 @@ export class UsuariosService {
       this.logger.error('Erro ao atualizar tema do usuário:', error);
       throw error;
     }
-  }
-
-  async getPrintData(id: string) {
-    const user = await this.findOne(id);
-
-  // Formatar permissões para impressão (perfis)
-  const userPermissions = user.perfil?.permissoes || [];
-    const formattedPermissions: Array<{
-      group: string;
-      permissions: string[];
-    }> = [];
-
-    // Agrupar permissões por categoria
-    for (const [groupName, permissions] of Object.entries(PERMISSION_GROUPS)) {
-      const groupPermissions = permissions.filter((p) =>
-        userPermissions.includes(p.key),
-      );
-      if (groupPermissions.length > 0) {
-        formattedPermissions.push({
-          group: groupName,
-          permissions: groupPermissions.map((p) => p.label),
-        });
-      }
-    }
-
-    // Encontrar permissões que não estão em nenhum grupo
-    const allGroupedPermissions = Object.values(PERMISSION_GROUPS)
-      .flat()
-      .map((p) => p.key);
-    const ungroupedPermissions = userPermissions.filter(
-      (p) => !allGroupedPermissions.includes(p),
-    );
-
-    if (ungroupedPermissions.length > 0) {
-      formattedPermissions.push({
-        group: 'Outras',
-        permissions: ungroupedPermissions,
-      });
-    }
-
-    return {
-      id: user.id,
-      name: user.nome,
-      email: user.email,
-      isActive: user.ativo,
-      criadoEm: user.criadoEm,
-      atualizadoEm: user.atualizadoEm,
-      permissions: formattedPermissions,
-      totalPermissions: userPermissions.length,
-      printedAt: new Date().toISOString(),
-    };
   }
 
   async remove(id: string): Promise<void> {

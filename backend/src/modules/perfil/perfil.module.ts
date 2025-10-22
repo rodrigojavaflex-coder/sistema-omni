@@ -16,7 +16,7 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
     // Importar UsuariosModule para disponibilizar PermissionsGuard e UsuarioRepository
     UsuariosModule,
   ],
-  providers: [PerfilService, PermissionsGuard],
+  providers: [PerfilService],
   controllers: [PerfilController],
   exports: [PerfilService],
 })

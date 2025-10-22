@@ -17,7 +17,7 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
     forwardRef(() => AuditoriaModule),
   ],
   controllers: [UsuariosController],
-  providers: [UsuariosService, PermissionsGuard],
-  exports: [UsuariosService, PermissionsGuard],
+  providers: [UsuariosService],
+  exports: [UsuariosService],
 })
 export class UsuariosModule {}

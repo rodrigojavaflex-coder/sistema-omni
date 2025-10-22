@@ -1,42 +1,105 @@
 @if (currentUser) {
 <nav class="sidebar">
+  <!-- Campo de pesquisa -->
+  <div class="search-section" [class.filter-active]="isFilterActive">
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input 
+          type="text" 
+          class="search-input" 
+          [class.filter-active]="isFilterActive"
+          placeholder="Buscar menu..." 
+          [(ngModel)]="searchQuery"
+          (input)="onSearchInput($event)"
+        />
+        @if (searchQuery) {
+          <button class="clear-search" (click)="clearSearch()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
   <!-- Menu principal -->
   <div class="sidebar-content">
     <nav class="main-nav">
+      @if (isFilterActive && getDisplayMenuItems().length === 0) {
+        <div class="no-results-message">
+          <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <p>Nenhum item encontrado</p>
+          <span>Tente outro termo de busca</span>
+        </div>
+      }
       <ul class="nav-list">
-        @for (item of visibleMenuItems; track item.route) {
+        @for (item of getDisplayMenuItems(); track item.label) {
         <li class="nav-item">
-          <a 
-            [routerLink]="item.route" 
-            [class.active]="isRouteActive(item.route)"
-            class="nav-link"
-            [attr.title]="!shouldShowExpanded ? item.label : null"
-            (click)="onMenuItemClick()"
-          >
-            <span class="nav-icon">
-              @if (item.icon === 'feather-home') {
-                <svg width="28" height="28" fill="none" stroke="rgba(100,116,139,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <!-- Item de menu normal -->
+          @if (!item.isSubmenu) {
+            <a 
+              [routerLink]="item.route" 
+              [class.active]="isRouteActive(item.route || '')"
+              class="nav-link"
+              [attr.title]="!shouldShowExpanded ? item.label : null"
+              (click)="onMenuItemClick()"
+            >
+              <span class="nav-icon" [innerHTML]="getMenuIcon(item.icon)"></span>
+              @if (shouldShowExpanded) {
+                <span class="nav-text">{{ item.label }}</span>
               }
-              @if (item.icon === 'feather-users') {
-                <svg width="28" height="28" fill="none" stroke="rgba(100,116,139,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-3-3.87"></path><path d="M9 21v-2a4 4 0 0 1 3-3.87"></path><path d="M7 7a4 4 0 1 1 8 0 4 4 0 0 1-8 0z"></path></svg>
+            </a>
+          }
+          
+          <!-- Item de submenu -->
+          @if (item.isSubmenu) {
+            <div class="submenu-container">
+              <button 
+                class="nav-link submenu-toggle"
+                [class.expanded]="isSubmenuExpanded(item.label)"
+                (click)="toggleSubmenu(item.label)"
+                [attr.title]="!shouldShowExpanded ? item.label : null"
+              >
+                <span class="nav-icon" [innerHTML]="getMenuIcon(item.icon)"></span>
+                @if (shouldShowExpanded) {
+                  <span class="nav-text">{{ item.label }}</span>
+                  <span class="submenu-arrow" [class.rotated]="isSubmenuExpanded(item.label)">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </span>
+                }
+              </button>
+              
+              <!-- Submenu items -->
+              @if (isSubmenuExpanded(item.label) && shouldShowExpanded) {
+                <ul class="submenu-list">
+                  @for (subItem of item.submenuItems; track subItem.label) {
+                    <li class="submenu-item">
+                      <a 
+                        [routerLink]="subItem.route" 
+                        [class.active]="isRouteActive(subItem.route || '')"
+                        class="submenu-link"
+                        (click)="onMenuItemClick()"
+                      >
+                        <span class="submenu-icon" [innerHTML]="getMenuIcon(subItem.icon)"></span>
+                        <span class="submenu-text">{{ subItem.label }}</span>
+                      </a>
+                    </li>
+                  }
+                </ul>
               }
-              @if (item.icon === 'feather-file-text') {
-                <svg width="28" height="28" fill="none" stroke="rgba(100,116,139,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-              }
-              @if (item.icon === 'feather-search') {
-                <svg width="28" height="28" fill="none" stroke="rgba(100,116,139,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              }
-              @if (item.icon === 'feather-bar-chart-2') {
-                <svg width="28" height="28" fill="none" stroke="rgba(100,116,139,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-              }
-              @if (item.icon === 'feather-settings') {
-                <svg width="28" height="28" fill="none" stroke="rgba(100,116,139,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09A1.65 1.65 0 0 0 11 3.09V3a2 2 0 0 1 4 0v.09c.38.16.73.39 1 .7.27.31.5.66.7 1.05h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09c.38.16.73.39 1 .7.27.31.5.66.7 1.05h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82v.09c.38.16.73.39 1 .7.27.31.5.66.7 1.05z"></path></svg>
-              }
-            </span>
-            @if (shouldShowExpanded) {
-              <span class="nav-text">{{ item.label }}</span>
-            }
-          </a>
+            </div>
+          }
         </li>
         }
       </ul>

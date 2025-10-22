@@ -9,7 +9,16 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { Request, Response } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: true,
+  });
+  
+  // Configurações de encoding UTF-8
+  app.use((req: Request, res: Response, next) => {
+    res.charset = 'utf-8';
+    next();
+  });
+  
   // Middleware para HEAD /
   app.use((req: Request, res: Response, next) => {
     if (req.method === 'HEAD' && req.path === '/') {
@@ -34,7 +43,7 @@ async function bootstrap() {
     }),
   );
 
-  // Filtro global de exceÃ§Ãµes genÃ©rico
+  // Filtro global de exceções genérico
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // Configuração de CORS - Apenas para desenvolvimento
@@ -56,7 +65,7 @@ async function bootstrap() {
   // Prefixo global para todas as rotas
   app.setGlobalPrefix('api');
 
-  // ConfiguraÃ§Ã£o do Swagger
+  // Configuração do Swagger
   const swaggerConfig = configService.get('app.swagger');
   const config = new DocumentBuilder()
     .setTitle(swaggerConfig.title)

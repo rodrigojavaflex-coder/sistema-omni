@@ -9,6 +9,8 @@ import { HomeComponent } from './components/home/home';
 import { ChangePasswordComponent } from './components/change-password/change-password';
 import { PerfilListComponent } from './components/perfil-list/perfil-list';
 import { PerfilFormComponent } from './components/perfil-form/perfil-form';
+import { VeiculoListComponent } from './components/veiculo-list/veiculo-list';
+import { VeiculoFormComponent } from './components/veiculo-form/veiculo-form';
 
 export const routes: Routes = [
   // Rota de configuração
@@ -47,6 +49,21 @@ export const routes: Routes = [
   {
     path: 'auditoria',
     component: AuditoriaComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'veiculo',
+    component: VeiculoListComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'veiculo/new',
+    component: VeiculoFormComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'veiculo/edit/:id',
+    component: VeiculoFormComponent,
     canActivate: [authGuard]
   },
   // Rotas de perfil: paths específicos antes da rota geral para evitar conflitos de prefixo

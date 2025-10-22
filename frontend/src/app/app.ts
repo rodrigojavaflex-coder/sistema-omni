@@ -15,17 +15,14 @@ export class App implements OnInit {
   private router = inject(Router);
 
   async ngOnInit() {
-    // Verificar se há token e se ainda é válido na inicialização
+    // No refresh (F5), o AuthService já verifica o token em background
+    // Aqui só verificamos se não está na página de login e não há token local
     const currentPath = this.router.url;
     const isLoginPage = currentPath.includes('/login');
     
-    if (!isLoginPage && this.authService.isAuthenticated()) {
-      // Verificar se token ainda é válido
-      const isValid = await this.authService.validateToken();
-      
-      if (!isValid) {
-        this.router.navigate(['/login']);
-      }
+    if (!isLoginPage && !this.authService.isAuthenticated()) {
+      // Se não está logado e não está na página de login, redirecionar
+      this.router.navigate(['/login']);
     }
   }
 }

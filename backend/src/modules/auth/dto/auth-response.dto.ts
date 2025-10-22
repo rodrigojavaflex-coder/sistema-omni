@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Permission } from '../../../common/enums/permission.enum';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 export class AuthResponseDto {
   @ApiProperty({
@@ -30,14 +31,5 @@ export class AuthResponseDto {
   @ApiProperty({
     description: 'Dados do usuário logado',
   })
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    isActive: boolean;
-    permissions: Permission[];
-    tema: string;
-    criadoEm: Date;
-    atualizadoEm: Date;
-  };
+  user: Usuario;
 }

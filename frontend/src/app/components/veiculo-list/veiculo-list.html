@@ -1,9 +1,9 @@
-<div class="user-list-container">
+<div class="veiculo-list-container">
   <div class="header">
-    <h2>Lista de Usuários</h2>
-    @if (canCreateUser()) {
-      <button class="btn btn-primary" (click)="createUser()">
-        Novo Usuário
+    <h2>Lista de Veículos</h2>
+    @if (canCreate()) {
+      <button class="btn btn-primary" (click)="createItem()">
+        Novo Veículo
       </button>
     }
   </div>
@@ -13,17 +13,26 @@
     <div class="filter-group">
       <input 
         type="text" 
-        placeholder="Filtrar por nome"
-        [(ngModel)]="nameFilter"
+        placeholder="Filtrar por descrição"
+        [(ngModel)]="descricaoFilter"
         (input)="onFilterChange()"
         class="form-control"
       >
     </div>
     <div class="filter-group">
       <input 
-        type="email" 
-        placeholder="Filtrar por email"
-        [(ngModel)]="emailFilter"
+        type="text" 
+        placeholder="Filtrar por placa"
+        [(ngModel)]="placaFilter"
+        (input)="onFilterChange()"
+        class="form-control"
+      >
+    </div>
+    <div class="filter-group">
+      <input 
+        type="number" 
+        placeholder="Filtrar por ano"
+        [(ngModel)]="anoFilter"
         (input)="onFilterChange()"
         class="form-control"
       >
@@ -36,7 +45,7 @@
   <!-- Loading -->
   @if (loading) {
     <div class="loading">
-      Carregando usuários...
+      Carregando veículos...
     </div>
   }
 
@@ -47,47 +56,44 @@
     </div>
   }
 
-  <!-- Tabela de usuários -->
+  <!-- Tabela de veículos -->
   @if (!loading && !error) {
     <div class="table-container">
-    <table class="users-table">
+    <table class="veiculos-table">
       <thead>
         <tr>
-          <th>Nome</th>
-          <th>Email</th>
-          <th>Status</th>
+          <th>Descrição</th>
+          <th>Placa</th>
+          <th>Ano</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Combustível</th>
           <th>Criado em</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody>
-  <tr *ngFor="let user of items">
-          <td>{{ user.nome }}</td>
-          <td>{{ user.email }}</td>
+  <tr *ngFor="let item of items">
+          <td>{{ item.descricao }}</td>
+          <td>{{ item.placa }}</td>
+          <td>{{ item.ano }}</td>
+          <td>{{ item.marca }}</td>
+          <td>{{ item.modelo }}</td>
+          <td>{{ item.combustivel }}</td>
+          <td>{{ item.criadoEm | date:'dd/MM/yyyy HH:mm' }}</td>
           <td>
-            <span [class]="user.ativo ? 'status-active' : 'status-inactive'">
-              {{ user.ativo ? 'Ativo' : 'Inativo' }}
-            </span>
-          </td>
-          <td>{{ user.criadoEm | date:'dd/MM/yyyy HH:mm' }}</td>
-          <td>
-            @if (canEditUser()) {
-              <button class="btn btn-small btn-primary" (click)="editUser(user)">
+            @if (canEdit()) {
+              <button class="btn btn-small btn-primary" (click)="editItem(item)">
                 Editar
               </button>
             }
-            @if (canReadUser()) {
-              <button class="btn btn-small btn-info" (click)="printUser(user)">
-                Imprimir
-              </button>
-            }
-            @if (canDeleteUser()) {
-              <button class="btn btn-small btn-danger" (click)="deleteUser(user)">
+            @if (canDelete()) {
+              <button class="btn btn-small btn-danger" (click)="deleteVehicle(item)">
                 Excluir
               </button>
             }
-            @if (canAuditUser()) {
-              <button class="btn btn-small btn-audit" (click)="openAuditHistory(user)">
+            @if (canAudit()) {
+              <button class="btn btn-small btn-audit" (click)="openAuditHistory(item)">
                 Auditoria
               </button>
             }
@@ -96,10 +102,10 @@
       </tbody>
     </table>
 
-    <!-- Mensagem quando não há usuários -->
+    <!-- Mensagem quando não há veículos -->
   @if (items.length === 0) {
-      <div class="no-users">
-        Nenhum usuário encontrado.
+      <div class="no-veiculos">
+        Nenhum veículo encontrado.
       </div>
     }
   </div>
@@ -118,7 +124,7 @@
     
     <span class="page-info">
       Página {{ currentPage }} de {{ totalPages }} 
-      ({{ totalItems }} usuários)
+      ({{ totalItems }} veículos)
     </span>
     
     <button 
@@ -145,15 +151,18 @@
 
 <!-- Modal de histórico de auditoria -->
 <app-historico-auditoria
-  *ngIf="selectedUserForAudit"
-  [entidade]="'usuarios'"
-  [entidadeId]="selectedUserForAudit.id"
+  *ngIf="selectedItemForAudit"
+  [entidade]="'veiculos'"
+  [entidadeId]="selectedItemForAudit.id"
+  [entityDisplayName]="'Veículo'"
   [fieldLabels]="{
-    nome: 'Nome',
-    email: 'Email',
-    ativo: 'Status',
-    senha: 'Senha',
-    permissoes: 'Permissões'
+    descricao: 'Descrição',
+    placa: 'Placa',
+    ano: 'Ano',
+    chassi: 'Chassi',
+    marca: 'Marca',
+    modelo: 'Modelo',
+    combustivel: 'Combustível'
   }"
   [showModal]="showAuditModal"
   (modalClosed)="closeAuditModal()">

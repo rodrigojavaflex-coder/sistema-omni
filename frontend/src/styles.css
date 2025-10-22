@@ -207,6 +207,43 @@ body.theme-dark {
   margin-top: 1rem;
 }
 
+/* Estilos globais para mensagens de erro */
+.error,
+.field-error,
+.validation-error,
+.form-error {
+  color: #dc2626 !important;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Garantir visibilidade das mensagens de erro em todos os temas */
+body.theme-dark .error,
+body.theme-dark .field-error,
+body.theme-dark .validation-error,
+body.theme-dark .form-error {
+  color: #f87171 !important;
+}
+
+body.theme-light .error,
+body.theme-light .field-error,
+body.theme-light .validation-error,
+body.theme-light .form-error {
+  color: #dc2626 !important;
+}
+
+/* Fallback para tema automático do navegador */
+@media (prefers-color-scheme: dark) {
+  .error,
+  .field-error,
+  .validation-error,
+  .form-error {
+    color: #f87171 !important;
+  }
+}
+
 /* Estilos globais para layout de página */
 .page-header {
   margin-bottom: 1rem;
@@ -727,6 +764,24 @@ body.theme-light .btn-secondary {
   background-color: #f8f9fa !important;
   border-color: #e2e8f0 !important;
   color: #1a202c !important;
+}
+
+body.theme-light .btn-secondary:hover:not(:disabled) {
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e0 !important;
+}
+
+/* Botão específico para auditoria - mesma cor em ambos os temas */
+.btn-audit {
+  background-color: #4a5568 !important;
+  border-color: #718096 !important;
+  color: #f7fafc !important;
+  transition: all 0.3s ease;
+}
+
+.btn-audit:hover:not(:disabled) {
+  background-color: #2d3748 !important;
+  border-color: #4a5568 !important;
 }
 
 /* Dropdown específico do header */
