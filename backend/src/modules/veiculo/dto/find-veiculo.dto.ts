@@ -21,6 +21,21 @@ export class FindVeiculoDto {
   @Min(1900)
   ano?: number;
 
+  @ApiProperty({ required: false, description: 'Marca' })
+  @IsOptional()
+  @IsString()
+  marca?: string;
+
+  @ApiProperty({ required: false, description: 'Modelo' })
+  @IsOptional()
+  @IsString()
+  modelo?: string;
+
+  @ApiProperty({ required: false, description: 'Combustível' })
+  @IsOptional()
+  @IsString()
+  combustivel?: string;
+
   @ApiProperty({
     minimum: 1,
     default: 1,

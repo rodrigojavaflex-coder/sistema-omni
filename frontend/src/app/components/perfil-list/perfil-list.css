@@ -1,4 +1,53 @@
 /* Container de perfil list usa padding global via .perfil-list */
+
+/* Botões de exportação */
+.btn-export {
+  padding: 0.5rem 0.75rem;
+  min-width: 40px;
+  margin-right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-export svg {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-export:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-export:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #1d7a3a 0%, #28a745 100%);
+  color: white;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #155d2a 0%, #1d7a3a 100%);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #c92a2a 0%, #dc3545 100%);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #a02020 0%, #c92a2a 100%);
+}
+
 /* Largura fixa para coluna de Ações */
 .perfil-list .data-table th:first-child,
 .perfil-list .data-table td:first-child {

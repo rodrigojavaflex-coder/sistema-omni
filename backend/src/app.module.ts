@@ -8,6 +8,7 @@ import { UsuariosModule } from './modules/usuarios/usuarios.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuditoriaModule } from './modules/auditoria/auditoria.module';
 import { VeiculoModule } from './modules/veiculo';
+import { MotoristaModule } from './modules/motorista/motorista.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 import { PerfilModule } from './modules/perfil/perfil.module';
 import { SharedModule } from './common/shared.module';
@@ -33,6 +34,8 @@ import { Configuracao } from './modules/configuracao/entities/configuracao.entit
       UsuariosModule,
       // VEICULO MODULE
       VeiculoModule,
+      // MOTORISTA MODULE
+      MotoristaModule,
   AuthModule,
   // Shared (global guards/providers)
   SharedModule,

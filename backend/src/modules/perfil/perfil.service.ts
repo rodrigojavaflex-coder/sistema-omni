@@ -21,8 +21,36 @@ export class PerfilService {
     return this.perfilRepository.save(perfil);
   }
 
-  findAll(): Promise<Perfil[]> {
-    return this.perfilRepository.find();
+  async findAll(): Promise<Perfil[]> {
+    const perfis = await this.perfilRepository.find();
+    
+    // Limpar permissões obsoletas de todos os perfis
+    const validPermissions = Object.values(Permission);
+    let cleaned = false;
+    
+    for (const perfil of perfis) {
+      const originalLength = perfil.permissoes?.length || 0;
+      const cleanedPermissions = perfil.permissoes?.filter(p => 
+        validPermissions.includes(p)
+      ) || [];
+      
+      if (originalLength !== cleanedPermissions.length) {
+        console.log(`🧹 Limpando permissões obsoletas do perfil ${perfil.nomePerfil}:`, {
+          antes: originalLength,
+          depois: cleanedPermissions.length,
+          removidas: perfil.permissoes?.filter(p => !validPermissions.includes(p))
+        });
+        perfil.permissoes = cleanedPermissions;
+        cleaned = true;
+      }
+    }
+    
+    // Salvar todos os perfis de uma vez se houve limpeza
+    if (cleaned) {
+      await this.perfilRepository.save(perfis);
+    }
+    
+    return perfis;
   }
 
   async findOne(id: string): Promise<Perfil> {
@@ -30,6 +58,25 @@ export class PerfilService {
     if (!perfil) {
       throw new NotFoundException(`Perfil com id ${id} não encontrado`);
     }
+    
+    // Limpar permissões obsoletas (que não existem mais no enum)
+    const validPermissions = Object.values(Permission);
+    const originalLength = perfil.permissoes?.length || 0;
+    const cleanedPermissions = perfil.permissoes?.filter(p => 
+      validPermissions.includes(p)
+    ) || [];
+    
+    // Se houve remoção de permissões obsoletas, atualizar no banco
+    if (originalLength !== cleanedPermissions.length) {
+      console.log(`🧹 Limpando permissões obsoletas do perfil ${perfil.nomePerfil}:`, {
+        antes: originalLength,
+        depois: cleanedPermissions.length,
+        removidas: perfil.permissoes?.filter(p => !validPermissions.includes(p))
+      });
+      perfil.permissoes = cleanedPermissions;
+      await this.perfilRepository.save(perfil);
+    }
+    
     return perfil;
   }
 

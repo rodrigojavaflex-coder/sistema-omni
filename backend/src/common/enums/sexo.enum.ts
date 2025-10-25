@@ -1,0 +1,5 @@
+export enum Sexo {
+  MASCULINO = 'MASCULINO',
+  FEMININO = 'FEMININO',
+  NAO_INFORMADO = 'NÃO INFORMADO'
+}

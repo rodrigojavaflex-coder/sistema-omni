@@ -30,7 +30,7 @@ export const MENU_CONFIGURATION: MenuConfig = {
           label: 'Auditoria',
           route: '/auditoria',
           icon: 'feather-search',
-          requiredPermissions: [Permission.AUDIT_VIEW, Permission.AUDIT_MANAGE],
+          requiredPermissions: [Permission.AUDIT_VIEW],
           parentMenu: 'Administração'
         },
         {
@@ -83,6 +83,18 @@ export const MENU_CONFIGURATION: MenuConfig = {
             Permission.VEICULO_DELETE
           ],
           parentMenu: 'Cadastros'
+        },
+        {
+          label: 'Motoristas',
+          route: '/motorista',
+          icon: 'feather-user',
+          requiredPermissions: [
+            Permission.MOTORISTA_CREATE,
+            Permission.MOTORISTA_READ,
+            Permission.MOTORISTA_UPDATE,
+            Permission.MOTORISTA_DELETE
+          ],
+          parentMenu: 'Cadastros'
         }
       ]
     },
@@ -90,7 +102,7 @@ export const MENU_CONFIGURATION: MenuConfig = {
       label: 'Relatórios',
       route: '/reports',
       icon: 'feather-bar-chart-2',
-      requiredPermissions: [Permission.REPORTS_VIEW, Permission.REPORTS_EXPORT],
+      requiredPermissions: [Permission.REPORTS_VIEW],
       order: 3
     }
   ]

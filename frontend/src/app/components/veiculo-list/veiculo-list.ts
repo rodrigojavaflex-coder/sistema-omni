@@ -2,36 +2,45 @@ import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { VeiculoService } from '../../services';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
-import { Veiculo, FindVeiculoDto } from '../../models/veiculo.model';
+import { Veiculo, FindVeiculoDto, Combustivel } from '../../models';
 import { Permission } from '../../models/usuario.model';
 import { PaginatedResponse } from '../../models/usuario.model';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
 import { HistoricoAuditoriaComponent } from '../historico-auditoria/historico-auditoria.component';
 import { BaseListComponent } from '../base-list.component';
+import { PlacaPipe } from '../../pipes/placa.pipe';
 
 @Component({
   selector: 'app-veiculo-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmationModalComponent, HistoricoAuditoriaComponent],
+  imports: [CommonModule, FormsModule, ConfirmationModalComponent, HistoricoAuditoriaComponent, PlacaPipe],
   templateUrl: './veiculo-list.html',
   styleUrls: ['./veiculo-list.css']
 })
 export class VeiculoListComponent extends BaseListComponent<Veiculo> implements OnInit {
   private veiculoService = inject(VeiculoService);
-  private authService = inject(AuthService);
   private router = inject(Router);
 
   currentPage = 1;
-  pageSize = 10;
+  itemsPerPage = 10;
   totalItems = 0;
   totalPages = 0;
 
   descricaoFilter = '';
   placaFilter = '';
-  anoFilter?: number;
+  anoFilter: number | null = null;
+  marcaFilter = '';
+  modeloFilter = '';
+  combustivelFilter = '';
+
+  combustivelOptions = Object.values(Combustivel);
+
+  filterTimeout: any = null;
 
   deleteModalTitle = 'Confirmação de Exclusão';
 
@@ -43,14 +52,32 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
     super.ngOnInit();
   }
 
-  protected override loadItems(): void {
+  loadItems() {
     this.loading = true;
-    this.error = '';
-    const filters: FindVeiculoDto = { page: this.currentPage, limit: this.pageSize };
 
-    if (this.descricaoFilter.trim()) filters.descricao = this.descricaoFilter.trim();
-    if (this.placaFilter.trim()) filters.placa = this.placaFilter.trim();
-    if (this.anoFilter) filters.ano = this.anoFilter;
+    const filters: FindVeiculoDto = {
+      page: this.currentPage,
+      limit: this.itemsPerPage,
+    };
+
+    if (this.descricaoFilter.trim()) {
+      filters.descricao = this.descricaoFilter.trim();
+    }
+    if (this.placaFilter.trim()) {
+      filters.placa = this.placaFilter.trim();
+    }
+    if (this.anoFilter && this.anoFilter >= 1900) {
+      filters.ano = this.anoFilter;
+    }
+    if (this.marcaFilter.trim()) {
+      filters.marca = this.marcaFilter.trim();
+    }
+    if (this.modeloFilter.trim()) {
+      filters.modelo = this.modeloFilter.trim();
+    }
+    if (this.combustivelFilter) {
+      filters.combustivel = this.combustivelFilter;
+    }
 
     this.veiculoService.getVeiculos(filters).subscribe({
       next: (response: PaginatedResponse<Veiculo>) => {
@@ -59,13 +86,9 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
         this.totalPages = response.meta.totalPages;
         this.loading = false;
       },
-      error: (err: any) => {
+      error: (error: HttpErrorResponse) => {
+        console.error('Erro ao carregar itens:', error);
         this.loading = false;
-        if (err?.status === 403) {
-          this.errorModalService.show('Acesso negado: usuário não possui permissão para este recurso', 'Acesso negado');
-        } else {
-          this.errorModalService.show('Erro ao carregar veículos', 'Erro');
-        }
       }
     });
   }
@@ -75,15 +98,21 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
     this.loadItems();
   }
 
-  onFilterChange(): void {
-    this.currentPage = 1;
-    this.loadItems();
+  onFilterChange() {
+    clearTimeout(this.filterTimeout);
+    this.filterTimeout = setTimeout(() => {
+      this.currentPage = 1;
+      this.loadItems();
+    }, 500);
   }
 
-  clearFilters(): void {
+  clearFilters() {
     this.descricaoFilter = '';
     this.placaFilter = '';
-    this.anoFilter = undefined;
+    this.anoFilter = null;
+    this.marcaFilter = '';
+    this.modeloFilter = '';
+    this.combustivelFilter = '';
     this.currentPage = 1;
     this.loadItems();
   }
@@ -124,5 +153,99 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
   closeAuditModal(): void {
     this.showAuditModal = false;
     this.selectedItemForAudit = null;
+  }
+
+  /** Implementação dos métodos de exportação */
+  protected loadAllItemsForExport(): Observable<Veiculo[]> {
+    return new Observable<Veiculo[]>(observer => {
+      const allItems: Veiculo[] = [];
+      let currentPage = 1;
+      const pageLimit = 100; // Limite máximo aceito pelo backend
+
+      const loadPage = () => {
+        const filters: FindVeiculoDto = {
+          page: currentPage,
+          limit: pageLimit,
+        };
+
+        if (this.descricaoFilter.trim()) {
+          filters.descricao = this.descricaoFilter.trim();
+        }
+        if (this.placaFilter.trim()) {
+          filters.placa = this.placaFilter.trim();
+        }
+        if (this.anoFilter && this.anoFilter >= 1900) {
+          filters.ano = this.anoFilter;
+        }
+        if (this.marcaFilter.trim()) {
+          filters.marca = this.marcaFilter.trim();
+        }
+        if (this.modeloFilter.trim()) {
+          filters.modelo = this.modeloFilter.trim();
+        }
+        if (this.combustivelFilter) {
+          filters.combustivel = this.combustivelFilter;
+        }
+
+        this.veiculoService.getVeiculos(filters).subscribe({
+          next: (response: PaginatedResponse<Veiculo>) => {
+            allItems.push(...response.data);
+            
+            // Se ainda há mais páginas, continua buscando
+            if (currentPage < response.meta.totalPages) {
+              currentPage++;
+              loadPage();
+            } else {
+              // Terminou de buscar todas as páginas
+              observer.next(allItems);
+              observer.complete();
+            }
+          },
+          error: (error) => {
+            observer.error(error);
+          }
+        });
+      };
+
+      loadPage();
+    });
+  }
+
+  protected getExportDataExcel(items: Veiculo[]): { headers: string[], data: any[][] } {
+    const headers = ['Descrição', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível'];
+    const data = items.map(item => [
+      item.descricao,
+      item.placa,
+      item.ano,
+      item.chassi,
+      item.marca,
+      item.modelo,
+      item.combustivel
+    ]);
+    return { headers, data };
+  }
+
+  protected getExportDataPDF(items: Veiculo[]): { headers: string[], data: any[][] } {
+    const headers = ['Descrição', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível'];
+    const data = items.map(item => [
+      item.descricao,
+      item.placa,
+      item.ano,
+      item.chassi,
+      item.marca,
+      item.modelo,
+      item.combustivel
+    ]);
+    return { headers, data };
+  }
+
+  protected getExportFileName(): string {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('pt-BR').replace(/\//g, '-');
+    return `Veiculos_${dateStr}`;
+  }
+
+  protected getTableDisplayName(): string {
+    return 'Veículos';
   }
 }

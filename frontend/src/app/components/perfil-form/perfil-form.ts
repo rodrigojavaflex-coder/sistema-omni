@@ -77,13 +77,15 @@ export class PerfilFormComponent implements OnInit {
     if (this.perfilForm.invalid) return;
     this.loading = true;
     const data = this.perfilForm.value;
+    
     const request = this.isEditMode && this.perfilId
       ? this.perfilService.update(this.perfilId, data)
       : this.perfilService.create(data);
     request.subscribe({
       next: () => this.router.navigate(['/perfil']),
-      error: () => {
-        this.error = 'Erro ao salvar perfil';
+      error: (err) => {
+        console.error('Erro ao salvar perfil:', err);
+        this.error = err.error?.message || 'Erro ao salvar perfil';
         this.loading = false;
       }
     });

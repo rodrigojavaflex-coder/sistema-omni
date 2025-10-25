@@ -7,17 +7,11 @@ export enum Permission {
   USER_DELETE = 'user:delete',
   USER_AUDIT = 'user:audit',
 
-  // Sistema
-  SYSTEM_CONFIG = 'system:config',
-  SYSTEM_LOGS = 'system:logs',
-
   // Relatórios
   REPORTS_VIEW = 'reports:view',
-  REPORTS_EXPORT = 'reports:export',
 
   // Auditoria
   AUDIT_VIEW = 'audit:view',
-  AUDIT_MANAGE = 'audit:manage',
 
   // Perfis
   PROFILE_CREATE = 'perfil:create',

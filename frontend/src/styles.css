@@ -590,14 +590,46 @@ body.theme-dark main {
 
 /* Buttons */
 body.theme-dark .btn-secondary {
-  background-color: #4a5568 !important;
-  border-color: #718096 !important;
-  color: #f7fafc !important;
+  background-color: #2d2d2d !important;
+  border: 1px solid #444 !important;
+  color: #e0e0e0 !important;
+}
+
+body.theme-dark .btn-secondary:hover:not(:disabled) {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: white !important;
+}
+
+body.theme-dark .btn-secondary:disabled {
+  background-color: #1a1a1a !important;
+  border-color: #333 !important;
+  color: #666 !important;
+  opacity: 0.6;
 }
 
 body.theme-dark .btn,
 body.theme-dark button {
   color: #f7fafc !important;
+}
+
+body.theme-dark .btn-pagination {
+  background-color: #2d2d2d !important;
+  border: 1px solid #444 !important;
+  color: #e0e0e0 !important;
+}
+
+body.theme-dark .btn-pagination:hover:not(:disabled) {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: white !important;
+}
+
+body.theme-dark .btn-pagination:disabled {
+  background-color: #1a1a1a !important;
+  border-color: #333 !important;
+  color: #666 !important;
+  opacity: 0.6 !important;
 }
 
 body.theme-dark .btn-primary {
@@ -761,14 +793,22 @@ body.theme-light .nav-item.active {
 
 /* Buttons */
 body.theme-light .btn-secondary {
-  background-color: #f8f9fa !important;
-  border-color: #e2e8f0 !important;
-  color: #1a202c !important;
+  background-color: #6c757d !important;
+  border: 1px solid #6c757d !important;
+  color: white !important;
 }
 
 body.theme-light .btn-secondary:hover:not(:disabled) {
-  background-color: #e2e8f0 !important;
-  border-color: #cbd5e0 !important;
+  background-color: #545b62 !important;
+  border-color: #545b62 !important;
+  color: white !important;
+}
+
+body.theme-light .btn-secondary:disabled {
+  background-color: #f5f5f5 !important;
+  border-color: #ddd !important;
+  color: #999 !important;
+  opacity: 0.6;
 }
 
 /* Botão específico para auditoria - mesma cor em ambos os temas */

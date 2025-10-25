@@ -6,11 +6,12 @@ import { NavigationComponent } from '../navigation/navigation';
 import { HeaderComponent } from '../header/header'; // Importar HeaderComponent
 
 import { ErrorModalComponent } from '../error-modal/error-modal.component';
+import { ToastComponent } from '../toast/toast.component';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, NavigationComponent, HeaderComponent, ErrorModalComponent], // Adicionar HeaderComponent e ErrorModalComponent
+  imports: [CommonModule, RouterOutlet, NavigationComponent, HeaderComponent, ErrorModalComponent, ToastComponent], // Adicionar ToastComponent
   templateUrl: './layout.html',
   styleUrls: ['./layout.css']
 })

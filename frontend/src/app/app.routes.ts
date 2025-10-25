@@ -11,6 +11,8 @@ import { PerfilListComponent } from './components/perfil-list/perfil-list';
 import { PerfilFormComponent } from './components/perfil-form/perfil-form';
 import { VeiculoListComponent } from './components/veiculo-list/veiculo-list';
 import { VeiculoFormComponent } from './components/veiculo-form/veiculo-form';
+import { MotoristaListComponent } from './components/motorista-list/motorista-list';
+import { MotoristaFormComponent } from './components/motorista-form/motorista-form';
 
 export const routes: Routes = [
   // Rota de configuração
@@ -64,6 +66,22 @@ export const routes: Routes = [
   {
     path: 'veiculo/edit/:id',
     component: VeiculoFormComponent,
+    canActivate: [authGuard]
+  },
+  // Rotas de motorista
+  {
+    path: 'motorista',
+    component: MotoristaListComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'motorista/new',
+    component: MotoristaFormComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'motorista/edit/:id',
+    component: MotoristaFormComponent,
     canActivate: [authGuard]
   },
   // Rotas de perfil: paths específicos antes da rota geral para evitar conflitos de prefixo

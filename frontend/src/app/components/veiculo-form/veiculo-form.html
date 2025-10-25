@@ -1,75 +1,76 @@
 <div class="veiculo-form-container">
-  <h2 *ngIf="!isEditMode">Novo Veículo</h2>
-  <h2 *ngIf="isEditMode">Editar Veículo</h2>
+  <h2>{{ getFormTitle() }} Veículo</h2>
 
-  <!-- Mensagem de erro global -->
-  <div class="alert alert-error" *ngIf="error">
-    <i class="fas fa-exclamation-triangle"></i>
-    {{ error }}
+  <!-- Botões do topo -->
+  <div class="form-actions form-actions-top">
+    <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+      <span *ngIf="loading" class="spinner"></span>
+      {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
   </div>
 
-  <form [formGroup]="veiculoForm" (ngSubmit)="onSubmit()">
-    <!-- Primeira linha -->
-    <div class="form-row-group">
-      <div class="form-field">
-        <label>Descrição</label>
-        <input type="text" formControlName="descricao" class="form-control" />
-        <div class="error" *ngIf="getErrorMessage('descricao')">{{ getErrorMessage('descricao') }}</div>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <!-- Dados do Veículo -->
+    <div class="form-section">
+      <h3>Dados do Veículo</h3>
+      
+      <div class="form-row">
+        <div class="form-field">
+          <label>Descrição *</label>
+          <input type="text" formControlName="descricao" class="form-control" />
+          <div class="error" *ngIf="isFieldInvalid('descricao')">{{ getFieldError('descricao') }}</div>
+        </div>
+
+        <div class="form-field">
+          <label>Placa *</label>
+          <input type="text" formControlName="placa" class="form-control" (input)="onPlacaInput($event)" />
+          <div class="error" *ngIf="isFieldInvalid('placa')">{{ getFieldError('placa') }}</div>
+        </div>
+
+        <div class="form-field">
+          <label>Ano *</label>
+          <input type="number" formControlName="ano" class="form-control" />
+          <div class="error" *ngIf="isFieldInvalid('ano')">{{ getFieldError('ano') }}</div>
+        </div>
+
+        <div class="form-field">
+          <label>Chassi *</label>
+          <input type="text" formControlName="chassi" class="form-control" />
+          <div class="error" *ngIf="isFieldInvalid('chassi')">{{ getFieldError('chassi') }}</div>
+        </div>
       </div>
 
-      <div class="form-field">
-        <label>Placa</label>
-        <input type="text" formControlName="placa" class="form-control" (input)="onPlacaInput($event)" />
-        <div class="error" *ngIf="getErrorMessage('placa')">{{ getErrorMessage('placa') }}</div>
-      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Marca *</label>
+          <input type="text" formControlName="marca" class="form-control" />
+          <div class="error" *ngIf="isFieldInvalid('marca')">{{ getFieldError('marca') }}</div>
+        </div>
 
-      <div class="form-field">
-        <label>Ano</label>
-        <input type="number" formControlName="ano" class="form-control" />
-        <div class="error" *ngIf="getErrorMessage('ano')">{{ getErrorMessage('ano') }}</div>
-      </div>
+        <div class="form-field">
+          <label>Modelo *</label>
+          <input type="text" formControlName="modelo" class="form-control" />
+          <div class="error" *ngIf="isFieldInvalid('modelo')">{{ getFieldError('modelo') }}</div>
+        </div>
 
-      <div class="form-field">
-        <label>Chassi</label>
-        <input type="text" formControlName="chassi" class="form-control" />
-        <div class="error" *ngIf="getErrorMessage('chassi')">{{ getErrorMessage('chassi') }}</div>
-      </div>
-    </div>
-
-    <!-- Segunda linha -->
-    <div class="form-row-group">
-      <div class="form-field">
-        <label>Marca</label>
-        <input type="text" formControlName="marca" class="form-control" />
-        <div class="error" *ngIf="getErrorMessage('marca')">{{ getErrorMessage('marca') }}</div>
-      </div>
-
-      <div class="form-field">
-        <label>Modelo</label>
-        <input type="text" formControlName="modelo" class="form-control" />
-        <div class="error" *ngIf="getErrorMessage('modelo')">{{ getErrorMessage('modelo') }}</div>
-      </div>
-
-      <div class="form-field">
-        <label>Combustível</label>
-        <select formControlName="combustivel" class="form-control">
-          <option value="">Selecione</option>
-          <option *ngFor="let c of combustivelOptions" [value]="c">{{ c }}</option>
-        </select>
-        <div class="error" *ngIf="getErrorMessage('combustivel')">{{ getErrorMessage('combustivel') }}</div>
-      </div>
-
-      <div class="form-field">
-        <!-- Campo vazio para balanceamento visual -->
+        <div class="form-field">
+          <label>Combustível *</label>
+          <select formControlName="combustivel" class="form-control">
+            <option value="">Selecione</option>
+            <option *ngFor="let c of combustivelOptions" [value]="c">{{ c }}</option>
+          </select>
+          <div class="error" *ngIf="isFieldInvalid('combustivel')">{{ getFieldError('combustivel') }}</div>
+        </div>
       </div>
     </div>
 
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
-        <span *ngIf="isSubmitting" class="spinner"></span>
-        {{ isSubmitting ? 'Salvando...' : 'Salvar' }}
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ loading ? 'Salvando...' : getSubmitButtonText() }}
       </button>
-      <button type="button" class="btn btn-secondary" (click)="onCancel()">Cancelar</button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
     </div>
   </form>
 </div>

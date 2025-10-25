@@ -7,17 +7,11 @@ export enum Permission {
   USER_DELETE = 'user:delete',
   USER_AUDIT = 'user:audit',
 
-  // Sistema
-  SYSTEM_CONFIG = 'system:config',
-  SYSTEM_LOGS = 'system:logs',
-
   // Relatórios
   REPORTS_VIEW = 'reports:view',
-  REPORTS_EXPORT = 'reports:export',
 
   // Auditoria
   AUDIT_VIEW = 'audit:view',
-  AUDIT_MANAGE = 'audit:manage',
 
   // Perfis
   PROFILE_CREATE = 'perfil:create',
@@ -54,17 +48,11 @@ export const PERMISSION_GROUPS = {
     { key: Permission.USER_DELETE, label: 'Excluir usuários' },
     { key: Permission.USER_AUDIT, label: 'Visualizar auditoria' },
   ],
-  Sistema: [
-    { key: Permission.SYSTEM_CONFIG, label: 'Configurações do sistema' },
-    { key: Permission.SYSTEM_LOGS, label: 'Visualizar logs do sistema' },
-  ],
   Relatórios: [
     { key: Permission.REPORTS_VIEW, label: 'Visualizar relatórios' },
-    { key: Permission.REPORTS_EXPORT, label: 'Exportar relatórios' },
   ],
   Auditoria: [
     { key: Permission.AUDIT_VIEW, label: 'Visualizar logs de auditoria' },
-    { key: Permission.AUDIT_MANAGE, label: 'Gerenciar logs de auditoria' },
   ],
   Perfis: [
     { key: Permission.PROFILE_CREATE, label: 'Criar perfis' },

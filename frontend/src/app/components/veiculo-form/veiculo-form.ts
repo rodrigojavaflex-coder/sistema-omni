@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, NgIf, NgForOf } from '@angular/common';
-import { FormsModule, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { VeiculoService } from '../../services/veiculo.service';
 import { CreateVeiculoDto, UpdateVeiculoDto } from '../../models/veiculo.model';
-import { Combustivel } from '../../models/veiculo.model';
+import { Combustivel } from '../../models/combustivel.enum';
+import { BaseFormComponent } from '../base/base-form.component';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-veiculo-form',
@@ -13,42 +15,37 @@ import { Combustivel } from '../../models/veiculo.model';
   templateUrl: './veiculo-form.html',
   styleUrls: ['./veiculo-form.css']
 })
-export class VeiculoFormComponent implements OnInit {
-  veiculoForm: FormGroup;
-  isEditMode = false;
-  veiculoId?: string;
-  loading = false;
-  error: string | null = null;
-  isSubmitting = false;
-
+export class VeiculoFormComponent extends BaseFormComponent<CreateVeiculoDto | UpdateVeiculoDto> implements OnInit {
   combustivelOptions = Object.values(Combustivel);
   currentYear = new Date().getFullYear();
 
   constructor(
     private fb: FormBuilder,
     private veiculoService: VeiculoService,
-    private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    router: Router
   ) {
-    this.veiculoForm = this.createForm();
+    super(router);
   }
 
-  ngOnInit(): void {
-    this.checkEditMode();
-    
-    // Limpar mensagem de erro quando o usuário começar a editar
-    this.veiculoForm.valueChanges.subscribe(() => {
-      if (this.error) {
-        this.error = null;
-      }
-    });
+  override ngOnInit(): void {
+    // Verifica se está em modo edição
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.editMode = true;
+      this.entityId = id;
+    }
+
+    super.ngOnInit();
   }
 
-  private createForm(): FormGroup {
+  // Implementação dos métodos abstratos
+
+  protected initializeForm(): void {
     // Regex para placas brasileiras: AAA1234 (antiga) ou AAA1A23 (Mercosul)
     const placaRegex = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/;
 
-    return this.fb.group({
+    this.form = this.fb.group({
       descricao: ['', [
         Validators.required, 
         Validators.minLength(3),
@@ -82,104 +79,49 @@ export class VeiculoFormComponent implements OnInit {
     });
   }
 
-  private checkEditMode(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.isEditMode = true;
-      this.veiculoId = id;
-      this.loadVeiculo(id);
-    } else {
-      this.isEditMode = false;
-    }
+  protected buildFormData(): CreateVeiculoDto | UpdateVeiculoDto {
+    const formValue = this.form.value;
+    return {
+      ...formValue,
+      ano: Number(formValue.ano)
+    };
   }
 
-  private loadVeiculo(id: string): void {
-    this.loading = true;
-    this.veiculoService.getById(id).subscribe({
-      next: (v) => {
-        this.veiculoForm.patchValue({
-          descricao: v.descricao,
-          placa: v.placa,
-          ano: v.ano,
-          chassi: v.chassi,
-          marca: v.marca,
-          modelo: v.modelo,
-          combustivel: v.combustivel
-        });
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Erro ao carregar veículo:', err);
-        this.error = 'Erro ao carregar veículo';
-        this.loading = false;
-      }
+  protected async saveEntity(data: CreateVeiculoDto | UpdateVeiculoDto): Promise<void> {
+    await firstValueFrom(this.veiculoService.create(data as CreateVeiculoDto));
+  }
+
+  protected async updateEntity(id: string, data: CreateVeiculoDto | UpdateVeiculoDto): Promise<void> {
+    await firstValueFrom(this.veiculoService.update(id, data as UpdateVeiculoDto));
+  }
+
+  protected async loadEntityById(id: string): Promise<void> {
+    const veiculo = await firstValueFrom(this.veiculoService.getById(id));
+    this.form.patchValue({
+      descricao: veiculo.descricao,
+      placa: veiculo.placa,
+      ano: veiculo.ano,
+      chassi: veiculo.chassi,
+      marca: veiculo.marca,
+      modelo: veiculo.modelo,
+      combustivel: veiculo.combustivel
     });
-  }
 
-  onSubmit(): void {
-    if (this.veiculoForm.invalid || this.isSubmitting) {
-      this.markTouched();
-      return;
-    }
-    this.isSubmitting = true;
-    const formValue = this.veiculoForm.value;
-    // Garantir tipo correto
-    formValue.ano = Number(formValue.ano);
-    if (this.isEditMode && this.veiculoId) {
-      const dto: UpdateVeiculoDto = { ...formValue };
-      this.veiculoService.update(this.veiculoId, dto).subscribe({
-        next: () => this.router.navigate(['/veiculo']),
-        error: (err) => this.handleError(err)
-      });
-    } else {
-      const dto: CreateVeiculoDto = { ...formValue };
-      this.veiculoService.create(dto).subscribe({
-        next: () => this.router.navigate(['/veiculo']),
-        error: (err) => this.handleError(err)
-      });
-    }
-  }
-
-  private handleError(err: any): void {
-    console.error('Erro ao salvar veículo:', err);
-    this.isSubmitting = false;
-    
-    // Limpar erro anterior
-    this.error = null;
-    
-    if (err.status === 400) {
-      this.error = 'Dados inválidos. Verifique os campos e tente novamente.';
-    } else if (err.status === 409) {
-      // Erro de conflito - veículo duplicado
-      const errorMessage = err.error?.message || 'Veículo já existente';
-      this.error = errorMessage;
-    } else if (err.status === 500) {
-      this.error = 'Erro interno do servidor. Tente novamente em alguns minutos.';
-    } else if (err.status === 0) {
-      this.error = 'Erro de conexão. Verifique sua internet e tente novamente.';
-    } else {
-      this.error = 'Erro inesperado. Tente novamente.';
-    }
-    
-    // Scroll para o topo para mostrar a mensagem de erro
+    // Formatar placa no input após carregar
     setTimeout(() => {
-      const container = document.querySelector('.veiculo-form-container');
-      if (container) {
-        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const placaInput = document.querySelector('input[formControlName="placa"]') as HTMLInputElement;
+      if (placaInput && veiculo.placa) {
+        placaInput.value = this.formatPlacaDisplay(veiculo.placa);
       }
-    }, 100);
+    }, 0);
   }
 
-  onCancel(): void {
-    this.router.navigate(['/veiculo']);
+  // Sobrescreve o método para garantir a rota correta
+  protected override getListRoute(): string {
+    return '/veiculo';
   }
 
-  private markTouched(): void {
-    Object.keys(this.veiculoForm.controls).forEach(key => {
-      const control = this.veiculoForm.get(key);
-      control?.markAsTouched();
-    });
-  }
+  // Métodos específicos do componente
 
   /** Formatação e validação da placa em tempo real */
   onPlacaInput(event: Event): void {
@@ -194,62 +136,27 @@ export class VeiculoFormComponent implements OnInit {
       value = value.substring(0, 7);
     }
     
-    // Atualizar o campo do formulário
-    this.veiculoForm.get('placa')?.setValue(value, { emitEvent: false });
-    
-    // Atualizar o valor do input para refletir a formatação
-    input.value = value;
-  }
-
-  /** Helpers para exibir mensagens de erro no template */
-  hasError(controlName: string, errorType: string): boolean {
-    const control = this.veiculoForm.get(controlName);
-    return !!(control && control.touched && control.hasError(errorType));
-  }
-
-  getErrorMessage(controlName: string): string {
-    const control = this.veiculoForm.get(controlName);
-    if (!control || !control.errors || !control.touched) return '';
-    
-    const errors = control.errors;
-    const fieldLabel = this.getFieldLabel(controlName);
-    
-    if (errors['required']) return `${fieldLabel} é obrigatório`;
-    if (errors['minlength']) {
-      const requiredLength = errors['minlength'].requiredLength;
-      return `${fieldLabel} deve ter pelo menos ${requiredLength} caracteres`;
-    }
-    if (errors['maxlength']) {
-      const maxLength = errors['maxlength'].requiredLength;
-      return `${fieldLabel} não pode ter mais de ${maxLength} caracteres`;
-    }
-    if (errors['min']) return `${fieldLabel} deve ser maior que ${errors['min'].min}`;
-    if (errors['max']) return `${fieldLabel} deve ser menor que ${errors['max'].max}`;
-    
-    if (errors['pattern']) {
-      if (controlName === 'placa') {
-        return 'Placa deve estar no formato brasileiro (ABC1234 ou ABC1A23)';
-      }
-      return `${fieldLabel} inválido`;
+    // Adicionar hífen na posição correta
+    let formattedValue = value;
+    if (value.length > 3) {
+      formattedValue = value.substring(0, 3) + '-' + value.substring(3);
     }
     
-    return 'Campo inválido';
+    // Atualizar o campo do formulário (sem hífen para validação)
+    this.form.get('placa')?.setValue(value, { emitEvent: false });
+    
+    // Atualizar o valor do input para refletir a formatação visual
+    input.value = formattedValue;
   }
 
-  private getFieldLabel(controlName: string): string {
-    const labels: { [key: string]: string } = {
-      descricao: 'Descrição',
-      placa: 'Placa',
-      ano: 'Ano',
-      chassi: 'Chassi',
-      marca: 'Marca',
-      modelo: 'Modelo',
-      combustivel: 'Combustível'
-    };
-    return labels[controlName] || controlName;
+  /** Formatar placa ao carregar dados */
+  private formatPlacaDisplay(placa: string): string {
+    if (!placa || placa.length < 4) return placa;
+    return placa.substring(0, 3) + '-' + placa.substring(3);
   }
 
-  get descricao() { return this.veiculoForm.get('descricao'); }
-  get placa() { return this.veiculoForm.get('placa'); }
-  get ano() { return this.veiculoForm.get('ano'); }
+  // Getters para facilitar acesso no template
+  get descricao() { return this.form.get('descricao'); }
+  get placa() { return this.form.get('placa'); }
+  get ano() { return this.form.get('ano'); }
 }

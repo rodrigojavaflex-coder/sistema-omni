@@ -62,6 +62,9 @@ export class VeiculoController {
   @ApiQuery({ name: 'descricao', required: false, description: 'Filtrar por descrição' })
   @ApiQuery({ name: 'placa', required: false, description: 'Filtrar por placa' })
   @ApiQuery({ name: 'ano', required: false, description: 'Filtrar por ano' })
+  @ApiQuery({ name: 'marca', required: false, description: 'Filtrar por marca' })
+  @ApiQuery({ name: 'modelo', required: false, description: 'Filtrar por modelo' })
+  @ApiQuery({ name: 'combustivel', required: false, description: 'Filtrar por combustível' })
   findAll(@Query() findVeiculoDto: FindVeiculoDto) {
     return this.veiculoService.findAll(findVeiculoDto);
   }

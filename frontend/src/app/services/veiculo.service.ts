@@ -17,6 +17,9 @@ export class VeiculoService {
       if (find.descricao) params = params.set('descricao', find.descricao);
       if (find.placa) params = params.set('placa', find.placa);
       if (find.ano) params = params.set('ano', find.ano.toString());
+      if (find.marca) params = params.set('marca', find.marca);
+      if (find.modelo) params = params.set('modelo', find.modelo);
+      if (find.combustivel) params = params.set('combustivel', find.combustivel);
     }
     return this.http.get<PaginatedResponse<Veiculo>>(`${environment.apiUrl}/veiculo`, { params });
   }

@@ -21,7 +21,6 @@ import { BaseListComponent } from '../base-list.component';
 })
 export class PerfilListComponent extends BaseListComponent<Perfil> implements OnDestroy {
   private perfilService = inject(PerfilService);
-  public authService = inject(AuthService);
   private userService = inject(UserService);
   private router = inject(Router);
   private destroy$ = new Subject<void>();
@@ -157,5 +156,54 @@ export class PerfilListComponent extends BaseListComponent<Perfil> implements On
         }
       });
     }
+  }
+
+  /** Implementação dos métodos de exportação */
+  protected loadAllItemsForExport(): Observable<Perfil[]> {
+    return this.perfilService.findAll();
+  }
+
+  protected getExportDataExcel(items: Perfil[]): { headers: string[], data: any[][] } {
+    // Formatar permissões para os itens carregados
+    const mapLabels = new Map<Permission, string>();
+    Object.values(this.permissionGroups).forEach(group => {
+      group.forEach(item => mapLabels.set(item.key, item.label));
+    });
+
+    const headers = ['Nome do Perfil', 'Permissões'];
+    const data = items.map(item => {
+      const labels = item.permissoes
+        .map(p => mapLabels.get(p) || p)
+        .join(', ');
+      return [item.nomePerfil, labels];
+    });
+    return { headers, data };
+  }
+
+  protected getExportDataPDF(items: Perfil[]): { headers: string[], data: any[][] } {
+    // Formatar permissões para os itens carregados
+    const mapLabels = new Map<Permission, string>();
+    Object.values(this.permissionGroups).forEach(group => {
+      group.forEach(item => mapLabels.set(item.key, item.label));
+    });
+
+    const headers = ['Nome do Perfil', 'Permissões'];
+    const data = items.map(item => {
+      const labels = item.permissoes
+        .map(p => mapLabels.get(p) || p)
+        .join(', ');
+      return [item.nomePerfil, labels];
+    });
+    return { headers, data };
+  }
+
+  protected getExportFileName(): string {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('pt-BR').replace(/\//g, '-');
+    return `Perfis_${dateStr}`;
+  }
+
+  protected getTableDisplayName(): string {
+    return 'Perfis';
   }
 }

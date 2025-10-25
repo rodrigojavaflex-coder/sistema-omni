@@ -45,7 +45,7 @@ export class VeiculoService {
   }
 
   async findAll(findVeiculoDto: FindVeiculoDto): Promise<PaginatedResponseDto<Veiculo>> {
-    const { page = 1, limit = 10, descricao, placa, ano } = findVeiculoDto as any;
+    const { page = 1, limit = 10, descricao, placa, ano, marca, modelo, combustivel } = findVeiculoDto as any;
 
     const query = this.veiculoRepository.createQueryBuilder('v');
 
@@ -59,6 +59,18 @@ export class VeiculoService {
 
     if (ano) {
       query.andWhere('v.ano = :ano', { ano });
+    }
+
+    if (marca) {
+      query.andWhere('v.marca ILIKE :marca', { marca: `%${marca}%` });
+    }
+
+    if (modelo) {
+      query.andWhere('v.modelo ILIKE :modelo', { modelo: `%${modelo}%` });
+    }
+
+    if (combustivel) {
+      query.andWhere('v.combustivel = :combustivel', { combustivel });
     }
 
     const [items, total] = await query.skip((page - 1) * limit).take(limit).orderBy('v.criadoEm', 'DESC').getManyAndCount();

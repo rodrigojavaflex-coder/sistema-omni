@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, MaxLength, IsEnum, IsNumber, Matches, MinLength } from 'class-validator';
-import { Combustivel } from '../entities/veiculo.entity';
+import { Combustivel } from '../../../common/enums/combustivel.enum';
 
 export class CreateVeiculoDto {
   @ApiProperty({ description: 'Descrição do veículo', example: 'Caminhão 3/4', maxLength: 30 })

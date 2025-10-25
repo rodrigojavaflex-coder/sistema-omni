@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Observable } from 'rxjs';
 import { UserService } from '../../services';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
@@ -19,7 +20,6 @@ import { BaseListComponent } from '../base-list.component';
 })
 export class UserListComponent extends BaseListComponent<Usuario> {
   private userService = inject(UserService);
-  private authService = inject(AuthService);
   private router = inject(Router);
 
   // Paginação
@@ -378,5 +378,86 @@ export class UserListComponent extends BaseListComponent<Usuario> {
   closeAuditModal(): void {
     this.showAuditModal = false;
     this.selectedUserForAudit = null;
+  }
+
+  /** Implementação dos métodos de exportação */
+  protected loadAllItemsForExport(): Observable<Usuario[]> {
+    return new Observable<Usuario[]>(observer => {
+      const allItems: Usuario[] = [];
+      let currentPage = 1;
+      const pageLimit = 100; // Limite máximo aceito pelo backend
+
+      const loadPage = () => {
+        const filters: FindUsuariosDto = { 
+          page: currentPage, 
+          limit: pageLimit
+        };
+
+        if (this.nameFilter.trim()) {
+          filters.nome = this.nameFilter.trim();
+        }
+
+        if (this.emailFilter.trim()) {
+          filters.email = this.emailFilter.trim();
+        }
+
+        this.userService.getUsers(filters).subscribe({
+          next: (response: PaginatedResponse<Usuario>) => {
+            allItems.push(...response.data);
+            
+            // Se ainda há mais páginas, continua buscando
+            if (currentPage < response.meta.totalPages) {
+              currentPage++;
+              loadPage();
+            } else {
+              // Terminou de buscar todas as páginas
+              observer.next(allItems);
+              observer.complete();
+            }
+          },
+          error: (error) => {
+            observer.error(error);
+          }
+        });
+      };
+
+      loadPage();
+    });
+  }
+
+  protected getExportDataExcel(items: Usuario[]): { headers: string[], data: any[][] } {
+    const headers = ['Nome', 'E-mail', 'Perfil', 'Status', 'Criado em'];
+    const data = items.map(item => [
+      item.nome,
+      item.email,
+      item.perfil ? item.perfil.nomePerfil : 'Sem perfil',
+      item.ativo ? 'Ativo' : 'Inativo',
+      new Date(item.criadoEm).toLocaleDateString('pt-BR')
+    ]);
+    return { headers, data };
+  }
+
+  
+
+  protected getExportDataPDF(items: Usuario[]): { headers: string[], data: any[][] } {
+    const headers = ['Nome', 'E-mail', 'Perfil', 'Status', 'Criado em'];
+    const data = items.map(item => [
+      item.nome,
+      item.email,
+      item.perfil ? item.perfil.nomePerfil : 'Sem perfil',
+      item.ativo ? 'Ativo' : 'Inativo',
+      new Date(item.criadoEm).toLocaleDateString('pt-BR')
+    ]);
+    return { headers, data };
+  }
+
+  protected getExportFileName(): string {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('pt-BR').replace(/\//g, '-');
+    return `Usuarios_${dateStr}`;
+  }
+
+  protected getTableDisplayName(): string {
+    return 'Usuários';
   }
 }
