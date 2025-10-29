@@ -1,0 +1,306 @@
+// ========================================
+// SISTEMA DE DESIGN - OMNI
+// Arquivo principal de estilos
+// ========================================
+
+// 1. Fundação
+@use 'variaveis' as *;
+@use 'mixins' as *;
+
+// 2. Componentes
+@use 'components';
+
+// 3. Utilitários
+@use 'utilities';
+
+// ========================================
+// RESET E BASE
+// ========================================
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: $font-md;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  @include themed(background-color, $light-bg-secondary, $dark-bg-primary);
+  @include themed(color, $light-text-primary, $dark-text-primary);
+  @include smooth-color-transition;
+}
+
+// ========================================
+// SCROLLBAR GLOBAL
+// ========================================
+
+body {
+  @include custom-scrollbar;
+}
+
+// ========================================
+// LINKS
+// ========================================
+
+a {
+  color: $primary;
+  text-decoration: none;
+  transition: color $transition-fast;
+  
+  &:hover {
+    color: darken-color($primary, 10%);
+    text-decoration: underline;
+  }
+}
+
+// ========================================
+// CÓDIGO
+// ========================================
+
+code,
+pre {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9em;
+}
+
+code {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  
+  @include themed(background-color, $light-bg-tertiary, $dark-bg-tertiary);
+  @include themed(color, $danger, lighten-color($danger, 20%));
+}
+
+pre {
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  overflow-x: auto;
+  
+  @include themed(background-color, $light-bg-tertiary, $dark-bg-tertiary);
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+  
+  code {
+    padding: 0;
+    background: none;
+    
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+}
+
+// ========================================
+// IMAGENS
+// ========================================
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// ========================================
+// CARDS GENÉRICOS
+// ========================================
+
+.card {
+  @include card;
+  
+  .card-header {
+    padding: $spacing-md $spacing-lg;
+    font-weight: 600;
+    font-size: $font-lg;
+    
+    @include themed(border-bottom, 1px solid $light-border, 1px solid $dark-border);
+  }
+  
+  .card-body {
+    padding: $spacing-lg;
+  }
+  
+  .card-footer {
+    padding: $spacing-md $spacing-lg;
+    
+    @include themed(border-top, 1px solid $light-border, 1px solid $dark-border);
+  }
+}
+
+// ========================================
+// ALERTAS
+// ========================================
+
+.alert {
+  padding: $spacing-md $spacing-lg;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+  border: 1px solid;
+  
+  &.alert-success {
+    background-color: lighten-color($success, 45%);
+    border-color: lighten-color($success, 30%);
+    color: darken-color($success, 10%);
+    
+    body.theme-dark & {
+      background-color: rgba($success, 0.2);
+      border-color: rgba($success, 0.4);
+      color: lighten-color($success, 20%);
+    }
+  }
+  
+  &.alert-danger {
+    background-color: lighten-color($danger, 45%);
+    border-color: lighten-color($danger, 30%);
+    color: darken-color($danger, 10%);
+    
+    body.theme-dark & {
+      background-color: rgba($danger, 0.2);
+      border-color: rgba($danger, 0.4);
+      color: lighten-color($danger, 20%);
+    }
+  }
+  
+  &.alert-warning {
+    background-color: lighten-color($warning, 45%);
+    border-color: lighten-color($warning, 30%);
+    color: darken-color($warning, 30%);
+    
+    body.theme-dark & {
+      background-color: rgba($warning, 0.2);
+      border-color: rgba($warning, 0.4);
+      color: lighten-color($warning, 20%);
+    }
+  }
+  
+  &.alert-info {
+    background-color: lighten-color($info, 45%);
+    border-color: lighten-color($info, 30%);
+    color: darken-color($info, 10%);
+    
+    body.theme-dark & {
+      background-color: rgba($info, 0.2);
+      border-color: rgba($info, 0.4);
+      color: lighten-color($info, 20%);
+    }
+  }
+}
+
+// ========================================
+// BADGES
+// ========================================
+
+.badge {
+  display: inline-block;
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-xs;
+  font-weight: 600;
+  border-radius: $radius-sm;
+  
+  &.badge-primary {
+    background-color: $primary;
+    color: white;
+  }
+  
+  &.badge-success {
+    background-color: $success;
+    color: white;
+  }
+  
+  &.badge-danger {
+    background-color: $danger;
+    color: white;
+  }
+  
+  &.badge-warning {
+    background-color: $warning;
+    color: $dark;
+    
+    body.theme-dark & {
+      color: white;
+    }
+  }
+  
+  &.badge-info {
+    background-color: $info;
+    color: white;
+  }
+}
+
+// ========================================
+// DIVISORES
+// ========================================
+
+.divider {
+  height: 1px;
+  margin: $spacing-lg 0;
+  
+  @include themed(background-color, $light-border, $dark-border);
+}
+
+.divider-vertical {
+  width: 1px;
+  height: 100%;
+  
+  @include themed(background-color, $light-border, $dark-border);
+}
+
+// ========================================
+// CONTAINER RESPONSIVO
+// ========================================
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 $spacing-lg;
+  
+  @include responsive($tablet) {
+    padding: 0 $spacing-md;
+  }
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 $spacing-lg;
+  
+  @include responsive($tablet) {
+    padding: 0 $spacing-md;
+  }
+}
+
+// ========================================
+// RESPONSIVIDADE - HELPERS
+// ========================================
+
+@include responsive($mobile) {
+  .hide-mobile { display: none !important; }
+}
+
+@include responsive($tablet) {
+  .hide-tablet { display: none !important; }
+}
+
+@media (min-width: $desktop) {
+  .hide-desktop { display: none !important; }
+}
+
+// ========================================
+// PRINT STYLES
+// ========================================
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white;
+    color: black;
+  }
+  
+  a {
+    text-decoration: underline;
+  }
+}

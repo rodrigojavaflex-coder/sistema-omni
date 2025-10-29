@@ -1,0 +1,168 @@
+// ========================================
+// COMPONENTE: MODAIS
+// ========================================
+
+@use '../variaveis' as *;
+@use '../mixins' as *;
+
+// Overlay do modal
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: $z-modal;
+  padding: $spacing-md;
+  animation: fadeIn $transition-fast;
+  
+  body.theme-dark & {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// Container do modal
+.modal-container {
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: $radius-md;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp $transition-normal;
+  
+  @include themed(background-color, white, $dark-bg-primary);
+  @include custom-scrollbar;
+  
+  @include responsive($mobile) {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Header do modal
+.modal-header {
+  padding: $spacing-lg;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  @include themed(border-bottom, 1px solid $light-border, 1px solid $dark-border);
+  
+  h3 {
+    margin: 0;
+    font-size: $font-xl;
+    font-weight: 600;
+    
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+}
+
+// Botão de fechar
+.modal-close {
+  background: none;
+  border: none;
+  font-size: $font-xxl;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-sm;
+  transition: all $transition-fast;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+  
+  &:hover {
+    @include themed(background-color, $light-hover, $dark-hover);
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+}
+
+// Corpo do modal
+.modal-body {
+  padding: $spacing-lg;
+  
+  @include themed(color, $light-text-primary, $dark-text-primary);
+  
+  p {
+    margin: 0 0 $spacing-md 0;
+    line-height: 1.6;
+  }
+}
+
+// Footer do modal
+.modal-footer {
+  padding: $spacing-lg;
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  
+  @include themed(border-top, 1px solid $light-border, 1px solid $dark-border);
+}
+
+// Modal grande
+.modal-container-large {
+  @extend .modal-container;
+  max-width: 800px;
+}
+
+// Modal pequeno
+.modal-container-small {
+  @extend .modal-container;
+  max-width: 350px;
+}
+
+// Modal de confirmação
+.modal-confirmation {
+  .modal-body {
+    text-align: center;
+    padding: $spacing-xl;
+    
+    .confirmation-icon {
+      font-size: 48px;
+      margin-bottom: $spacing-md;
+      
+      &.icon-warning {
+        color: $warning;
+      }
+      
+      &.icon-danger {
+        color: $danger;
+      }
+      
+      &.icon-info {
+        color: $info;
+      }
+    }
+    
+    .confirmation-message {
+      font-size: $font-md;
+      font-weight: 500;
+      margin-bottom: $spacing-lg;
+    }
+  }
+}

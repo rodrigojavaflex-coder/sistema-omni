@@ -1,100 +1,100 @@
-<div class="veiculo-list-container">
-  <div class="header">
-    <h2>Lista de Veículos</h2>
-    @if (canCreate()) {
-      <button class="btn btn-primary" (click)="createItem()">
-        Novo Veículo
-      </button>
-    }
+<div class="list-container">
+  <div class="list-header">
+    <h2>Veículos</h2>
+    <div class="header-actions">
+      @if (canCreate()) {
+        <button class="btn btn-primary" (click)="createItem()">
+          Novo Veículo
+        </button>
+      }
+    </div>
   </div>
 
   <!-- Filtros -->
   <div class="filters">
     <input 
       type="text" 
-      placeholder="Descrição"
+      placeholder="Filtrar por descrição..."
       [(ngModel)]="descricaoFilter"
       (input)="onFilterChange()"
-      class="form-control filter-input"
+      class="filter-input"
     >
     <input 
       type="text" 
-      placeholder="Placa"
+      placeholder="Filtrar por placa..."
       [(ngModel)]="placaFilter"
       (input)="onFilterChange()"
-      class="form-control filter-input"
+      class="filter-input"
     >
     <input 
       type="number" 
-      placeholder="Ano"
+      placeholder="Filtrar por ano..."
       [(ngModel)]="anoFilter"
       (input)="onFilterChange()"
-      class="form-control filter-input"
+      class="filter-input"
     >
     <input 
       type="text" 
-      placeholder="Marca"
+      placeholder="Filtrar por marca..."
       [(ngModel)]="marcaFilter"
       (input)="onFilterChange()"
-      class="form-control filter-input"
+      class="filter-input"
     >
     <input 
       type="text" 
-      placeholder="Modelo"
+      placeholder="Filtrar por modelo..."
       [(ngModel)]="modeloFilter"
       (input)="onFilterChange()"
-      class="form-control filter-input"
+      class="filter-input"
     >
     <select 
       [(ngModel)]="combustivelFilter"
       (change)="onFilterChange()"
-      class="form-control filter-input"
+      class="filter-select"
     >
-      <option value="">Combustível</option>
+      <option value="">Todos os combustíveis</option>
       @for (combustivel of combustivelOptions; track combustivel) {
         <option [value]="combustivel">{{ combustivel }}</option>
       }
     </select>
-    <button class="btn btn-success btn-export" (click)="exportToExcel()" title="Exportar para Excel">
+    
+    <button (click)="exportToExcel()" class="btn-export-excel" title="Exportar para Excel">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
         <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
         <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
       </svg>
     </button>
-    <button class="btn btn-danger btn-export" (click)="exportToPDF()" title="Exportar para PDF">
+    <button (click)="exportToPDF()" class="btn-export-pdf" title="Exportar para PDF">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
         <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
         <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.396-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 5.753 5.753 0 0 1 1.334.05c.364.066.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.712 5.712 0 0 1-.911-.95 11.651 11.651 0 0 0-1.997.406 11.307 11.307 0 0 1-1.02 1.51c-.292.35-.609.656-.927.787a.793.793 0 0 1-.58.029zm1.379-1.901c-.166.076-.32.156-.459.238-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361.01.022.02.036.026.044a.266.266 0 0 0 .035-.012c.137-.056.355-.235.635-.572a8.18 8.18 0 0 0 .45-.606zm1.64-1.33a12.71 12.71 0 0 1 1.01-.193 11.744 11.744 0 0 1-.51-.858 20.801 20.801 0 0 1-.5 1.05zm2.446.45c.15.163.296.3.435.41.24.19.407.253.498.256a.107.107 0 0 0 .07-.015.307.307 0 0 0 .094-.125.436.436 0 0 0 .059-.2.095.095 0 0 0-.026-.063c-.052-.062-.2-.152-.518-.209a3.876 3.876 0 0 0-.612-.053zM8.078 7.8a6.7 6.7 0 0 0 .2-.828c.031-.188.043-.343.038-.465a.613.613 0 0 0-.032-.198.517.517 0 0 0-.145.04c-.087.035-.158.106-.196.283-.04.192-.03.469.046.822.024.111.054.227.09.346z"/>
       </svg>
     </button>
-    <button class="btn btn-secondary btn-clear" (click)="clearFilters()">
-      Limpar
-    </button>
+    <button (click)="clearFilters()" class="btn btn-secondary">Limpar</button>
   </div>
 
   <!-- Paginação -->
   @if (totalPages > 1) {
     <div class="pagination">
-    <button 
-      class="btn btn-secondary" 
-      (click)="onPageChange(currentPage - 1)"
-      [disabled]="currentPage <= 1"
-    >
-      Anterior
-    </button>
-    
-    <span class="page-info">
-      Página {{ currentPage }} de {{ totalPages }} 
-      ({{ totalItems }} veículos)
-    </span>
-    
-    <button 
-      class="btn btn-secondary" 
-      (click)="onPageChange(currentPage + 1)"
-      [disabled]="currentPage >= totalPages"
-    >
-      Próxima
-    </button>
+      <button 
+        (click)="onPageChange(currentPage - 1)"
+        [disabled]="currentPage === 1"
+        class="btn-pagination"
+      >
+        Anterior
+      </button>
+      
+      <span class="page-info">
+        Página {{ currentPage }} de {{ totalPages }} ({{ totalItems }} itens)
+      </span>
+      
+      <button 
+        (click)="onPageChange(currentPage + 1)"
+        [disabled]="currentPage === totalPages"
+        class="btn-pagination"
+      >
+        Próxima
+      </button>
     </div>
   }
 
@@ -107,7 +107,7 @@
 
   <!-- Error -->
   @if (error) {
-    <div class="alert alert-error">
+    <div class="error-message">
       {{ error }}
     </div>
   }
@@ -115,58 +115,58 @@
   <!-- Tabela de veículos -->
   @if (!loading && !error) {
     <div class="table-container">
-    <table class="veiculos-table">
-      <thead>
-        <tr>
-          <th>Descrição</th>
-          <th>Placa</th>
-          <th>Ano</th>
-          <th>Chassi</th>
-          <th>Marca</th>
-          <th>Modelo</th>
-          <th>Combustível</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (item of items; track item.id) {
+      <table class="data-table">
+        <thead>
           <tr>
-            <td>{{ item.descricao }}</td>
-            <td>{{ item.placa | placa }}</td>
-            <td>{{ item.ano }}</td>
-            <td>{{ item.chassi }}</td>
-            <td>{{ item.marca }}</td>
-            <td>{{ item.modelo }}</td>
-            <td>{{ item.combustivel }}</td>
-            <td>
-              @if (canEdit()) {
-                <button class="btn btn-small btn-primary" (click)="editItem(item)">
-                  Editar
-                </button>
-              }
-              @if (canDelete()) {
-                <button class="btn btn-small btn-danger" (click)="deleteVehicle(item)">
-                  Excluir
-                </button>
-              }
-              @if (canAudit()) {
-                <button class="btn btn-small btn-audit" (click)="openAuditHistory(item)">
-                  Auditoria
-                </button>
-              }
-            </td>
+            <th>Descrição</th>
+            <th>Placa</th>
+            <th>Ano</th>
+            <th>Chassi</th>
+            <th>Marca</th>
+            <th>Modelo</th>
+            <th>Combustível</th>
+            <th>Ações</th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (item of items; track item.id) {
+            <tr>
+              <td>{{ item.descricao }}</td>
+              <td>{{ item.placa | placa }}</td>
+              <td>{{ item.ano }}</td>
+              <td>{{ item.chassi }}</td>
+              <td>{{ item.marca }}</td>
+              <td>{{ item.modelo }}</td>
+              <td>{{ item.combustivel }}</td>
+              <td class="table-actions">
+                @if (canEdit()) {
+                  <button class="btn btn-small btn-primary" (click)="editItem(item)">
+                    Editar
+                  </button>
+                }
+                @if (canDelete()) {
+                  <button class="btn btn-small btn-danger" (click)="deleteVehicle(item)">
+                    Excluir
+                  </button>
+                }
+                @if (canAudit()) {
+                  <button class="btn-action btn-audit" (click)="openAuditHistory(item)" title="Auditoria">
+                    Auditoria
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
 
-    <!-- Mensagem quando não há veículos -->
-  @if (items.length === 0) {
-      <div class="no-veiculos">
-        Nenhum veículo encontrado.
-      </div>
-    }
-  </div>
+      <!-- Mensagem quando não há veículos -->
+      @if (items.length === 0) {
+        <div class="no-data">
+          Nenhum veículo encontrado.
+        </div>
+      }
+    </div>
   }
 </div>
 

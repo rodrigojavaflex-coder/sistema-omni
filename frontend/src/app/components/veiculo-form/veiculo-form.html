@@ -1,4 +1,4 @@
-<div class="veiculo-form-container">
+<div class="form-container">
   <h2>{{ getFormTitle() }} Veículo</h2>
 
   <!-- Botões do topo -->
@@ -15,52 +15,52 @@
     <div class="form-section">
       <h3>Dados do Veículo</h3>
       
-      <div class="form-row">
-        <div class="form-field">
-          <label>Descrição *</label>
-          <input type="text" formControlName="descricao" class="form-control" />
-          <div class="error" *ngIf="isFieldInvalid('descricao')">{{ getFieldError('descricao') }}</div>
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Descrição *</label>
+          <input type="text" formControlName="descricao" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('descricao')">{{ getFieldError('descricao') }}</div>
         </div>
 
-        <div class="form-field">
-          <label>Placa *</label>
-          <input type="text" formControlName="placa" class="form-control" (input)="onPlacaInput($event)" />
-          <div class="error" *ngIf="isFieldInvalid('placa')">{{ getFieldError('placa') }}</div>
+        <div class="form-group">
+          <label class="form-label">Placa *</label>
+          <input type="text" formControlName="placa" class="form-input" (input)="onPlacaInput($event)" />
+          <div class="form-error" *ngIf="isFieldInvalid('placa')">{{ getFieldError('placa') }}</div>
         </div>
 
-        <div class="form-field">
-          <label>Ano *</label>
-          <input type="number" formControlName="ano" class="form-control" />
-          <div class="error" *ngIf="isFieldInvalid('ano')">{{ getFieldError('ano') }}</div>
+        <div class="form-group">
+          <label class="form-label">Ano *</label>
+          <input type="number" formControlName="ano" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('ano')">{{ getFieldError('ano') }}</div>
         </div>
 
-        <div class="form-field">
-          <label>Chassi *</label>
-          <input type="text" formControlName="chassi" class="form-control" />
-          <div class="error" *ngIf="isFieldInvalid('chassi')">{{ getFieldError('chassi') }}</div>
+        <div class="form-group">
+          <label class="form-label">Chassi *</label>
+          <input type="text" formControlName="chassi" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('chassi')">{{ getFieldError('chassi') }}</div>
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-field">
-          <label>Marca *</label>
-          <input type="text" formControlName="marca" class="form-control" />
-          <div class="error" *ngIf="isFieldInvalid('marca')">{{ getFieldError('marca') }}</div>
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Marca *</label>
+          <input type="text" formControlName="marca" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('marca')">{{ getFieldError('marca') }}</div>
         </div>
 
-        <div class="form-field">
-          <label>Modelo *</label>
-          <input type="text" formControlName="modelo" class="form-control" />
-          <div class="error" *ngIf="isFieldInvalid('modelo')">{{ getFieldError('modelo') }}</div>
+        <div class="form-group">
+          <label class="form-label">Modelo *</label>
+          <input type="text" formControlName="modelo" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('modelo')">{{ getFieldError('modelo') }}</div>
         </div>
 
-        <div class="form-field">
-          <label>Combustível *</label>
-          <select formControlName="combustivel" class="form-control">
+        <div class="form-group">
+          <label class="form-label">Combustível *</label>
+          <select formControlName="combustivel" class="form-select">
             <option value="">Selecione</option>
             <option *ngFor="let c of combustivelOptions" [value]="c">{{ c }}</option>
           </select>
-          <div class="error" *ngIf="isFieldInvalid('combustivel')">{{ getFieldError('combustivel') }}</div>
+          <div class="form-error" *ngIf="isFieldInvalid('combustivel')">{{ getFieldError('combustivel') }}</div>
         </div>
       </div>
     </div>

@@ -1,49 +1,47 @@
-<form [formGroup]="perfilForm" (ngSubmit)="onSubmit()" class="perfil-form">
-  <header class="page-header">
-    <div class="header-content">
-      <h2>{{ isEditMode ? 'Editar Perfil' : 'Novo Perfil' }}</h2>
-      <div class="header-actions">
-        <button type="submit" class="btn btn-primary" [disabled]="perfilForm.invalid || loading">
-          {{ isEditMode ? 'Atualizar' : 'Salvar' }}
-        </button>
-  <button type="button" class="btn btn-secondary" (click)="router.navigate(['/perfil'])">Cancelar</button>
-      </div>
+<form [formGroup]="perfilForm" (ngSubmit)="onSubmit()" class="form-container">
+  <div class="form-header">
+    <h2>{{ isEditMode ? 'Editar Perfil' : 'Novo Perfil' }}</h2>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="perfilForm.invalid || loading">
+        {{ isEditMode ? 'Atualizar' : 'Salvar' }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="router.navigate(['/perfil'])">Cancelar</button>
     </div>
-  </header>
-
-  <div *ngIf="loading" class="loading-state">
-    <p>Carregando...</p>
   </div>
-  <div *ngIf="error" class="error-state">
-    <p>{{ error }}</p>
+
+  <div *ngIf="loading" class="loading">
+    Carregando...
+  </div>
+  <div *ngIf="error" class="error-message">
+    {{ error }}
   </div>
 
   <div *ngIf="!loading">
     <div class="form-group">
-      <div class="inline-group">
-        <label for="nomePerfil">Nome do Perfil</label>
-        <input id="nomePerfil" type="text" formControlName="nomePerfil" class="form-input" />
-      </div>
-      <div *ngIf="perfilForm.get('nomePerfil')?.invalid && perfilForm.get('nomePerfil')?.touched" class="error-message">
+      <label for="nomePerfil" class="form-label">Nome do Perfil</label>
+      <input id="nomePerfil" type="text" formControlName="nomePerfil" class="form-input" />
+      <div *ngIf="perfilForm.get('nomePerfil')?.invalid && perfilForm.get('nomePerfil')?.touched" class="form-error">
         Nome do perfil é obrigatório.
       </div>
     </div>
 
     <div class="permissions-section">
-      <div class="form-group inline-group">
-        <label for="permSearch">Buscar Permissões</label>
-        <input
-          id="permSearch"
-          name="permissionFilter"
-          type="text"
-          [(ngModel)]="permissionFilter"
-          (ngModelChange)="onPermissionFilterChange($event)"
-          [ngModelOptions]="{ standalone: true }"
-          placeholder="Digite para buscar..."
-          class="form-input perm-search"
-        />
+      <div class="form-inline">
+        <div class="form-group">
+          <label for="permSearch" class="form-label">Buscar Permissões</label>
+          <input
+            id="permSearch"
+            name="permissionFilter"
+            type="text"
+            [(ngModel)]="permissionFilter"
+            (ngModelChange)="onPermissionFilterChange($event)"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Digite para buscar..."
+            class="form-input"
+          />
+        </div>
       </div>
-      <div class="permissions-actions">
+      <div class="form-actions">
         <button
           type="button"
           class="btn btn-small btn-primary"
@@ -63,7 +61,7 @@
       </div>
       <div class="permissions-grid">
         <div *ngFor="let group of filteredPermissionGroups | keyvalue" class="permission-group">
-          <div class="permission-group-header inline-group">
+          <div class="permission-group-header form-check">
             <input
               type="checkbox"
               [id]="group.key + '_select_all'"
@@ -72,7 +70,7 @@
             />
             <label [for]="group.key + '_select_all'">{{ formatGroupName(group.key) }}</label>
           </div>
-          <div *ngFor="let perm of group.value" class="permission-item">
+          <div *ngFor="let perm of group.value" class="permission-item form-check">
             <input
               type="checkbox"
               [id]="perm.key"
@@ -89,7 +87,7 @@
       <button type="submit" class="btn btn-primary" [disabled]="perfilForm.invalid || loading">
         {{ isEditMode ? 'Atualizar' : 'Salvar' }}
       </button>
-  <button type="button" class="btn btn-secondary" (click)="router.navigate(['/perfil'])">Cancelar</button>
+      <button type="button" class="btn btn-secondary" (click)="router.navigate(['/perfil'])">Cancelar</button>
     </div>
   </div>
 </form>

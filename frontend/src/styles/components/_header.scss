@@ -1,0 +1,346 @@
+// ========================================
+// COMPONENTE: HEADER
+// ========================================
+
+@use '../variaveis' as *;
+@use '../mixins' as *;
+
+// Header principal
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 $spacing-lg;
+  height: 64px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  transition: background-color $transition-normal, border-color $transition-normal, color $transition-normal;
+  
+  @include themed(background-color, $light-bg-primary, $dark-bg-secondary);
+  @include themed(border-bottom, 1px solid $light-border, 1px solid $dark-border);
+  @include themed(box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3));
+  @include themed(color, $light-text-primary, $dark-text-primary);
+}
+
+// Seção esquerda do header
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+// Botão de toggle do menu
+.menu-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: $spacing-sm;
+  border-radius: $radius-full;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-fast;
+  
+  @include themed(background-color, $light-bg-secondary, $dark-bg-tertiary);
+  @include themed(box-shadow, 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.2));
+  
+  span {
+    font-size: 18px;
+    font-weight: 500;
+    transition: color $transition-normal;
+    
+    @include themed(color, $light-text-secondary, $dark-text-secondary);
+  }
+  
+  &:hover {
+    transform: translateY(-0.5px);
+    
+    @include themed(background-color, $light-bg-tertiary, $dark-bg-primary);
+    @include themed(box-shadow, 0 2px 6px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.3));
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Título do app
+.app-title {
+  font-size: $font-lg;
+  font-weight: 500;
+  transition: color $transition-normal;
+  
+  @include themed(color, $light-text-primary, $dark-text-primary);
+}
+
+// Seção direita do header
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+// Perfil do usuário
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.user-name {
+  font-weight: 500;
+  font-size: $font-sm;
+  transition: color $transition-normal;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+}
+
+// Avatar do usuário
+.user-dropdown-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-full;
+  background: linear-gradient(135deg, #4299e1, #3182ce) !important;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-md;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3) !important;
+  transition: all $transition-normal;
+  cursor: pointer;
+  position: relative;
+  border: 2px solid transparent;
+  
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4) !important;
+    border-color: rgba(66, 153, 225, 0.2);
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// Dropdown do usuário
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  min-width: 280px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-12px) scale(0.95);
+  transition: all $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1100;
+  backdrop-filter: blur(12px);
+  border-radius: $radius-lg;
+  
+  @include themed(background, $light-bg-primary, $dark-bg-secondary);
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+  @include themed(box-shadow, 0 12px 40px rgba(0, 0, 0, 0.12), 0 12px 40px rgba(0, 0, 0, 0.3));
+  
+  &.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+  
+  // Seta do dropdown
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 18px;
+    width: 12px;
+    height: 12px;
+    transform: rotate(45deg);
+    
+    @include themed(background, $light-bg-primary, $dark-bg-secondary);
+    @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+    border-bottom: none;
+    border-right: none;
+  }
+}
+
+// Header do dropdown
+.dropdown-header {
+  padding: $spacing-lg $spacing-lg $spacing-md $spacing-lg;
+  border-radius: $radius-lg $radius-lg 0 0;
+  transition: all $transition-normal;
+  
+  @include themed(background-color, $light-bg-secondary, $dark-bg-tertiary);
+  @include themed(border-bottom, 1px solid $light-border, 1px solid $dark-border);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-name-horizontal {
+  font-size: $font-md;
+  font-weight: 600;
+  line-height: 1.2;
+  
+  @include themed(color, $light-text-primary, $dark-text-primary);
+}
+
+.user-email {
+  font-size: $font-xs;
+  font-weight: 400;
+  opacity: 0.8;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+}
+
+// Divisor do dropdown
+.dropdown-divider {
+  height: 1px;
+  margin: 0;
+  opacity: 0.6;
+  
+  @include themed(background, $light-border, $dark-border);
+}
+
+// Seções do dropdown
+.dropdown-section {
+  padding: $spacing-md $spacing-lg;
+}
+
+.dropdown-section-title {
+  display: block;
+  font-size: $font-xs;
+  font-weight: 600;
+  margin-bottom: $spacing-md;
+  letter-spacing: 0.5px;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+}
+
+// Opções de tema
+.theme-options {
+  display: flex;
+  gap: 4px;
+  border-radius: $radius-sm;
+  overflow: hidden;
+  position: relative;
+  transition: background-color $transition-normal, border-color $transition-normal;
+  
+  @include themed(background-color, $light-bg-secondary, $dark-bg-tertiary);
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px $spacing-md;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  cursor: pointer;
+  transition: all $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: $font-xs;
+  font-weight: 500;
+  flex: 1;
+  position: relative;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+  
+  &:hover {
+    transform: translateY(0);
+    
+    @include themed(background-color, $light-bg-tertiary, $dark-bg-primary);
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+  
+  &.active {
+    background-color: $primary;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    transform: translateY(0);
+    
+    &:hover {
+      background-color: darken-color($primary, 10%);
+    }
+  }
+}
+
+// Items do dropdown
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px $spacing-lg;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all $transition-normal cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  text-align: center;
+  font-size: $font-sm;
+  font-weight: 500;
+  border-radius: 0 0 $radius-lg $radius-lg;
+  
+  @include themed(color, $light-text-primary, $dark-text-primary);
+  
+  &:hover {
+    transform: translateY(-1px);
+    
+    @include themed(background, $light-bg-secondary, $dark-bg-tertiary);
+  }
+  
+  &.logout-item {
+    color: $danger;
+    font-weight: 600;
+    
+    @include themed(border-top, 1px solid $light-border, 1px solid $dark-border);
+    
+    &:hover {
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+      color: darken-color($danger, 10%);
+      
+      body.theme-dark & {
+        background: rgba(220, 38, 38, 0.2);
+        color: #fee2e2;
+      }
+    }
+  }
+}
+
+.change-password-btn {
+  padding: 4px $spacing-lg !important;
+}
+
+// Overlay do dropdown
+.dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1050;
+  opacity: 0;
+  visibility: hidden;
+  transition: all $transition-fast;
+  
+  &.show {
+    opacity: 1;
+    visibility: visible;
+  }
+}

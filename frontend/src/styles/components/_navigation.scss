@@ -1,0 +1,568 @@
+// ========================================
+// COMPONENTE: NAVIGATION (SIDEBAR)
+// ========================================
+
+@use '../variaveis' as *;
+@use '../mixins' as *;
+
+// Sidebar principal
+.sidebar {
+  position: relative;
+  width: 300px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: all $transition-slow cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+  z-index: 100;
+  margin-right: $spacing-md;
+  
+  @include themed(background, $light-bg-primary, $dark-bg-secondary);
+  @include themed(border-right, 1px solid $light-border, 1px solid $dark-border);
+  @include themed(box-shadow, none, 0 0 20px rgba(0, 0, 0, 0.15));
+  
+  &.collapsed {
+    width: 72px;
+    margin-right: $spacing-md;
+  }
+  
+  &.floating {
+    position: fixed;
+    left: 0;
+    top: 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    margin-right: 0;
+    
+    &.collapsed {
+      width: 72px;
+    }
+  }
+}
+
+// Seção de pesquisa
+.search-section {
+  padding: $spacing-md $spacing-md $spacing-md $spacing-md;
+  transition: border-color $transition-normal;
+  
+  @include themed(background, transparent, $dark-bg-secondary);
+  @include themed(border-bottom, 1px solid $light-border, 1px solid $dark-border);
+  
+  &.filter-active {
+    border-bottom-color: $primary;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.search-container {
+  position: relative;
+  width: 100%;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+  
+  svg {
+    width: 20px !important;
+    height: 20px !important;
+    display: block;
+  }
+}
+
+.search-input {
+  width: 100%;
+  padding: $spacing-sm 50px $spacing-sm 44px;
+  border-radius: $radius-sm;
+  font-size: $font-sm;
+  transition: all $transition-normal cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  outline: none;
+  height: 44px;
+  box-sizing: border-box;
+  
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+  @include themed(background, $light-bg-secondary, $dark-bg-tertiary);
+  @include themed(color, $light-text-primary, $dark-text-primary);
+  
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
+  
+  &.filter-active {
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    
+    @include themed(background, rgba(59, 130, 246, 0.05), rgba(96, 165, 250, 0.1));
+  }
+  
+  &::placeholder {
+    font-size: $font-xs;
+    
+    @include themed(color, $light-text-secondary, $dark-text-secondary);
+  }
+}
+
+.clear-search {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: $radius-full;
+  transition: all $transition-fast;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  &:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: $danger;
+    transform: translateY(-50%) scale(1.1);
+  }
+}
+
+// Conteúdo da sidebar
+.sidebar-content {
+  flex: 1;
+  padding: $spacing-md 0;
+  padding-bottom: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  
+  // Scrollbar personalizada
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(107, 114, 128, 0.3), rgba(107, 114, 128, 0.5));
+    border-radius: 3px;
+    transition: all $transition-normal cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    &:hover {
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.4), rgba(59, 130, 246, 0.6));
+    }
+  }
+}
+
+.main-nav {
+  padding: 0 $spacing-md;
+}
+
+// Mensagem de nenhum resultado
+.no-results-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xxl $spacing-md;
+  text-align: center;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+  
+  svg {
+    margin-bottom: $spacing-md;
+    opacity: 0.5;
+  }
+  
+  p {
+    font-size: $font-md;
+    font-weight: 500;
+    margin: 0 0 $spacing-xs 0;
+    
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+  
+  span {
+    font-size: $font-xs;
+    
+    @include themed(color, $light-text-secondary, $dark-text-secondary);
+  }
+}
+
+// Lista de navegação
+.nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nav-item {
+  margin: 0;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 0;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: $font-sm;
+  transition: all $transition-normal cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  white-space: nowrap;
+  position: relative;
+  min-height: 48px;
+  box-sizing: border-box;
+  border-left: 3px solid transparent;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+  
+  &:hover {
+    background: transparent;
+    color: $primary;
+    transform: translateX(0);
+    border-left-color: $primary;
+  }
+  
+  &.active {
+    background: transparent;
+    font-weight: 600;
+    border-left-color: $primary;
+    
+    @include themed(color, darken-color($primary, 10%), lighten-color($primary, 10%));
+  }
+}
+
+.sidebar.collapsed .nav-link {
+  justify-content: center;
+  padding: 14px 8px;
+  gap: 0;
+  min-height: 48px;
+}
+
+.nav-icon {
+  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  
+  svg {
+    width: 20px !important;
+    height: 20px !important;
+    display: block;
+    flex-shrink: 0;
+  }
+}
+
+.nav-text {
+  font-weight: 500;
+  transition: opacity $transition-normal;
+}
+
+.sidebar.collapsed .nav-text {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+// Submenus
+.submenu-container {
+  width: 100%;
+}
+
+.submenu-toggle {
+  background: none;
+  border: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  text-decoration: none;
+  transition: all $transition-normal cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  cursor: pointer;
+  font-size: $font-sm;
+  font-weight: 500;
+  border-radius: 0;
+  min-height: 48px;
+  box-sizing: border-box;
+  gap: 14px;
+  justify-content: flex-start;
+  border-left: 3px solid transparent;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+  
+  &:hover {
+    background: transparent;
+    color: $primary;
+    transform: translateX(0);
+    border-left-color: $primary;
+  }
+  
+  &.expanded {
+    background: transparent;
+    color: $primary;
+    border-left-color: $primary;
+    font-weight: 600;
+  }
+}
+
+.submenu-arrow {
+  margin-left: auto;
+  transition: transform $transition-normal;
+  display: flex;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  justify-content: center;
+  flex-shrink: 0;
+  
+  svg {
+    width: 18px !important;
+    height: 18px !important;
+    flex-shrink: 0;
+    display: block;
+  }
+  
+  &.rotated {
+    transform: rotate(180deg) scale(1.1);
+  }
+}
+
+.submenu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  margin-left: 32px;
+  margin-right: 0;
+  overflow: hidden;
+  
+  @include themed(border-left, 3px solid $light-border, 3px solid $dark-border);
+}
+
+.submenu-item {
+  margin: 0;
+}
+
+.submenu-link {
+  display: flex;
+  align-items: center;
+  padding: $spacing-sm $spacing-md;
+  text-decoration: none;
+  transition: all $transition-normal cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  font-size: $font-sm;
+  font-weight: 400;
+  position: relative;
+  gap: $spacing-sm;
+  min-height: 40px;
+  box-sizing: border-box;
+  border-radius: 0;
+  margin: 0;
+  background: transparent;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+  
+  &:hover {
+    background: transparent;
+    color: $primary;
+    transform: translateX(4px);
+  }
+  
+  &.active {
+    background: transparent;
+    font-weight: 600;
+    
+    @include themed(color, darken-color($primary, 10%), lighten-color($primary, 10%));
+  }
+}
+
+.submenu-icon {
+  margin-right: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  justify-content: center;
+  
+  svg {
+    width: 16px !important;
+    height: 16px !important;
+    display: block;
+    flex-shrink: 0;
+  }
+}
+
+.submenu-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Rodapé da sidebar
+.sidebar-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 300px;
+  padding: $spacing-lg $spacing-md;
+  padding-bottom: 32px;
+  z-index: 200;
+  box-sizing: border-box;
+  
+  @include themed(border-top, 1px solid $light-border, 1px solid $dark-border);
+  @include themed(background, $light-bg-secondary, $dark-bg-primary);
+}
+
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: $radius-lg;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all $transition-normal cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  min-height: 48px;
+  box-sizing: border-box;
+  font-size: $font-sm;
+  
+  @include themed(background, linear-gradient(135deg, $light-bg-tertiary 0%, $light-border 100%), rgba(255, 255, 255, 0.08));
+  @include themed(border, 1px solid $light-border, 1px solid rgba(255, 255, 255, 0.2));
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+  @include themed(box-shadow, 0 2px 8px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.2));
+  
+  &:hover {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-color: rgba(252, 165, 165, 0.8);
+    color: $danger;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.15);
+    
+    body.theme-dark & {
+      background: rgba(220, 38, 38, 0.2);
+      border-color: rgba(220, 38, 38, 0.4);
+      color: #fee2e2;
+    }
+  }
+}
+
+.sidebar.collapsed .logout-btn {
+  justify-content: center;
+  padding: 14px 10px;
+  min-height: 48px;
+}
+
+.logout-icon {
+  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  svg {
+    width: 20px !important;
+    height: 20px !important;
+    display: block;
+    flex-shrink: 0;
+  }
+}
+
+.logout-text {
+  transition: opacity $transition-normal;
+}
+
+.sidebar.collapsed .logout-text {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+// Responsividade Mobile
+@media (max-width: 768px) {
+  .sidebar {
+    width: 300px;
+    
+    &.collapsed {
+      width: 72px;
+    }
+    
+    &.floating {
+      width: 300px;
+    }
+  }
+}
+
+// Reduzir animações para acessibilidade
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .nav-link,
+  .logout-btn {
+    transition: none;
+  }
+}
+
+// Animações
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.sidebar.floating {
+  animation: slideInLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}

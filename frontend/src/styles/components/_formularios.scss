@@ -1,0 +1,440 @@
+// ========================================
+// COMPONENTE: FORMULÁRIOS
+// ========================================
+
+@use '../variaveis' as *;
+@use '../mixins' as *;
+
+// Container do formulário
+.form-container {
+  padding: $spacing-xl;
+  max-width: 1200px;
+  margin: 0 auto;
+  
+  h2 {
+    margin-bottom: $spacing-xl;
+    font-size: $font-xl;
+    font-weight: 600;
+    
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+  
+  @media (max-width: 768px) {
+    padding: $spacing-md;
+  }
+}
+
+// Cabeçalho do formulário
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xl;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  
+  h2 {
+    margin: 0;
+    font-size: $font-xl;
+    font-weight: 600;
+    
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+// Seção do formulário
+.form-section {
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  border-radius: $radius-md;
+  
+  @include themed(background-color, $light-bg-primary, $dark-bg-secondary);
+  @include themed(box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3));
+  
+  h3 {
+    margin: 0 0 $spacing-lg 0;
+    font-size: $font-lg;
+    font-weight: 600;
+    padding-bottom: $spacing-sm;
+    border-bottom: 2px solid $primary;
+    
+    @include themed(color, $primary, $primary);
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  @media (max-width: 768px) {
+    padding: $spacing-md;
+  }
+}
+
+// Ações do formulário
+.form-actions {
+  display: flex;
+  gap: $spacing-sm;
+  justify-content: flex-start;
+  margin-top: $spacing-xl;
+  padding-top: $spacing-lg;
+  flex-wrap: wrap;
+  
+  @include themed(border-top, 1px solid $light-border, 1px solid $dark-border);
+  
+  &.form-actions-top {
+    margin-top: 0;
+    margin-bottom: $spacing-lg;
+    padding-top: 0;
+    border-top: none;
+    border-bottom: none;
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+// Grupo de formulário
+.form-group {
+  margin-bottom: $spacing-lg;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Label
+.form-label {
+  display: block;
+  margin-bottom: $spacing-sm;
+  font-weight: 500;
+  font-size: $font-sm;
+  
+  @include themed(color, $light-text-primary, $dark-text-primary);
+  
+  &.required::after {
+    content: ' *';
+    color: $danger;
+  }
+}
+
+// Input de texto
+.form-input {
+  @include input-base;
+  width: 100%;
+  display: block;
+  
+  &.invalid,
+  &:invalid {
+    border-color: $danger;
+    
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($danger, 0.1);
+    }
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    
+    @include themed(background-color, $light-bg-tertiary, $dark-bg-tertiary);
+  }
+}
+
+// Textarea
+.form-textarea {
+  @extend .form-input;
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+// Select
+.form-select {
+  @extend .form-input;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right $spacing-sm center;
+  padding-right: $spacing-xl;
+  
+  body.theme-dark & {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23aaa' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  }
+}
+
+// Checkbox e Radio
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+  
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: $primary;
+  }
+  
+  label {
+    cursor: pointer;
+    font-size: $font-sm;
+    margin: 0;
+    
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+}
+
+// Mensagem de erro
+.form-error {
+  display: block;
+  margin-top: $spacing-xs;
+  font-size: $font-xs;
+  color: $danger;
+}
+
+// Mensagem de ajuda
+.form-help {
+  display: block;
+  margin-top: $spacing-xs;
+  font-size: $font-xs;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+}
+
+// Input group (com ícone ou botão)
+.input-group {
+  display: flex;
+  
+  .form-input {
+    border-radius: 0;
+    
+    &:first-child {
+      border-top-left-radius: $radius-sm;
+      border-bottom-left-radius: $radius-sm;
+    }
+    
+    &:last-child {
+      border-top-right-radius: $radius-sm;
+      border-bottom-right-radius: $radius-sm;
+    }
+  }
+  
+  .input-group-prepend,
+  .input-group-append {
+    display: flex;
+    align-items: center;
+    padding: 0 $spacing-md;
+    font-size: $font-sm;
+    
+    @include themed(background-color, $light-bg-tertiary, $dark-bg-tertiary);
+    @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+    @include themed(color, $light-text-secondary, $dark-text-secondary);
+  }
+  
+  .input-group-prepend {
+    border-right: none;
+    border-top-left-radius: $radius-sm;
+    border-bottom-left-radius: $radius-sm;
+  }
+  
+  .input-group-append {
+    border-left: none;
+    border-top-right-radius: $radius-sm;
+    border-bottom-right-radius: $radius-sm;
+  }
+}
+
+// Formulário inline
+.form-inline {
+  display: flex;
+  gap: $spacing-md;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-md;
+  
+  .form-group {
+    flex: 1;
+    min-width: 200px;
+    margin-bottom: 0;
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    
+    .form-group {
+      width: 100%;
+      min-width: 100%;
+    }
+  }
+}
+
+// Formulário horizontal
+.form-horizontal {
+  .form-group {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    
+    .form-label {
+      flex: 0 0 150px;
+      margin-bottom: 0;
+    }
+    
+    .form-input,
+    .form-select,
+    .form-textarea {
+      flex: 1;
+    }
+  }
+}
+
+// Switch toggle
+.form-switch {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  
+  input[type="checkbox"] {
+    appearance: none;
+    width: 44px;
+    height: 24px;
+    border-radius: $radius-xl;
+    position: relative;
+    cursor: pointer;
+    transition: background-color $transition-normal;
+    
+    @include themed(background-color, $light-border, $dark-border);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: $radius-full;
+      top: 3px;
+      left: 3px;
+      background-color: white;
+      transition: transform $transition-normal;
+    }
+    
+    &:checked {
+      background-color: $primary;
+      
+      &::before {
+        transform: translateX(20px);
+      }
+    }
+  }
+  
+  label {
+    cursor: pointer;
+    font-size: $font-sm;
+    
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+}
+
+// Upload de arquivo
+.form-file {
+  .file-input {
+    display: none;
+  }
+  
+  .file-label {
+    @include button-base;
+    background-color: $light-bg-secondary;
+    border: 2px dashed $light-border;
+    padding: $spacing-lg;
+    text-align: center;
+    cursor: pointer;
+    
+    @include themed(color, $light-text-secondary, $dark-text-secondary);
+    
+    &:hover {
+      border-color: $primary;
+      
+      @include themed(background-color, $light-hover, $dark-hover);
+    }
+    
+    body.theme-dark & {
+      background-color: $dark-bg-secondary;
+      border-color: $dark-border;
+    }
+  }
+  
+  .file-name {
+    margin-top: $spacing-sm;
+    font-size: $font-sm;
+    
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+}
+
+// Seção de permissões (perfil-form)
+.permissions-section {
+  margin-top: $spacing-xl;
+  padding: $spacing-lg;
+  border-radius: $radius-md;
+  
+  @include themed(background-color, $light-bg-secondary, $dark-bg-tertiary);
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+}
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: $spacing-md;
+  margin-top: $spacing-md;
+}
+
+.permission-group {
+  padding: $spacing-md;
+  border-radius: $radius-sm;
+  
+  @include themed(background-color, $light-bg-primary, $dark-bg-secondary);
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+}
+
+.permission-group-header {
+  padding: $spacing-sm;
+  margin-bottom: $spacing-sm;
+  font-weight: 600;
+  border-radius: $radius-sm;
+  
+  @include themed(background-color, $light-bg-tertiary, $dark-bg-tertiary);
+  @include themed(border-bottom, 2px solid $light-border, 2px solid $dark-border);
+  
+  input[type="checkbox"] {
+    margin-right: $spacing-xs;
+  }
+}
+
+.permission-item {
+  padding: $spacing-xs 0;
+  
+  input[type="checkbox"] {
+    margin-right: $spacing-xs;
+  }
+  
+  label {
+    cursor: pointer;
+    font-size: $font-sm;
+    
+    @include themed(color, $light-text-primary, $dark-text-primary);
+  }
+}
+

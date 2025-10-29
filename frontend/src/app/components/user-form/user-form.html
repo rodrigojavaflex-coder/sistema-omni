@@ -1,7 +1,5 @@
-<div class="user-form-container">
-  <div class="form-header">
-    <h2>{{ isEditMode ? 'Editar Usuário' : 'Novo Usuário' }}</h2>
-  </div>
+<div class="form-container">
+  <h2>{{ isEditMode ? 'Editar Usuário' : 'Novo Usuário' }}</h2>
 
   <!-- Loading -->
   <div *ngIf="loading" class="loading">
@@ -9,12 +7,12 @@
   </div>
 
   <!-- Error -->
-  <div *ngIf="error" class="alert alert-error">
+  <div *ngIf="error" class="error-message">
     {{ error }}
   </div>
 
   <!-- Formulário -->
-  <form *ngIf="!loading" [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form">
+  <form *ngIf="!loading" [formGroup]="userForm" (ngSubmit)="onSubmit()">
     
     <!-- Nome -->
     <div class="form-group">
@@ -23,11 +21,11 @@
         id="name"
         type="text"
         formControlName="name"
-        class="form-control"
-        [class.error]="name?.invalid && name?.touched"
+        class="form-input"
+        [class.invalid]="name?.invalid && name?.touched"
         placeholder="Digite o nome completo"
       >
-      <div *ngIf="name?.invalid && name?.touched" class="error-message">
+      <div *ngIf="name?.invalid && name?.touched" class="form-error">
         {{ getErrorMessage('name') }}
       </div>
     </div>
@@ -39,11 +37,11 @@
         id="email"
         type="email"
         formControlName="email"
-        class="form-control"
-        [class.error]="email?.invalid && email?.touched"
+        class="form-input"
+        [class.invalid]="email?.invalid && email?.touched"
         placeholder="usuario@exemplo.com"
       >
-      <div *ngIf="email?.invalid && email?.touched" class="error-message">
+      <div *ngIf="email?.invalid && email?.touched" class="form-error">
         {{ getErrorMessage('email') }}
       </div>
     </div>
@@ -57,11 +55,11 @@
         id="password"
         type="password"
         formControlName="password"
-        class="form-control"
-        [class.error]="password?.invalid && password?.touched"
+        class="form-input"
+        [class.invalid]="password?.invalid && password?.touched"
         [placeholder]="isEditMode ? 'Nova senha (opcional)' : 'Digite uma senha segura'"
       >
-      <div *ngIf="password?.invalid && password?.touched" class="error-message">
+      <div *ngIf="password?.invalid && password?.touched" class="form-error">
         {{ getErrorMessage('password') }}
       </div>
       <div class="form-help">
@@ -71,14 +69,13 @@
 
     <!-- Status -->
     <div class="form-group">
-      <div class="checkbox-group">
+      <div class="form-check">
         <input
           id="isActive"
           type="checkbox"
           formControlName="isActive"
-          class="form-checkbox"
         >
-        <label for="isActive" class="checkbox-label">
+        <label for="isActive">
           Usuário ativo
         </label>
       </div>
@@ -92,7 +89,7 @@
       <label for="perfilId" class="form-label">Perfil *</label>
       <select
         id="perfilId"
-        class="form-control"
+        class="form-select"
         formControlName="perfilId"
         [attr.disabled]="isSubmitting ? '' : null"
       >
@@ -101,7 +98,7 @@
           {{ perfil.nomePerfil }}
         </option>
       </select>
-      <div *ngIf="userForm.get('perfilId')?.invalid && userForm.get('perfilId')?.touched" class="error-message">
+      <div *ngIf="userForm.get('perfilId')?.invalid && userForm.get('perfilId')?.touched" class="form-error">
         Perfil é obrigatório
       </div>
     </div>

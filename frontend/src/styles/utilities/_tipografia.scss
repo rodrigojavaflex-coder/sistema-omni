@@ -1,0 +1,94 @@
+// ========================================
+// UTILITÁRIOS: TIPOGRAFIA
+// ========================================
+
+@use '../variaveis' as *;
+@use '../mixins' as *;
+
+// Tamanhos de fonte
+.text-xs { font-size: $font-xs !important; }
+.text-sm { font-size: $font-sm !important; }
+.text-md { font-size: $font-md !important; }
+.text-lg { font-size: $font-lg !important; }
+.text-xl { font-size: $font-xl !important; }
+.text-xxl { font-size: $font-xxl !important; }
+
+// Peso da fonte
+.font-light { font-weight: 300 !important; }
+.font-normal { font-weight: 400 !important; }
+.font-medium { font-weight: 500 !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-bold { font-weight: 700 !important; }
+
+// Alinhamento de texto
+.text-left { text-align: left !important; }
+.text-center { text-align: center !important; }
+.text-right { text-align: right !important; }
+.text-justify { text-align: justify !important; }
+
+// Transformação de texto
+.text-uppercase { text-transform: uppercase !important; }
+.text-lowercase { text-transform: lowercase !important; }
+.text-capitalize { text-transform: capitalize !important; }
+.text-none { text-transform: none !important; }
+
+// Decoração de texto
+.text-underline { text-decoration: underline !important; }
+.text-line-through { text-decoration: line-through !important; }
+.text-no-decoration { text-decoration: none !important; }
+
+// Estilo de texto
+.text-italic { font-style: italic !important; }
+.text-normal-style { font-style: normal !important; }
+
+// Quebra de texto
+.text-truncate {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.text-break {
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.text-nowrap {
+  white-space: nowrap !important;
+}
+
+.text-wrap {
+  white-space: normal !important;
+}
+
+// Cores de texto
+.text-primary { color: $primary !important; }
+.text-success { color: $success !important; }
+.text-danger { color: $danger !important; }
+.text-warning { color: $warning !important; }
+.text-info { color: $info !important; }
+
+.text-light {
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+}
+
+.text-dark {
+  @include themed(color, $light-text-primary, $dark-text-primary);
+}
+
+.text-muted {
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+}
+
+// Espaçamento de linhas
+.line-height-1 { line-height: 1 !important; }
+.line-height-sm { line-height: 1.25 !important; }
+.line-height-md { line-height: 1.5 !important; }
+.line-height-lg { line-height: 1.75 !important; }
+.line-height-xl { line-height: 2 !important; }
+
+// Espaçamento de letras
+.letter-spacing-tight { letter-spacing: -0.05em !important; }
+.letter-spacing-normal { letter-spacing: 0 !important; }
+.letter-spacing-wide { letter-spacing: 0.05em !important; }
+.letter-spacing-wider { letter-spacing: 0.1em !important; }

@@ -1,0 +1,188 @@
+// ========================================
+// COMPONENTE: LISTAS
+// ========================================
+
+@use '../variaveis' as *;
+@use '../mixins' as *;
+
+// Container principal da lista
+.list-container {
+  padding: $spacing-lg;
+  min-height: calc(100vh - 100px);
+  
+  @include themed(background-color, $light-bg-secondary, $dark-bg-primary);
+  @include themed(color, $light-text-primary, $dark-text-primary);
+  
+  @include responsive($tablet) {
+    padding: $spacing-md;
+  }
+}
+
+// Header da lista
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  
+  @include themed(border-bottom, 2px solid $light-border, 2px solid $dark-border);
+  
+  h2 {
+    margin: 0;
+    font-size: $font-xxl;
+    font-weight: 600;
+    
+    @include themed(color, $light-text-primary, $dark-text-primary);
+    
+    @include responsive($mobile) {
+      font-size: $font-xl;
+    }
+  }
+}
+
+// Ações do header
+.header-actions {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+// Container dos filtros
+.filters {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: nowrap;
+  margin-bottom: $spacing-lg;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  align-items: center;
+  
+  @include themed(background-color, white, $dark-bg-secondary);
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+  @include smooth-color-transition;
+  
+  @include responsive($tablet) {
+    flex-wrap: wrap;
+  }
+}
+
+// Input de filtro
+.filter-input {
+  @include input-base;
+  flex: 1;
+  min-width: 150px;
+  
+  @include responsive($mobile) {
+    min-width: 100%;
+  }
+}
+
+// Select de filtro
+.filter-select {
+  @include input-base;
+  flex: 1;
+  min-width: 150px;
+  cursor: pointer;
+  
+  @include responsive($mobile) {
+    min-width: 100%;
+  }
+}
+
+// Container de paginação
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md 0;
+  margin-bottom: $spacing-lg;
+  flex-wrap: wrap;
+  
+  @include themed(border-bottom, 1px solid $light-border, 1px solid $dark-border);
+}
+
+// Informação da página
+.page-info {
+  font-size: $font-sm;
+  font-weight: 500;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+}
+
+// Container da tabela
+.table-container {
+  @include card;
+  overflow-x: auto;
+  margin-bottom: $spacing-lg;
+  
+  @include custom-scrollbar;
+}
+
+// Estados de carregamento e erro
+.loading-container,
+.error-container,
+.empty-container {
+  text-align: center;
+  padding: $spacing-xxl;
+  
+  @include card;
+  
+  p {
+    margin: $spacing-md 0;
+    font-size: $font-md;
+    
+    @include themed(color, $light-text-secondary, $dark-text-secondary);
+  }
+}
+
+.loading-spinner {
+  border: 4px solid;
+  border-top: 4px solid $primary;
+  border-radius: $radius-full;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+  
+  @include themed(border-color, $light-border, $dark-border);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-container {
+  background-color: rgba($danger, 0.1);
+  border-color: $danger;
+  
+  p {
+    color: $danger;
+  }
+}
+
+// Container de ações em massa
+.bulk-actions {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  border-radius: $radius-md;
+  align-items: center;
+  
+  @include themed(background-color, $light-bg-tertiary, $dark-bg-tertiary);
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+}
+
+// Contador de selecionados
+.selected-count {
+  font-size: $font-sm;
+  font-weight: 600;
+  
+  @include themed(color, $light-text-primary, $dark-text-primary);
+}

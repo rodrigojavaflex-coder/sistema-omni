@@ -1,0 +1,131 @@
+// ========================================
+// MIXINS GLOBAIS
+// ========================================
+
+@use 'sass:color';
+@use 'variaveis' as *;
+
+// Funções para ajustar cores sem warnings
+@function lighten-color($cor, $porcentagem) {
+  @return color.adjust($cor, $lightness: $porcentagem);
+}
+
+@function darken-color($cor, $porcentagem) {
+  @return color.adjust($cor, $lightness: -$porcentagem);
+}
+
+// Mixin para aplicar propriedades com suporte a tema
+@mixin themed($property, $light-value, $dark-value) {
+  #{$property}: $light-value;
+  
+  body.theme-dark & {
+    #{$property}: $dark-value;
+  }
+}
+
+// Mixin para cards
+@mixin card {
+  border-radius: $radius-md;
+  box-shadow: 0 2px 4px $light-shadow;
+  padding: $spacing-lg;
+  
+  @include themed(background-color, $light-bg-primary, $dark-bg-primary);
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+  
+  body.theme-dark & {
+    box-shadow: 0 2px 4px $dark-shadow;
+  }
+}
+
+// Mixin para responsividade
+@mixin responsive($breakpoint) {
+  @media (max-width: $breakpoint) {
+    @content;
+  }
+}
+
+// Mixin para botões base
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-sm;
+  font-weight: 500;
+  font-size: $font-sm;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all $transition-normal;
+  text-decoration: none;
+  white-space: nowrap;
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  &:not(:disabled):hover {
+    transform: translateY(-2px);
+  }
+  
+  &:not(:disabled):active {
+    transform: translateY(0);
+  }
+}
+
+// Mixin para input base
+@mixin input-base {
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-sm;
+  font-size: $font-sm;
+  transition: all $transition-normal;
+  
+  @include themed(background-color, $light-bg-primary, $dark-bg-primary);
+  @include themed(color, $light-text-primary, $dark-text-primary);
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+  
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+  
+  &::placeholder {
+    @include themed(color, $light-text-secondary, $dark-text-secondary);
+  }
+}
+
+// Mixin para truncar texto
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Mixin para scrollbar customizada
+@mixin custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    @include themed(background, $light-bg-secondary, $dark-bg-secondary);
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    @include themed(background, $light-border, $dark-border);
+    border-radius: $radius-sm;
+    
+    &:hover {
+      @include themed(background, $light-text-secondary, $dark-text-secondary);
+    }
+  }
+}
+
+// Mixin para transição suave de cores
+@mixin smooth-color-transition {
+  transition: background-color $transition-normal,
+              color $transition-normal,
+              border-color $transition-normal;
+}

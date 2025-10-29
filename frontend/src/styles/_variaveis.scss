@@ -1,0 +1,73 @@
+// ========================================
+// VARIÁVEIS GLOBAIS DO SISTEMA
+// ========================================
+
+// Cores primárias
+$primary: #007bff;
+$secondary: #6c757d;
+$success: #28a745;
+$danger: #dc3545;
+$warning: #ffc107;
+$info: #17a2b8;
+$dark: #343a40;
+$light: #f8f9fa;
+
+// Tema Claro
+$light-bg-primary: #ffffff;
+$light-bg-secondary: #f8f9fa;
+$light-bg-tertiary: #e9ecef;
+$light-text-primary: #212529;
+$light-text-secondary: #6c757d;
+$light-border: #dee2e6;
+$light-hover: #e9ecef;
+$light-shadow: rgba(0, 0, 0, 0.1);
+
+// Tema Escuro
+$dark-bg-primary: #1a1a1a;
+$dark-bg-secondary: #2d2d2d;
+$dark-bg-tertiary: #3a3a3a;
+$dark-text-primary: #e0e0e0;
+$dark-text-secondary: #a0a0a0;
+$dark-border: #444;
+$dark-hover: #3a3a3a;
+$dark-shadow: rgba(0, 0, 0, 0.3);
+
+// Espaçamentos padronizados
+$spacing-xs: 0.25rem;   // 4px
+$spacing-sm: 0.5rem;    // 8px
+$spacing-md: 1rem;      // 16px
+$spacing-lg: 1.5rem;    // 24px
+$spacing-xl: 2rem;      // 32px
+$spacing-xxl: 3rem;     // 48px
+
+// Breakpoints responsivos
+$mobile: 576px;
+$tablet: 768px;
+$desktop: 992px;
+$wide: 1200px;
+
+// Tamanhos de fonte
+$font-xs: 0.75rem;   // 12px
+$font-sm: 0.875rem;  // 14px
+$font-md: 1rem;      // 16px
+$font-lg: 1.25rem;   // 20px
+$font-xl: 1.5rem;    // 24px
+$font-xxl: 2rem;     // 32px
+
+// Border radius
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 20px;
+$radius-full: 50%;
+
+// Transições
+$transition-fast: 0.15s ease;
+$transition-normal: 0.3s ease;
+$transition-slow: 0.5s ease;
+
+// Z-index layers
+$z-dropdown: 1000;
+$z-modal: 1050;
+$z-popover: 1060;
+$z-tooltip: 1070;

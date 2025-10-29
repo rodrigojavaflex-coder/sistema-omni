@@ -1,0 +1,294 @@
+// ========================================
+// COMPONENTE: BOTÕES
+// ========================================
+
+@use '../variaveis' as *;
+@use '../mixins' as *;
+
+// Botão base
+.btn {
+  @include button-base;
+}
+
+// Botão primário
+.btn-primary {
+  @extend .btn;
+  background: linear-gradient(to bottom, lighten-color($primary, 5%), $primary);
+  color: white;
+  border-color: $primary;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(to bottom, $primary, darken-color($primary, 10%));
+    box-shadow: 0 4px 8px rgba($primary, 0.3);
+  }
+  
+  body.theme-dark & {
+    background: linear-gradient(to bottom, $primary, darken-color($primary, 10%));
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(to bottom, lighten-color($primary, 5%), $primary);
+    }
+  }
+}
+
+// Botão de sucesso
+.btn-success {
+  @extend .btn;
+  background: linear-gradient(to bottom, lighten-color($success, 5%), $success);
+  color: white;
+  border-color: $success;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(to bottom, $success, darken-color($success, 10%));
+    box-shadow: 0 4px 8px rgba($success, 0.3);
+  }
+  
+  body.theme-dark & {
+    background: linear-gradient(to bottom, $success, darken-color($success, 10%));
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(to bottom, lighten-color($success, 5%), $success);
+    }
+  }
+}
+
+// Botão de perigo
+.btn-danger {
+  @extend .btn;
+  background: linear-gradient(to bottom, lighten-color($danger, 5%), $danger);
+  color: white;
+  border-color: $danger;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(to bottom, $danger, darken-color($danger, 10%));
+    box-shadow: 0 4px 8px rgba($danger, 0.3);
+  }
+  
+  body.theme-dark & {
+    background: linear-gradient(to bottom, $danger, darken-color($danger, 10%));
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(to bottom, lighten-color($danger, 5%), $danger);
+    }
+  }
+}
+
+// Botão secundário
+.btn-secondary {
+  @extend .btn;
+  background: linear-gradient(to bottom, lighten-color($secondary, 5%), $secondary);
+  color: white;
+  border-color: $secondary;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(to bottom, $secondary, darken-color($secondary, 10%));
+    box-shadow: 0 4px 8px rgba($secondary, 0.3);
+  }
+  
+  body.theme-dark & {
+    background: linear-gradient(to bottom, $secondary, darken-color($secondary, 10%));
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(to bottom, lighten-color($secondary, 5%), $secondary);
+    }
+  }
+}
+
+// Botão de aviso
+.btn-warning {
+  @extend .btn;
+  background: linear-gradient(to bottom, lighten-color($warning, 5%), $warning);
+  color: $dark;
+  border-color: $warning;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(to bottom, $warning, darken-color($warning, 10%));
+    box-shadow: 0 4px 8px rgba($warning, 0.3);
+  }
+  
+  body.theme-dark & {
+    color: white;
+    background: linear-gradient(to bottom, $warning, darken-color($warning, 10%));
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(to bottom, lighten-color($warning, 5%), $warning);
+    }
+  }
+}
+
+// Botão de info
+.btn-info {
+  @extend .btn;
+  background: linear-gradient(to bottom, lighten-color($info, 5%), $info);
+  color: white;
+  border-color: $info;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(to bottom, $info, darken-color($info, 10%));
+    box-shadow: 0 4px 8px rgba($info, 0.3);
+  }
+  
+  body.theme-dark & {
+    background: linear-gradient(to bottom, $info, darken-color($info, 10%));
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(to bottom, lighten-color($info, 5%), $info);
+    }
+  }
+}
+
+// Botão outline
+.btn-outline-primary {
+  @extend .btn;
+  background-color: transparent;
+  color: $primary;
+  border-color: $primary;
+  
+  &:hover:not(:disabled) {
+    background-color: $primary;
+    color: white;
+  }
+}
+
+// Tamanhos de botões
+.btn-small {
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-xs;
+  
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.btn-large {
+  padding: $spacing-md $spacing-xl;
+  font-size: $font-lg;
+  
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+// Botão de paginação
+.btn-pagination {
+  @extend .btn;
+  padding: $spacing-xs $spacing-sm;
+  min-width: 36px;
+  background: $light-bg-secondary;
+  color: $light-text-primary;
+  border: 1px solid $light-border;
+  
+  body.theme-dark & {
+    background: $dark-bg-secondary;
+    color: $dark-text-primary;
+    border-color: $dark-border;
+  }
+  
+  &:hover:not(:disabled) {
+    background: $light-hover;
+    border-color: $primary;
+    
+    body.theme-dark & {
+      background: $dark-hover;
+    }
+  }
+  
+  &.active {
+    background: $primary !important;
+    color: white !important;
+    border-color: $primary !important;
+    font-weight: 600;
+  }
+}
+
+// Botões de exportação
+.btn-export {
+  @extend .btn;
+  @extend .btn-small;
+  min-width: 40px;
+  padding: $spacing-sm;
+  
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// Botão exportar Excel
+.btn-export-excel {
+  @extend .btn;
+  background: linear-gradient(to bottom, lighten-color(#1d6f42, 5%), #1d6f42);
+  color: white;
+  border-color: #1d6f42;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #1d6f42, darken-color(#1d6f42, 10%));
+    box-shadow: 0 4px 8px rgba(29, 111, 66, 0.3);
+  }
+  
+  body.theme-dark & {
+    background: linear-gradient(to bottom, #1d6f42, darken-color(#1d6f42, 10%));
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(to bottom, lighten-color(#1d6f42, 5%), #1d6f42);
+    }
+  }
+}
+
+// Botão exportar PDF
+.btn-export-pdf {
+  @extend .btn;
+  background: linear-gradient(to bottom, lighten-color(#dc3545, 5%), #dc3545);
+  color: white;
+  border-color: #dc3545;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #dc3545, darken-color(#dc3545, 10%));
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+  }
+  
+  body.theme-dark & {
+    background: linear-gradient(to bottom, #dc3545, darken-color(#dc3545, 10%));
+    
+    &:hover:not(:disabled) {
+      background: linear-gradient(to bottom, lighten-color(#dc3545, 5%), #dc3545);
+    }
+  }
+}
+
+.btn-export-pdf {
+  @extend .btn-export;
+  background: linear-gradient(to bottom, #c92a2a, #a61e1e);
+  color: white;
+  border-color: #a61e1e;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #a61e1e, #7d1616);
+    box-shadow: 0 4px 8px rgba(201, 42, 42, 0.4);
+  }
+}
+
+// Grupos de botões
+.btn-group {
+  display: flex;
+  gap: $spacing-sm;
+  
+  &.btn-group-vertical {
+    flex-direction: column;
+  }
+}
+
+// Botão de ação na tabela
+.btn-action {
+  @extend .btn;
+  @extend .btn-small;
+  padding: $spacing-xs $spacing-sm;
+  min-width: auto;
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}

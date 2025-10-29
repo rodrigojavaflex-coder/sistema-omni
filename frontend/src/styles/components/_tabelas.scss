@@ -1,0 +1,260 @@
+// ========================================
+// COMPONENTE: TABELAS
+// ========================================
+
+@use '../variaveis' as *;
+@use '../mixins' as *;
+
+// Tabela de dados
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-sm;
+  
+  // Cabeçalho
+  thead {
+    @include themed(background-color, $light-bg-secondary, $dark-bg-secondary);
+    
+    th {
+      padding: $spacing-md;
+      text-align: left;
+      font-weight: 600;
+      font-size: $font-xs;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      
+      @include themed(color, $light-text-primary, $dark-text-primary);
+      @include themed(border-bottom, 2px solid $light-border, 2px solid $dark-border);
+      
+      &:first-child {
+        padding-left: $spacing-lg;
+      }
+      
+      &:last-child {
+        padding-right: $spacing-lg;
+        text-align: center;
+      }
+    }
+  }
+  
+  // Corpo da tabela
+  tbody {
+    tr {
+      transition: background-color $transition-fast;
+      
+      @include themed(border-bottom, 1px solid $light-border, 1px solid $dark-border);
+      
+      &:hover {
+        @include themed(background-color, $light-hover, $dark-hover);
+      }
+      
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+    
+    td {
+      padding: $spacing-md;
+      
+      @include themed(color, $light-text-primary, $dark-text-primary);
+      
+      &:first-child {
+        padding-left: $spacing-lg;
+        font-weight: 500;
+      }
+      
+      &:last-child {
+        padding-right: $spacing-lg;
+        text-align: center;
+        white-space: nowrap;
+      }
+    }
+  }
+  
+  // Tabela responsiva
+  @include responsive($tablet) {
+    font-size: $font-xs;
+    
+    thead th,
+    tbody td {
+      padding: $spacing-sm;
+      
+      &:first-child {
+        padding-left: $spacing-sm;
+      }
+      
+      &:last-child {
+        padding-right: $spacing-sm;
+      }
+    }
+  }
+}
+
+// Badges de status
+.status-badge {
+  display: inline-block;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-xl;
+  font-size: $font-xs;
+  font-weight: 600;
+  min-width: 70px;
+  text-align: center;
+  border: 1px solid;
+  
+  &.status-active,
+  &.status-ativo {
+    @include themed(background-color, #d4edda, #1e4620);
+    @include themed(color, #155724, #7bc67e);
+    @include themed(border-color, #c3e6cb, #2d6e2f);
+  }
+  
+  &.status-inactive,
+  &.status-inativo {
+    @include themed(background-color, #f8d7da, #4a1e1e);
+    @include themed(color, #721c24, #f5a1a1);
+    @include themed(border-color, #f5c6cb, #6e2d2d);
+  }
+  
+  &.status-pending,
+  &.status-pendente {
+    @include themed(background-color, #fff3cd, #4a3c1e);
+    @include themed(color, #856404, #f5d576);
+    @include themed(border-color, #ffeaa7, #6e5a2f);
+  }
+  
+  &.status-approved,
+  &.status-aprovado {
+    @include themed(background-color, #d1ecf1, #1e3a4a);
+    @include themed(color, #0c5460, #76c7d6);
+    @include themed(border-color, #bee5eb, #2d5a6e);
+  }
+}
+
+// Ações da tabela
+.table-actions {
+  display: flex;
+  gap: $spacing-xs;
+  justify-content: center;
+  align-items: center;
+}
+
+// Célula com checkbox
+.table-checkbox {
+  width: 40px;
+  text-align: center;
+  
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: $primary;
+  }
+}
+
+// Célula vazia (sem dados)
+.table-empty-cell {
+  font-style: italic;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+}
+
+// Texto truncado na célula
+.table-cell-truncate {
+  max-width: 200px;
+  @include truncate;
+}
+
+// Ordenação de colunas
+.table-sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: $spacing-lg !important;
+  
+  &:hover {
+    @include themed(color, $primary, lighten-color($primary, 20%));
+  }
+  
+  &::after {
+    content: '⇅';
+    position: absolute;
+    right: $spacing-sm;
+    opacity: 0.3;
+  }
+  
+  &.sorted-asc::after {
+    content: '↑';
+    opacity: 1;
+    color: $primary;
+  }
+  
+  &.sorted-desc::after {
+    content: '↓';
+    opacity: 1;
+    color: $primary;
+  }
+}
+
+// Linha selecionada
+.table-row-selected {
+  background-color: rgba($primary, 0.1) !important;
+  
+  body.theme-dark & {
+    background-color: rgba($primary, 0.2) !important;
+  }
+}
+
+// Linha expandível
+.table-row-expandable {
+  cursor: pointer;
+  
+  .expand-icon {
+    transition: transform $transition-fast;
+    display: inline-block;
+    
+    &.expanded {
+      transform: rotate(90deg);
+    }
+  }
+}
+
+// Conteúdo expandido
+.table-expanded-content {
+  td {
+    padding: $spacing-lg !important;
+    
+    @include themed(background-color, $light-bg-tertiary, $dark-bg-tertiary);
+  }
+}
+
+// Tabela compacta
+.data-table-compact {
+  @extend .data-table;
+  
+  thead th,
+  tbody td {
+    padding: $spacing-sm !important;
+  }
+}
+
+// Tabela com borda
+.data-table-bordered {
+  @extend .data-table;
+  
+  @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+  
+  thead th,
+  tbody td {
+    @include themed(border, 1px solid $light-border, 1px solid $dark-border);
+  }
+}
+
+// Tabela striped (zebra)
+.data-table-striped {
+  @extend .data-table;
+  
+  tbody tr:nth-child(even) {
+    @include themed(background-color, $light-bg-tertiary, $dark-bg-tertiary);
+  }
+}
