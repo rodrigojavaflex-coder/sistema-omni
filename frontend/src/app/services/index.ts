@@ -6,3 +6,4 @@ export * from './theme.service';
 export * from './perfil.service';
 export * from './error-modal.service';
 export * from './veiculo.service';
+export * from './export.service';

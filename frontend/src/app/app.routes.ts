@@ -9,10 +9,6 @@ import { HomeComponent } from './components/home/home';
 import { ChangePasswordComponent } from './components/change-password/change-password';
 import { PerfilListComponent } from './components/perfil-list/perfil-list';
 import { PerfilFormComponent } from './components/perfil-form/perfil-form';
-import { VeiculoListComponent } from './components/veiculo-list/veiculo-list';
-import { VeiculoFormComponent } from './components/veiculo-form/veiculo-form';
-import { MotoristaListComponent } from './components/motorista-list/motorista-list';
-import { MotoristaFormComponent } from './components/motorista-form/motorista-form';
 
 export const routes: Routes = [
   // Rota de configuração
@@ -55,33 +51,33 @@ export const routes: Routes = [
   },
   {
     path: 'veiculo',
-    component: VeiculoListComponent,
+    loadComponent: () => import('./components/veiculo-list/veiculo-list').then(m => m.VeiculoListComponent),
     canActivate: [authGuard]
   },
   {
     path: 'veiculo/new',
-    component: VeiculoFormComponent,
+    loadComponent: () => import('./components/veiculo-form/veiculo-form').then(m => m.VeiculoFormComponent),
     canActivate: [authGuard]
   },
   {
     path: 'veiculo/edit/:id',
-    component: VeiculoFormComponent,
+    loadComponent: () => import('./components/veiculo-form/veiculo-form').then(m => m.VeiculoFormComponent),
     canActivate: [authGuard]
   },
-  // Rotas de motorista
+  // Rotas de motorista com lazy loading
   {
     path: 'motorista',
-    component: MotoristaListComponent,
+    loadComponent: () => import('./components/motorista-list/motorista-list').then(m => m.MotoristaListComponent),
     canActivate: [authGuard]
   },
   {
     path: 'motorista/new',
-    component: MotoristaFormComponent,
+    loadComponent: () => import('./components/motorista-form/motorista-form').then(m => m.MotoristaFormComponent),
     canActivate: [authGuard]
   },
   {
     path: 'motorista/edit/:id',
-    component: MotoristaFormComponent,
+    loadComponent: () => import('./components/motorista-form/motorista-form').then(m => m.MotoristaFormComponent),
     canActivate: [authGuard]
   },
   // Rotas de perfil: paths específicos antes da rota geral para evitar conflitos de prefixo

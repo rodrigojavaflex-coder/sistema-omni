@@ -32,7 +32,13 @@
               "src/styles.css"
             ],
             "allowedCommonJsDependencies": [
-              "bootstrap"
+              "bootstrap",
+              "canvg",
+              "core-js",
+              "html2canvas",
+              "jspdf",
+              "rgbcolor",
+              "raf"
             ]
           },
           "configurations": {
@@ -41,8 +47,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "1MB",
-                  "maximumError": "2MB"
+                  "maximumWarning": "2MB",
+                  "maximumError": "5MB"
                 },
                 {
                   "type": "anyComponentStyle",

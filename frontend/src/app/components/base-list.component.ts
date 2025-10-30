@@ -4,9 +4,7 @@ import { finalize } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ErrorModalService } from '../services';
 import { AuthService } from '../services/auth.service';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { ExportService, ExportData } from '../services/export.service';
 
 /**
  * Componente base genérico para listagens com suporte a carregamento, erros, modal de exclusão e exportação.
@@ -24,6 +22,7 @@ export abstract class BaseListComponent<T> implements OnInit {
   // Serviço de modal de erro injetado uma única vez
   protected errorModalService = inject(ErrorModalService);
   protected authService = inject(AuthService);
+  protected exportService = inject(ExportService);
 
   ngOnInit(): void {
     this.loadItems();
@@ -93,31 +92,18 @@ export abstract class BaseListComponent<T> implements OnInit {
           const exportData = this.getExportDataExcel(allItems);
           const fileName = this.getExportFileName();
 
-          // Criar worksheet com cabeçalhos e dados
-          const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet([
-            exportData.headers,
-            ...exportData.data
-          ]);
-
-          // Auto-ajustar largura das colunas
-          const colWidths = exportData.headers.map((header, i) => {
-            const maxLength = Math.max(
-              header.length,
-              ...exportData.data.map(row => String(row[i] || '').length)
-            );
-            return { wch: Math.min(maxLength + 2, 50) };
+          this.exportService.exportToExcel(exportData, fileName).subscribe({
+            next: () => {
+              this.loading = false;
+            },
+            error: (error) => {
+              console.error('Erro ao exportar para Excel:', error);
+              this.errorModalService.show('Erro ao exportar para Excel');
+              this.loading = false;
+            }
           });
-          ws['!cols'] = colWidths;
-
-          // Criar workbook e adicionar worksheet
-          const wb: XLSX.WorkBook = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, 'Dados');
-
-          // Salvar arquivo
-          XLSX.writeFile(wb, `${fileName}.xlsx`);
-          this.loading = false;
         } catch (error) {
-          console.error('Erro ao exportar para Excel:', error);
+          console.error('Erro ao preparar dados para Excel:', error);
           this.errorModalService.show('Erro ao exportar para Excel');
           this.loading = false;
         }
@@ -140,55 +126,18 @@ export abstract class BaseListComponent<T> implements OnInit {
           const fileName = this.getExportFileName();
           const tableName = this.getTableDisplayName();
 
-          // Criar documento PDF
-          const doc = new jsPDF({
-            orientation: exportData.headers.length > 5 ? 'landscape' : 'portrait',
-            unit: 'mm',
-            format: 'a4'
+          this.exportService.exportToPDF(exportData, fileName, tableName).subscribe({
+            next: () => {
+              this.loading = false;
+            },
+            error: (error) => {
+              console.error('Erro ao exportar para PDF:', error);
+              this.errorModalService.show('Erro ao exportar para PDF');
+              this.loading = false;
+            }
           });
-
-          const pageWidth = doc.internal.pageSize.getWidth();
-          const pageHeight = doc.internal.pageSize.getHeight();
-
-          // Adicionar título
-          doc.setFontSize(16);
-          doc.text(`Lista de ${tableName}`, 14, 15);
-
-          // Adicionar tabela
-          autoTable(doc, {
-            head: [exportData.headers],
-            body: exportData.data,
-            startY: 25,
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
-            alternateRowStyles: { fillColor: [248, 249, 250] },
-            margin: { top: 25, bottom: 15 }
-          });
-
-          // Adicionar rodapé em todas as páginas
-          const totalPages = (doc as any).internal.getNumberOfPages();
-          const dataExportacao = new Date().toLocaleString('pt-BR');
-          const currentUser = this.authService.getCurrentUser();
-          const userName = currentUser ? currentUser.nome : 'Usuário não identificado';
-
-          for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(100);
-            
-            // Rodapé: Exportado em + Usuário
-            const footerText = `Exportado em: ${dataExportacao} | Usuário: ${userName}`;
-            const textWidth = doc.getTextWidth(footerText);
-            const xPosition = (pageWidth - textWidth) / 2; // Centralizar
-            
-            doc.text(footerText, xPosition, pageHeight - 10);
-          }
-
-          // Salvar arquivo
-          doc.save(`${fileName}.pdf`);
-          this.loading = false;
         } catch (error) {
-          console.error('Erro ao exportar para PDF:', error);
+          console.error('Erro ao preparar dados para PDF:', error);
           this.errorModalService.show('Erro ao exportar para PDF');
           this.loading = false;
         }
