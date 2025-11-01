@@ -95,6 +95,18 @@ export const MENU_CONFIGURATION: MenuConfig = {
             Permission.MOTORISTA_DELETE
           ],
           parentMenu: 'Cadastros'
+        },
+        {
+          label: 'Ocorrências',
+          route: '/ocorrencia',
+          icon: 'feather-alert-circle',
+          requiredPermissions: [
+            Permission.OCORRENCIA_CREATE,
+            Permission.OCORRENCIA_READ,
+            Permission.OCORRENCIA_UPDATE,
+            Permission.OCORRENCIA_DELETE
+          ],
+          parentMenu: 'Cadastros'
         }
       ]
     },

@@ -80,6 +80,22 @@ export const routes: Routes = [
     loadComponent: () => import('./components/motorista-form/motorista-form').then(m => m.MotoristaFormComponent),
     canActivate: [authGuard]
   },
+  // Rotas de ocorrência com lazy loading
+  {
+    path: 'ocorrencia',
+    loadComponent: () => import('./components/ocorrencia-list/ocorrencia-list').then(m => m.OcorrenciaListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'ocorrencia/new',
+    loadComponent: () => import('./components/ocorrencia-form/ocorrencia-form').then(m => m.OcorrenciaFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'ocorrencia/edit/:id',
+    loadComponent: () => import('./components/ocorrencia-form/ocorrencia-form').then(m => m.OcorrenciaFormComponent),
+    canActivate: [authGuard]
+  },
   // Rotas de perfil: paths específicos antes da rota geral para evitar conflitos de prefixo
   {
     path: 'perfil/new',

@@ -1,0 +1,6 @@
+export enum SentidoVia {
+  LESTE_OESTE = 'LESTE-OESTE',
+  OESTE_LESTE = 'OESTE-LESTE',
+  NORTE_SUL = 'NORTE-SUL',
+  SUL_NORTE = 'SUL-NORTE'
+}

@@ -32,6 +32,13 @@ export enum Permission {
   MOTORISTA_UPDATE = 'motorista:update',
   MOTORISTA_DELETE = 'motorista:delete',
   MOTORISTA_AUDIT = 'motorista:audit',
+  
+  // Ocorrências
+  OCORRENCIA_CREATE = 'ocorrencia:create',
+  OCORRENCIA_READ = 'ocorrencia:read',
+  OCORRENCIA_UPDATE = 'ocorrencia:update',
+  OCORRENCIA_DELETE = 'ocorrencia:delete',
+  OCORRENCIA_AUDIT = 'ocorrencia:audit',
 }
 
 export const PERMISSION_GROUPS = {
@@ -73,6 +80,13 @@ export const PERMISSION_GROUPS = {
     { key: Permission.MOTORISTA_UPDATE, label: 'Editar motoristas' },
     { key: Permission.MOTORISTA_DELETE, label: 'Excluir motoristas' },
     { key: Permission.MOTORISTA_AUDIT, label: 'Auditar motoristas' },
+  ],
+  Ocorrências: [
+    { key: Permission.OCORRENCIA_CREATE, label: 'Criar ocorrências' },
+    { key: Permission.OCORRENCIA_READ, label: 'Visualizar ocorrências' },
+    { key: Permission.OCORRENCIA_UPDATE, label: 'Editar ocorrências' },
+    { key: Permission.OCORRENCIA_DELETE, label: 'Excluir ocorrências' },
+    { key: Permission.OCORRENCIA_AUDIT, label: 'Auditar ocorrências' },
   ],
 };
 

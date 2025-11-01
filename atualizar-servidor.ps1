@@ -421,7 +421,7 @@ Write-Host "`n8. Verificando status final..." -ForegroundColor Cyan
 Start-Sleep 2
 
 try {
-    $response = Invoke-WebRequest -Uri "http://localhost:8080/api" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+    $null = Invoke-WebRequest -Uri "http://localhost:8080/api" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
     Write-Host "  OK: Backend respondendo corretamente!" -ForegroundColor Green
 } catch {
     Write-Host "  AVISO: Backend nao esta respondendo ainda" -ForegroundColor Yellow

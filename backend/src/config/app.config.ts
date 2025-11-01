@@ -4,6 +4,7 @@ export default registerAs('app', () => ({
   port: parseInt(process.env.PORT || '3000', 10),  // Porta 3000 padrão para servidor local
   environment: process.env.NODE_ENV || 'development',
   jwtSecret: process.env.JWT_SECRET || 'fallback-secret-key',
+  googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
   swagger: {
     title: process.env.SWAGGER_TITLE || 'Sistema OMNI - API Documentation',
     description: process.env.SWAGGER_DESCRIPTION || 'API do Sistema OMNI',

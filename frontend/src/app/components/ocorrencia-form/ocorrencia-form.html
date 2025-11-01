@@ -1,0 +1,242 @@
+<div class="form-container">
+  <div class="form-header">
+    <h2>{{ getFormTitle() }} Ocorrência</h2>
+    
+    <!-- Botões ao lado do título -->
+    <div class="form-actions form-actions-header">
+      <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    
+    <!-- Dados Básicos -->
+    <div class="form-section">
+      <h3>Dados Básicos</h3>
+      
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Data e Hora *</label>
+          <app-data-hora-picker 
+            formControlName="dataHora"
+            [isInvalid]="isFieldInvalid('dataHora')">
+          </app-data-hora-picker>
+          <div class="form-error" *ngIf="isFieldInvalid('dataHora')">{{ getFieldError('dataHora') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tipo de Ocorrência *</label>
+          <select formControlName="tipo" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let t of tipoOptions" [value]="t">{{ t }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('tipo')">{{ getFieldError('tipo') }}</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descrição *</label>
+        <textarea formControlName="descricao" class="form-input" rows="4" placeholder="Descreva a ocorrência em detalhes"></textarea>
+        <div class="form-error" *ngIf="isFieldInvalid('descricao')">{{ getFieldError('descricao') }}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Observações Técnicas</label>
+        <textarea formControlName="observacoesTecnicas" class="form-input" rows="3" placeholder="Informações técnicas relevantes"></textarea>
+        <div class="form-error" *ngIf="isFieldInvalid('observacoesTecnicas')">{{ getFieldError('observacoesTecnicas') }}</div>
+      </div>
+    </div>
+
+    <!-- Veículo e Motorista -->
+    <div class="form-section">
+      <h3>Veículo e Motorista</h3>
+      
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Veículo *</label>
+          <app-veiculo-autocomplete 
+            formControlName="idVeiculo" 
+            (veiculoSelected)="onVeiculoSelected($event)">
+          </app-veiculo-autocomplete>
+          <div class="form-error" *ngIf="isFieldInvalid('idVeiculo')">{{ getFieldError('idVeiculo') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Motorista *</label>
+          <app-motorista-autocomplete 
+            formControlName="idMotorista" 
+            (motoristaSelected)="onMotoristaSelected($event)">
+          </app-motorista-autocomplete>
+          <div class="form-error" *ngIf="isFieldInvalid('idMotorista')">{{ getFieldError('idMotorista') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Localização -->
+    <div class="form-section">
+      <h3>Localização</h3>
+      
+      <div class="form-group">
+        <label class="form-label">Local Detalhado</label>
+        <div style="display: flex; gap: 10px; align-items: flex-end;">
+          <div style="flex: 1;">
+            <textarea 
+              formControlName="localDetalhado" 
+              class="form-input" 
+              rows="2" 
+              placeholder="Descrição do local (endereço completo)"
+              (keydown.enter)="buscarLocalizacao()">
+            </textarea>
+            <div class="form-error" *ngIf="isFieldInvalid('localDetalhado')">{{ getFieldError('localDetalhado') }}</div>
+          </div>
+          <button type="button" class="btn btn-secondary" (click)="buscarLocalizacao()" style="white-space: nowrap; padding: 8px 16px;" title="Informe o Local ex: GO 070 Goiania e clique para buscar a localização no mapa">
+            Buscar Localização
+          </button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Localização do Evento</label>
+        <app-mapa-localizacao 
+          [localizacaoInicial]="localizacaoSelecionada"
+          [endereco]="form.get('localDetalhado')?.value"
+          [centro]="[-16.656293, -49.331340]"
+          (localizacaoSelecionada)="onLocalizacaoSelecionada($event)">
+        </app-mapa-localizacao>
+      </div>
+
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Linha</label>
+          <select formControlName="linha" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let l of linhaOptions" [value]="l">{{ l }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('linha')">{{ getFieldError('linha') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Arco</label>
+          <select formControlName="arco" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let a of arcoOptions" [value]="a">{{ a }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('arco')">{{ getFieldError('arco') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Sentido da Via</label>
+          <select formControlName="sentidoVia" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let s of sentidoViaOptions" [value]="s">{{ s }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('sentidoVia')">{{ getFieldError('sentidoVia') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tipo de Local</label>
+          <select formControlName="tipoLocal" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let t of tipoLocalOptions" [value]="t">{{ t }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('tipoLocal')">{{ getFieldError('tipoLocal') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Responsabilidade -->
+    <div class="form-section">
+      <h3>Responsabilidade e Documentação</h3>
+      
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Culpabilidade</label>
+          <select formControlName="culpabilidade" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let c of culpabilidadeOptions" [value]="c">{{ c }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('culpabilidade')">{{ getFieldError('culpabilidade') }}</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Informações de Terceiros</label>
+        <textarea formControlName="informacoesTerceiros" class="form-input" rows="3" placeholder="Dados de terceiros envolvidos"></textarea>
+        <div class="form-error" *ngIf="isFieldInvalid('informacoesTerceiros')">{{ getFieldError('informacoesTerceiros') }}</div>
+      </div>
+
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Abertura de PAP</label>
+          <input type="text" formControlName="aberturaPAP" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('aberturaPAP')">{{ getFieldError('aberturaPAP') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Boletim de Ocorrência</label>
+          <input type="text" formControlName="boletimOcorrencia" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('boletimOcorrencia')">{{ getFieldError('boletimOcorrencia') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vítimas -->
+    <div class="form-section">
+      <h3>Informações sobre Vítimas</h3>
+      
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Houve Vítimas? *</label>
+          <select formControlName="houveVitimas" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let s of simNaoOptions" [value]="s">{{ s }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('houveVitimas')">{{ getFieldError('houveVitimas') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Vítimas com Lesões</label>
+          <input type="number" formControlName="numVitimasComLesoes" class="form-input" min="0" />
+          <div class="form-error" *ngIf="isFieldInvalid('numVitimasComLesoes')">{{ getFieldError('numVitimasComLesoes') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Vítimas Fatais</label>
+          <input type="number" formControlName="numVitimasFatais" class="form-input" min="0" />
+          <div class="form-error" *ngIf="isFieldInvalid('numVitimasFatais')">{{ getFieldError('numVitimasFatais') }}</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Informações sobre Vítimas</label>
+        <textarea formControlName="informacoesVitimas" class="form-input" rows="3" placeholder="Dados das vítimas"></textarea>
+        <div class="form-error" *ngIf="isFieldInvalid('informacoesVitimas')">{{ getFieldError('informacoesVitimas') }}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Endereço das Vítimas</label>
+        <textarea formControlName="enderecoVitimas" class="form-input" rows="2" placeholder="Endereço das vítimas"></textarea>
+        <div class="form-error" *ngIf="isFieldInvalid('enderecoVitimas')">{{ getFieldError('enderecoVitimas') }}</div>
+      </div>
+
+            <div class="form-group">
+        <label class="form-label">Informações sobre Testemunhas</label>
+        <textarea formControlName="informacoesTestemunhas" class="form-input" rows="3" placeholder="Dados de testemunhas"></textarea>
+        <div class="form-error" *ngIf="isFieldInvalid('informacoesTestemunhas')">{{ getFieldError('informacoesTestemunhas') }}</div>
+      </div>
+    </div>
+
+    <!-- Botões do rodapé -->
+    <div class="form-actions form-actions-bottom">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </form>
+</div>

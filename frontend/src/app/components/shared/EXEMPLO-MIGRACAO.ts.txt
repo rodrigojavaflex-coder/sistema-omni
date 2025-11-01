@@ -1,0 +1,168 @@
+// EXEMPLO: ocorrencia-form.ts REFATORADO com componentes reutilizáveis
+
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
+import { OcorrenciaService } from '../../services/ocorrencia.service';
+import { VeiculoService } from '../../services/veiculo.service';
+import { MotoristaService } from '../../services/motorista.service';
+import { BaseFormComponent } from '../base/base-form.component';
+import { firstValueFrom } from 'rxjs';
+
+// IMPORTAR OS NOVOS COMPONENTES
+import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
+import { MotoristaAutocompleteComponent } from '../shared/motorista-autocomplete/motorista-autocomplete.component';
+import { Veiculo, Motorista } from '../../models';
+
+@Component({
+  selector: 'app-ocorrencia-form',
+  standalone: true,
+  imports: [
+    CommonModule, 
+    ReactiveFormsModule,
+    VeiculoAutocompleteComponent,      // ← NOVO
+    MotoristaAutocompleteComponent     // ← NOVO
+  ],
+  templateUrl: './ocorrencia-form.html',
+  styleUrls: ['./ocorrencia-form.css']
+})
+export class OcorrenciaFormComponent extends BaseFormComponent implements OnInit {
+  private ocorrenciaService = inject(OcorrenciaService);
+  private veiculoService = inject(VeiculoService);
+  private motoristaService = inject(MotoristaService);
+  private fb = inject(FormBuilder);
+  private route = inject(ActivatedRoute);
+
+  // Opções de selects (mantém)
+  tipoOptions = Object.values(TipoOcorrencia);
+  linhaOptions = Object.values(Linha);
+  // ... outros enums
+
+  // ❌ REMOVER TODO CÓDIGO DE AUTOCOMPLETE:
+  // veiculoSearchText = '';
+  // filteredVeiculos: Veiculo[] = [];
+  // showVeiculoDropdown = false;
+  // selectedVeiculoIndex = -1;
+  // veiculoSearchTimeout: any;
+  // isLoadingVeiculos = false;
+  // searchVeiculos() { ... }
+  // onVeiculoSearchChange() { ... }
+  // onVeiculoKeyDown() { ... }
+  // scrollToSelectedVeiculo() { ... }
+  // selectVeiculo() { ... }
+  // onVeiculoFocus() { ... }
+  // onVeiculoBlur() { ... }
+  // (e todos os métodos equivalentes para motorista)
+
+  // ✅ APENAS ESTES MÉTODOS SÃO NECESSÁRIOS:
+  
+  onVeiculoSelecionado(veiculo: Veiculo): void {
+    console.log('Veículo selecionado:', veiculo);
+    // Lógica adicional se necessário
+  }
+
+  onMotoristaSelecionado(motorista: Motorista): void {
+    console.log('Motorista selecionado:', motorista);
+    // Lógica adicional se necessário
+  }
+
+  constructor(router: Router) {
+    super(router);
+  }
+
+  override ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.editMode = true;
+      this.entityId = id;
+    }
+    super.ngOnInit();
+  }
+
+  protected initializeForm(): void {
+    this.form = this.fb.group({
+      dataHora: ['', [Validators.required]],
+      idVeiculo: ['', [Validators.required]],      // ← Mantém apenas o FormControl
+      idMotorista: ['', [Validators.required]],    // ← Mantém apenas o FormControl
+      tipo: ['', [Validators.required]],
+      descricao: ['', [Validators.required, Validators.minLength(10)]],
+      // ... outros campos
+    });
+  }
+
+  protected buildFormData(): CreateOcorrenciaDto | UpdateOcorrenciaDto {
+    const formValue = this.form.value;
+    
+    const data: any = {
+      dataHora: formValue.dataHora,
+      idVeiculo: formValue.idVeiculo,
+      idMotorista: formValue.idMotorista,
+      tipo: formValue.tipo,
+      descricao: formValue.descricao,
+      houveVitimas: formValue.houveVitimas
+    };
+
+    // Campos opcionais (mantém igual)
+    // ...
+
+    return data;
+  }
+
+  protected async saveEntity(data: CreateOcorrenciaDto): Promise<void> {
+    await firstValueFrom(this.ocorrenciaService.create(data));
+    this.notificationService.success('Ocorrência cadastrada com sucesso!');
+  }
+
+  protected async updateEntity(id: string, data: UpdateOcorrenciaDto): Promise<void> {
+    await firstValueFrom(this.ocorrenciaService.update(id, data));
+    this.notificationService.success('Ocorrência atualizada com sucesso!');
+  }
+
+  protected async loadEntityById(id: string): Promise<void> {
+    const ocorrencia = await firstValueFrom(this.ocorrenciaService.getById(id));
+    
+    // Converter data para formato datetime-local
+    const dataHora = new Date(ocorrencia.dataHora);
+    const dataHoraFormatted = dataHora.toISOString().slice(0, 16);
+    
+    // ❌ REMOVER: Carregamento manual de veículo e motorista para exibição
+    // O componente de autocomplete cuida disso internamente
+    
+    this.form.patchValue({
+      dataHora: dataHoraFormatted,
+      idVeiculo: ocorrencia.idVeiculo,      // ← Apenas seta o ID
+      idMotorista: ocorrencia.idMotorista,  // ← Apenas seta o ID
+      tipo: ocorrencia.tipo,
+      // ... outros campos
+    });
+  }
+
+  protected override getListRoute(): string {
+    return '/ocorrencia';
+  }
+
+  // ❌ REMOVER: override ngOnDestroy() { ... } para limpar timeouts
+  // Não é mais necessário!
+}
+
+/* 
+RESUMO DA REFATORAÇÃO:
+======================
+
+REMOVIDO (~150 linhas de código):
+- 12+ propriedades de estado do autocomplete
+- 16+ métodos de gerenciamento de autocomplete
+- Lógica de navegação por teclado
+- Controle de loading states
+- Tratamento de timeouts/debounce
+- Scroll management
+- Cleanup no ngOnDestroy
+
+ADICIONADO (~10 linhas):
+- Import dos componentes
+- 2 métodos de callback simples
+
+REDUÇÃO: ~140 linhas de código por componente
+Se usado em 2 componentes (list + form): ~280 linhas economizadas!
+*/

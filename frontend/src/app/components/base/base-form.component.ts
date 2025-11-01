@@ -257,7 +257,7 @@ export abstract class BaseFormComponent<T> implements OnInit, OnDestroy {
   }
 
   getFormTitle(): string {
-    return this.editMode ? 'Editar' : 'Novo';
+    return this.editMode ? 'Editar' : 'Nova';
   }
 
   getSubmitButtonText(): string {

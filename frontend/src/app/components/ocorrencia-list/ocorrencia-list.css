@@ -1,0 +1,354 @@
+﻿/* Layout responsivo para filtros */
+.list-container {
+  padding: 1.5rem;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.list-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Wrapper para filtros */
+.filters-wrapper {
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  overflow: visible;
+  position: relative;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  padding: 1rem;
+  overflow: visible;
+  align-items: center;
+  position: relative;
+}
+
+.filter-input,
+.filter-select {
+  flex: 0 1 auto;
+  min-width: 130px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Filtros com multi-select */
+.filters app-multi-select {
+  flex: 0 1 auto;
+  min-width: 130px;
+  position: relative;
+}
+
+/* Aumentar z-index progressivamente para os multi-select nos filtros básicos */
+/* Muito mais alto para ficar acima dos filtros avançados */
+.filters app-multi-select:nth-child(1) {
+  z-index: 2010;
+}
+
+.filters app-multi-select:nth-child(2) {
+  z-index: 2009;
+}
+
+/* Dropdowns do multi-select dentro dos filtros */
+.filters app-multi-select ::ng-deep .multi-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 2050;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: -1px;
+}
+
+/* Filtros autocomplete */
+.filters app-veiculo-autocomplete,
+.filters app-motorista-autocomplete {
+  flex: 0 1 auto;
+  min-width: 130px;
+  display: block;
+  position: relative;
+  z-index: 2000;
+}
+
+.filters app-veiculo-autocomplete ::ng-deep .autocomplete-container,
+.filters app-motorista-autocomplete ::ng-deep .autocomplete-container {
+  position: relative;
+}
+
+.filters app-veiculo-autocomplete ::ng-deep .autocomplete-dropdown,
+.filters app-motorista-autocomplete ::ng-deep .autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 2050;
+  max-height: 300px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 2px;
+}
+
+.filters app-veiculo-autocomplete ::ng-deep .autocomplete-input,
+.filters app-motorista-autocomplete ::ng-deep .autocomplete-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background: white;
+}
+
+.filters app-veiculo-autocomplete ::ng-deep .autocomplete-input:focus,
+.filters app-motorista-autocomplete ::ng-deep .autocomplete-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Botões de ação */
+.btn-export-excel,
+.btn-export-pdf,
+.filters .btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  white-space: nowrap;
+}
+
+/* Botão de filtros avançados */
+.btn-advanced-filters {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  background: white;
+  color: var(--text-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.btn-advanced-filters:hover {
+  border-color: var(--primary-color, #0066cc);
+  background: var(--bg-hover, #f5f5f5);
+}
+
+.btn-advanced-filters.active {
+  border-color: var(--primary-color, #0066cc);
+  background: var(--primary-color, #0066cc);
+  color: white;
+}
+
+.btn-advanced-filters svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Filtros avançados */
+.advanced-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0 1rem 1rem 1rem;
+  align-items: flex-start;
+  border-top: 1px solid var(--border-color);
+  animation: slideDown 0.2s ease-in-out;
+  position: relative;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+.advanced-filters app-multi-select {
+  flex: 0 1 calc(33.333% - 0.5rem);
+  min-width: 150px;
+  position: relative;
+}
+
+/* Aumentar z-index progressivamente para cada filtro */
+.advanced-filters app-multi-select:nth-child(1) {
+  z-index: 1060;
+}
+
+.advanced-filters app-multi-select:nth-child(2) {
+  z-index: 1059;
+}
+
+.advanced-filters app-multi-select:nth-child(3) {
+  z-index: 1058;
+}
+
+.advanced-filters app-multi-select:nth-child(4) {
+  z-index: 1057;
+}
+
+.advanced-filters app-multi-select:nth-child(5) {
+  z-index: 1056;
+}
+
+/* Dropdowns do multi-select dentro dos filtros avançados */
+.advanced-filters app-multi-select ::ng-deep .multi-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: -1px;
+}
+
+/* Wrapper para scroll se necessário em telas pequenas */
+@supports (display: flex) {
+  .filters {
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  @media (max-width: 1200px) {
+    .filters {
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-info {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 1200px) {
+  .advanced-filters app-multi-select {
+    flex: 0 1 calc(50% - 0.5rem);
+  }
+}
+
+@media (max-width: 1024px) {
+  .filters {
+    gap: 0.5rem;
+  }
+
+  .filter-input,
+  .filter-select {
+    min-width: 110px;
+  }
+
+  .filters app-veiculo-autocomplete,
+  .filters app-motorista-autocomplete {
+    min-width: 110px;
+  }
+
+  .advanced-filters app-multi-select {
+    flex: 0 1 calc(50% - 0.5rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .list-container {
+    padding: 1rem;
+  }
+  
+  .filters {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .filter-input,
+  .filter-select,
+  .filters app-veiculo-autocomplete,
+  .filters app-motorista-autocomplete {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 100px;
+  }
+  
+  .btn-export-excel,
+  .btn-export-pdf,
+  .filters .btn,
+  .btn-advanced-filters {
+    flex: 0 1 auto;
+  }
+
+  .advanced-filters {
+    padding: 1rem;
+  }
+
+  .advanced-filters app-multi-select {
+    flex: 1 1 calc(50% - 0.5rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-input,
+  .filter-select,
+  .filters app-veiculo-autocomplete,
+  .filters app-motorista-autocomplete,
+  .advanced-filters app-multi-select {
+    flex: 1 1 100%;
+  }
+}
+

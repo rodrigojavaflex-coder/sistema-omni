@@ -1,0 +1,42 @@
+<div class="autocomplete-container">
+  <input 
+    type="text" 
+    [placeholder]="config.placeholder"
+    [(ngModel)]="searchText"
+    (input)="onSearchChange()"
+    (keydown)="onKeyDown($event)"
+    (focus)="onFocus()"
+    (blur)="onBlur()"
+    [class.is-invalid]="isInvalid"
+    class="autocomplete-input"
+    autocomplete="off"
+  >
+  
+  @if (isLoading) {
+    <div class="autocomplete-dropdown autocomplete-dropdown-generic">
+      <div class="autocomplete-loading">Carregando...</div>
+    </div>
+  }
+  
+  @if (showDropdown && filteredItems.length > 0 && !isLoading) {
+    <div class="autocomplete-dropdown autocomplete-dropdown-generic">
+      @for (item of filteredItems; track item.id; let i = $index) {
+        <div 
+          class="autocomplete-item" 
+          [class.selected]="i === selectedIndex"
+          (click)="selectItem(item)">
+          <strong>{{ config.displayFn(item) }}</strong>
+          @if (config.displaySecondaryFn) {
+            <small>{{ config.displaySecondaryFn(item) }}</small>
+          }
+        </div>
+      }
+    </div>
+  }
+  
+  @if (showDropdown && filteredItems.length === 0 && !isLoading && searchText.length >= (config.minChars || 2)) {
+    <div class="autocomplete-dropdown autocomplete-dropdown-generic">
+      <div class="autocomplete-empty">Nenhum item encontrado</div>
+    </div>
+  }
+</div>

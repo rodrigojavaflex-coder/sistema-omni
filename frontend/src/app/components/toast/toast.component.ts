@@ -18,10 +18,10 @@ import { Subscription } from 'rxjs';
           <div class="toast-content">
             <div class="toast-icon">
               @switch (toast.type) {
-                @case ('success') { ✅ }
-                @case ('error') { ❌ }
-                @case ('warning') { ⚠️ }
-                @case ('info') { ℹ️ }
+                @case ('success') { <svg class="icon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg> }
+                @case ('error') { <svg class="icon-error" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> }
+                @case ('warning') { <svg class="icon-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> }
+                @case ('info') { <svg class="icon-info" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> }
               }
             </div>
             <div class="toast-message">{{ toast.message }}</div>
@@ -86,48 +86,52 @@ import { Subscription } from 'rxjs';
 
     /* Tema Claro */
     .toast-success {
-      border: 2px solid #10b981;
-      background: #f0fdf4;
+      border: none;
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08);
     }
 
     .toast-error {
-      border: 2px solid #ef4444;
-      background: #fef2f2;
+      border: none;
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.08);
     }
 
     .toast-warning {
-      border: 2px solid #f59e0b;
-      background: #fffbeb;
+      border: none;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.08);
     }
 
     .toast-info {
-      border: 2px solid #3b82f6;
-      background: #eff6ff;
+      border: none;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
     }
 
     /* Tema Escuro */
     :host-context(body.theme-dark) .toast-success {
-      border: 2px solid #10b981;
-      background: #064e3b;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      border: none;
+      background: linear-gradient(135deg, #1a4d3e 0%, #2a5f50 100%);
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.1);
     }
 
     :host-context(body.theme-dark) .toast-error {
-      border: 2px solid #ef4444;
-      background: #7f1d1d;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      border: none;
+      background: linear-gradient(135deg, #4a2020 0%, #6b3030 100%);
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.1);
     }
 
     :host-context(body.theme-dark) .toast-warning {
-      border: 2px solid #f59e0b;
-      background: #78350f;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      border: none;
+      background: linear-gradient(135deg, #5a3d1a 0%, #7a5a2a 100%);
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.1);
     }
 
     :host-context(body.theme-dark) .toast-info {
-      border: 2px solid #3b82f6;
-      background: #1e3a8a;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      border: none;
+      background: linear-gradient(135deg, #1a3a5a 0%, #2a4a7a 100%);
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
     }
 
     :host-context(body.theme-dark) .toast-message {
@@ -153,6 +157,54 @@ import { Subscription } from 'rxjs';
     .toast-icon {
       font-size: 28px;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+    }
+
+    .icon-success,
+    .icon-error,
+    .icon-warning,
+    .icon-info {
+      width: 24px;
+      height: 24px;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .toast-success .icon-success {
+      color: #10b981;
+    }
+
+    .toast-error .icon-error {
+      color: #ef4444;
+    }
+
+    .toast-warning .icon-warning {
+      color: #f59e0b;
+    }
+
+    .toast-info .icon-info {
+      color: #3b82f6;
+    }
+
+    :host-context(body.theme-dark) .toast-success .icon-success {
+      color: #6ee7b7;
+    }
+
+    :host-context(body.theme-dark) .toast-error .icon-error {
+      color: #fca5a5;
+    }
+
+    :host-context(body.theme-dark) .toast-warning .icon-warning {
+      color: #fcd34d;
+    }
+
+    :host-context(body.theme-dark) .toast-info .icon-info {
+      color: #93c5fd;
     }
 
     .toast-message {

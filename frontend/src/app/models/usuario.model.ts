@@ -32,6 +32,13 @@ export enum Permission {
   MOTORISTA_UPDATE = 'motorista:update',
   MOTORISTA_DELETE = 'motorista:delete',
   MOTORISTA_AUDIT = 'motorista:audit',
+  
+  // Ocorrências
+  OCORRENCIA_CREATE = 'ocorrencia:create',
+  OCORRENCIA_READ = 'ocorrencia:read',
+  OCORRENCIA_UPDATE = 'ocorrencia:update',
+  OCORRENCIA_DELETE = 'ocorrencia:delete',
+  OCORRENCIA_AUDIT = 'ocorrencia:audit',
 }
 
 export interface PermissionGroup {

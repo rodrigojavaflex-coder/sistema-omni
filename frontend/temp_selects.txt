@@ -1,0 +1,23 @@
+    
+    <select 
+      [(ngModel)]="veiculoFilter"
+      (change)="onFilterChange()"
+      class="filter-select"
+    >
+      <option value="">Todos os veículos</option>
+      @for (veiculo of veiculosOptions; track veiculo.id) {
+        <option [value]="veiculo.id">{{ veiculo.descricao }} - {{ veiculo.placa }}</option>
+      }
+    </select>
+    
+    <select 
+      [(ngModel)]="motoristaFilter"
+      (change)="onFilterChange()"
+      class="filter-select"
+    >
+      <option value="">Todos os motoristas</option>
+      @for (motorista of motoristasOptions; track motorista.id) {
+        <option [value]="motorista.id">{{ motorista.nome }}</option>
+      }
+    </select>
+    
