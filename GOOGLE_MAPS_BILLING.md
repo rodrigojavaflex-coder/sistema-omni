@@ -41,9 +41,11 @@ A chave do Google Maps API não tem faturamento habilitado. Mesmo que a chave se
 - Usando `AdvancedMarkerElement` em vez de `Marker` (com fallback)
 
 ### Verificação da Chave Atual
-A chave configurada em `.env`:
+A chave deve estar configurada em `.env` (não fazer commit):
 ```
-GOOGLE_MAPS_API_KEY=AIzaSyDVBVuLZ0Q4wAXCgIbYc4VIFGR7_jIdLO0
+GOOGLE_MAPS_API_KEY=SUA_CHAVE_AQUI
 ```
 
 **Confirme se esta chave tem faturamento habilitado e se está restrita apenas para Maps JavaScript API.**
+
+⚠️ **IMPORTANTE:** Nunca coloque a chave em arquivos que serão commitados no repositório!
