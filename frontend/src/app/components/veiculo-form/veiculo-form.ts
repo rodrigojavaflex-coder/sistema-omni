@@ -3,7 +3,7 @@ import { CommonModule, NgIf, NgForOf } from '@angular/common';
 import { FormsModule, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { VeiculoService } from '../../services/veiculo.service';
-import { CreateVeiculoDto, UpdateVeiculoDto } from '../../models/veiculo.model';
+import { CreateVeiculoDto, UpdateVeiculoDto, StatusVeiculo } from '../../models/veiculo.model';
 import { Combustivel } from '../../models/combustivel.enum';
 import { BaseFormComponent } from '../base/base-form.component';
 import { firstValueFrom } from 'rxjs';
@@ -17,6 +17,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class VeiculoFormComponent extends BaseFormComponent<CreateVeiculoDto | UpdateVeiculoDto> implements OnInit {
   combustivelOptions = Object.values(Combustivel);
+  statusOptions = Object.values(StatusVeiculo);
   currentYear = new Date().getFullYear();
 
   constructor(
@@ -75,7 +76,10 @@ export class VeiculoFormComponent extends BaseFormComponent<CreateVeiculoDto | U
         Validators.minLength(2),
         Validators.maxLength(50)
       ]],
-      combustivel: ['', [Validators.required]]
+      combustivel: ['', [Validators.required]],
+      status: [StatusVeiculo.ATIVO],
+      marcaDaCarroceria: ['', [Validators.maxLength(50)]],
+      modeloDaCarroceria: ['', [Validators.maxLength(50)]]
     });
   }
 
@@ -104,7 +108,10 @@ export class VeiculoFormComponent extends BaseFormComponent<CreateVeiculoDto | U
       chassi: veiculo.chassi,
       marca: veiculo.marca,
       modelo: veiculo.modelo,
-      combustivel: veiculo.combustivel
+      combustivel: veiculo.combustivel,
+      status: veiculo.status || StatusVeiculo.ATIVO,
+      marcaDaCarroceria: veiculo.marcaDaCarroceria || '',
+      modeloDaCarroceria: veiculo.modeloDaCarroceria || ''
     });
 
     // Formatar placa no input após carregar
@@ -159,4 +166,7 @@ export class VeiculoFormComponent extends BaseFormComponent<CreateVeiculoDto | U
   get descricao() { return this.form.get('descricao'); }
   get placa() { return this.form.get('placa'); }
   get ano() { return this.form.get('ano'); }
+  get status() { return this.form.get('status'); }
+  get marcaDaCarroceria() { return this.form.get('marcaDaCarroceria'); }
+  get modeloDaCarroceria() { return this.form.get('modeloDaCarroceria'); }
 }

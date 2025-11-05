@@ -61,7 +61,7 @@ export class MotoristaService {
       .createQueryBuilder('motorista')
       .take(limit)
       .skip(skip)
-      .orderBy('motorista.criadoEm', 'DESC');
+      .orderBy('motorista.atualizadoEm', 'DESC');
 
     const conditions: string[] = [];
     const parameters: any = {};
@@ -202,6 +202,6 @@ export class MotoristaService {
 
   async remove(id: string): Promise<void> {
     const motorista = await this.findOne(id);
-    await this.motoristaRepository.softDelete(id);
+    await this.motoristaRepository.remove(motorista);
   }
 }

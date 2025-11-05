@@ -67,8 +67,29 @@ export abstract class BaseListComponent<T> implements OnInit {
       .subscribe({
         next: () => this.loadItems(),
         error: (err: HttpErrorResponse) => {
-          const serverMsg = err.error?.message || 'Erro ao excluir';
-          this.errorModalService.show(serverMsg);
+          // Tentar obter mensagem do servidor, status ou mensagem padrão
+          let errorMessage = 'Erro ao excluir';
+          
+          if (err.error?.message) {
+            errorMessage = err.error.message;
+          } else if (err.error?.error) {
+            errorMessage = err.error.error;
+          } else if (err.statusText) {
+            errorMessage = err.statusText;
+          } else if (err.status) {
+            const statusMessages: { [key: number]: string } = {
+              400: 'Solicitação inválida',
+              401: 'Não autorizado',
+              403: 'Acesso proibido',
+              404: 'Item não encontrado',
+              409: 'Conflito ao excluir (pode ter dependências)',
+              500: 'Erro interno do servidor!',
+              503: 'Serviço indisponível'
+            };
+            errorMessage = statusMessages[err.status] || `Erro HTTP ${err.status}`;
+          }
+          
+          this.errorModalService.show(errorMessage);
         }
       });
   }

@@ -59,7 +59,7 @@ export class OcorrenciaService {
       .leftJoinAndSelect('ocorrencia.motorista', 'motorista')
       .take(limit)
       .skip(skip)
-      .orderBy('ocorrencia.dataHora', 'DESC');
+      .orderBy('ocorrencia.atualizadoEm', 'DESC');
 
     const conditions: string[] = [];
     const parameters: any = {};

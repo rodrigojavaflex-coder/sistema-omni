@@ -2,6 +2,7 @@ import { Entity, Column, Index } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Combustivel } from '../../../common/enums/combustivel.enum';
+import { StatusVeiculo } from '../../../common/enums/status-veiculo.enum';
 
 @Entity('veiculos')
 @Index('IDX_VEICULO_DESCRICAO', ['descricao'], { unique: true })
@@ -38,4 +39,16 @@ export class Veiculo extends BaseEntity {
   @ApiProperty({ description: 'Tipo de combustível', enum: Combustivel })
   @Column({ length: 30 })
   combustivel: Combustivel;
+
+  @ApiProperty({ description: 'Status do veículo', enum: StatusVeiculo, default: StatusVeiculo.ATIVO })
+  @Column({ length: 20, default: StatusVeiculo.ATIVO })
+  status: StatusVeiculo;
+
+  @ApiProperty({ description: 'Marca da carroceria', example: 'Marcopolo' })
+  @Column({ length: 50, nullable: true })
+  marcaDaCarroceria: string;
+
+  @ApiProperty({ description: 'Modelo da carroceria', example: 'Volare' })
+  @Column({ length: 50, nullable: true })
+  modeloDaCarroceria: string;
 }

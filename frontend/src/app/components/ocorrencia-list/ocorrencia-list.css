@@ -33,6 +33,12 @@
   border: 1px solid var(--border-color);
   overflow: visible;
   position: relative;
+  z-index: 1;
+}
+
+.filters-wrapper.modal-open {
+  z-index: 0;
+  pointer-events: none;
 }
 
 .filters {
@@ -43,6 +49,7 @@
   overflow: visible;
   align-items: center;
   position: relative;
+  z-index: auto;
 }
 
 .filter-input,
@@ -71,59 +78,20 @@
   position: relative;
 }
 
-/* Aumentar z-index progressivamente para os multi-select nos filtros básicos */
-/* Muito mais alto para ficar acima dos filtros avançados */
-.filters app-multi-select:nth-child(1) {
-  z-index: 2010;
-}
+/* Filtros com multi-select - dropdowns com z-index alto */
 
-.filters app-multi-select:nth-child(2) {
-  z-index: 2009;
-}
-
-/* Dropdowns do multi-select dentro dos filtros */
-.filters app-multi-select ::ng-deep .multi-select-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 2050;
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin-top: -1px;
-}
-
-/* Filtros autocomplete */
+/* Filtros autocomplete - dropdowns com z-index alto */
 .filters app-veiculo-autocomplete,
 .filters app-motorista-autocomplete {
   flex: 0 1 auto;
   min-width: 130px;
   display: block;
   position: relative;
-  z-index: 2000;
 }
 
 .filters app-veiculo-autocomplete ::ng-deep .autocomplete-container,
 .filters app-motorista-autocomplete ::ng-deep .autocomplete-container {
   position: relative;
-}
-
-.filters app-veiculo-autocomplete ::ng-deep .autocomplete-dropdown,
-.filters app-motorista-autocomplete ::ng-deep .autocomplete-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 2050;
-  max-height: 300px;
-  overflow-y: auto;
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin-top: 2px;
 }
 
 .filters app-veiculo-autocomplete ::ng-deep .autocomplete-input,
@@ -197,6 +165,8 @@
   border-top: 1px solid var(--border-color);
   animation: slideDown 0.2s ease-in-out;
   position: relative;
+  overflow: visible;
+  z-index: auto;
 }
 
 @keyframes slideDown {
@@ -217,34 +187,12 @@
   position: relative;
 }
 
-/* Aumentar z-index progressivamente para cada filtro */
-.advanced-filters app-multi-select:nth-child(1) {
-  z-index: 1060;
-}
-
-.advanced-filters app-multi-select:nth-child(2) {
-  z-index: 1059;
-}
-
-.advanced-filters app-multi-select:nth-child(3) {
-  z-index: 1058;
-}
-
-.advanced-filters app-multi-select:nth-child(4) {
-  z-index: 1057;
-}
-
-.advanced-filters app-multi-select:nth-child(5) {
-  z-index: 1056;
-}
-
 /* Dropdowns do multi-select dentro dos filtros avançados */
 .advanced-filters app-multi-select ::ng-deep .multi-select-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 1050;
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 4px;

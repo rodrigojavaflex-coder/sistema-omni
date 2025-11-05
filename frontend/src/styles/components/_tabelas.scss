@@ -56,6 +56,7 @@
     
     td {
       padding: $spacing-md;
+      word-break: break-word;
       
       @include themed(color, $light-text-primary, $dark-text-primary);
       
@@ -78,14 +79,32 @@
     
     thead th,
     tbody td {
-      padding: $spacing-sm;
+      padding: 0.4rem;
       
       &:first-child {
-        padding-left: $spacing-sm;
+        padding-left: 0.5rem;
       }
       
       &:last-child {
-        padding-right: $spacing-sm;
+        padding-right: 0.5rem;
+      }
+    }
+  }
+  
+  @include responsive($mobile) {
+    font-size: 0.65rem;
+    min-width: 600px;
+    
+    thead th,
+    tbody td {
+      padding: 0.2rem 0.3rem;
+      
+      &:first-child {
+        padding-left: 0.3rem;
+      }
+      
+      &:last-child {
+        padding-right: 0.3rem;
       }
     }
   }
@@ -134,9 +153,34 @@
 // Ações da tabela
 .table-actions {
   display: flex;
-  gap: $spacing-xs;
+  flex-direction: column;
+  gap: 0.25rem;
   justify-content: center;
   align-items: center;
+  width: 100%;
+  
+  @include responsive($mobile) {
+    gap: 0.15rem;
+  }
+}
+
+// Botões pequenos da tabela
+.btn-small {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  width: 100%;
+  
+  @include responsive($tablet) {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.65rem;
+  }
+  
+  @include responsive($mobile) {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.6rem;
+  }
 }
 
 // Célula com checkbox

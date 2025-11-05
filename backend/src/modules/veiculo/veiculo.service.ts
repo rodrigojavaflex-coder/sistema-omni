@@ -45,7 +45,11 @@ export class VeiculoService {
   }
 
   async findAll(findVeiculoDto: FindVeiculoDto): Promise<PaginatedResponseDto<Veiculo>> {
-    const { page = 1, limit = 10, descricao, placa, ano, marca, modelo, combustivel } = findVeiculoDto as any;
+    const { page = 1, limit = 10, descricao, placa, ano, marca, modelo, combustivel, status, marcaDaCarroceria, modeloDaCarroceria } = findVeiculoDto as any;
+
+    this.logger.debug('🔍 VEICULO FINDALL - Filtros recebidos:', {
+      page, limit, descricao, placa, ano, marca, modelo, combustivel, status, marcaDaCarroceria, modeloDaCarroceria
+    });
 
     const query = this.veiculoRepository.createQueryBuilder('v');
 
@@ -73,7 +77,22 @@ export class VeiculoService {
       query.andWhere('v.combustivel = :combustivel', { combustivel });
     }
 
-    const [items, total] = await query.skip((page - 1) * limit).take(limit).orderBy('v.criadoEm', 'DESC').getManyAndCount();
+    if (status) {
+      this.logger.debug('✅ Aplicando filtro de STATUS:', status);
+      query.andWhere('v.status = :status', { status });
+    }
+
+    if (marcaDaCarroceria) {
+      this.logger.debug('✅ Aplicando filtro de MARCA CARROCERIA:', marcaDaCarroceria);
+      query.andWhere('v.marcaDaCarroceria ILIKE :marcaDaCarroceria', { marcaDaCarroceria: `%${marcaDaCarroceria}%` });
+    }
+
+    if (modeloDaCarroceria) {
+      this.logger.debug('✅ Aplicando filtro de MODELO CARROCERIA:', modeloDaCarroceria);
+      query.andWhere('v.modeloDaCarroceria ILIKE :modeloDaCarroceria', { modeloDaCarroceria: `%${modeloDaCarroceria}%` });
+    }
+
+    const [items, total] = await query.skip((page - 1) * limit).take(limit).orderBy('v.atualizadoEm', 'DESC').getManyAndCount();
 
     const meta = new PaginationMetaDto(page, limit, total);
     return new PaginatedResponseDto(items, meta);

@@ -1,5 +1,10 @@
 import { Combustivel } from './combustivel.enum';
 
+export enum StatusVeiculo {
+  ATIVO = 'ATIVO',
+  INATIVO = 'INATIVO',
+}
+
 export interface Veiculo {
   id: string;
   descricao: string;
@@ -9,6 +14,9 @@ export interface Veiculo {
   marca: string;
   modelo: string;
   combustivel: Combustivel;
+  status?: StatusVeiculo;
+  marcaDaCarroceria?: string;
+  modeloDaCarroceria?: string;
   criadoEm: Date;
   atualizadoEm: Date;
 }
@@ -21,6 +29,9 @@ export interface CreateVeiculoDto {
   marca: string;
   modelo: string;
   combustivel: Combustivel;
+  status?: StatusVeiculo;
+  marcaDaCarroceria?: string;
+  modeloDaCarroceria?: string;
 }
 
 export interface UpdateVeiculoDto extends Partial<CreateVeiculoDto> {}
@@ -34,4 +45,7 @@ export interface FindVeiculoDto {
   marca?: string;
   modelo?: string;
   combustivel?: string;
+  status?: StatusVeiculo;
+  marcaDaCarroceria?: string;
+  modeloDaCarroceria?: string;
 }

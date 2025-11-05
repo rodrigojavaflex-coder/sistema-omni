@@ -7,7 +7,7 @@ import { Observable } from 'rxjs';
 import { VeiculoService } from '../../services';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
-import { Veiculo, FindVeiculoDto, Combustivel } from '../../models';
+import { Veiculo, FindVeiculoDto, Combustivel, StatusVeiculo } from '../../models';
 import { Permission } from '../../models/usuario.model';
 import { PaginatedResponse } from '../../models/usuario.model';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
@@ -37,8 +37,12 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
   marcaFilter = '';
   modeloFilter = '';
   combustivelFilter = '';
+  statusFilter = '';
+  marcaCarroceriaFilter = '';
+  modeloCarroceriaFilter = '';
 
   combustivelOptions = Object.values(Combustivel);
+  statusOptions = Object.values(StatusVeiculo);
 
   filterTimeout: any = null;
 
@@ -78,6 +82,15 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
     if (this.combustivelFilter) {
       filters.combustivel = this.combustivelFilter;
     }
+    if (this.statusFilter) {
+      filters.status = this.statusFilter as StatusVeiculo;
+    }
+    if (this.marcaCarroceriaFilter.trim()) {
+      filters.marcaDaCarroceria = this.marcaCarroceriaFilter.trim();
+    }
+    if (this.modeloCarroceriaFilter.trim()) {
+      filters.modeloDaCarroceria = this.modeloCarroceriaFilter.trim();
+    }
 
     this.veiculoService.getVeiculos(filters).subscribe({
       next: (response: PaginatedResponse<Veiculo>) => {
@@ -113,6 +126,9 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
     this.marcaFilter = '';
     this.modeloFilter = '';
     this.combustivelFilter = '';
+    this.statusFilter = '';
+    this.marcaCarroceriaFilter = '';
+    this.modeloCarroceriaFilter = '';
     this.currentPage = 1;
     this.loadItems();
   }
@@ -186,6 +202,15 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
         if (this.combustivelFilter) {
           filters.combustivel = this.combustivelFilter;
         }
+        if (this.statusFilter) {
+          filters.status = this.statusFilter as StatusVeiculo;
+        }
+        if (this.marcaCarroceriaFilter.trim()) {
+          filters.marcaDaCarroceria = this.marcaCarroceriaFilter.trim();
+        }
+        if (this.modeloCarroceriaFilter.trim()) {
+          filters.modeloDaCarroceria = this.modeloCarroceriaFilter.trim();
+        }
 
         this.veiculoService.getVeiculos(filters).subscribe({
           next: (response: PaginatedResponse<Veiculo>) => {
@@ -212,7 +237,7 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
   }
 
   protected getExportDataExcel(items: Veiculo[]): { headers: string[], data: any[][] } {
-    const headers = ['Descrição', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível'];
+    const headers = ['Descrição', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível', 'Status', 'Marca Carroceria', 'Modelo Carroceria'];
     const data = items.map(item => [
       item.descricao,
       item.placa,
@@ -220,13 +245,16 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
       item.chassi,
       item.marca,
       item.modelo,
-      item.combustivel
+      item.combustivel,
+      item.status || '',
+      item.marcaDaCarroceria || '',
+      item.modeloDaCarroceria || ''
     ]);
     return { headers, data };
   }
 
   protected getExportDataPDF(items: Veiculo[]): { headers: string[], data: any[][] } {
-    const headers = ['Descrição', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível'];
+    const headers = ['Descrição', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível', 'Status', 'Marca Carroceria', 'Modelo Carroceria'];
     const data = items.map(item => [
       item.descricao,
       item.placa,
@@ -234,7 +262,10 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
       item.chassi,
       item.marca,
       item.modelo,
-      item.combustivel
+      item.combustivel,
+      item.status || '',
+      item.marcaDaCarroceria || '',
+      item.modeloDaCarroceria || ''
     ]);
     return { headers, data };
   }

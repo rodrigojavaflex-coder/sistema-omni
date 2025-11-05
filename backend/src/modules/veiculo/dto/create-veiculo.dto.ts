@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MaxLength, IsEnum, IsNumber, Matches, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, IsEnum, IsNumber, Matches, MinLength, IsOptional } from 'class-validator';
 import { Combustivel } from '../../../common/enums/combustivel.enum';
+import { StatusVeiculo } from '../../../common/enums/status-veiculo.enum';
 
 export class CreateVeiculoDto {
   @ApiProperty({ description: 'Descrição do veículo', example: 'Caminhão 3/4', maxLength: 30 })
@@ -48,4 +49,21 @@ export class CreateVeiculoDto {
   @IsNotEmpty({ message: 'Combustível é obrigatório' })
   @IsEnum(Combustivel, { message: 'Combustível deve ser um dos tipos válidos' })
   combustivel: Combustivel;
+
+  @ApiProperty({ description: 'Status do veículo', enum: StatusVeiculo, default: StatusVeiculo.ATIVO })
+  @IsOptional()
+  @IsEnum(StatusVeiculo, { message: 'Status deve ser um dos tipos válidos' })
+  status?: StatusVeiculo;
+
+  @ApiProperty({ description: 'Marca da carroceria', example: 'Marcopolo', maxLength: 50, required: false })
+  @IsOptional()
+  @IsString({ message: 'Marca da carroceria deve ser um texto' })
+  @MaxLength(50, { message: 'Marca da carroceria não pode ter mais de 50 caracteres' })
+  marcaDaCarroceria?: string;
+
+  @ApiProperty({ description: 'Modelo da carroceria', example: 'Volare', maxLength: 50, required: false })
+  @IsOptional()
+  @IsString({ message: 'Modelo da carroceria deve ser um texto' })
+  @MaxLength(50, { message: 'Modelo da carroceria não pode ter mais de 50 caracteres' })
+  modeloDaCarroceria?: string;
 }

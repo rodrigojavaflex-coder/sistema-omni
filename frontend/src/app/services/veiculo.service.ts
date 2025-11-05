@@ -20,6 +20,9 @@ export class VeiculoService {
       if (find.marca) params = params.set('marca', find.marca);
       if (find.modelo) params = params.set('modelo', find.modelo);
       if (find.combustivel) params = params.set('combustivel', find.combustivel);
+      if (find.status) params = params.set('status', find.status);
+      if (find.marcaDaCarroceria) params = params.set('marcaDaCarroceria', find.marcaDaCarroceria);
+      if (find.modeloDaCarroceria) params = params.set('modeloDaCarroceria', find.modeloDaCarroceria);
     }
     return this.http.get<PaginatedResponse<Veiculo>>(`${environment.apiUrl}/veiculo`, { params });
   }

@@ -218,7 +218,7 @@
 
 // Botão exportar Excel
 .btn-export-excel {
-  @extend .btn;
+  @extend .btn-export;
   background: linear-gradient(to bottom, lighten-color(#1d6f42, 5%), #1d6f42);
   color: white;
   border-color: #1d6f42;
@@ -239,7 +239,7 @@
 
 // Botão exportar PDF
 .btn-export-pdf {
-  @extend .btn;
+  @extend .btn-export;
   background: linear-gradient(to bottom, lighten-color(#dc3545, 5%), #dc3545);
   color: white;
   border-color: #dc3545;
@@ -258,18 +258,6 @@
   }
 }
 
-.btn-export-pdf {
-  @extend .btn-export;
-  background: linear-gradient(to bottom, #c92a2a, #a61e1e);
-  color: white;
-  border-color: #a61e1e;
-  
-  &:hover:not(:disabled) {
-    background: linear-gradient(to bottom, #a61e1e, #7d1616);
-    box-shadow: 0 4px 8px rgba(201, 42, 42, 0.4);
-  }
-}
-
 // Grupos de botões
 .btn-group {
   display: flex;
@@ -281,14 +269,12 @@
 }
 
 // Botão de ação na tabela
-.btn-action {
-  @extend .btn;
-  @extend .btn-small;
-  padding: $spacing-xs $spacing-sm;
-  min-width: auto;
+.btn-audit {
+  @include themed(color, $primary, lighten-color($primary, 20%));
+  @include themed(border-color, $primary, lighten-color($primary, 20%));
   
-  svg {
-    width: 16px;
-    height: 16px;
+  &:hover:not(:disabled) {
+    background-color: $primary;
+    color: white;
   }
 }

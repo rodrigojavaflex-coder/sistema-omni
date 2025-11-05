@@ -55,7 +55,7 @@
 .filters {
   display: flex;
   gap: $spacing-sm;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   margin-bottom: $spacing-lg;
   padding: $spacing-md;
   border-radius: $radius-md;
@@ -66,7 +66,14 @@
   @include smooth-color-transition;
   
   @include responsive($tablet) {
-    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+  
+  @include responsive($mobile) {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
   }
 }
 
@@ -74,10 +81,20 @@
 .filter-input {
   @include input-base;
   flex: 1;
-  min-width: 150px;
+  min-width: 120px;
+  max-width: 180px;
+  
+  @include responsive($tablet) {
+    max-width: 140px;
+    padding: 0.4rem 0.5rem;
+    font-size: $font-xs;
+  }
   
   @include responsive($mobile) {
-    min-width: 100%;
+    width: 100%;
+    max-width: none;
+    padding: 0.4rem 0.3rem;
+    font-size: $font-xs;
   }
 }
 
@@ -85,11 +102,81 @@
 .filter-select {
   @include input-base;
   flex: 1;
-  min-width: 150px;
+  min-width: 120px;
+  max-width: 180px;
   cursor: pointer;
   
+  @include responsive($tablet) {
+    max-width: 140px;
+    padding: 0.4rem 0.5rem;
+    font-size: $font-xs;
+  }
+  
   @include responsive($mobile) {
-    min-width: 100%;
+    width: 100%;
+    max-width: none;
+    padding: 0.4rem 0.3rem;
+    font-size: $font-xs;
+  }
+}
+
+// Botões de ação nos filtros
+.filters .btn {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.75rem;
+  white-space: nowrap;
+  font-size: $font-sm;
+  
+  @include responsive($tablet) {
+    padding: 0.4rem 0.5rem;
+    font-size: $font-xs;
+  }
+  
+  @include responsive($mobile) {
+    width: 100%;
+    padding: 0.4rem 0.3rem;
+    font-size: $font-xs;
+  }
+}
+
+.btn-export-excel,
+.btn-export-pdf {
+  flex: 0 0 auto;
+  
+  @include responsive($tablet) {
+    padding: 0.4rem 0.5rem;
+    font-size: $font-xs;
+  }
+  
+  @include responsive($mobile) {
+    width: 100%;
+    padding: 0.4rem 0.3rem;
+    font-size: $font-xs;
+  }
+}
+
+// Botão de paginação
+.btn-pagination {
+  padding: 0.5rem 1rem;
+  font-size: $font-sm;
+  border: 1px solid;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+  background: white;
+  
+  @include themed(border-color, $light-border, $dark-border);
+  @include themed(color, $light-text-primary, $dark-text-primary);
+  @include themed(background-color, white, $dark-bg-secondary);
+  
+  &:hover:not(:disabled) {
+    @include themed(border-color, $primary, lighten-color($primary, 20%));
+    @include themed(background-color, $light-hover, $dark-hover);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 

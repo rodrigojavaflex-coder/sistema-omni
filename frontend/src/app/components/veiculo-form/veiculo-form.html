@@ -63,6 +63,27 @@
           <div class="form-error" *ngIf="isFieldInvalid('combustivel')">{{ getFieldError('combustivel') }}</div>
         </div>
       </div>
+
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select formControlName="status" class="form-select">
+            <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Marca da Carroceria</label>
+          <input type="text" formControlName="marcaDaCarroceria" class="form-input" placeholder="Ex: Marcopolo" />
+          <div class="form-error" *ngIf="isFieldInvalid('marcaDaCarroceria')">{{ getFieldError('marcaDaCarroceria') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Modelo da Carroceria</label>
+          <input type="text" formControlName="modeloDaCarroceria" class="form-input" placeholder="Ex: Volare" />
+          <div class="form-error" *ngIf="isFieldInvalid('modeloDaCarroceria')">{{ getFieldError('modeloDaCarroceria') }}</div>
+        </div>
+      </div>
     </div>
 
     <div class="form-actions">
