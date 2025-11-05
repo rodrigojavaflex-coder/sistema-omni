@@ -46,21 +46,28 @@ async function bootstrap() {
   // Filtro global de exceções genérico
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Configuração de CORS - Apenas para desenvolvimento
-  if (process.env.NODE_ENV !== 'production') {
-    app.enableCors({
-      origin: [
-        'http://localhost:4200',    // Angular dev server
-        'http://localhost:3000',    // Backend dev
-        'http://localhost:8080',    // Backend dev alternativo
-        'http://127.0.0.1:4200',    // Alternativa localhost
+  // Configuração de CORS
+  const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? [
+        'https://gestaodetransporte.com',
+        'https://www.gestaodetransporte.com',
+        'http://gestaodetransporte.com',
+        'http://www.gestaodetransporte.com'
+      ]
+    : [
+        'http://localhost:4200',
+        'http://localhost:3000',
+        'http://localhost:8080',
+        'http://127.0.0.1:4200',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:8080'
-      ],
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-      credentials: true,
-    });
-  }
+      ];
+
+  app.enableCors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true,
+  });
 
   // Prefixo global para todas as rotas
   app.setGlobalPrefix('api');

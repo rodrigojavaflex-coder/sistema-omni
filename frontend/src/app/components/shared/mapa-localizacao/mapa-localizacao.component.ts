@@ -82,22 +82,17 @@ export class MapaLocalizacaoComponent implements OnInit, AfterViewInit, OnChange
   }
 
   private buscarChaveAPI(): void {
-    this.http.get<{ key?: string; token?: string }>('/api/config/google-maps-key').subscribe({
+    this.http.get<{ key: string }>('/api/config/google-maps-key').subscribe({
       next: (response) => {
-        // Em desenvolvimento retorna 'key', em produção retorna 'token'
         if (response.key) {
           this.apiKey = response.key;
-        } else if (response.token) {
-          this.apiKey = response.token;
+          this.carregarGoogleMaps();
         } else {
           console.error('Erro: chave não obtida do servidor');
-          return;
         }
-
-        this.carregarGoogleMaps();
       },
       error: (err: any) => {
-        console.error('Erro ao buscar configuração da API');
+        console.error('Erro ao buscar configuração da API do Google Maps', err);
       }
     });
   }

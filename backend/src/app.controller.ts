@@ -13,11 +13,11 @@ export class AppController {
   }
 
   @Get('config/google-maps-key')
-  getGoogleMapsKey(): { key: string } | { token: string } {
+  getGoogleMapsKey(): { key: string } {
     try {
       return this.appService.getGoogleMapsKey();
     } catch (error) {
-      this.logger.error('Erro ao obter Google Maps Key');
+      this.logger.error('Erro ao obter Google Maps Key', error);
       throw error;
     }
   }
