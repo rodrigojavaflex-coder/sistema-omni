@@ -4,6 +4,7 @@ import { Repository, Between, In } from 'typeorm';
 import { Ocorrencia } from './entities/ocorrencia.entity';
 import { CreateOcorrenciaDto } from './dto/create-ocorrencia.dto';
 import { UpdateOcorrenciaDto } from './dto/update-ocorrencia.dto';
+import { validarCamposVitimas, ValidadorCamposVitimas } from '../../common/validators/validador-vitimas';
 
 @Injectable()
 export class OcorrenciaService {
@@ -13,6 +14,12 @@ export class OcorrenciaService {
   ) {}
 
   async create(createOcorrenciaDto: CreateOcorrenciaDto): Promise<Ocorrencia> {
+    // Validar campos de vítima condicionalmente
+    const errosVitimas = await validarCamposVitimas(createOcorrenciaDto);
+    if (errosVitimas.length > 0) {
+      throw new BadRequestException(errosVitimas[0]);
+    }
+
     // Validar localização se fornecida
     if (createOcorrenciaDto.localizacao) {
       this.validateLocation(createOcorrenciaDto.localizacao);
@@ -198,6 +205,21 @@ export class OcorrenciaService {
 
   async update(id: string, updateOcorrenciaDto: UpdateOcorrenciaDto): Promise<Ocorrencia> {
     const ocorrencia = await this.findOne(id);
+
+    // Mesclar os dados atualizados com os dados existentes para validação completa
+    const dadosMergidos = {
+      ...ocorrencia,
+      ...updateOcorrenciaDto,
+    };
+
+    console.log('[UPDATE] Dados mergidos:', dadosMergidos);
+    // Validar campos de vítima condicionalmente
+    const errosVitimas = await validarCamposVitimas(dadosMergidos);
+    console.log('[UPDATE] Erros de vítimas:', errosVitimas);
+    
+    if (errosVitimas.length > 0) {
+      throw new BadRequestException(errosVitimas[0]);
+    }
 
     // Validar localização se fornecida
     if (updateOcorrenciaDto.localizacao) {

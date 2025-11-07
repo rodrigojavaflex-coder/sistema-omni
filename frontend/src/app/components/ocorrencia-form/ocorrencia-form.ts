@@ -13,6 +13,7 @@ import { SentidoVia } from '../../models/sentido-via.enum';
 import { TipoLocal } from '../../models/tipo-local.enum';
 import { Culpabilidade } from '../../models/culpabilidade.enum';
 import { SimNao } from '../../models/sim-nao.enum';
+import { Sexo } from '../../models/sexo.enum';
 import { Veiculo, Motorista } from '../../models';
 import { BaseFormComponent } from '../base/base-form.component';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
@@ -54,6 +55,7 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
   tipoLocalOptions = Object.values(TipoLocal);
   culpabilidadeOptions = Object.values(Culpabilidade);
   simNaoOptions = Object.values(SimNao);
+  sexoOptions = Object.values(Sexo);
 
   localizacaoSelecionada: PontoLocalizacao | null = null;
 
@@ -93,6 +95,11 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       houveVitimas: ['', [Validators.required]],
       numVitimasComLesoes: [0, [Validators.min(0)]],
       numVitimasFatais: [0, [Validators.min(0)]],
+      nomeDaVitima: ['', [Validators.maxLength(150)]],
+      documentoDaVitima: ['', [Validators.maxLength(50)]],
+      dataNascimentoDaVitima: [''],
+      sexoDaVitima: [''],
+      nomeDaMaeDaVitima: ['', [Validators.maxLength(150)]],
       informacoesVitimas: [''],
       enderecoVitimas: [''],
       informacoesTestemunhas: ['']
@@ -133,6 +140,16 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
     if (formValue.boletimOcorrencia) data.boletimOcorrencia = formValue.boletimOcorrencia;
     if (formValue.numVitimasComLesoes) data.numVitimasComLesoes = formValue.numVitimasComLesoes;
     if (formValue.numVitimasFatais) data.numVitimasFatais = formValue.numVitimasFatais;
+    
+    // SEMPRE enviar os 5 campos de vítima para o backend validar
+    // Quando houveVitimas = 'SIM': backend vai validar se estão vazios
+    // Quando houveVitimas != 'SIM': backend vai permitir vazios
+    data.nomeDaVitima = formValue.nomeDaVitima || '';
+    data.documentoDaVitima = formValue.documentoDaVitima || '';
+    data.dataNascimentoDaVitima = formValue.dataNascimentoDaVitima || '';
+    data.sexoDaVitima = formValue.sexoDaVitima || '';
+    data.nomeDaMaeDaVitima = formValue.nomeDaMaeDaVitima || '';
+    
     if (formValue.informacoesVitimas) data.informacoesVitimas = formValue.informacoesVitimas;
     if (formValue.enderecoVitimas) data.enderecoVitimas = formValue.enderecoVitimas;
     if (formValue.informacoesTestemunhas) data.informacoesTestemunhas = formValue.informacoesTestemunhas;
@@ -194,6 +211,11 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       houveVitimas: ocorrencia.houveVitimas,
       numVitimasComLesoes: ocorrencia.numVitimasComLesoes || 0,
       numVitimasFatais: ocorrencia.numVitimasFatais || 0,
+      nomeDaVitima: ocorrencia.nomeDaVitima,
+      documentoDaVitima: ocorrencia.documentoDaVitima,
+      dataNascimentoDaVitima: ocorrencia.dataNascimentoDaVitima,
+      sexoDaVitima: ocorrencia.sexoDaVitima,
+      nomeDaMaeDaVitima: ocorrencia.nomeDaMaeDaVitima,
       informacoesVitimas: ocorrencia.informacoesVitimas,
       enderecoVitimas: ocorrencia.enderecoVitimas,
       informacoesTestemunhas: ocorrencia.informacoesTestemunhas

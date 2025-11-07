@@ -120,7 +120,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Arco</label>
+          <label class="form-label">Extensão</label>
           <select formControlName="arco" class="form-select">
             <option value="">Selecione</option>
             <option *ngFor="let a of arcoOptions" [value]="a">{{ a }}</option>
@@ -211,8 +211,43 @@
         </div>
       </div>
 
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Nome da Vítima <span *ngIf="form.get('houveVitimas')?.value === 'SIM'">*</span></label>
+          <input type="text" formControlName="nomeDaVitima" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('nomeDaVitima')">{{ getFieldError('nomeDaVitima') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Documento da Vítima <span *ngIf="form.get('houveVitimas')?.value === 'SIM'">*</span></label>
+          <input type="text" formControlName="documentoDaVitima" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('documentoDaVitima')">{{ getFieldError('documentoDaVitima') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Data de Nascimento da Vítima <span *ngIf="form.get('houveVitimas')?.value === 'SIM'">*</span></label>
+          <input type="date" formControlName="dataNascimentoDaVitima" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('dataNascimentoDaVitima')">{{ getFieldError('dataNascimentoDaVitima') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Gênero da Vítima <span *ngIf="form.get('houveVitimas')?.value === 'SIM'">*</span></label>
+          <select formControlName="sexoDaVitima" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let s of sexoOptions" [value]="s">{{ s }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('sexoDaVitima')">{{ getFieldError('sexoDaVitima') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nome da Mãe da Vítima <span *ngIf="form.get('houveVitimas')?.value === 'SIM'">*</span></label>
+          <input type="text" formControlName="nomeDaMaeDaVitima" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('nomeDaMaeDaVitima')">{{ getFieldError('nomeDaMaeDaVitima') }}</div>
+        </div>
+      </div>
+
       <div class="form-group">
-        <label class="form-label">Informações sobre Vítimas</label>
+        <label class="form-label">Outras Informações da Vítima</label>
         <textarea formControlName="informacoesVitimas" class="form-input" rows="3" placeholder="Dados das vítimas"></textarea>
         <div class="form-error" *ngIf="isFieldInvalid('informacoesVitimas')">{{ getFieldError('informacoesVitimas') }}</div>
       </div>

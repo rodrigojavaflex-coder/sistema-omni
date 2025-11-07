@@ -144,7 +144,10 @@ export class MotoristaListComponent extends BaseListComponent<Motorista> {
 
   formatDate(date: string): string {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('pt-BR');
+    // Pega apenas a parte da data (YYYY-MM-DD) e formata sem problema de timezone
+    const dateParts = date.split('T')[0].split('-');
+    const [year, month, day] = dateParts;
+    return `${day}/${month}/${year}`;
   }
 
   formatCPF(cpf: string): string {
@@ -201,6 +204,13 @@ export class MotoristaListComponent extends BaseListComponent<Motorista> {
 
   /** Exportação para Excel com todos os campos */
   protected override getExportDataExcel(items: Motorista[]): { headers: string[], data: any[][] } {
+    const formatExcelDate = (date: string | undefined): string => {
+      if (!date) return '-';
+      const dateParts = date.split('T')[0].split('-');
+      const [year, month, day] = dateParts;
+      return `${day}/${month}/${year}`;
+    };
+
     const headers = [
       'Nome',
       'Matrícula',
@@ -209,6 +219,7 @@ export class MotoristaListComponent extends BaseListComponent<Motorista> {
       'Sexo',
       'Data de Nascimento',
       'Data de Habilitação',
+      'Validade da Habilitação',
       'Data de Admissão',
       'Data Curso Transporte',
       'Data Exame Toxicológico',
@@ -229,11 +240,12 @@ export class MotoristaListComponent extends BaseListComponent<Motorista> {
       this.formatCPF(item.cpf),
       item.identidade || '-',
       item.sexo || '-',
-      item.dataNascimento ? new Date(item.dataNascimento).toLocaleDateString('pt-BR') : '-',
-      item.dataHabilitacao ? new Date(item.dataHabilitacao).toLocaleDateString('pt-BR') : '-',
-      item.dataAdmissao ? new Date(item.dataAdmissao).toLocaleDateString('pt-BR') : '-',
-      item.dataCursoTransporte ? new Date(item.dataCursoTransporte).toLocaleDateString('pt-BR') : '-',
-      item.dataExameToxicologico ? new Date(item.dataExameToxicologico).toLocaleDateString('pt-BR') : '-',
+      formatExcelDate(item.dataNascimento),
+      formatExcelDate(item.dataHabilitacao),
+      formatExcelDate(item.validadeDaHabilitacao),
+      formatExcelDate(item.dataAdmissao),
+      formatExcelDate(item.dataCursoTransporte),
+      formatExcelDate(item.dataExameToxicologico),
       item.email || '-',
       item.telefone || '-',
       item.celular || '-',

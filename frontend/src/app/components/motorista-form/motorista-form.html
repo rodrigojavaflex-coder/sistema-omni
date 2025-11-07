@@ -23,7 +23,7 @@
 
       <div class="form-inline">
         <div class="form-group">
-          <label class="form-label">Sexo</label>
+          <label class="form-label">Gênero</label>
           <select formControlName="sexo" class="form-select">
             <option value="">Selecione</option>
             <option *ngFor="let s of sexoOptions" [value]="s">{{ s }}</option>
@@ -86,6 +86,12 @@
           <label class="form-label">Data de Habilitação *</label>
           <input type="date" formControlName="dataHabilitacao" class="form-input" />
           <div class="form-error" *ngIf="isFieldInvalid('dataHabilitacao')">{{ getFieldError('dataHabilitacao') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Validade da Habilitação *</label>
+          <input type="date" formControlName="validadeDaHabilitacao" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('validadeDaHabilitacao')">{{ getFieldError('validadeDaHabilitacao') }}</div>
         </div>
 
         <div class="form-group">

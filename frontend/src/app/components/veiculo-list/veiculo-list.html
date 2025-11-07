@@ -14,7 +14,7 @@
   <div class="filters">
     <input 
       type="text" 
-      placeholder="Descrição"
+      placeholder="N° do Veiculo"
       [(ngModel)]="descricaoFilter"
       (input)="onFilterChange()"
       class="filter-input"
@@ -145,16 +145,16 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Descrição</th>
-            <th>Placa</th>
-            <th>Ano</th>
-            <th>Chassi</th>
+            <th>N° do Veiculo</th>
+            <th style="width: 10%;">Placa</th>
+            <th style="width: 8%;">Ano</th>
+            <th style="width: 12%;">Chassi</th>
             <th>Marca</th>
             <th>Modelo</th>
             <th>Combustível</th>
-            <th>Status</th>
-            <th>Marca Carroceria</th>
-            <th>Modelo Carroceria</th>
+            <th style="width: 12%;">Status</th>
+            <th title="Marca da Carroceria">Marca Carr.</th>
+            <th title="Modelo da Carroceria">Modelo Carr.</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -223,7 +223,7 @@
   [entidadeId]="selectedItemForAudit.id"
   [entityDisplayName]="'Veículo'"
   [fieldLabels]="{
-    descricao: 'Descrição',
+    descricao: 'N° do Veiculo',
     placa: 'Placa',
     ano: 'Ano',
     chassi: 'Chassi',

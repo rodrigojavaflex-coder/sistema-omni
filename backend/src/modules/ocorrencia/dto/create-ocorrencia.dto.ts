@@ -10,6 +10,7 @@ import {
   MaxLength,
   IsObject
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { TipoOcorrencia } from '../../../common/enums/tipo-ocorrencia.enum';
 import { Linha } from '../../../common/enums/linha.enum';
 import { Arco } from '../../../common/enums/arco.enum';
@@ -17,6 +18,7 @@ import { SentidoVia } from '../../../common/enums/sentido-via.enum';
 import { TipoLocal } from '../../../common/enums/tipo-local.enum';
 import { Culpabilidade } from '../../../common/enums/culpabilidade.enum';
 import { SimNao } from '../../../common/enums/sim-nao.enum';
+import { Sexo } from '../../../common/enums/sexo.enum';
 
 export class CreateOcorrenciaDto {
   @IsDateString({}, { message: 'Data e hora inválida' })
@@ -44,20 +46,20 @@ export class CreateOcorrenciaDto {
   observacoesTecnicas?: string;
 
   @IsEnum(Linha, { message: 'Linha inválida' })
-  @IsOptional()
-  linha?: Linha;
+  @IsNotEmpty({ message: 'Linha é obrigatória' })
+  linha: Linha;
 
-  @IsEnum(Arco, { message: 'Arco inválido' })
-  @IsOptional()
-  arco?: Arco;
+  @IsEnum(Arco, { message: 'Extensão inválida' })
+  @IsNotEmpty({ message: 'Extensão é obrigatória' })
+  arco: Arco;
 
   @IsEnum(SentidoVia, { message: 'Sentido da via inválido' })
-  @IsOptional()
-  sentidoVia?: SentidoVia;
+  @IsNotEmpty({ message: 'Sentido da via é obrigatório' })
+  sentidoVia: SentidoVia;
 
   @IsEnum(TipoLocal, { message: 'Tipo de local inválido' })
-  @IsOptional()
-  tipoLocal?: TipoLocal;
+  @IsNotEmpty({ message: 'Tipo de local é obrigatório' })
+  tipoLocal: TipoLocal;
 
   @IsString()
   @IsOptional()
@@ -72,8 +74,8 @@ export class CreateOcorrenciaDto {
   };
 
   @IsEnum(Culpabilidade, { message: 'Culpabilidade inválida' })
-  @IsOptional()
-  culpabilidade?: Culpabilidade;
+  @IsNotEmpty({ message: 'Culpabilidade é obrigatória' })
+  culpabilidade: Culpabilidade;
 
   @IsString()
   @IsOptional()
@@ -102,6 +104,31 @@ export class CreateOcorrenciaDto {
   @Min(0, { message: 'Número de vítimas fatais não pode ser negativo' })
   @IsOptional()
   numVitimasFatais?: number;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(150)
+  nomeDaVitima?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  documentoDaVitima?: string;
+
+  @Transform(({ value }) => value === '' ? null : value)
+  @IsDateString({}, { message: 'Informe a data de nascimento da vítima' })
+  @IsOptional()
+  dataNascimentoDaVitima?: string;
+
+  @Transform(({ value }) => value === '' ? null : value)
+  @IsEnum(Sexo, { message: 'Informe o gênero da vítima' })
+  @IsOptional()
+  sexoDaVitima?: Sexo;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(150)
+  nomeDaMaeDaVitima?: string;
 
   @IsString()
   @IsOptional()

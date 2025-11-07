@@ -93,7 +93,7 @@
           [options]="arcoOptions"
           [(ngModel)]="arcoFilter"
           (selectionChange)="onFilterChange()"
-          placeholder="Arco...">
+          placeholder="Extensão...">
         </app-multi-select>
 
         <app-multi-select 
@@ -255,7 +255,13 @@
     descricao: 'Descrição',
     linha: 'Linha',
     localDetalhado: 'Local',
-    houveVitimas: 'Houve Vítimas'
+    houveVitimas: 'Houve Vítimas',
+    arco: 'Extensão',
+    nomeDaVitima: 'Nome da Vítima',
+    documentoDaVitima: 'Documento da Vítima',
+    dataNascimentoDaVitima: 'Data de Nascimento da Vítima',
+    sexoDaVitima: 'Sexo da Vítima',
+    nomeDaMaeDaVitima: 'Nome da Mãe da Vítima'
   }"
   [showModal]="showAuditModal"
   (modalClosed)="closeAuditModal()">

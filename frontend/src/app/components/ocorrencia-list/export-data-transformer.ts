@@ -160,7 +160,7 @@ export class ExportDataTransformer {
       // Localização
       this.formatCampo(item.localDetalhado),                                   // Local Detalhado
       this.formatCampo(item.linha),                                            // Linha
-      this.formatCampo(item.arco),                                             // Arco
+      this.formatCampo(item.arco),                                             // Extensão
       this.formatCampo(item.sentidoVia),                                       // Sentido da Via
       this.formatCampo(item.tipoLocal),                                        // Tipo de Local
       this.formatLocalizacao(item.localizacao),                                // Localização (coordenadas)
@@ -172,7 +172,12 @@ export class ExportDataTransformer {
       this.formatSimNao(item.houveVitimas),                                    // Houve Vítimas?
       this.formatNumVitimas(item.numVitimasComLesoes),                         // Vítimas com Lesões
       this.formatNumVitimas(item.numVitimasFatais),                            // Vítimas Fatais
-      this.formatCampo(item.informacoesVitimas),                               // Informações sobre Vítimas
+      this.formatCampo(item.nomeDaVitima),                                     // Nome da Vítima
+      this.formatCampo(item.documentoDaVitima),                                // Documento da Vítima
+      this.formatData(item.dataNascimentoDaVitima),                            // Data de Nascimento da Vítima
+      this.formatCampo(item.sexoDaVitima),                                     // Gênero da Vítima
+      this.formatCampo(item.nomeDaMaeDaVitima),                                // Nome da Mãe da Vítima
+      this.formatCampo(item.informacoesVitimas),                               // Outras Informações da Vítima
       this.formatCampo(item.enderecoVitimas),                                  // Endereço das Vítimas
       this.formatCampo(item.informacoesTestemunhas),                           // Informações sobre Testemunhas
 
@@ -201,7 +206,7 @@ export class ExportDataTransformer {
       'Matrícula do Motorista',
       'Local Detalhado',
       'Linha',
-      'Arco',
+      'Extensão',
       'Sentido da Via',
       'Tipo de Local',
       'Localização',
@@ -209,7 +214,12 @@ export class ExportDataTransformer {
       'Houve Vítimas?',
       'Vítimas com Lesões',
       'Vítimas Fatais',
-      'Informações sobre Vítimas',
+      'Nome da Vítima',
+      'Documento da Vítima',
+      'Data de Nascimento da Vítima',
+      'Gênero da Vítima',
+      'Nome da Mãe da Vítima',
+      'Outras Informações da Vítima',
       'Endereço das Vítimas',
       'Informações sobre Testemunhas',
       'Informações de Terceiros',

@@ -18,6 +18,9 @@ export class Motorista extends BaseEntity {
   @Column({ type: 'date', nullable: false })
   dataHabilitacao: Date;
 
+  @Column({ type: 'date', nullable: true })
+  validadeDaHabilitacao: Date;
+
   @Column({ type: 'date', nullable: false })
   dataAdmissao: Date;
 

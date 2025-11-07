@@ -5,6 +5,7 @@ import { SentidoVia } from './sentido-via.enum';
 import { TipoLocal } from './tipo-local.enum';
 import { Culpabilidade } from './culpabilidade.enum';
 import { SimNao } from './sim-nao.enum';
+import { Sexo } from './sexo.enum';
 import { Veiculo } from './veiculo.model';
 import { Motorista } from './motorista.model';
 
@@ -34,6 +35,11 @@ export interface Ocorrencia {
   houveVitimas: SimNao;
   numVitimasComLesoes?: number;
   numVitimasFatais?: number;
+  nomeDaVitima?: string;
+  documentoDaVitima?: string;
+  dataNascimentoDaVitima?: Date;
+  sexoDaVitima?: Sexo;
+  nomeDaMaeDaVitima?: string;
   informacoesVitimas?: string;
   enderecoVitimas?: string;
   informacoesTestemunhas?: string;
@@ -64,6 +70,11 @@ export interface CreateOcorrenciaDto {
   houveVitimas: SimNao;
   numVitimasComLesoes?: number;
   numVitimasFatais?: number;
+  nomeDaVitima?: string;
+  documentoDaVitima?: string;
+  dataNascimentoDaVitima?: Date;
+  sexoDaVitima?: Sexo;
+  nomeDaMaeDaVitima?: string;
   informacoesVitimas?: string;
   enderecoVitimas?: string;
   informacoesTestemunhas?: string;

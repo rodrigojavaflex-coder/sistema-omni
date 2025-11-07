@@ -94,13 +94,13 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>Nome</th>
+          <th style="width: 25%;">Nome</th>
           <th>Matrícula</th>
-          <th>CPF</th>
-          <th>Data Nascimento</th>
-          <th>Data Admissão</th>
-          <th>Telefone</th>
-          <th>Celular</th>
+          <th>Terceirizado</th>
+          <th>Data Habilitação</th>
+          <th title="Validade Habilitação">Validade Hab.</th>
+          <th title="Curso Transporte">Curso Transp.</th>
+          <th title="Exame Toxicológico">Exame Tox.</th>
           <th>Status</th>
           <th>Ações</th>
         </tr>
@@ -109,11 +109,11 @@
         <tr *ngFor="let item of items">
           <td>{{ item.nome }}</td>
           <td>{{ item.matricula }}</td>
-          <td>{{ formatCPF(item.cpf) }}</td>
-          <td>{{ formatDate(item.dataNascimento) }}</td>
-          <td>{{ formatDate(item.dataAdmissao) }}</td>
-          <td>{{ item.telefone || '-' }}</td>
-          <td>{{ item.celular || '-' }}</td>
+          <td>{{ item.terceirizado || '-' }}</td>
+          <td>{{ formatDate(item.dataHabilitacao) }}</td>
+          <td>{{ item.validadeDaHabilitacao ? formatDate(item.validadeDaHabilitacao) : '-' }}</td>
+          <td>{{ item.dataCursoTransporte ? formatDate(item.dataCursoTransporte) : '-' }}</td>
+          <td>{{ item.dataExameToxicologico ? formatDate(item.dataExameToxicologico) : '-' }}</td>
           <td>
             <span [class]="'status-badge status-' + item.status.toLowerCase()">{{ item.status }}</span>
           </td>
@@ -159,6 +159,7 @@
     cpf: 'CPF',
     dataNascimento: 'Data de Nascimento',
     dataHabilitacao: 'Data de Habilitação',
+    validadeDaHabilitacao: 'Validade da Habilitação',
     dataAdmissao: 'Data de Admissão',
     dataCursoTransporte: 'Data Curso Transporte',
     dataExameToxicologico: 'Data Exame Toxicológico',

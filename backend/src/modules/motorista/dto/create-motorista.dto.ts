@@ -22,6 +22,10 @@ export class CreateMotoristaDto {
   @IsNotEmpty({ message: 'Data de habilitação é obrigatória' })
   dataHabilitacao: string;
 
+  @IsDateString({}, { message: 'Validade da habilitação inválida' })
+  @IsNotEmpty({ message: 'Validade da habilitação é obrigatória' })
+  validadeDaHabilitacao: string;
+
   @IsDateString({}, { message: 'Data de admissão inválida' })
   @IsNotEmpty({ message: 'Data de admissão é obrigatória' })
   dataAdmissao: string;

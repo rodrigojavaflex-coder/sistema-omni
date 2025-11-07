@@ -7,6 +7,7 @@ import { SentidoVia } from '../../../common/enums/sentido-via.enum';
 import { TipoLocal } from '../../../common/enums/tipo-local.enum';
 import { Culpabilidade } from '../../../common/enums/culpabilidade.enum';
 import { SimNao } from '../../../common/enums/sim-nao.enum';
+import { Sexo } from '../../../common/enums/sexo.enum';
 import { Veiculo } from '../../veiculo/entities/veiculo.entity';
 import { Motorista } from '../../motorista/entities/motorista.entity';
 
@@ -112,6 +113,25 @@ export class Ocorrencia extends BaseEntity {
 
   @Column({ type: 'integer', nullable: true, default: 0 })
   numVitimasFatais: number;
+
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  nomeDaVitima: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  documentoDaVitima: string;
+
+  @Column({ type: 'date', nullable: true })
+  dataNascimentoDaVitima: Date;
+
+  @Column({
+    type: 'enum',
+    enum: Sexo,
+    nullable: true
+  })
+  sexoDaVitima: Sexo;
+
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  nomeDaMaeDaVitima: string;
 
   @Column({ type: 'text', nullable: true })
   informacoesVitimas: string;

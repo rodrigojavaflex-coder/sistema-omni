@@ -8,6 +8,7 @@ export interface Motorista {
   matricula: string;
   dataNascimento: string;
   dataHabilitacao: string;
+  validadeDaHabilitacao: string;
   dataAdmissao: string;
   dataCursoTransporte?: string;
   dataExameToxicologico?: string;
@@ -32,6 +33,7 @@ export interface CreateMotoristaDto {
   matricula: string;
   dataNascimento: string;
   dataHabilitacao: string;
+  validadeDaHabilitacao: string;
   dataAdmissao: string;
   dataCursoTransporte?: string;
   dataExameToxicologico?: string;

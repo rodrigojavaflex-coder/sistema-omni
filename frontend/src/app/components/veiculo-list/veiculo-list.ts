@@ -237,7 +237,7 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
   }
 
   protected getExportDataExcel(items: Veiculo[]): { headers: string[], data: any[][] } {
-    const headers = ['Descrição', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível', 'Status', 'Marca Carroceria', 'Modelo Carroceria'];
+    const headers = ['N° do Veiculo', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível', 'Status', 'Marca Carroceria', 'Modelo Carroceria'];
     const data = items.map(item => [
       item.descricao,
       item.placa,
@@ -254,7 +254,7 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
   }
 
   protected getExportDataPDF(items: Veiculo[]): { headers: string[], data: any[][] } {
-    const headers = ['Descrição', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível', 'Status', 'Marca Carroceria', 'Modelo Carroceria'];
+    const headers = ['N° do Veiculo', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível', 'Status', 'Marca Carroceria', 'Modelo Carroceria'];
     const data = items.map(item => [
       item.descricao,
       item.placa,
