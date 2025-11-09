@@ -107,6 +107,18 @@ export const MENU_CONFIGURATION: MenuConfig = {
             Permission.OCORRENCIA_DELETE
           ],
           parentMenu: 'Cadastros'
+        },
+        {
+          label: 'Trechos',
+          route: '/trechos',
+          icon: 'feather-layers',
+          requiredPermissions: [
+            Permission.TRECHO_CREATE,
+            Permission.TRECHO_READ,
+            Permission.TRECHO_UPDATE,
+            Permission.TRECHO_DELETE
+          ],
+          parentMenu: 'Cadastros'
         }
       ]
     },

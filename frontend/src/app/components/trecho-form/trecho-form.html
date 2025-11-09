@@ -1,0 +1,188 @@
+<div class="trechos-container">
+  
+  <!-- TABELA E CONTROLES -->
+  <div class="trechos-content">
+    
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <input 
+        type="text" 
+        [(ngModel)]="filterDescricao" 
+        (input)="onFilterChange()" 
+        placeholder="Filtrar..."
+        class="toolbar-filter"
+      />
+      <button (click)="clearFilters()" class="btn btn-secondary btn-sm" title="Limpar filtro">
+        Limpar
+      </button>
+      <button 
+        *ngIf="modo === 'visualizacao'" 
+        (click)="iniciarNovo()" 
+        class="btn btn-primary btn-lg"
+        [disabled]="loading"
+        title="Adicionar novo Trecho"
+      >
+        Adicionar
+      </button>
+    </div>
+
+    <!-- TABELA -->
+    <div class="table-wrapper">
+      <table class="data-table" *ngIf="!loadingList && !errorList">
+        <thead>
+          <tr>
+            <th style="width: 50px; text-align: center;" *ngIf="modo === 'visualizacao'">✓</th>
+            <th style="width: 50px; text-align: center;" *ngIf="modo !== 'visualizacao'"></th>
+            <th>Nome do Trecho</th>
+            <th style="width: 100px; text-align: center;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- LINHA DE NOVO TRECHO -->
+          <tr *ngIf="modo === 'novo'" class="row-editing">
+            <td colspan="4">
+              <div class="row-editing-content">
+                <input 
+                  type="text" 
+                  [(ngModel)]="newTrechoDescricao" 
+                  placeholder="Digite o nome do trecho..."
+                  class="input-inline-novo"
+                  [disabled]="loading"
+                  autofocus
+                />
+                <div class="row-editing-actions">
+                  <button 
+                    (click)="salvarTrecho()" 
+                    class="btn btn-success"
+                    [disabled]="loading"
+                    title="Salvar trecho"
+                  >
+                    Salvar
+                  </button>
+                  <button 
+                    (click)="cancelarEdicao()" 
+                    class="btn btn-secondary"
+                    [disabled]="loading"
+                    title="Cancelar"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- LINHAS DE TRECHOS -->
+          <tr 
+            *ngFor="let item of items" 
+            [class.row-editing]="editingTrechoId === item.id"
+            [class.row-hidden]="modo === 'edicao' && editingTrechoId !== item.id"
+            [class.row-clickable]="modo === 'visualizacao'"
+            (click)="modo === 'visualizacao' && toggleTrechoVisualizacao(item)"
+          >
+            <!-- CHECKBOX EM VISUALIZAÇÃO -->
+            <td style="text-align: center;" *ngIf="modo === 'visualizacao'" (click)="$event.stopPropagation()">
+              <input 
+                type="checkbox" 
+                [checked]="isTrechoChecked(item.id)"
+                (change)="toggleTrechoVisualizacao(item)"
+                class="checkbox-viz"
+              />
+            </td>
+
+            <!-- VAZIO EM EDIÇÃO -->
+            <td style="text-align: center;" *ngIf="modo !== 'visualizacao'"></td>
+
+            <!-- DESCRIÇÃO / EDIÇÃO -->
+            <td>
+              <div *ngIf="editingTrechoId !== item.id || modo === 'visualizacao'">
+                {{ item.descricao }}
+              </div>
+              <div *ngIf="editingTrechoId === item.id && modo !== 'visualizacao'" class="row-editing-content">
+                <input 
+                  type="text" 
+                  [(ngModel)]="editingDescricao" 
+                  class="input-inline-novo"
+                  [disabled]="loading"
+                  autofocus
+                />
+                <div class="row-editing-actions">
+                  <button 
+                    (click)="salvarTrecho()" 
+                    class="btn btn-success"
+                    [disabled]="loading"
+                    title="Atualizar"
+                  >
+                    Salvar
+                  </button>
+                  <button 
+                    (click)="cancelarEdicao()" 
+                    class="btn btn-secondary"
+                    [disabled]="loading"
+                    title="Cancelar"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </td>
+
+            <!-- AÇÕES -->
+            <td style="text-align: center;" (click)="$event.stopPropagation()">
+              <div class="table-actions">
+                <button 
+                  *ngIf="modo === 'visualizacao'"
+                  (click)="iniciarEdicao(item)"
+                  class="btn btn-small btn-primary"
+                  title="Editar"
+                >
+                  Editar
+                </button>
+                <button 
+                  *ngIf="modo === 'visualizacao'"
+                  (click)="onDelete(item)"
+                  class="btn btn-small btn-danger"
+                  title="Excluir"
+                >
+                  Excluir
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- LOADING/ERROR -->
+      <div *ngIf="loadingList" class="loading-message">⏳ Carregando...</div>
+      <div *ngIf="errorList && !loadingList" class="error-message">❌ {{ errorList }}</div>
+    </div>
+
+    <!-- PAGINAÇÃO -->
+    <div *ngIf="totalPages > 1 && !loadingList" class="pagination">
+      <button (click)="onPageChange(currentPage - 1)" [disabled]="currentPage === 1" class="btn-page">←</button>
+      <span class="page-info">Página {{ currentPage }} de {{ totalPages }} ({{ totalItems }} itens)</span>
+      <button (click)="onPageChange(currentPage + 1)" [disabled]="currentPage === totalPages" class="btn-page">→</button>
+    </div>
+
+  </div>
+
+  <!-- MAPA NA DIREITA -->
+    <!-- MAPA NA DIREITA -->
+  <div class="mapa-wrapper">
+    <app-mapa-poligono 
+      #mapaPoligonoRef
+      [poligonoInicial]="editingAreaPoligono"
+      [modoEdicao]="modo !== 'visualizacao'"
+      (poligonoSelecionado)="onAreaSelected($event)">
+    </app-mapa-poligono>
+  </div>
+
+</div>
+
+<!-- Modal de confirmação de exclusão -->
+<app-confirmation-modal
+  [isVisible]="showDeleteModal"
+  [message]="deleteModalMessage"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()"
+></app-confirmation-modal>

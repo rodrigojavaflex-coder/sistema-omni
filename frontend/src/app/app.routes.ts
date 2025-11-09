@@ -96,6 +96,22 @@ export const routes: Routes = [
     loadComponent: () => import('./components/ocorrencia-form/ocorrencia-form').then(m => m.OcorrenciaFormComponent),
     canActivate: [authGuard]
   },
+  // Rotas de trecho com lazy loading
+  {
+    path: 'trechos',
+    loadComponent: () => import('./components/trecho-form/trecho-form').then(m => m.TrechoFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'trechos/new',
+    loadComponent: () => import('./components/trecho-form/trecho-form').then(m => m.TrechoFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'trechos/edit/:id',
+    loadComponent: () => import('./components/trecho-form/trecho-form').then(m => m.TrechoFormComponent),
+    canActivate: [authGuard]
+  },
   // Rotas de perfil: paths específicos antes da rota geral para evitar conflitos de prefixo
   {
     path: 'perfil/new',

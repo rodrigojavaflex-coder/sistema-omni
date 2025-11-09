@@ -1,0 +1,29 @@
+<div class="container-mapa">
+  <div class="mapa-header">
+    <!-- Campo de busca de localização com botões -->
+    <div class="busca-localizacao-row">
+      <input 
+        type="text" 
+        #searchInput
+        (keyup.enter)="$event.preventDefault(); buscarLocalizacao(searchInput.value); searchInput.value = ''"
+        placeholder="Buscar localização (endereço, cidade, CEP...)"
+        class="input-busca">
+      
+      <button 
+        type="button" 
+        class="btn btn-primary btn-small" 
+        (click)="buscarLocalizacao(searchInput.value); searchInput.value = ''"
+        title="Buscar a localização">
+        Buscar
+      </button>
+    </div>
+  </div>
+
+  <div #containerMapa id="mapa-poligono-container" class="mapa"></div>
+
+  <div class="mapa-info" *ngIf="pontos.length > 0">
+    <p><strong>Pontos adicionados:</strong> {{ pontos.length }}</p>
+    <p *ngIf="pontos.length >= 3"><strong>Polígono:</strong> ✓ Válido</p>
+    <p *ngIf="pontos.length < 3" class="warning"><strong>Aviso:</strong> Adicione mais {{ 3 - pontos.length }} ponto(s) para completar o polígono</p>
+  </div>
+</div>

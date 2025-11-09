@@ -39,6 +39,12 @@ export enum Permission {
   OCORRENCIA_UPDATE = 'ocorrencia:update',
   OCORRENCIA_DELETE = 'ocorrencia:delete',
   OCORRENCIA_AUDIT = 'ocorrencia:audit',
+
+  // Trechos
+  TRECHO_CREATE = 'trecho:create',
+  TRECHO_READ = 'trecho:read',
+  TRECHO_UPDATE = 'trecho:update',
+  TRECHO_DELETE = 'trecho:delete',
 }
 
 export const PERMISSION_GROUPS = {
@@ -87,6 +93,12 @@ export const PERMISSION_GROUPS = {
     { key: Permission.OCORRENCIA_UPDATE, label: 'Editar ocorrências' },
     { key: Permission.OCORRENCIA_DELETE, label: 'Excluir ocorrências' },
     { key: Permission.OCORRENCIA_AUDIT, label: 'Auditar ocorrências' },
+  ],
+  Trechos: [
+    { key: Permission.TRECHO_CREATE, label: 'Criar trechos' },
+    { key: Permission.TRECHO_READ, label: 'Visualizar trechos' },
+    { key: Permission.TRECHO_UPDATE, label: 'Editar trechos' },
+    { key: Permission.TRECHO_DELETE, label: 'Excluir trechos' },
   ],
 };
 

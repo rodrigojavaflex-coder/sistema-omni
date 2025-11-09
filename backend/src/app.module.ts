@@ -10,6 +10,7 @@ import { AuditoriaModule } from './modules/auditoria/auditoria.module';
 import { VeiculoModule } from './modules/veiculo';
 import { MotoristaModule } from './modules/motorista/motorista.module';
 import { OcorrenciaModule } from './modules/ocorrencia/ocorrencia.module';
+import { TrechoModule } from './modules/trecho/trecho.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 import { PerfilModule } from './modules/perfil/perfil.module';
 import { SharedModule } from './common/shared.module';
@@ -40,6 +41,8 @@ import { Configuracao } from './modules/configuracao/entities/configuracao.entit
       MotoristaModule,
       // OCORRENCIA MODULE
       OcorrenciaModule,
+      // TRECHO MODULE
+      TrechoModule,
   AuthModule,
   // Shared (global guards/providers)
   SharedModule,

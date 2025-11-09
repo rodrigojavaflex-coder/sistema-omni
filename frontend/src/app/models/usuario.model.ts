@@ -39,6 +39,12 @@ export enum Permission {
   OCORRENCIA_UPDATE = 'ocorrencia:update',
   OCORRENCIA_DELETE = 'ocorrencia:delete',
   OCORRENCIA_AUDIT = 'ocorrencia:audit',
+
+  // Trechos
+  TRECHO_CREATE = 'trecho:create',
+  TRECHO_READ = 'trecho:read',
+  TRECHO_UPDATE = 'trecho:update',
+  TRECHO_DELETE = 'trecho:delete',
 }
 
 export interface PermissionGroup {
