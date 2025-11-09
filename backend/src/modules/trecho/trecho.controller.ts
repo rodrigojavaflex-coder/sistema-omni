@@ -49,6 +49,23 @@ export class TrechoController {
     );
   }
 
+  @Get('by-location/:latitude/:longitude')
+  @Permissions(Permission.TRECHO_READ)
+  async findByLocation(
+    @Param('latitude') latitude: string,
+    @Param('longitude') longitude: string,
+  ) {
+    try {
+      return await this.trechoService.findByLocation(
+        parseFloat(latitude),
+        parseFloat(longitude)
+      );
+    } catch (error) {
+      console.error('Erro no controller findByLocation:', error);
+      throw error;
+    }
+  }
+
   @Get(':id')
   @Permissions(Permission.TRECHO_READ)
   findOne(@Param('id') id: string) {

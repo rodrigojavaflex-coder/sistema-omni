@@ -35,7 +35,6 @@ export class ValidadorCamposVitimas implements ValidatorConstraintInterface {
     }
 
     const houveVitimas = objeto.houveVitimas;
-    console.log('validate() - houveVitimas:', JSON.stringify(houveVitimas), 'tipo:', typeof houveVitimas);
 
     // Se houveVitimas não for 'Sim' (case-insensitive), a validação passa
     // O enum SimNao usa 'Sim' e 'Não'
@@ -43,14 +42,9 @@ export class ValidadorCamposVitimas implements ValidatorConstraintInterface {
       ? houveVitimas.toUpperCase() 
       : houveVitimas;
     
-    console.log('UPPERCASE:', houveVitimasUpperCase);
-    
     if (houveVitimasUpperCase !== 'SIM' && houveVitimasUpperCase !== true) {
-      console.log('✅ NÃO É SIM - PASSA SEM VALIDAR VÍTIMAS');
       return true;
     }
-
-    console.log('🔴 É SIM - VALIDANDO VÍTIMAS');
 
     // Se houveVitimas é 'SIM', todos esses campos devem estar preenchidos
     const camposObrigatorios = [
@@ -92,18 +86,12 @@ export class ValidadorCamposVitimas implements ValidatorConstraintInterface {
  * Retorna um array de mensagens de erro ou vazio se válido
  */
 export async function validarCamposVitimas(objeto: any): Promise<string[]> {
-  console.log('\n=== VALIDADOR VITIMAS ===');
-  console.log('houveVitimas RECEBIDO:', JSON.stringify(objeto?.houveVitimas));
-  console.log('TIPO:', typeof objeto?.houveVitimas);
-  
   const validador = new ValidadorCamposVitimas();
   const ehValido = validador.validate(objeto);
 
   if (!ehValido) {
-    console.log('❌ FALHOU:', validador.defaultMessage());
     return [validador.defaultMessage()];
   }
 
-  console.log('✅ PASSOU\n');
   return [];
 }

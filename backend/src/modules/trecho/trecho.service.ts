@@ -69,6 +69,31 @@ export class TrechoService {
     return trecho;
   }
 
+  async findByLocation(latitude: number, longitude: number): Promise<Trecho[]> {
+    try {
+      // Os dados foram salvos no banco com latitude/longitude invertidos!
+      // O polígono tem as coordenadas em (latitude longitude)
+      // Então criamos o ponto também em (latitude longitude)
+      
+      const query = `
+        SELECT 
+          t."id",
+          t."descricao",
+          t."area",
+          t."criadoEm",
+          t."atualizadoEm"
+        FROM trechos t
+        WHERE t."area" IS NOT NULL
+        AND ST_Contains(t."area"::geometry, ST_SetSRID(ST_Point($1, $2), 4326)::geometry)
+        LIMIT 1
+      `;
+
+      return await this.trechoRepository.query(query, [latitude, longitude]);
+    } catch (error: any) {
+      return [];
+    }
+  }
+
   async update(id: string, updateTrechoDto: UpdateTrechoDto): Promise<Trecho> {
     const trecho = await this.findOne(id);
 

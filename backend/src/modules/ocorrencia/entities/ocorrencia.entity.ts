@@ -10,6 +10,7 @@ import { SimNao } from '../../../common/enums/sim-nao.enum';
 import { Sexo } from '../../../common/enums/sexo.enum';
 import { Veiculo } from '../../veiculo/entities/veiculo.entity';
 import { Motorista } from '../../motorista/entities/motorista.entity';
+import { Trecho } from '../../trecho/entities/trecho.entity';
 
 @Entity('ocorrencias')
 @Index(['dataHora'])
@@ -32,6 +33,13 @@ export class Ocorrencia extends BaseEntity {
 
   @Column({ type: 'uuid', nullable: false })
   idMotorista: string;
+
+  @ManyToOne(() => Trecho, { nullable: true, eager: true })
+  @JoinColumn({ name: 'idTrecho' })
+  trecho?: Trecho;
+
+  @Column({ type: 'uuid', nullable: true })
+  idTrecho?: string;
 
   @Column({
     type: 'enum',

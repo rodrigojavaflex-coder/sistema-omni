@@ -5,6 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { OcorrenciaService } from '../../services/ocorrencia.service';
 import { VeiculoService } from '../../services/veiculo.service';
 import { MotoristaService } from '../../services/motorista.service';
+import { TrechoService } from '../../services/trecho.service';
 import { CreateOcorrenciaDto, UpdateOcorrenciaDto } from '../../models/ocorrencia.model';
 import { TipoOcorrencia } from '../../models/tipo-ocorrencia.enum';
 import { Linha } from '../../models/linha.enum';
@@ -14,10 +15,13 @@ import { TipoLocal } from '../../models/tipo-local.enum';
 import { Culpabilidade } from '../../models/culpabilidade.enum';
 import { SimNao } from '../../models/sim-nao.enum';
 import { Sexo } from '../../models/sexo.enum';
-import { Veiculo, Motorista } from '../../models';
+import { StatusVeiculo } from '../../models/veiculo.model';
+import { Status } from '../../models/status.enum';
+import { Veiculo, Motorista, Trecho } from '../../models';
 import { BaseFormComponent } from '../base/base-form.component';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
 import { MotoristaAutocompleteComponent } from '../shared/motorista-autocomplete/motorista-autocomplete.component';
+import { TrechoAutocompleteComponent } from '../shared/trecho-autocomplete/trecho-autocomplete.component';
 import { MapaLocalizacaoComponent, PontoLocalizacao } from '../shared/mapa-localizacao/mapa-localizacao.component';
 import { DataHoraPickerComponent } from '../shared/data-hora-picker/data-hora-picker.component';
 import { firstValueFrom } from 'rxjs';
@@ -32,6 +36,7 @@ import { ViewChild, ElementRef } from '@angular/core';
     ReactiveFormsModule,
     VeiculoAutocompleteComponent,
     MotoristaAutocompleteComponent,
+    TrechoAutocompleteComponent,
     MapaLocalizacaoComponent,
     DataHoraPickerComponent
   ],
@@ -42,10 +47,15 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
   private ocorrenciaService = inject(OcorrenciaService);
   private veiculoService = inject(VeiculoService);
   private motoristaService = inject(MotoristaService);
+  private trechoService = inject(TrechoService);
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
 
   @ViewChild(MapaLocalizacaoComponent) mapaComponent!: MapaLocalizacaoComponent;
+
+  // Enums para uso no template
+  statusVeiculoAtivo = StatusVeiculo.ATIVO;
+  statusMotoristaAtivo = Status.ATIVO;
 
   // Opções de selects
   tipoOptions = Object.values(TipoOcorrencia);
@@ -80,6 +90,7 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       dataHora: ['', [Validators.required]],
       idVeiculo: ['', [Validators.required]],
       idMotorista: ['', [Validators.required]],
+      idTrecho: ['', [Validators.required]],
       tipo: ['', [Validators.required]],
       descricao: ['', [Validators.required, Validators.minLength(10)]],
       observacoesTecnicas: [''],
@@ -109,14 +120,27 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
   protected buildFormData(): CreateOcorrenciaDto | UpdateOcorrenciaDto {
     const formValue = this.form.value;
     
+    console.log('🔍 buildFormData - Valores do formulário:', {
+      idVeiculo: formValue.idVeiculo,
+      idMotorista: formValue.idMotorista,
+      idTrecho: formValue.idTrecho
+    });
+    
     const data: any = {
       dataHora: formValue.dataHora,
       idVeiculo: formValue.idVeiculo,
       idMotorista: formValue.idMotorista,
+      idTrecho: formValue.idTrecho,
       tipo: formValue.tipo,
       descricao: formValue.descricao,
       houveVitimas: formValue.houveVitimas
     };
+
+    console.log('📤 Dados a enviar para o backend:', {
+      idVeiculo: data.idVeiculo,
+      idMotorista: data.idMotorista,
+      idTrecho: data.idTrecho
+    });
 
     // Campos opcionais
     if (formValue.observacoesTecnicas) data.observacoesTecnicas = formValue.observacoesTecnicas;
@@ -196,6 +220,7 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       dataHora: dataHoraFormatted,
       idVeiculo: ocorrencia.idVeiculo,
       idMotorista: ocorrencia.idMotorista,
+      idTrecho: ocorrencia.idTrecho,
       tipo: ocorrencia.tipo,
       descricao: ocorrencia.descricao,
       observacoesTecnicas: ocorrencia.observacoesTecnicas,
@@ -229,10 +254,48 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
   // Callbacks dos autocompletes
   onVeiculoSelected(veiculo: Veiculo): void {
     this.form.patchValue({ idVeiculo: veiculo.id });
+    this.form.get('idVeiculo')?.markAsTouched();
   }
 
   onMotoristaSelected(motorista: Motorista): void {
     this.form.patchValue({ idMotorista: motorista.id });
+    this.form.get('idMotorista')?.markAsTouched();
+  }
+
+  onTrechoSelected(trecho: any): void {
+    this.form.patchValue({ idTrecho: trecho.id });
+  }
+
+  buscarTrechoPorLocalizacao(): void {
+    // Verificar se há localização selecionada
+    if (!this.localizacaoSelecionada) {
+      this.notificationService.error('Selecione uma localização no mapa antes de buscar o trecho');
+      return;
+    }
+
+    this.loading = true;
+    const { latitude, longitude } = this.localizacaoSelecionada;
+
+    this.trechoService.findByLocation(latitude, longitude).subscribe({
+      next: (trechos: Trecho[]) => {
+        this.loading = false;
+
+        if (!trechos || trechos.length === 0) {
+          this.notificationService.error('Nenhum trecho encontrado para esta localização');
+          return;
+        }
+
+        // Pegar o primeiro trecho da lista
+        const trechoEncontrado = trechos[0];
+        this.form.patchValue({ idTrecho: trechoEncontrado.id });
+        this.notificationService.success(`Trecho "${trechoEncontrado.descricao}" selecionado com sucesso!`);
+      },
+      error: (error) => {
+        this.loading = false;
+        const errorMessage = error.error?.message || 'Erro ao buscar trecho pela localização';
+        this.notificationService.error(errorMessage);
+      }
+    });
   }
 
   // Callback do mapa

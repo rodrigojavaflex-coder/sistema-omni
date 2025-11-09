@@ -33,6 +33,10 @@ export class CreateOcorrenciaDto {
   @IsNotEmpty({ message: 'Motorista é obrigatório' })
   idMotorista: string;
 
+  @IsUUID('4', { message: 'ID do trecho inválido' })
+  @IsOptional()
+  idTrecho?: string;
+
   @IsEnum(TipoOcorrencia, { message: 'Tipo de ocorrência inválido' })
   @IsNotEmpty({ message: 'Tipo de ocorrência é obrigatório' })
   tipo: TipoOcorrencia;

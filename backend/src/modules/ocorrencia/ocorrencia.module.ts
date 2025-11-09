@@ -8,6 +8,7 @@ import { Ocorrencia } from './entities/ocorrencia.entity';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { VeiculoModule } from '../veiculo/veiculo.module';
 import { MotoristaModule } from '../motorista/motorista.module';
+import { TrechoModule } from '../trecho/trecho.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MotoristaModule } from '../motorista/motorista.module';
     forwardRef(() => AuditoriaModule),
     forwardRef(() => VeiculoModule),
     forwardRef(() => MotoristaModule),
+    forwardRef(() => TrechoModule),
   ],
   controllers: [OcorrenciaController],
   providers: [OcorrenciaService],

@@ -8,6 +8,7 @@ import { SimNao } from './sim-nao.enum';
 import { Sexo } from './sexo.enum';
 import { Veiculo } from './veiculo.model';
 import { Motorista } from './motorista.model';
+import { Trecho } from './trecho.model';
 
 export interface Ocorrencia {
   id: string;
@@ -16,6 +17,8 @@ export interface Ocorrencia {
   idVeiculo: string;
   motorista: Motorista;
   idMotorista: string;
+  trecho?: Trecho;
+  idTrecho?: string;
   tipo: TipoOcorrencia;
   descricao: string;
   observacoesTecnicas?: string;
@@ -51,6 +54,7 @@ export interface CreateOcorrenciaDto {
   dataHora: string;
   idVeiculo: string;
   idMotorista: string;
+  idTrecho?: string;
   tipo: TipoOcorrencia;
   descricao: string;
   observacoesTecnicas?: string;

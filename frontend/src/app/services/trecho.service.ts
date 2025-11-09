@@ -52,4 +52,10 @@ export class TrechoService {
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  findByLocation(latitude: number, longitude: number): Observable<Trecho[]> {
+    return this.http.get<Trecho[]>(
+      `${this.apiUrl}/by-location/${latitude}/${longitude}`
+    );
+  }
 }

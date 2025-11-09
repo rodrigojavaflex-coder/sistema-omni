@@ -46,17 +46,6 @@ export class MotoristaService {
   ): Promise<{ data: Motorista[]; total: number; page: number; limit: number }> {
     const skip = (page - 1) * limit;
 
-    console.log('========================================');
-    console.log('🔍 MOTORISTA FINDALL CHAMADO');
-    console.log('Parâmetros recebidos:');
-    console.log('  page:', page, '(tipo:', typeof page, ')');
-    console.log('  limit:', limit, '(tipo:', typeof limit, ')');
-    console.log('  search:', search, '(tipo:', typeof search, ')');
-    console.log('  nome:', nome, '(tipo:', typeof nome, ')');
-    console.log('  matricula:', matricula, '(tipo:', typeof matricula, ')');
-    console.log('  cpf:', cpf, '(tipo:', typeof cpf, ')');
-    console.log('  status:', status, '(tipo:', typeof status, ')');
-
     let query = this.motoristaRepository
       .createQueryBuilder('motorista')
       .take(limit)
@@ -68,7 +57,6 @@ export class MotoristaService {
 
     // Filtro por nome
     if (nome) {
-      console.log('✅ Aplicando filtro por NOME específico');
       const nomeNormalized = this.normalizeText(nome);
       conditions.push(`LOWER(TRANSLATE(motorista.nome, 
         'ÁÀÃÂÄÉÈÊËÍÌÎÏÓÒÕÔÖÚÙÛÜÇáàãâäéèêëíìîïóòõôöúùûüç',
@@ -79,14 +67,12 @@ export class MotoristaService {
 
     // Filtro por matrícula
     if (matricula) {
-      console.log('✅ Aplicando filtro por MATRICULA específica');
       conditions.push('LOWER(motorista.matricula) LIKE :matricula');
       parameters.matricula = `%${matricula.toLowerCase()}%`;
     }
 
     // Filtro por CPF
     if (cpf) {
-      console.log('✅ Aplicando filtro por CPF específico');
       const cpfOnlyNumbers = cpf.replace(/\D/g, '');
       conditions.push('motorista.cpf LIKE :cpf');
       parameters.cpf = `%${cpfOnlyNumbers}%`;
@@ -94,18 +80,14 @@ export class MotoristaService {
 
     // Filtro por status
     if (status) {
-      console.log('✅ Aplicando filtro por STATUS específico');
       conditions.push('motorista.status = :status');
       parameters.status = status;
     }
 
-    // Busca geral (se fornecida e não há filtros específicos)
-    if (search && !nome && !matricula && !cpf && !status) {
-      console.log('✅ Aplicando BUSCA GERAL');
+    // Busca geral (se fornecida e não há filtros específicos de nome, matricula ou cpf)
+    if (search && !nome && !matricula && !cpf) {
       const searchLower = search.toLowerCase();
       const searchOnlyNumbers = search.replace(/\D/g, '');
-      console.log('  searchLower:', searchLower);
-      console.log('  searchOnlyNumbers:', searchOnlyNumbers);
       
       // Monta condições baseado no tipo de busca
       const searchConditions: string[] = [
@@ -122,27 +104,14 @@ export class MotoristaService {
       }
       
       conditions.push(`(${searchConditions.join(' OR ')})`);
-    } else if (search) {
-      console.log('⚠️  SEARCH foi IGNORADO porque há filtros específicos');
     }
-
-    console.log('📋 Condições construídas:', conditions);
-    console.log('📊 Parâmetros:', parameters);
 
     // Aplica as condições
     if (conditions.length > 0) {
       query = query.where(conditions.join(' AND '), parameters);
-      console.log('✅ Condições aplicadas à query');
-    } else {
-      console.log('⚠️  NENHUMA CONDIÇÃO FOI APLICADA - Retornará TODOS os motoristas');
     }
 
-    console.log('📝 SQL gerado:', query.getSql());
-
     const [data, total] = await query.getManyAndCount();
-
-    console.log('📊 Resultados:', total, 'motoristas encontrados');
-    console.log('========================================');
 
     return {
       data,

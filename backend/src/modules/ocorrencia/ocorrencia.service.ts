@@ -212,10 +212,8 @@ export class OcorrenciaService {
       ...updateOcorrenciaDto,
     };
 
-    console.log('[UPDATE] Dados mergidos:', dadosMergidos);
     // Validar campos de vítima condicionalmente
     const errosVitimas = await validarCamposVitimas(dadosMergidos);
-    console.log('[UPDATE] Erros de vítimas:', errosVitimas);
     
     if (errosVitimas.length > 0) {
       throw new BadRequestException(errosVitimas[0]);
@@ -235,8 +233,27 @@ export class OcorrenciaService {
       updateData.localizacao = this.formatLocationForDB(updateOcorrenciaDto.localizacao);
     }
 
-    Object.assign(ocorrencia, updateData);
-    return await this.ocorrenciaRepository.save(ocorrencia);
+    // Usar update() do queryBuilder para atualizar direto no banco
+    // Isso evita problemas com eager loading e Object.assign
+    await this.ocorrenciaRepository
+      .createQueryBuilder()
+      .update(Ocorrencia)
+      .set(updateData)
+      .where('id = :id', { id })
+      .execute();
+
+    // Recarregar com as relações para retornar dados completos
+    const ocorrenciaCompleta = await this.ocorrenciaRepository.findOne({
+      where: { id },
+      relations: ['veiculo', 'motorista', 'trecho'],
+      cache: false
+    });
+
+    if (!ocorrenciaCompleta) {
+      throw new NotFoundException('Ocorrência não encontrada após atualização');
+    }
+    
+    return ocorrenciaCompleta;
   }
 
   async remove(id: string): Promise<void> {

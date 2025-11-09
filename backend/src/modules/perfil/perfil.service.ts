@@ -35,11 +35,6 @@ export class PerfilService {
       ) || [];
       
       if (originalLength !== cleanedPermissions.length) {
-        console.log(`🧹 Limpando permissões obsoletas do perfil ${perfil.nomePerfil}:`, {
-          antes: originalLength,
-          depois: cleanedPermissions.length,
-          removidas: perfil.permissoes?.filter(p => !validPermissions.includes(p))
-        });
         perfil.permissoes = cleanedPermissions;
         cleaned = true;
       }
@@ -68,11 +63,6 @@ export class PerfilService {
     
     // Se houve remoção de permissões obsoletas, atualizar no banco
     if (originalLength !== cleanedPermissions.length) {
-      console.log(`🧹 Limpando permissões obsoletas do perfil ${perfil.nomePerfil}:`, {
-        antes: originalLength,
-        depois: cleanedPermissions.length,
-        removidas: perfil.permissoes?.filter(p => !validPermissions.includes(p))
-      });
       perfil.permissoes = cleanedPermissions;
       await this.perfilRepository.save(perfil);
     }

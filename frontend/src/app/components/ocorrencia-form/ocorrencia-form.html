@@ -59,7 +59,8 @@
         <div class="form-group">
           <label class="form-label">Veículo *</label>
           <app-veiculo-autocomplete 
-            formControlName="idVeiculo" 
+            formControlName="idVeiculo"
+            [filterStatus]="statusVeiculoAtivo"
             (veiculoSelected)="onVeiculoSelected($event)">
           </app-veiculo-autocomplete>
           <div class="form-error" *ngIf="isFieldInvalid('idVeiculo')">{{ getFieldError('idVeiculo') }}</div>
@@ -68,7 +69,8 @@
         <div class="form-group">
           <label class="form-label">Motorista *</label>
           <app-motorista-autocomplete 
-            formControlName="idMotorista" 
+            formControlName="idMotorista"
+            [filterStatus]="statusMotoristaAtivo"
             (motoristaSelected)="onMotoristaSelected($event)">
           </app-motorista-autocomplete>
           <div class="form-error" *ngIf="isFieldInvalid('idMotorista')">{{ getFieldError('idMotorista') }}</div>
@@ -110,6 +112,29 @@
       </div>
 
       <div class="form-inline">
+        <button 
+          type="button" 
+          class="btn btn-sm btn-outline-primary" 
+          (click)="buscarTrechoPorLocalizacao()"
+          [disabled]="loading"
+          title="Buscar trecho"
+          style="margin-top: 22px; padding: 8px 10px; border-radius: 4px; height: fit-content;">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="width: 18px; height: 18px; display: inline-block;">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </button>
+
+        <div class="form-group">
+          <label class="form-label">Trecho *</label>
+          <app-trecho-autocomplete 
+            formControlName="idTrecho" 
+            (trechoSelected)="onTrechoSelected($event)">
+          </app-trecho-autocomplete>
+          <div class="form-error" *ngIf="isFieldInvalid('idTrecho')">{{ getFieldError('idTrecho') }}</div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Linha</label>
           <select formControlName="linha" class="form-select">
