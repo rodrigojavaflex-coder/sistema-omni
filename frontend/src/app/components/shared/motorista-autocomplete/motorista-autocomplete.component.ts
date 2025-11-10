@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { MotoristaService } from '../../../services/motorista.service';
 import { Motorista } from '../../../models/motorista.model';
-import { Status } from '../../../models/status.enum';
+import { StatusMotorista } from '../../../models/status-motorista.enum';
 import { AutocompleteComponent, AutocompleteConfig } from '../autocomplete/autocomplete.component';
 
 @Component({
@@ -28,7 +28,7 @@ import { AutocompleteComponent, AutocompleteConfig } from '../autocomplete/autoc
 })
 export class MotoristaAutocompleteComponent implements ControlValueAccessor, OnInit {
   @Input() isInvalid = false;
-  @Input() filterStatus?: Status; // Filtro de status opcional (ex: 'ATIVO')
+  @Input() filterStatus?: StatusMotorista; // Filtro de status opcional (ex: 'Ativo')
   @Output() motoristaSelected = new EventEmitter<Motorista>();
 
   value = '';
@@ -42,7 +42,15 @@ export class MotoristaAutocompleteComponent implements ControlValueAccessor, OnI
   ngOnInit(): void {
     this.autocompleteConfig = {
       placeholder: 'Buscar motorista (mín. 2 caracteres)...',
-      searchFn: (searchTerm: string) => this.motoristaService.getAll(1, 20, searchTerm, undefined, undefined, undefined, this.filterStatus),
+      searchFn: (searchTerm: string) => this.motoristaService.getAll(
+        1, 
+        20, 
+        searchTerm, 
+        undefined, 
+        undefined, 
+        undefined, 
+        this.filterStatus // Passa o filtro de status se estiver definido
+      ),
       displayFn: (motorista: Motorista) => motorista.nome,
       minChars: 2,
       debounceTime: 300,

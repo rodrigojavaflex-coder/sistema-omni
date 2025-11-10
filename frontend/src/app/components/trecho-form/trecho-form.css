@@ -1,11 +1,12 @@
 .trechos-container {
   display: flex;
   flex-direction: row;
-  height: 100vh;
+  width: 100%;
+  min-height: 100%;
   background: var(--bg-primary);
   gap: 12px;
   padding: 12px;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* ===== CONTEÚDO (GRID E CONTROLES) ===== */
@@ -13,12 +14,14 @@
   display: flex;
   flex-direction: column;
   width: 25%;
+  min-height: 100%;
   background: var(--bg-primary);
   border: none;
   border-radius: 8px;
   overflow: hidden;
   padding: 0;
   box-shadow: none;
+  box-sizing: border-box;
 }
 
 /* ===== TOOLBAR ===== */
@@ -106,6 +109,8 @@
   font-size: 12px;
   color: var(--text-secondary);
   flex-shrink: 0;
+  box-sizing: border-box;
+  flex-wrap: wrap;
 }
 
 .page-info {
@@ -297,14 +302,17 @@ body.theme-dark .btn-success:disabled {
 /* ===== TABELA ===== */
 .table-wrapper {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
+  min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  min-width: 300px;
 }
 
 .data-table thead {
@@ -498,18 +506,13 @@ body.theme-dark .data-table tbody tr.row-editing {
 .mapa-wrapper {
   flex: 1;
   width: 75%;
+  min-height: 100%;
   background: var(--bg-primary);
   border: none;
   border-radius: 8px;
   overflow: hidden;
-  min-width: 0;
   box-shadow: none;
-}
-
-.mapa-wrapper app-mapa-poligono {
-  display: block;
-  height: 100%;
-  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -517,11 +520,19 @@ body.theme-dark .data-table tbody tr.row-editing {
   .trechos-content {
     width: 40%;
   }
+
+  .mapa-wrapper {
+    width: 60%;
+  }
 }
 
 @media (max-width: 1200px) {
   .trechos-content {
-    width: 45%;
+    width: 50%;
+  }
+
+  .mapa-wrapper {
+    width: 50%;
   }
 }
 
@@ -530,45 +541,93 @@ body.theme-dark .data-table tbody tr.row-editing {
     flex-direction: column;
     gap: 0;
     padding: 0;
+    min-height: auto;
   }
 
   .trechos-content {
     width: 100%;
-    height: 50%;
+    min-height: auto;
+    height: 45%;
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
+    box-sizing: border-box;
+    flex-shrink: 0;
   }
 
   .mapa-wrapper {
-    height: 50%;
+    width: 100%;
+    min-height: auto;
+    height: 55%;
     border-left: none;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+
+  .table-wrapper {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .toolbar {
+    padding: 10px 12px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px 8px;
+    font-size: 12px;
+  }
+
+  .btn-small {
+    padding: 2px 6px;
+    font-size: 10px;
   }
 }
 
 @media (max-width: 768px) {
-  .toolbar {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .toolbar-title {
-    grid-column: 1;
-  }
-
-  .toolbar-filter {
-    grid-column: 1;
-  }
-
-  .toolbar .btn {
-    grid-column: auto;
-  }
-
   .trechos-content {
-    height: 60%;
+    height: 50%;
   }
 
   .mapa-wrapper {
-    height: 40%;
+    height: 50%;
+    width: 100%;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .toolbar-filter {
+    width: 100%;
+  }
+
+  .toolbar .btn {
+    flex: 1;
+    min-width: 60px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+
+  .data-table th {
+    text-transform: capitalize;
+    letter-spacing: 0;
+  }
+
+  .pagination {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  .btn-page {
+    padding: 4px 6px;
+    font-size: 11px;
   }
 }
 

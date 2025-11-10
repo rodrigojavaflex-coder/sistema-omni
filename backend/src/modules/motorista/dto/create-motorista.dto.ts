@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, IsEmail, IsOptional, IsEnum, IsDateString, MaxLength, MinLength } from 'class-validator';
 import { Sexo } from '../../../common/enums/sexo.enum';
 import { Terceirizado } from '../../../common/enums/terceirizado.enum';
-import { Status } from '../../../common/enums/status.enum';
+import { StatusMotorista } from '../../../common/enums/status-motorista.enum';
 
 export class CreateMotoristaDto {
   @IsString()
@@ -92,7 +92,7 @@ export class CreateMotoristaDto {
   @IsOptional()
   terceirizado?: Terceirizado;
 
-  @IsEnum(Status, { message: 'Status inválido' })
+  @IsEnum(StatusMotorista, { message: 'Status inválido' })
   @IsOptional()
-  status?: Status;
+  status?: StatusMotorista;
 }

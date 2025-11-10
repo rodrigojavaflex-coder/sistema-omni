@@ -5,6 +5,7 @@
   background: var(--bg-primary);
   border-radius: 4px;
   overflow: hidden;
+  display: block;
 }
 
 /* Aplicar tema escuro ao mapa - sem filtros destrutivos */
@@ -18,6 +19,7 @@ body.theme-dark #mapa-poligono-container {
   flex-direction: column;
   height: 100%;
   width: 100%;
+  min-height: 100%;
   background: var(--bg-primary);
 }
 
@@ -111,6 +113,7 @@ body.theme-dark #mapa-poligono-container {
 .mapa {
   flex: 1;
   width: 100%;
+  min-height: 300px;
   background: var(--bg-primary);
   border-radius: 0;
   overflow: hidden;
@@ -196,4 +199,16 @@ body.theme-dark .gm-style-mtc button.gm-active {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 1024px) {
+  .container-mapa {
+    min-height: 400px;
+    height: 100%;
+  }
+  
+  .mapa {
+    min-height: 300px;
+  }
 }

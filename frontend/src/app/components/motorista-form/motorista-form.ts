@@ -4,7 +4,7 @@ import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angu
 import { Router, ActivatedRoute } from '@angular/router';
 import { BaseFormComponent } from '../base/base-form.component';
 import { MotoristaService } from '../../services/motorista.service';
-import { CreateMotoristaDto, UpdateMotoristaDto, Sexo, Terceirizado, Status } from '../../models';
+import { CreateMotoristaDto, UpdateMotoristaDto, Sexo, Terceirizado, StatusMotorista } from '../../models';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -17,7 +17,7 @@ import { firstValueFrom } from 'rxjs';
 export class MotoristaFormComponent extends BaseFormComponent<CreateMotoristaDto | UpdateMotoristaDto> implements OnInit {
   sexoOptions = Object.values(Sexo);
   terceirizadoOptions = Object.values(Terceirizado);
-  statusOptions = Object.values(Status);
+  statusOptions = Object.values(StatusMotorista);
 
   constructor(
     private fb: FormBuilder,
@@ -59,7 +59,7 @@ export class MotoristaFormComponent extends BaseFormComponent<CreateMotoristaDto
       telefone: ['', Validators.maxLength(20)],
       celular: ['', Validators.maxLength(20)],
       terceirizado: [''],
-      status: ['ATIVO', Validators.required]
+      status: ['Ativo', Validators.required]
     });
   }
 
@@ -84,7 +84,7 @@ export class MotoristaFormComponent extends BaseFormComponent<CreateMotoristaDto
     if (!data.telefone) delete data.telefone;
     if (!data.celular) delete data.celular;
     if (!data.terceirizado) delete data.terceirizado;
-    if (!data.status) data.status = 'ATIVO';
+    if (!data.status) data.status = 'Ativo';
     
     return data;
   }

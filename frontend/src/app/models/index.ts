@@ -5,4 +5,5 @@ export * from './trecho.model';
 export * from './sexo.enum';
 export * from './terceirizado.enum';
 export * from './status.enum';
+export * from './status-motorista.enum';
 export * from './combustivel.enum';

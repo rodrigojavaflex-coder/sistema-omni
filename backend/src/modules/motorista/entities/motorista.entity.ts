@@ -2,7 +2,7 @@ import { Entity, Column } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Sexo } from '../../../common/enums/sexo.enum';
 import { Terceirizado } from '../../../common/enums/terceirizado.enum';
-import { Status } from '../../../common/enums/status.enum';
+import { StatusMotorista } from '../../../common/enums/status-motorista.enum';
 
 @Entity('motoristas')
 export class Motorista extends BaseEntity {
@@ -73,9 +73,9 @@ export class Motorista extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: Status,
-    default: Status.ATIVO,
+    enum: StatusMotorista,
+    default: StatusMotorista.ATIVO,
     nullable: false
   })
-  status: Status;
+  status: StatusMotorista;
 }

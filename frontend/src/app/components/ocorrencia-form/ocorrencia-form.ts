@@ -16,7 +16,7 @@ import { Culpabilidade } from '../../models/culpabilidade.enum';
 import { SimNao } from '../../models/sim-nao.enum';
 import { Sexo } from '../../models/sexo.enum';
 import { StatusVeiculo } from '../../models/veiculo.model';
-import { Status } from '../../models/status.enum';
+import { StatusMotorista } from '../../models/status-motorista.enum';
 import { Veiculo, Motorista, Trecho } from '../../models';
 import { BaseFormComponent } from '../base/base-form.component';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
@@ -55,7 +55,7 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
 
   // Enums para uso no template
   statusVeiculoAtivo = StatusVeiculo.ATIVO;
-  statusMotoristaAtivo = Status.ATIVO;
+  statusMotoristaAtivo = StatusMotorista.ATIVO;
 
   // Opções de selects
   tipoOptions = Object.values(TipoOcorrencia);

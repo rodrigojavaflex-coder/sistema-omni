@@ -1,14 +1,11 @@
 export enum TipoOcorrencia {
   ABALROAMENTO = 'Abalroamento',
-  ACIDENTE = 'Acidente',
-  ASSALTO = 'Assalto',
-  ATROPELAMENTO = 'Atropelamento',
-  COLISAO = 'Colisão',
-  INCIDENTE_CLIENTE_DESEMBARQUE = 'Incidente com Cliente (Desembarque)',
-  INCIDENTE_CLIENTE_EMBARQUE = 'Incidente com Cliente (Embarque)',
-  INCIDENTE_CLIENTE_OUTROS = 'Incidente com Cliente (Outros)',
+  AVARIAS = 'Avarias',
+  INCIDENTE_CLIENTE = 'Incidente com cliente',
+  INCIDENTE_MOTORISTA = 'Incidente com motorista',
+  MA_CONDUTA_MOTORISTA = 'Má conduta do motorista',
+  SINISTRO = 'Sinistro',
   VANDALISMO = 'Vandalismo',
-  INCIDENTE_COLABORADOR = 'Incidente com Colaborador',
-  PROBLEMA_MECANICO = 'Problema Mecânico',
-  OUTROS = 'Outros'
+  VIAGEM_INCOMPLETA = 'Viagem incompleta',
+  VIAGEM_NAO_REALIZADA = 'Viagem não realizada'
 }

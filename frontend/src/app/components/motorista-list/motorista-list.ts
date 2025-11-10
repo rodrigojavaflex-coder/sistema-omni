@@ -7,7 +7,7 @@ import { BaseListComponent } from '../base-list.component';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
 import { HistoricoAuditoriaComponent } from '../historico-auditoria/historico-auditoria.component';
 import { Motorista } from '../../models/motorista.model';
-import { Status } from '../../models/status.enum';
+import { StatusMotorista } from '../../models/status-motorista.enum';
 import { MotoristaService } from '../../services/motorista.service';
 import { AuthService } from '../../services/auth.service';
 import { Permission } from '../../models/usuario.model';
@@ -34,7 +34,7 @@ export class MotoristaListComponent extends BaseListComponent<Motorista> {
   filterCpf = '';
   filterStatus = '';
   
-  statusOptions = Object.values(Status);
+  statusOptions = Object.values(StatusMotorista);
   
   currentPage = 1;
   pageSize = 10;
