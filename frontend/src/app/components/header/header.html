@@ -24,6 +24,11 @@
             <div class="user-info">
               <div class="user-name-horizontal">{{ user.nome }}</div>
               <div class="user-email">{{ user.email }}</div>
+              <div class="user-meta">
+                <div class="user-meta-line">Perfil: {{ user.perfil.nomePerfil || 'N/D' }}</div>
+                <div class="user-meta-line">Sessão ativa há {{ sessionActiveFor }}</div>
+                <div class="user-meta-line">Expira em {{ tokenExpiresIn }}</div>
+              </div>
             </div>
           </div>
           <div class="dropdown-divider"></div>

@@ -127,12 +127,11 @@
         </button>
 
         <div class="form-group">
-          <label class="form-label">Trecho *</label>
+          <label class="form-label">Trecho</label>
           <app-trecho-autocomplete 
             formControlName="idTrecho" 
             (trechoSelected)="onTrechoSelected($event)">
           </app-trecho-autocomplete>
-          <div class="form-error" *ngIf="isFieldInvalid('idTrecho')">{{ getFieldError('idTrecho') }}</div>
         </div>
 
         <div class="form-group">

@@ -37,6 +37,7 @@ export class AuthService {
   private lastValidationTime = 0;
   private validationThrottleMs = 2000; // 2 segundos entre validações
   private isRefreshing = false; // Flag para evitar múltiplos refreshs simultâneos
+  private sessionStartedAtKey = 'session_started_at';
 
   constructor() {
     // Verificar se há token salvo no localStorage
@@ -58,6 +59,7 @@ export class AuthService {
     localStorage.setItem('access_token', response.access_token);
     localStorage.setItem('refresh_token', response.refresh_token);
     localStorage.setItem('user', JSON.stringify(response.user));
+    this.storeSessionStart(response.access_token, true);
 
     // Atualizar estado
     this.currentUserSubject.next(response.user);
@@ -112,6 +114,7 @@ export class AuthService {
       );
 
       localStorage.setItem('access_token', response.access_token);
+      this.storeSessionStart(response.access_token, false);
       return response.access_token;
     } catch (error) {
       // Se refresh falhar, fazer logout
@@ -162,6 +165,47 @@ export class AuthService {
    */
   getAccessToken(): string | null {
     return localStorage.getItem('access_token');
+  }
+
+  /**
+   * Recupera timestamp de início de sessão (ms) salvo
+   */
+  getSessionStartTime(): number | null {
+    const stored = localStorage.getItem(this.sessionStartedAtKey);
+    return stored ? parseInt(stored, 10) : null;
+  }
+
+  /**
+   * Recupera timestamp de expiração do access token (ms)
+   */
+  getAccessTokenExpiration(): number | null {
+    const token = this.getAccessToken();
+    if (!token) return null;
+
+    const payload = this.decodeTokenPayload(token);
+    if (!payload?.exp) return null;
+
+    return payload.exp * 1000;
+  }
+
+  /**
+   * Tempo de sessão ativa em ms
+   */
+  getSessionDurationMs(): number | null {
+    const start = this.getSessionStartTime();
+    if (!start) return null;
+
+    return Date.now() - start;
+  }
+
+  /**
+   * Tempo restante do token de acesso em ms
+   */
+  getAccessTokenExpiresInMs(): number | null {
+    const exp = this.getAccessTokenExpiration();
+    if (!exp) return null;
+
+    return exp - Date.now();
   }
 
   /**
@@ -234,6 +278,7 @@ export class AuthService {
         
         this.currentUserSubject.next(user);
         this.isAuthenticatedSubject.next(true);
+        this.storeSessionStart(token, false);
         
         // Inicializar tema com preferência do usuário (forçar reset no refresh)
         this.themeService.initializeTheme(user.id, user.tema, true);
@@ -251,6 +296,30 @@ export class AuthService {
         // Se der erro ao parsear, limpar dados
         this.clearAuthData();
       }
+    }
+  }
+
+  private storeSessionStart(token: string, resetStart: boolean): void {
+    const payload = this.decodeTokenPayload(token);
+    const issuedAtMs = payload?.iat ? payload.iat * 1000 : Date.now();
+
+    // Quando resetStart for true, sempre grava (novo login). Caso contrário, grava apenas se não existir.
+    const shouldUpdate = resetStart || !this.getSessionStartTime();
+
+    if (shouldUpdate) {
+      localStorage.setItem(this.sessionStartedAtKey, issuedAtMs.toString());
+    }
+  }
+
+  private decodeTokenPayload(token: string): any | null {
+    try {
+      const payloadBase64 = token.split('.')[1];
+      const normalized = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+      const json = atob(padded);
+      return JSON.parse(json);
+    } catch (error) {
+      return null;
     }
   }
 
@@ -276,6 +345,7 @@ export class AuthService {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
+    localStorage.removeItem(this.sessionStartedAtKey);
     
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);

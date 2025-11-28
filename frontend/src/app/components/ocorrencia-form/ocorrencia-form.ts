@@ -90,7 +90,7 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       dataHora: ['', [Validators.required]],
       idVeiculo: ['', [Validators.required]],
       idMotorista: ['', [Validators.required]],
-      idTrecho: ['', [Validators.required]],
+      idTrecho: [''],
       tipo: ['', [Validators.required]],
       descricao: ['', [Validators.required, Validators.minLength(10)]],
       observacoesTecnicas: [''],
