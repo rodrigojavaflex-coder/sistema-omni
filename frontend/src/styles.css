@@ -199,6 +199,63 @@ body.theme-dark {
   margin-top: 1rem;
 }
 
+/* Botões globais de exportação (Excel/PDF) */
+.btn-export-excel,
+.btn-export-pdf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: #16a34a;
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-export-excel:hover,
+.btn-export-pdf:hover {
+  filter: brightness(0.9);
+}
+
+.btn-export-excel svg,
+.btn-export-pdf svg {
+  fill: currentColor;
+  width: 16px;
+  height: 16px;
+}
+
+body.theme-dark .btn-export-excel,
+body.theme-dark .btn-export-pdf {
+  filter: none;
+}
+
+body.theme-dark .btn-export-excel:hover,
+body.theme-dark .btn-export-pdf:hover {
+  filter: brightness(0.85);
+}
+
+/* Cores específicas */
+.btn-export-excel {
+  background: #16a34a !important;
+  color: #fff !important;
+  border-color: #15803d !important;
+}
+.btn-export-excel:hover {
+  background: #15803d !important;
+}
+.btn-export-pdf {
+  background: #dc2626 !important;
+  color: #fff !important;
+  border-color: #b91c1c !important;
+}
+.btn-export-pdf:hover {
+  background: #b91c1c !important;
+}
+
 /* Estilos globais para mensagens de erro */
 .error,
 .field-error,

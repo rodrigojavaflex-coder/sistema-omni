@@ -16,12 +16,18 @@ import { JwtPayload } from './strategies/jwt.strategy';
 import { AuditoriaService } from '../../common/services/auditoria.service';
 import { AuditAction } from '../../common/enums/auditoria.enum';
 import { Configuracao } from '../configuracao/entities/configuracao.entity';
+import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
+import { Departamento } from '../departamento/entities/departamento.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Usuario)
     private readonly userRepository: Repository<Usuario>,
+    @InjectRepository(DepartamentoUsuario)
+    private readonly departamentoUsuarioRepository: Repository<DepartamentoUsuario>,
+    @InjectRepository(Departamento)
+    private readonly departamentoRepository: Repository<Departamento>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly auditoriaService: AuditoriaService,
@@ -143,7 +149,12 @@ export class AuthService {
       });
     }
 
-    // Retornar usuário sem senha e incluindo perfil
+    const departamentosUsuario = await this.departamentoUsuarioRepository.find({
+      where: { usuarioId: user.id },
+      relations: ['departamento'],
+    });
+
+    // Retornar usuário sem senha e incluindo perfil e departamentos
     const safeUser = {
       id: user.id,
       nome: user.nome,
@@ -153,6 +164,7 @@ export class AuthService {
       tema: user.tema || 'Claro',
       criadoEm: user.criadoEm,
       atualizadoEm: user.atualizadoEm,
+      departamentos: departamentosUsuario.map((du) => du.departamento),
     } as unknown as Usuario;
 
     return {
@@ -216,7 +228,7 @@ export class AuthService {
 
   async getProfile(userId: string): Promise<Usuario> {
   const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['perfil'] });
-    if (!user) {
+  if (!user) {
       // Auditar tentativa de acesso a perfil inexistente
       if (await this.shouldAuditAction(AuditAction.READ)) {
         await this.auditoriaService.createLog({
@@ -239,7 +251,15 @@ export class AuthService {
       });
     }
 
-    return user;
+    const departamentosUsuario = await this.departamentoUsuarioRepository.find({
+      where: { usuarioId: userId },
+      relations: ['departamento'],
+    });
+
+    return {
+      ...user,
+      departamentos: departamentosUsuario.map((du) => du.departamento),
+    } as Usuario;
   }
 
   /**

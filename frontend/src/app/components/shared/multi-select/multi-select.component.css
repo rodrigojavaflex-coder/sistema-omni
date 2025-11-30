@@ -72,6 +72,11 @@
   padding: 0.25rem 0;
 }
 
+.option-item.select-all {
+  border-bottom: 1px solid var(--border-color, #ddd);
+  font-weight: 600;
+}
+
 .dropdown-options::-webkit-scrollbar {
   width: 6px;
 }

@@ -335,6 +335,14 @@ export class UserListComponent extends BaseListComponent<Usuario> {
       'motorista:update': 'Editar motoristas',
       'motorista:delete': 'Excluir motoristas',
       'motorista:audit': 'Auditar motoristas',
+      'meta:create': 'Criar metas',
+      'meta:read': 'Visualizar metas',
+      'meta:update': 'Editar metas',
+      'meta:delete': 'Excluir metas',
+      'departamento:create': 'Criar departamentos',
+      'departamento:read': 'Visualizar departamentos',
+      'departamento:update': 'Editar departamentos',
+      'departamento:delete': 'Excluir departamentos',
       'audit:view': 'Visualizar auditoria',
       'audit:manage': 'Gerenciar auditoria',
       'reports:view': 'Visualizar relatórios',
@@ -459,5 +467,10 @@ export class UserListComponent extends BaseListComponent<Usuario> {
 
   protected getTableDisplayName(): string {
     return 'Usuários';
+  }
+
+  formatDepartamentos(deps: { nomeDepartamento: string }[] | undefined): string {
+    if (!deps || deps.length === 0) return '-';
+    return deps.map((d) => d.nomeDepartamento).join(', ');
   }
 }

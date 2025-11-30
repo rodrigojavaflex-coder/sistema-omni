@@ -89,6 +89,7 @@
           <tr>
             <th>Nome</th>
             <th>Email</th>
+            <th>Departamentos</th>
             <th>Status</th>
             <th>Criado em</th>
             <th>Ações</th>
@@ -98,6 +99,7 @@
           <tr *ngFor="let user of items">
             <td>{{ user.nome }}</td>
             <td>{{ user.email }}</td>
+            <td>{{ formatDepartamentos(user.departamentos) }}</td>
             <td>
               <span [class]="user.ativo ? 'status-badge status-ativo' : 'status-badge status-inativo'">
                 {{ user.ativo ? 'Ativo' : 'Inativo' }}

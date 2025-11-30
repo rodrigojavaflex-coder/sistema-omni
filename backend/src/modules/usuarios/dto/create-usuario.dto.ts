@@ -71,4 +71,13 @@ export class CreateUsuarioDto {
   @IsString({ message: 'Tema deve ser uma string' })
   @IsIn(['Claro', 'Escuro'], { message: 'Tema deve ser Claro ou Escuro' })
   tema?: string = 'Claro';
+
+  @ApiProperty({
+    description: 'Lista de departamentos associados ao usuário',
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray({ message: 'departamentoIds deve ser uma lista de IDs' })
+  departamentoIds?: string[];
 }

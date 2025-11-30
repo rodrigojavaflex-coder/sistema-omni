@@ -45,6 +45,20 @@ export enum Permission {
   TRECHO_READ = 'trecho:read',
   TRECHO_UPDATE = 'trecho:update',
   TRECHO_DELETE = 'trecho:delete',
+
+  // Departamentos
+  DEPARTAMENTO_CREATE = 'departamento:create',
+  DEPARTAMENTO_READ = 'departamento:read',
+  DEPARTAMENTO_UPDATE = 'departamento:update',
+  DEPARTAMENTO_DELETE = 'departamento:delete',
+  DEPARTAMENTO_AUDIT = 'departamento:audit',
+
+  // Metas
+  META_CREATE = 'meta:create',
+  META_READ = 'meta:read',
+  META_UPDATE = 'meta:update',
+  META_DELETE = 'meta:delete',
+  META_AUDIT = 'meta:audit',
 }
 
 export const PERMISSION_GROUPS = {
@@ -99,6 +113,20 @@ export const PERMISSION_GROUPS = {
     { key: Permission.TRECHO_READ, label: 'Visualizar trechos' },
     { key: Permission.TRECHO_UPDATE, label: 'Editar trechos' },
     { key: Permission.TRECHO_DELETE, label: 'Excluir trechos' },
+  ],
+  Departamentos: [
+    { key: Permission.DEPARTAMENTO_CREATE, label: 'Criar departamentos' },
+    { key: Permission.DEPARTAMENTO_READ, label: 'Visualizar departamentos' },
+    { key: Permission.DEPARTAMENTO_UPDATE, label: 'Editar departamentos' },
+    { key: Permission.DEPARTAMENTO_DELETE, label: 'Excluir departamentos' },
+    { key: Permission.DEPARTAMENTO_AUDIT, label: 'Auditar departamentos' },
+  ],
+  Metas: [
+    { key: Permission.META_CREATE, label: 'Criar metas' },
+    { key: Permission.META_READ, label: 'Visualizar metas' },
+    { key: Permission.META_UPDATE, label: 'Editar metas' },
+    { key: Permission.META_DELETE, label: 'Excluir metas' },
+    { key: Permission.META_AUDIT, label: 'Auditar metas' },
   ],
 };
 

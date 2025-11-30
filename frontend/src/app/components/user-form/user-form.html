@@ -1,132 +1,76 @@
 <div class="form-container">
-  <h2>{{ isEditMode ? 'Editar Usuário' : 'Novo Usuário' }}</h2>
+  <h2>{{ getFormTitle() }} Usuário</h2>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading">
-    Carregando dados do usuário...
+  <div class="form-actions form-actions-top">
+    <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+      <span *ngIf="loading" class="spinner"></span>
+      {{ loading ? (editMode ? 'Atualizando...' : 'Salvando...') : getSubmitButtonText() }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
   </div>
 
-  <!-- Error -->
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-  </div>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-section">
+      <h3>Informações do Usuário</h3>
 
-  <!-- Formulário -->
-  <form *ngIf="!loading" [formGroup]="userForm" (ngSubmit)="onSubmit()">
-    
-    <!-- Nome -->
-    <div class="form-group">
-      <label for="name" class="form-label">Nome *</label>
-      <input
-        id="name"
-        type="text"
-        formControlName="name"
-        class="form-input"
-        [class.invalid]="name?.invalid && name?.touched"
-        placeholder="Digite o nome completo"
-      >
-      <div *ngIf="name?.invalid && name?.touched" class="form-error">
-        {{ getErrorMessage('name') }}
+      <div class="form-group">
+        <label class="form-label">Nome *</label>
+        <input type="text" formControlName="nome" class="form-input" placeholder="Digite o nome completo" />
+        <div class="form-error" *ngIf="isFieldInvalid('nome')">{{ getFieldError('nome') }}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input type="email" formControlName="email" class="form-input" placeholder="usuario@exemplo.com" />
+        <div class="form-error" *ngIf="isFieldInvalid('email')">{{ getFieldError('email') }}</div>
+      </div>
+
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Senha {{ editMode ? '(opcional para alterar)' : '*' }}</label>
+          <input type="password" formControlName="senha" class="form-input" [placeholder]="editMode ? 'Nova senha (opcional)' : 'Digite uma senha segura'" />
+          <div class="form-error" *ngIf="isFieldInvalid('senha')">{{ getFieldError('senha') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Departamentos</label>
+          <app-multi-select
+            [options]="departamentoOptions"
+            name="departamentos"
+            [(ngModel)]="departamentosSelecionados"
+            (selectionChange)="departamentosSelecionados = $event"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Selecione departamentos">
+          </app-multi-select>
+        </div>
+      </div>
+
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Perfil *</label>
+          <select formControlName="perfilId" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let perfil of availableProfiles" [value]="perfil.id">{{ perfil.nomePerfil }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('perfilId')">{{ getFieldError('perfilId') }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select formControlName="ativo" class="form-select">
+            <option [value]="true">Ativo</option>
+            <option [value]="false">Inativo</option>
+          </select>
+        </div>
       </div>
     </div>
 
-    <!-- Email -->
-    <div class="form-group">
-      <label for="email" class="form-label">Email *</label>
-      <input
-        id="email"
-        type="email"
-        formControlName="email"
-        class="form-input"
-        [class.invalid]="email?.invalid && email?.touched"
-        placeholder="usuario@exemplo.com"
-      >
-      <div *ngIf="email?.invalid && email?.touched" class="form-error">
-        {{ getErrorMessage('email') }}
-      </div>
-    </div>
-
-    <!-- Senha -->
-    <div class="form-group">
-      <label for="password" class="form-label">
-        Senha {{ isEditMode ? '(deixe em branco para não alterar)' : '*' }}
-      </label>
-      <input
-        id="password"
-        type="password"
-        formControlName="password"
-        class="form-input"
-        [class.invalid]="password?.invalid && password?.touched"
-        [placeholder]="isEditMode ? 'Nova senha (opcional)' : 'Digite uma senha segura'"
-      >
-      <div *ngIf="password?.invalid && password?.touched" class="form-error">
-        {{ getErrorMessage('password') }}
-      </div>
-      <div class="form-help">
-        A senha deve ter pelo menos 6 caracteres
-      </div>
-    </div>
-
-    <!-- Status -->
-    <div class="form-group">
-      <div class="form-check">
-        <input
-          id="isActive"
-          type="checkbox"
-          formControlName="isActive"
-        >
-        <label for="isActive">
-          Usuário ativo
-        </label>
-      </div>
-      <div class="form-help">
-        Usuários inativos não podem acessar o sistema
-      </div>
-    </div>
-
-    <!-- Perfil -->
-    <div class="form-group">
-      <label for="perfilId" class="form-label">Perfil *</label>
-      <select
-        id="perfilId"
-        class="form-select"
-        formControlName="perfilId"
-        [attr.disabled]="isSubmitting ? '' : null"
-      >
-        <option value="" disabled>Selecione um perfil</option>
-        <option *ngFor="let perfil of availableProfiles" [value]="perfil.id">
-          {{ perfil.nomePerfil }}
-        </option>
-      </select>
-      <div *ngIf="userForm.get('perfilId')?.invalid && userForm.get('perfilId')?.touched" class="form-error">
-        Perfil é obrigatório
-      </div>
-    </div>
-
-    <!-- Botões -->
     <div class="form-actions">
-      <button
-        type="button"
-        class="btn btn-secondary"
-        (click)="onCancel()"
-        [disabled]="isSubmitting"
-      >
-        Cancelar
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ loading ? (editMode ? 'Atualizando...' : 'Salvando...') : getSubmitButtonText() }}
       </button>
-      
-      <button
-        type="submit"
-        class="btn btn-primary"
-        [disabled]="userForm.invalid || isSubmitting"
-      >
-        <span *ngIf="isSubmitting">
-          {{ isEditMode ? 'Atualizando...' : 'Salvando...' }}
-        </span>
-        <span *ngIf="!isSubmitting">
-          {{ isEditMode ? 'Atualizar Usuário' : 'Criar Usuário' }}
-        </span>
-      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
     </div>
-
   </form>
 </div>

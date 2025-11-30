@@ -7,3 +7,4 @@ export * from './terceirizado.enum';
 export * from './status.enum';
 export * from './status-motorista.enum';
 export * from './combustivel.enum';
+export * from './meta.model';

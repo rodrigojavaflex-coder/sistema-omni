@@ -129,6 +129,38 @@ export const routes: Routes = [
     canActivate: [authGuard],
     pathMatch: 'full'
   },
+  // Rotas de departamento
+  {
+    path: 'departamento',
+    loadComponent: () => import('./components/departamento-list/departamento-list').then(m => m.DepartamentoListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'departamento/new',
+    loadComponent: () => import('./components/departamento-form/departamento-form').then(m => m.DepartamentoFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'departamento/edit/:id',
+    loadComponent: () => import('./components/departamento-form/departamento-form').then(m => m.DepartamentoFormComponent),
+    canActivate: [authGuard]
+  },
+  // Metas
+  {
+    path: 'meta',
+    loadComponent: () => import('./components/meta-list/meta-list').then(m => m.MetaListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'meta/new',
+    loadComponent: () => import('./components/meta-form/meta-form').then(m => m.MetaFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'meta/edit/:id',
+    loadComponent: () => import('./components/meta-form/meta-form').then(m => m.MetaFormComponent),
+    canActivate: [authGuard]
+  },
   
   // Home padrão
   {

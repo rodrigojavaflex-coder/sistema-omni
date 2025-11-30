@@ -19,6 +19,8 @@ import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import googleMapsConfig from './config/google-maps.config';
 import { Configuracao } from './modules/configuracao/entities/configuracao.entity';
+import { DepartamentoModule } from './modules/departamento/departamento.module';
+import { MetaModule } from './modules/meta/meta.module';
 
 @Module({
   imports: [
@@ -49,6 +51,8 @@ import { Configuracao } from './modules/configuracao/entities/configuracao.entit
     AuditoriaModule,
   ConfiguracaoModule,
   PerfilModule,
+  DepartamentoModule,
+  MetaModule,
     TypeOrmModule.forFeature([Configuracao]),
   ],
   controllers: [AppController],

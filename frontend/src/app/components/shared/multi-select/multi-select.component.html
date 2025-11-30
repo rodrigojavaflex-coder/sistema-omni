@@ -22,6 +22,14 @@
   @if (isOpen) {
     <div class="multi-select-dropdown">
       <div class="dropdown-options">
+        <label class="option-item select-all">
+          <input
+            type="checkbox"
+            [checked]="isAllSelected()"
+            (change)="toggleAll()"
+          >
+          <span>{{ selectAllLabel }}</span>
+        </label>
         @for (option of options; track option) {
           <label class="option-item">
             <input 
@@ -37,21 +45,11 @@
         }
       </div>
 
-      @if (selectedItems.length > 0) {
-        <div class="dropdown-footer">
-          <span class="selected-count">
-            {{ selectedItems.length }} selecionado(s)
-          </span>
-          <button 
-            type="button"
-            class="clear-btn"
-            (click)="clearSelection()"
-            title="Limpar seleção"
-          >
-            Limpar
-          </button>
-        </div>
-      }
+      <div class="dropdown-footer">
+        <span class="selected-count">
+          {{ selectedItems.length }} selecionado(s)
+        </span>
+      </div>
     </div>
   }
 </div>

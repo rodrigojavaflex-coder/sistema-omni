@@ -45,6 +45,20 @@ export enum Permission {
   TRECHO_READ = 'trecho:read',
   TRECHO_UPDATE = 'trecho:update',
   TRECHO_DELETE = 'trecho:delete',
+
+  // Departamentos
+  DEPARTAMENTO_CREATE = 'departamento:create',
+  DEPARTAMENTO_READ = 'departamento:read',
+  DEPARTAMENTO_UPDATE = 'departamento:update',
+  DEPARTAMENTO_DELETE = 'departamento:delete',
+  DEPARTAMENTO_AUDIT = 'departamento:audit',
+
+  // Metas
+  META_CREATE = 'meta:create',
+  META_READ = 'meta:read',
+  META_UPDATE = 'meta:update',
+  META_DELETE = 'meta:delete',
+  META_AUDIT = 'meta:audit',
 }
 
 export interface PermissionGroup {
@@ -69,6 +83,7 @@ export interface Usuario {
   criadoEm: Date;
   atualizadoEm: Date;
   tema?: string; // Tema preferido do usuário (Claro ou Escuro)
+  departamentos?: { id: string; nomeDepartamento: string }[];
 }
 
 export interface ChangePasswordDto {
@@ -84,6 +99,7 @@ export interface CreateUsuarioDto {
   ativo?: boolean;
   tema?: string; // Tema preferido (Claro ou Escuro)
   perfilId: string; // ID do perfil do usuário
+  departamentoIds?: string[];
 }
 
 export interface UpdateUsuarioDto {
@@ -93,6 +109,7 @@ export interface UpdateUsuarioDto {
   ativo?: boolean;
   tema?: string; // Permitir atualizar tema do usuário (Claro ou Escuro)
   perfilId?: string; // Atualizar perfil do usuário
+  departamentoIds?: string[];
 }
 
 export interface FindUsuariosDto {

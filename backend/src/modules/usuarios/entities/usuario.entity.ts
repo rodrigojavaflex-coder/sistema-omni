@@ -1,7 +1,8 @@
-import { Entity, Column, Index, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, Index, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Perfil } from '../../perfil/entities/perfil.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { DepartamentoUsuario } from '../../departamento/entities/departamento-usuario.entity';
 
 @Entity('usuarios')
 @Index(['email'], { unique: true })
@@ -46,6 +47,12 @@ export class Usuario extends BaseEntity {
   @ManyToOne(() => Perfil, { eager: true })
   @JoinColumn({ name: 'perfilId' })
   perfil: Perfil;
+
+  @OneToMany(() => DepartamentoUsuario, (du) => du.usuario, {
+    cascade: false,
+    eager: false,
+  })
+  departamentosUsuario?: DepartamentoUsuario[];
 
   @ApiProperty({
     description: 'Tema preferido do usuário',

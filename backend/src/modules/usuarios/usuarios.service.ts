@@ -5,9 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Perfil } from '../perfil/entities/perfil.entity';
 import * as bcrypt from 'bcrypt';
+import { Departamento } from '../departamento/entities/departamento.entity';
+import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
 import { Usuario } from './entities/usuario.entity';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
@@ -26,15 +28,19 @@ export class UsuariosService {
     private readonly usuarioRepository: Repository<Usuario>,
     @InjectRepository(Perfil)
     private readonly perfilRepository: Repository<Perfil>,
+    @InjectRepository(Departamento)
+    private readonly departamentoRepository: Repository<Departamento>,
+    @InjectRepository(DepartamentoUsuario)
+    private readonly departamentoUsuarioRepository: Repository<DepartamentoUsuario>,
   ) {}
 
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
     this.logger.debug('UserService.create called with:', createUsuarioDto);
     try {
-      // Verificar se já existe um usuário com este email
-      const existingUser = await this.usuarioRepository.findOneBy({
-        email: createUsuarioDto.email,
-      });
+    // Verificar se já existe um usuário com este email
+    const existingUser = await this.usuarioRepository.findOneBy({
+      email: createUsuarioDto.email,
+    });
       if (existingUser) {
         throw new ConflictException(
           `Já existe um usuário cadastrado com este email: ${existingUser.nome} (${existingUser.email})`,
@@ -79,6 +85,10 @@ export class UsuariosService {
       });
 
       const savedUser = await this.usuarioRepository.save(user);
+
+      if (createUsuarioDto.departamentoIds?.length) {
+        await this.syncDepartamentos(savedUser.id, createUsuarioDto.departamentoIds);
+      }
       this.logger.log('User saved successfully:', {
         id: savedUser.id,
         name: savedUser.nome,
@@ -138,7 +148,9 @@ export class UsuariosService {
     const { page = 1, limit = 10, nome, email } = findUsuariosDto;
 
     const queryBuilder = this.usuarioRepository.createQueryBuilder('user')
-      .leftJoinAndSelect('user.perfil', 'perfil'); // Carregar perfil
+      .leftJoinAndSelect('user.perfil', 'perfil')
+      .leftJoinAndSelect('user.departamentosUsuario', 'du')
+      .leftJoinAndSelect('du.departamento', 'departamento');
 
     if (nome) {
       queryBuilder.andWhere('user.nome ILIKE :nome', { nome: `%${nome}%` });
@@ -154,6 +166,12 @@ export class UsuariosService {
       .orderBy('user.criadoEm', 'DESC')
       .getManyAndCount();
 
+    users.forEach((u: any) => {
+      if (u.departamentosUsuario) {
+        u.departamentos = u.departamentosUsuario.map((du: any) => du.departamento);
+      }
+    });
+
     const meta = new PaginationMetaDto(page, limit, total);
     return new PaginatedResponseDto(users, meta);
   }
@@ -168,6 +186,12 @@ export class UsuariosService {
     if (!user) {
       throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
     }
+
+    const departamentosUsuario = await this.departamentoUsuarioRepository.find({
+      where: { usuarioId: id },
+      relations: ['departamento'],
+    });
+    (user as any).departamentos = departamentosUsuario.map((du) => du.departamento);
 
     return user;
   }
@@ -220,7 +244,11 @@ export class UsuariosService {
     if (updateUsuarioDto.tema !== undefined) user.tema = updateUsuarioDto.tema;
 
     try {
-      return await this.usuarioRepository.save(user);
+      const saved = await this.usuarioRepository.save(user);
+      if (updateUsuarioDto.departamentoIds) {
+        await this.syncDepartamentos(id, updateUsuarioDto.departamentoIds);
+      }
+      return saved;
     } catch (error) {
       // Verificar se é um erro de violação de constraint de unicidade do banco
       if (
@@ -310,5 +338,30 @@ export class UsuariosService {
    */
   async getProfiles(): Promise<Perfil[]> {
     return this.perfilRepository.find();
+  }
+
+  private async syncDepartamentos(userId: string, departamentoIds: string[]): Promise<void> {
+    const uniqueIds = Array.from(new Set(departamentoIds)).filter(Boolean);
+
+    if (!uniqueIds.length) {
+      await this.departamentoUsuarioRepository.delete({ usuarioId: userId });
+      return;
+    }
+
+    const existentes = await this.departamentoRepository.find({
+      where: { id: In(uniqueIds) },
+      select: ['id'],
+    });
+    const existentesIds = new Set(existentes.map((d) => d.id));
+    const validIds = uniqueIds.filter((id) => existentesIds.has(id));
+
+    await this.departamentoUsuarioRepository.delete({ usuarioId: userId });
+
+    const links = validIds.map((departamentoId) =>
+      this.departamentoUsuarioRepository.create({ usuarioId: userId, departamentoId }),
+    );
+    if (links.length) {
+      await this.departamentoUsuarioRepository.save(links);
+    }
   }
 }

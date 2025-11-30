@@ -140,6 +140,11 @@ export class HeaderComponent {
     this.themeService.toggleTheme();
   }
 
+  formatDepartamentos(deps: { nomeDepartamento: string }[] | undefined): string {
+    if (!deps || deps.length === 0) return 'N/D';
+    return deps.map((d) => d.nomeDepartamento).join(', ');
+  }
+
   private updateSessionInfo() {
     const sessionMs = this.authService.getSessionDurationMs();
     const expiresMs = this.authService.getAccessTokenExpiresInMs();

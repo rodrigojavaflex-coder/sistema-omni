@@ -1,0 +1,58 @@
+<div class="form-container">
+  <h2>{{ getFormTitle() }} Meta</h2>
+
+  <div class="form-actions form-actions-top">
+    <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+      <span *ngIf="loading" class="spinner"></span>
+      {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-section">
+      <h3>Informações da Meta</h3>
+
+      <div class="form-inline">
+        <div class="form-group" style="flex: 2;">
+          <label class="form-label">Título da Meta *</label>
+          <input type="text" formControlName="nomeDaMeta" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('nomeDaMeta')">{{ getFieldError('nomeDaMeta') }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prazo Final</label>
+          <input type="date" formControlName="prazoFinal" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('prazoFinal')">{{ getFieldError('prazoFinal') || 'Prazo final é obrigatório' }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor da Meta</label>
+          <input type="number" formControlName="meta" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('meta')">{{ getFieldError('meta') || 'Meta é obrigatória e deve ser um número inteiro' }}</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Departamento *</label>
+        <select formControlName="departamentoId" class="form-select">
+          <option value="">Selecione</option>
+          <option *ngFor="let dep of departamentos" [value]="dep.id">{{ dep.nomeDepartamento }}</option>
+        </select>
+        <div class="form-error" *ngIf="isFieldInvalid('departamentoId')">{{ getFieldError('departamentoId') }}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descrição Detalhada</label>
+        <textarea formControlName="descricaoDetalhada" class="form-input" rows="4"></textarea>
+        <div class="form-error" *ngIf="isFieldInvalid('descricaoDetalhada')">{{ getFieldError('descricaoDetalhada') || 'Descrição é obrigatória' }}</div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </form>
+</div>

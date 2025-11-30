@@ -10,12 +10,14 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { ConfiguracaoModule } from '../configuracao/configuracao.module';
+import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
+import { Departamento } from '../departamento/entities/departamento.entity';
 
 @Module({
   imports: [
     AuditoriaModule,
     ConfiguracaoModule,
-    TypeOrmModule.forFeature([Usuario]),
+    TypeOrmModule.forFeature([Usuario, DepartamentoUsuario, Departamento]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

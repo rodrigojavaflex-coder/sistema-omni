@@ -33,6 +33,7 @@ export class CreateOcorrenciaDto {
   @IsNotEmpty({ message: 'Motorista é obrigatório' })
   idMotorista: string;
 
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsUUID('4', { message: 'ID do trecho inválido' })
   @IsOptional()
   idTrecho?: string;

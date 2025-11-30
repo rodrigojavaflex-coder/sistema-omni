@@ -85,4 +85,22 @@ export class MultiSelectComponent implements ControlValueAccessor {
     this.onChange(this.selectedItems);
     this.selectionChange.emit(this.selectedItems);
   }
+
+  isAllSelected(): boolean {
+    return this.options.length > 0 && this.selectedItems.length === this.options.length;
+  }
+
+  toggleAll(): void {
+    if (this.isAllSelected()) {
+      this.clearSelection();
+    } else {
+      this.selectedItems = [...this.options];
+      this.onChange(this.selectedItems);
+      this.selectionChange.emit(this.selectedItems);
+    }
+  }
+
+  get selectAllLabel(): string {
+    return this.isAllSelected() ? 'Desmarcar todos' : 'Marcar todos';
+  }
 }

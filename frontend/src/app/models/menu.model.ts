@@ -62,6 +62,18 @@ export const MENU_CONFIGURATION: MenuConfig = {
             Permission.PROFILE_DELETE
           ],
           parentMenu: 'Administração'
+        },
+        {
+          label: 'Departamentos',
+          route: '/departamento',
+          icon: 'feather-briefcase',
+          requiredPermissions: [
+            Permission.DEPARTAMENTO_CREATE,
+            Permission.DEPARTAMENTO_READ,
+            Permission.DEPARTAMENTO_UPDATE,
+            Permission.DEPARTAMENTO_DELETE
+          ],
+          parentMenu: 'Administração'
         }       
       ]
     },
@@ -119,7 +131,19 @@ export const MENU_CONFIGURATION: MenuConfig = {
             Permission.TRECHO_DELETE
           ],
           parentMenu: 'Cadastros'
-        }
+        },
+        {
+          label: 'Metas',
+          route: '/meta',
+          icon: 'feather-target',
+          requiredPermissions: [
+            Permission.META_CREATE,
+            Permission.META_READ,
+            Permission.META_UPDATE,
+            Permission.META_DELETE,
+          ],
+          parentMenu: 'Cadastros'
+        },
       ]
     },
     {

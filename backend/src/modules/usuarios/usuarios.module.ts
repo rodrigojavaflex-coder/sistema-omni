@@ -6,12 +6,14 @@ import { UsuariosService } from './usuarios.service';
 import { UsuariosController } from './usuarios.controller';
 import { Usuario } from './entities/usuario.entity';
 import { Perfil } from '../perfil/entities/perfil.entity';
+import { Departamento } from '../departamento/entities/departamento.entity';
+import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 
 @Module({
   imports: [
-  TypeOrmModule.forFeature([Usuario, Perfil]),
+  TypeOrmModule.forFeature([Usuario, Perfil, Departamento, DepartamentoUsuario]),
     JwtModule,
     ConfigModule,
     forwardRef(() => AuditoriaModule),
