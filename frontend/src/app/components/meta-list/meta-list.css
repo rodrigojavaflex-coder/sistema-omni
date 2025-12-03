@@ -18,6 +18,43 @@
   align-items: center;
 }
 
+.filters-card {
+  border: 1px solid var(--border-color, #d1d5db);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  background: var(--bg-secondary, #f9fafb);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.filter-field input,
+.filter-field select {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 0.9rem;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;

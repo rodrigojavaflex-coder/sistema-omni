@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Req,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { type Request } from 'express';
@@ -34,7 +35,10 @@ export class MetaExecucaoController {
   @ApiOperation({ summary: 'Listar execuções de uma meta' })
   @Permissions(Permission.META_EXECUCAO_READ)
   findAll(@Req() req: AuthenticatedRequest, @Param('metaId') metaId: string) {
-    const userId = req.user?.id as string;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('Usuário não autenticado');
+    }
     return this.metaExecucaoService.findAll(userId, metaId);
   }
 
@@ -47,7 +51,10 @@ export class MetaExecucaoController {
     @Param('metaId') metaId: string,
     @Body() dto: CreateMetaExecucaoDto,
   ) {
-    const userId = req.user?.id as string;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('Usuário não autenticado');
+    }
     return this.metaExecucaoService.create(userId, metaId, dto);
   }
 
@@ -61,7 +68,10 @@ export class MetaExecucaoController {
     @Param('execucaoId') execucaoId: string,
     @Body() dto: UpdateMetaExecucaoDto,
   ) {
-    const userId = req.user?.id as string;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('Usuário não autenticado');
+    }
     return this.metaExecucaoService.update(userId, metaId, execucaoId, dto);
   }
 
@@ -74,7 +84,10 @@ export class MetaExecucaoController {
     @Param('metaId') metaId: string,
     @Param('execucaoId') execucaoId: string,
   ) {
-    const userId = req.user?.id as string;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('Usuário não autenticado');
+    }
     return this.metaExecucaoService.remove(userId, metaId, execucaoId);
   }
 }

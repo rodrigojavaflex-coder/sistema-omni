@@ -2,6 +2,9 @@
   <div class="list-header">
     <h2>Metas</h2>
     <div class="header-actions">
+      <button class="btn btn-secondary" type="button" (click)="toggleFilters()">
+        {{ showFilters ? 'Ocultar filtros' : 'Filtros' }}
+      </button>
       <button class="btn btn-primary" (click)="create()">Nova Meta</button>
       <button class="btn-export-excel" (click)="exportToExcel()" title="Exportar para Excel">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -17,6 +20,45 @@
       </button>
     </div>
   </div>
+
+  <form *ngIf="showFilters" [formGroup]="filterForm" class="filters-card">
+    <div class="filters-grid">
+      <label class="filter-field">
+        <span>Busca</span>
+        <input type="text" formControlName="search" placeholder="Título ou departamento" />
+      </label>
+      <label class="filter-field">
+        <span>Departamento</span>
+        <select formControlName="departamentoId">
+          <option value="">Todos</option>
+          <option *ngFor="let dep of departamentos" [value]="dep.id">
+            {{ dep.nomeDepartamento }}
+          </option>
+        </select>
+      </label>
+      <label class="filter-field">
+        <span>Polaridade</span>
+        <select formControlName="polaridade">
+          <option value="">Todas</option>
+          <option *ngFor="let option of polaridadeOptions" [value]="option[0]">
+            {{ option[1] }}
+          </option>
+        </select>
+      </label>
+      <label class="filter-field">
+        <span>Indicador</span>
+        <select formControlName="indicador">
+          <option value="">Todos</option>
+          <option *ngFor="let option of indicadorOptions" [value]="option[0]">
+            {{ option[1] }}
+          </option>
+        </select>
+      </label>
+    </div>
+    <div class="filter-actions">
+      <button type="button" class="btn btn-secondary" (click)="clearFilters()">Limpar filtros</button>
+    </div>
+  </form>
 
   <div *ngIf="loading" class="loading">Carregando...</div>
   <div *ngIf="!loading && items.length === 0" class="empty-state">Nenhuma meta encontrada.</div>

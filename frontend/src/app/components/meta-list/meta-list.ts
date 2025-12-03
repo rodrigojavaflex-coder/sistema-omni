@@ -1,13 +1,16 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { BaseListComponent } from '../base-list.component';
 import {
   Meta,
   POLARIDADE_META_LABELS,
   UNIDADE_META_LABELS,
   INDICADOR_META_LABELS,
+  PolaridadeMeta,
+  IndicadorMeta,
 } from '../../models/meta.model';
 import { MetaService } from '../../services/meta.service';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
@@ -18,7 +21,7 @@ import { Permission } from '../../models/usuario.model';
 @Component({
   selector: 'app-meta-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, ConfirmationModalComponent, HistoricoAuditoriaComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, ConfirmationModalComponent, HistoricoAuditoriaComponent],
   templateUrl: './meta-list.html',
   styleUrls: ['./meta-list.css']
 })
@@ -26,6 +29,7 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   private metaService = inject(MetaService);
   private router = inject(Router);
   protected override authService = inject(AuthService);
+  private fb = inject(FormBuilder);
 
   canAudit = false;
   showAuditModal = false;
@@ -33,11 +37,26 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   polaridadeLabels = POLARIDADE_META_LABELS;
   unidadeLabels = UNIDADE_META_LABELS;
   indicadorLabels = INDICADOR_META_LABELS;
+  polaridadeOptions = Object.entries(POLARIDADE_META_LABELS) as [PolaridadeMeta, string][];
+  indicadorOptions = Object.entries(INDICADOR_META_LABELS) as [IndicadorMeta, string][];
+  departamentos: { id: string; nomeDepartamento: string }[] = [];
+  showFilters = false;
+  filterForm = this.fb.group({
+    search: [''],
+    departamentoId: [''],
+    polaridade: [''],
+    indicador: [''],
+  });
+  private allItems: Meta[] = [];
 
   protected override loadItems(): void {
     this.loading = true;
     this.metaService.getAll().subscribe({
-      next: (items) => { this.items = items; this.loading = false; },
+      next: (items) => {
+        this.allItems = items;
+        this.applyFilters();
+        this.loading = false;
+      },
       error: () => {
         this.loading = false;
         this.errorModalService.show('Erro ao carregar metas', 'Erro');
@@ -54,7 +73,7 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   }
 
   protected override loadAllItemsForExport(): Observable<Meta[]> {
-    return this.metaService.getAll();
+    return of(this.getFilteredItems(this.allItems));
   }
 
   protected override getExportDataExcel(items: Meta[]) {
@@ -131,6 +150,8 @@ export class MetaListComponent extends BaseListComponent<Meta> {
 
   override ngOnInit(): void {
     this.canAudit = this.authService.hasPermission(Permission.META_AUDIT);
+    this.filterForm.valueChanges.subscribe(() => this.applyFilters());
+    this.loadDepartamentos();
     super.ngOnInit();
   }
 
@@ -143,5 +164,55 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   closeAudit(): void {
     this.showAuditModal = false;
     this.selectedForAudit = null;
+  }
+
+  toggleFilters(): void {
+    this.showFilters = !this.showFilters;
+  }
+
+  clearFilters(): void {
+    this.filterForm.reset({
+      search: '',
+      departamentoId: '',
+      polaridade: '',
+      indicador: '',
+    });
+  }
+
+  private applyFilters(): void {
+    this.items = this.getFilteredItems(this.allItems);
+  }
+
+  private getFilteredItems(source: Meta[]): Meta[] {
+    const { search, departamentoId, polaridade, indicador } = this.filterForm.value;
+    const term = this.normalizeText(search);
+    return source.filter((meta) => {
+      const titulo = this.normalizeText(meta.tituloDaMeta);
+      const departamentoNome = this.normalizeText(meta.departamento?.nomeDepartamento);
+      const matchesSearch = !term || titulo.includes(term) || departamentoNome.includes(term);
+      const matchesDepartamento = !departamentoId || meta.departamentoId === departamentoId;
+      const matchesPolaridade = !polaridade || meta.polaridade === polaridade;
+      const matchesIndicador = !indicador || meta.indicador === indicador;
+      return matchesSearch && matchesDepartamento && matchesPolaridade && matchesIndicador;
+    });
+  }
+
+  private loadDepartamentos(): void {
+    this.authService
+      .getProfile()
+      .then((user) => {
+        this.departamentos = user?.departamentos ?? [];
+      })
+      .catch(() => {
+        this.departamentos = [];
+      });
+  }
+
+  private normalizeText(value?: string | null): string {
+    return (value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
   }
 }

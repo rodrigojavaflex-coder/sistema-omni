@@ -25,7 +25,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   
   isAuthenticated = false;
   isDesktop = true;
-  menuState: MenuState = 'open';
+  menuState: MenuState = 'hidden';
 
   ngOnInit() {
     this.authService.isAuthenticated$

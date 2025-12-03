@@ -11,7 +11,7 @@ export type ViewportMode = 'desktop' | 'mobile';
 })
 export class NavigationService implements OnDestroy {
   private readonly destroy$ = new Subject<void>();
-  private menuStateSubject = new BehaviorSubject<MenuState>('open');
+  private menuStateSubject = new BehaviorSubject<MenuState>('hidden');
   private viewportSubject = new BehaviorSubject<ViewportMode>('desktop');
 
   public menuState$ = this.menuStateSubject.asObservable();
@@ -53,9 +53,7 @@ export class NavigationService implements OnDestroy {
       )
       .subscribe(viewport => {
         this.viewportSubject.next(viewport);
-        if (viewport === 'desktop') {
-          this.menuStateSubject.next('open');
-        } else {
+        if (viewport === 'mobile') {
           this.menuStateSubject.next('hidden');
         }
       });
