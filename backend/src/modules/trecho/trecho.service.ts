@@ -96,7 +96,7 @@ export class TrechoService {
       `;
 
       return await this.trechoRepository.query(query, [latitude, longitude]);
-    } catch (error: any) {
+    } catch {
       return [];
     }
   }

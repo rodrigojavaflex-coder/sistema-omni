@@ -8,10 +8,8 @@ import {
   IsOptional,
   MinLength,
   IsArray,
-  IsEnum,
   IsIn,
 } from 'class-validator';
-import { Permission } from '../../../common/enums/permission.enum';
 
 export class CreateUsuarioDto {
   @ApiProperty({

@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
 
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { LoginDto } from './dto/login.dto';
@@ -300,10 +301,9 @@ export class AuthService {
   decodeToken(token: string): any {
     try {
       // Importar jwt para decodificar sem verificar expiração
-      const jwt = require('jsonwebtoken');
       return jwt.decode(token);
     } catch (error) {
-      console.warn('Erro ao decodificar token:', error.message);
+      console.warn('Erro ao decodificar token:', (error as Error).message);
       return null;
     }
   }

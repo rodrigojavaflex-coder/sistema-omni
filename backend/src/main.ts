@@ -46,23 +46,25 @@ async function bootstrap() {
   // Filtro global de exceções genérico
   app.useGlobalFilters(new AllExceptionsFilter());
 
+  const environment =
+    configService.get<string>('app.environment') || 'development';
+  const isProduction = environment === 'production';
   // Configuração de CORS
-  const allowedOrigins =
-    process.env.NODE_ENV === 'production'
-      ? [
-          'https://gestaodetransporte.com',
-          'https://www.gestaodetransporte.com',
-          'http://gestaodetransporte.com',
-          'http://www.gestaodetransporte.com',
-        ]
-      : [
-          'http://localhost:4200',
-          'http://localhost:3000',
-          'http://localhost:8080',
-          'http://127.0.0.1:4200',
-          'http://127.0.0.1:3000',
-          'http://127.0.0.1:8080',
-        ];
+  const allowedOrigins = isProduction
+    ? [
+        'https://gestaodetransporte.com',
+        'https://www.gestaodetransporte.com',
+        'http://gestaodetransporte.com',
+        'http://www.gestaodetransporte.com',
+      ]
+    : [
+        'http://localhost:4200',
+        'http://localhost:3000',
+        'http://localhost:8080',
+        'http://127.0.0.1:4200',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:8080',
+      ];
 
   app.enableCors({
     origin: allowedOrigins,
@@ -86,15 +88,14 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   // Debug do ambiente
-  console.log(`🔍 NODE_ENV: "${process.env.NODE_ENV}"`);
+  console.log(`🔍 NODE_ENV: "${environment}"`);
   console.log(
-    `🔍 Ambiente detectado: ${process.env.NODE_ENV === 'production' ? 'PRODUÇÃO' : 'DESENVOLVIMENTO'}`,
+    `🔍 Ambiente detectado: ${isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO'}`,
   );
 
-  const isProduction = process.env.NODE_ENV === 'production';
   const port = isProduction
     ? 8080
-    : process.env.PORT || configService.get('app.port') || 3000;
+    : configService.get<number>('app.port') || 3000;
 
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 Aplicação rodando na porta ${port}`);

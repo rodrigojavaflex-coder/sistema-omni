@@ -106,7 +106,7 @@ export class AuthController {
           if (decoded?.sub) {
             await this.authService.logout(decoded.sub, req);
           }
-        } catch (error) {
+        } catch {
           // Se falhar ao decodificar, continua com logout simples
         }
       }
@@ -115,7 +115,7 @@ export class AuthController {
         message: 'Logout realizado com sucesso',
         success: true,
       };
-    } catch (error) {
+    } catch {
       // Sempre retorna sucesso para logout (mesmo com erro)
       return {
         message: 'Logout realizado com sucesso',

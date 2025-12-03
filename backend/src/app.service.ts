@@ -19,8 +19,7 @@ export class AppService {
   getGoogleMapsKey(): { key: string } {
     const apiKey =
       this.configService.get<string>('googleMaps.apiKey') ||
-      this.configService.get<string>('app.googleMapsApiKey') ||
-      process.env.GOOGLE_MAPS_API_KEY;
+      this.configService.get<string>('app.googleMapsApiKey');
 
     if (!apiKey) {
       this.logger.error('Google Maps API Key não configurada');
@@ -28,7 +27,7 @@ export class AppService {
     }
 
     this.logger.log(
-      `Retornando chave do Google Maps (ambiente: ${process.env.NODE_ENV || 'development'})`,
+      `Retornando chave do Google Maps (ambiente: ${this.configService.get<string>('app.environment') || 'development'})`,
     );
     return { key: apiKey };
   }

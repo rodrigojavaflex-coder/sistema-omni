@@ -1,7 +1,4 @@
 import {
-  validate,
-  ValidationError,
-  ValidationArguments,
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
@@ -90,7 +87,7 @@ export class ValidadorCamposVitimas implements ValidatorConstraintInterface {
  * Função auxiliar para validar um DTO de ocorrência
  * Retorna um array de mensagens de erro ou vazio se válido
  */
-export async function validarCamposVitimas(objeto: any): Promise<string[]> {
+export function validarCamposVitimas(objeto: any): string[] {
   const validador = new ValidadorCamposVitimas();
   const ehValido = validador.validate(objeto);
 

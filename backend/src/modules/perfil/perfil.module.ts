@@ -1,9 +1,8 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { PerfilService } from './perfil.service';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { PerfilController } from './perfil.controller';
 import { Perfil } from './entities/perfil.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';

@@ -8,7 +8,6 @@ import { Usuario } from './entities/usuario.entity';
 import { Perfil } from '../perfil/entities/perfil.entity';
 import { Departamento } from '../departamento/entities/departamento.entity';
 import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 
 @Module({

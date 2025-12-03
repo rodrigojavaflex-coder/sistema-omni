@@ -306,6 +306,7 @@
       <div
         class="execucao-menu"
         *ngIf="execucaoMenuVisible && contextExecucao"
+        #execucaoMenuRef
         [style.top.px]="execucaoMenuPosition.y"
         [style.left.px]="execucaoMenuPosition.x"
         (click)="$event.stopPropagation()"

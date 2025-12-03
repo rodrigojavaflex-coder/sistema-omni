@@ -29,7 +29,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         status = HttpStatus.BAD_REQUEST;
         // Extrai tabela referenciada do detalhe do erro
         const detail: string = (err.driverError.detail as string) || '';
-        const match = /referenced from table \"([^\"]+)\"/.exec(detail);
+        const match = /referenced from table "([^"]+)"/.exec(detail);
         const tabela = match ? match[1] : 'outros registros';
         const suggestion = `Por favor, exclua antes os registros em "${tabela}" que dependem deste item e tente novamente.`;
         message = `Operação inválida: existem registros vinculados. ${suggestion}`;

@@ -21,7 +21,7 @@ import { Departamento } from '../departamento/entities/departamento.entity';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET', 'default-secret-key'),
         signOptions: {
           expiresIn: configService.get('JWT_EXPIRES_IN', '1h'),

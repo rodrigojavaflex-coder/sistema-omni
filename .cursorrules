@@ -1,0 +1,26 @@
+# Comportamento Geral
+- Responda sempre em Português do Brasil.
+- Seja conciso e direto. Evite explicações teóricas longas, foque no código.
+- Se a solução envolver alterar múltiplos arquivos, use o Composer logic para planejar antes de executar.
+
+# Angular (Frontend)
+- Utilize **Standalone Components** em todos os novos desenvolvimentos; recorra a NgModules apenas quando não houver alternativa (ex.: libs herdadas).
+- **Signals** são preferenciais para fluxos novos ou refatorados; mantenha Observables/RxJS onde já existe pipeline consolidado e a migração seria custosa.
+- Prefira `inject()` para dependências; use construtor somente quando precisar chamar `super()` ou realizar inicializações específicas.
+- Tipar explicitamente todos os Observables (incluindo HTTP) e evitar `any`.
+- Mantenha templates limpos: mova lógica não trivial para o componente ou pipes.
+
+# NestJS (Backend)
+- Preserve a arquitetura Controller → Service → TypeORM Repository, sem camadas extras quando não agregarem valor.
+- Todos os endpoints devem expor DTOs com `class-validator` (ex.: `@ApiProperty` nos DTOs) e usar `@ApiResponse` nos controllers para manter a doc Swagger.
+- Defina tipos de retorno explícitos em services/controllers (`Promise<T>`, etc.).
+- Leia variáveis de ambiente exclusivamente via `ConfigService` ou configs `registerAs` existentes (app, database, googleMaps), migrando gradualmente código legado que ainda usa `process.env`.
+- Ao criar rotas novas, documente-as com decorators do Swagger para manter a documentação viva.
+
+# Banco de Dados (PostgreSQL)
+- Prefira queries otimizadas e garanta índices coerentes com os filtros utilizados.
+- Quando for necessário alterar a estrutura, certifique-se de que a migração (quando houver) seja reversível (up/down).
+- Use transações para operações críticas ou múltiplos updates, evitando locks desnecessários.
+- Siga as convenções atuais: nomes em snake_case, prefixos `fk_`/`idx_`, chaves primárias UUID por padrão.
+- Revise colunas para ter `NOT NULL`, defaults e constraints (CHECK/UNIQUE) sempre que aplicável, garantindo integridade no próprio banco.
+- Para cargas de dados grandes, considere `COPY`, bulk inserts ou jobs assíncronos para não degradar a aplicação online.

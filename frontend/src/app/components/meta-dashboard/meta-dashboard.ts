@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MetaService } from '../../services/meta.service';
@@ -48,6 +48,8 @@ export class MetaDashboardComponent implements OnInit {
   execModalVisible = false;
   execucaoMenuVisible = false;
   execucaoMenuPosition = { x: 0, y: 0 };
+  @ViewChild('execucaoMenuRef')
+  execucaoMenuRef?: ElementRef<HTMLDivElement>;
   contextExecucao: MetaExecucao | null = null;
   private ignoreNextOutsideEvent = false;
 
@@ -503,6 +505,11 @@ export class MetaDashboardComponent implements OnInit {
     this.ignoreNextOutsideEvent = true;
     document.addEventListener('click', this.handleOutsideClick, true);
     document.addEventListener('contextmenu', this.handleOutsideClick, true);
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(() => this.adjustExecucaoMenuPosition());
+    } else {
+      setTimeout(() => this.adjustExecucaoMenuPosition(), 0);
+    }
   }
 
   private handleOutsideClick = (): void => {
@@ -521,6 +528,28 @@ export class MetaDashboardComponent implements OnInit {
     this.execucaoMenuVisible = false;
     this.contextExecucao = null;
     this.ignoreNextOutsideEvent = false;
+  }
+
+  private adjustExecucaoMenuPosition(): void {
+    if (!this.execucaoMenuRef || typeof window === 'undefined') return;
+
+    const padding = 12;
+    const menu = this.execucaoMenuRef.nativeElement;
+    const { width, height } = menu.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const maxX = Math.max(padding, viewportWidth - width - padding);
+    const maxY = Math.max(padding, viewportHeight - height - padding);
+
+    const clampedX = Math.min(Math.max(padding, this.execucaoMenuPosition.x), maxX);
+    const clampedY = Math.min(Math.max(padding, this.execucaoMenuPosition.y), maxY);
+
+    if (
+      clampedX !== this.execucaoMenuPosition.x ||
+      clampedY !== this.execucaoMenuPosition.y
+    ) {
+      this.execucaoMenuPosition = { x: clampedX, y: clampedY };
+    }
   }
 
   onMenuEdit(): void {

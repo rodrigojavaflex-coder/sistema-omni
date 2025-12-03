@@ -5,7 +5,6 @@ import { VeiculoController } from './veiculo.controller.js';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { Veiculo } from './entities/veiculo.entity';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Veiculo]), JwtModule, ConfigModule],

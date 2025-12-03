@@ -4,14 +4,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Ocorrencia } from './entities/ocorrencia.entity';
 import { CreateOcorrenciaDto } from './dto/create-ocorrencia.dto';
 import { UpdateOcorrenciaDto } from './dto/update-ocorrencia.dto';
-import {
-  validarCamposVitimas,
-  ValidadorCamposVitimas,
-} from '../../common/validators/validador-vitimas';
+import { validarCamposVitimas } from '../../common/validators/validador-vitimas';
 
 @Injectable()
 export class OcorrenciaService {
@@ -22,7 +19,7 @@ export class OcorrenciaService {
 
   async create(createOcorrenciaDto: CreateOcorrenciaDto): Promise<Ocorrencia> {
     // Validar campos de vítima condicionalmente
-    const errosVitimas = await validarCamposVitimas(createOcorrenciaDto);
+    const errosVitimas = validarCamposVitimas(createOcorrenciaDto);
     if (errosVitimas.length > 0) {
       throw new BadRequestException(errosVitimas[0]);
     }
@@ -236,7 +233,7 @@ export class OcorrenciaService {
     };
 
     // Validar campos de vítima condicionalmente
-    const errosVitimas = await validarCamposVitimas(dadosMergidos);
+    const errosVitimas = validarCamposVitimas(dadosMergidos);
 
     if (errosVitimas.length > 0) {
       throw new BadRequestException(errosVitimas[0]);

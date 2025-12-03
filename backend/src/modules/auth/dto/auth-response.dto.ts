@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Permission } from '../../../common/enums/permission.enum';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 export class AuthResponseDto {
