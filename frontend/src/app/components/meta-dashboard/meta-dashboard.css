@@ -449,7 +449,7 @@ textarea.form-input {
   overflow-y: auto;
   background: var(--bg-primary, #fff);
   border-radius: 20px;
-  padding: 20px 28px 28px;
+  padding: 16px 28px 28px;
   box-shadow: 0 30px 70px rgba(15, 23, 42, 0.35);
 }
 
@@ -477,9 +477,9 @@ textarea.form-input {
 
 .header-info {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
 }
 
 .compact-header .header-info h2 {
@@ -492,6 +492,7 @@ textarea.form-input {
   gap: 8px;
   color: var(--text-secondary, #555);
   font-size: 0.9rem;
+  align-items: center;
 }
 
 .modal-actions {
