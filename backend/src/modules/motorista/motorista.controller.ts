@@ -61,7 +61,10 @@ export class MotoristaController {
 
   @Patch(':id')
   @Permissions(Permission.MOTORISTA_UPDATE)
-  update(@Param('id') id: string, @Body() updateMotoristaDto: UpdateMotoristaDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateMotoristaDto: UpdateMotoristaDto,
+  ) {
     return this.motoristaService.update(id, updateMotoristaDto);
   }
 

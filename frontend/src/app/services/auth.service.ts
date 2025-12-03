@@ -25,6 +25,8 @@ export class AuthService {
   private router = inject(Router);
   private themeService = inject(ThemeService);
   private apiUrl = `${environment.apiUrl}/auth`;
+  private storage: Storage | null = this.resolveStorage();
+  private inMemoryStore = new Map<string, string>();
 
   // Estado da autenticação
   private currentUserSubject = new BehaviorSubject<Usuario | null>(null);
@@ -40,11 +42,8 @@ export class AuthService {
   private sessionStartedAtKey = 'session_started_at';
 
   constructor() {
-    // Verificar se há token salvo no localStorage
+    // Verificar se há token persistido na sessão atual
     this.checkStoredAuth();
-    
-    // Expor referência para uso interno (evita dependência circular)
-    (window as any).__authService = this;
   }
 
   /**
@@ -55,10 +54,10 @@ export class AuthService {
       this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password })
     );
 
-    // Salvar tokens no localStorage
-    localStorage.setItem('access_token', response.access_token);
-    localStorage.setItem('refresh_token', response.refresh_token);
-    localStorage.setItem('user', JSON.stringify(response.user));
+    // Salvar tokens na sessão atual
+    this.setStoredValue('access_token', response.access_token);
+    this.setStoredValue('refresh_token', response.refresh_token);
+    this.persistUserSnapshot(response.user);
     this.storeSessionStart(response.access_token, true);
 
     // Atualizar estado
@@ -97,7 +96,7 @@ export class AuthService {
       return null;
     }
 
-    const refreshToken = localStorage.getItem('refresh_token');
+    const refreshToken = this.getStoredValue('refresh_token');
     
     if (!refreshToken) {
       this.clearAuthData(true);
@@ -113,7 +112,7 @@ export class AuthService {
         })
       );
 
-      localStorage.setItem('access_token', response.access_token);
+      this.setStoredValue('access_token', response.access_token);
       this.storeSessionStart(response.access_token, false);
       return response.access_token;
     } catch (error) {
@@ -164,14 +163,14 @@ export class AuthService {
    * Obtém token de acesso
    */
   getAccessToken(): string | null {
-    return localStorage.getItem('access_token');
+    return this.getStoredValue('access_token');
   }
 
   /**
    * Recupera timestamp de início de sessão (ms) salvo
    */
   getSessionStartTime(): number | null {
-    const stored = localStorage.getItem(this.sessionStartedAtKey);
+    const stored = this.getStoredValue(this.sessionStartedAtKey);
     return stored ? parseInt(stored, 10) : null;
   }
 
@@ -239,6 +238,7 @@ export class AuthService {
       const user = await this.getProfile();
       this.currentUserSubject.next(user);
       this.isAuthenticatedSubject.next(true);
+      this.persistUserSnapshot(user);
       return true;
     } catch (error: any) {
       // Se for 401 e não estivermos já fazendo refresh, tentar refresh
@@ -250,6 +250,7 @@ export class AuthService {
             const user = await this.getProfile();
             this.currentUserSubject.next(user);
             this.isAuthenticatedSubject.next(true);
+            this.persistUserSnapshot(user);
             return true;
           } catch (refreshError) {
             // Se ainda assim falhar, limpar dados mas não redirecionar aqui
@@ -266,11 +267,11 @@ export class AuthService {
   }
 
   /**
-   * Verifica autenticação armazenada no localStorage
+   * Verifica autenticação armazenada na sessão atual
    */
   private async checkStoredAuth(): Promise<void> {
-    const token = localStorage.getItem('access_token');
-    const userStr = localStorage.getItem('user');
+    const token = this.getStoredValue('access_token');
+    const userStr = this.getStoredValue('user');
 
     if (token && userStr) {
       try {
@@ -307,7 +308,7 @@ export class AuthService {
     const shouldUpdate = resetStart || !this.getSessionStartTime();
 
     if (shouldUpdate) {
-      localStorage.setItem(this.sessionStartedAtKey, issuedAtMs.toString());
+      this.setStoredValue(this.sessionStartedAtKey, issuedAtMs.toString());
     }
   }
 
@@ -323,9 +324,50 @@ export class AuthService {
     }
   }
 
-  /**
-   * Limpa dados de autenticação
-   */
+  private persistUserSnapshot(user: Usuario): void {
+    this.setStoredValue('user', JSON.stringify(user));
+  }
+
+  private setStoredValue(key: string, value: string): void {
+    if (this.storage) {
+      this.storage.setItem(key, value);
+      return;
+    }
+    this.inMemoryStore.set(key, value);
+  }
+
+  private getStoredValue(key: string): string | null {
+    if (this.storage) {
+      return this.storage.getItem(key);
+    }
+    return this.inMemoryStore.get(key) ?? null;
+  }
+
+  private removeStoredValue(key: string): void {
+    if (this.storage) {
+      this.storage.removeItem(key);
+    } else {
+      this.inMemoryStore.delete(key);
+    }
+  }
+
+  private resolveStorage(): Storage | null {
+    if (typeof window === 'undefined' || !window.sessionStorage) {
+      return null;
+    }
+
+    try {
+      const storage = window.sessionStorage;
+      const testKey = '__auth_storage_test__';
+      storage.setItem(testKey, '1');
+      storage.removeItem(testKey);
+      return storage;
+    } catch (error) {
+      console.warn('SessionStorage indisponível; usando armazenamento em memória.');
+      return null;
+    }
+  }
+
   /**
    * Atualiza o tema do usuário atual
    * Usado quando o tema é alterado para manter consistência
@@ -335,6 +377,7 @@ export class AuthService {
     if (currentUser) {
       const updatedUser = { ...currentUser, tema };
       this.currentUserSubject.next(updatedUser);
+      this.persistUserSnapshot(updatedUser);
     }
   }
 
@@ -342,10 +385,10 @@ export class AuthService {
     // Evitar redirecionamentos desnecessários se já estamos na página de login
     const isAlreadyOnLogin = this.router.url.includes('/login');
     
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    localStorage.removeItem(this.sessionStartedAtKey);
+    this.removeStoredValue('access_token');
+    this.removeStoredValue('refresh_token');
+    this.removeStoredValue('user');
+    this.removeStoredValue(this.sessionStartedAtKey);
     
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);

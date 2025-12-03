@@ -106,18 +106,5 @@
     </nav>
   </div>
 
-  <!-- Footer -->
-  <div class="sidebar-footer">
-    <button 
-      (click)="logout()" 
-      class="logout-btn"
-      [attr.title]="!shouldShowExpanded ? 'Sair' : null"
-    >
-      <span class="logout-icon">⏻</span>
-      @if (shouldShowExpanded) {
-        <span class="logout-text">Sair</span>
-      }
-    </button>
-  </div>
 </nav>
 }

@@ -26,7 +26,7 @@ export class ValidadorCamposVitimas implements ValidatorConstraintInterface {
     documentoDaVitima: 'Informe o documento da vítima',
     dataNascimentoDaVitima: 'Informe a data de nascimento da vítima',
     sexoDaVitima: 'Informe o gênero da vítima',
-    nomeDaMaeDaVitima: 'Informe o nome da mãe da vítima'
+    nomeDaMaeDaVitima: 'Informe o nome da mãe da vítima',
   };
 
   validate(objeto: any): boolean {
@@ -38,10 +38,11 @@ export class ValidadorCamposVitimas implements ValidatorConstraintInterface {
 
     // Se houveVitimas não for 'Sim' (case-insensitive), a validação passa
     // O enum SimNao usa 'Sim' e 'Não'
-    const houveVitimasUpperCase = typeof houveVitimas === 'string' 
-      ? houveVitimas.toUpperCase() 
-      : houveVitimas;
-    
+    const houveVitimasUpperCase =
+      typeof houveVitimas === 'string'
+        ? houveVitimas.toUpperCase()
+        : houveVitimas;
+
     if (houveVitimasUpperCase !== 'SIM' && houveVitimasUpperCase !== true) {
       return true;
     }
@@ -57,16 +58,17 @@ export class ValidadorCamposVitimas implements ValidatorConstraintInterface {
 
     for (const campo of camposObrigatorios) {
       const valor = objeto[campo];
-      
+
       // Considerar TUDO como vazio: null, undefined, '', '  ', etc
-      const estaVazio = 
-        valor === null || 
-        valor === undefined || 
-        valor === '' || 
+      const estaVazio =
+        valor === null ||
+        valor === undefined ||
+        valor === '' ||
         (typeof valor === 'string' && valor.trim() === '');
 
       if (estaVazio) {
-        this.ultimoErro = this.mensagensErro[campo] || `Campo obrigatório: ${campo}`;
+        this.ultimoErro =
+          this.mensagensErro[campo] || `Campo obrigatório: ${campo}`;
         return false;
       }
     }
@@ -75,7 +77,10 @@ export class ValidadorCamposVitimas implements ValidatorConstraintInterface {
   }
 
   defaultMessage(): string {
-    return this.ultimoErro || 'Quando há vítimas, todos os campos de vítima devem ser preenchidos';
+    return (
+      this.ultimoErro ||
+      'Quando há vítimas, todos os campos de vítima devem ser preenchidos'
+    );
   }
 
   private ultimoErro: string;

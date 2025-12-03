@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
 import { Trecho } from './entities/trecho.entity';
@@ -15,11 +19,13 @@ export class TrechoService {
   async create(createTrechoDto: CreateTrechoDto): Promise<Trecho> {
     // Verifica se já existe trecho com a mesma descrição
     const existente = await this.trechoRepository.findOne({
-      where: { descricao: createTrechoDto.descricao }
+      where: { descricao: createTrechoDto.descricao },
     });
 
     if (existente) {
-      throw new ConflictException('Já existe um trecho cadastrado com esta descrição');
+      throw new ConflictException(
+        'Já existe um trecho cadastrado com esta descrição',
+      );
     }
 
     const trecho = this.trechoRepository.create(createTrechoDto);
@@ -31,7 +37,7 @@ export class TrechoService {
     limit: number = 10,
     descricao?: string,
     orderBy?: string,
-    order?: string
+    order?: string,
   ): Promise<{ data: Trecho[]; total: number; page: number; limit: number }> {
     const skip = (page - 1) * limit;
 
@@ -41,21 +47,22 @@ export class TrechoService {
     }
 
     // Validar parâmetros de ordenação
-    const orderByField = orderBy === 'atualizadoEm' ? 'atualizadoEm' : 'criadoEm';
+    const orderByField =
+      orderBy === 'atualizadoEm' ? 'atualizadoEm' : 'criadoEm';
     const orderDirection = order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
     const [data, total] = await this.trechoRepository.findAndCount({
       where,
       skip,
       take: limit,
-      order: { [orderByField]: orderDirection }
+      order: { [orderByField]: orderDirection },
     });
 
     return {
       data,
       total,
       page,
-      limit
+      limit,
     };
   }
 
@@ -74,7 +81,7 @@ export class TrechoService {
       // Os dados foram salvos no banco com latitude/longitude invertidos!
       // O polígono tem as coordenadas em (latitude longitude)
       // Então criamos o ponto também em (latitude longitude)
-      
+
       const query = `
         SELECT 
           t."id",
@@ -98,13 +105,18 @@ export class TrechoService {
     const trecho = await this.findOne(id);
 
     // Se está atualizando a descrição, verifica se já existe outra com a mesma
-    if (updateTrechoDto.descricao && updateTrechoDto.descricao !== trecho.descricao) {
+    if (
+      updateTrechoDto.descricao &&
+      updateTrechoDto.descricao !== trecho.descricao
+    ) {
       const existente = await this.trechoRepository.findOne({
-        where: { descricao: updateTrechoDto.descricao }
+        where: { descricao: updateTrechoDto.descricao },
       });
 
       if (existente) {
-        throw new ConflictException('Já existe um trecho cadastrado com esta descrição');
+        throw new ConflictException(
+          'Já existe um trecho cadastrado com esta descrição',
+        );
       }
     }
 

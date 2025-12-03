@@ -7,6 +7,7 @@ import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AuthService, NavigationService } from '../../services/index';
 import { Usuario, Permission } from '../../models/usuario.model';
 import { MenuItem, MENU_CONFIGURATION } from '../../models/menu.model';
+import { MenuState } from '../../services/navigation.service';
 
 @Component({
   selector: 'app-navigation',
@@ -34,9 +35,8 @@ export class NavigationComponent implements OnInit, OnDestroy {
   // Propriedades para filtro visual do menu
   filteredMenuItems: MenuItem[] = [];
   isFilterActive = false;
-
-  // Estados do menu através do serviço
-  get isMobileOpen() { return this.navigationService.isMobileOpen; }
+  menuState: MenuState = 'open';
+  private isDesktop = true;
 
   // Definir todos os itens de menu disponíveis
   private allMenuItems: MenuItem[] = MENU_CONFIGURATION.items;
@@ -49,6 +49,18 @@ export class NavigationComponent implements OnInit, OnDestroy {
         this.currentUser = user;
         this.updateVisibleMenuItems();
         this.updateSearchableItems();
+      });
+
+    this.navigationService.menuState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(state => {
+        this.menuState = state;
+      });
+
+    this.navigationService.viewport$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(viewport => {
+        this.isDesktop = viewport === 'desktop';
       });
 
     // Configurar debounce para pesquisa
@@ -70,7 +82,10 @@ export class NavigationComponent implements OnInit, OnDestroy {
    * Verifica se o menu deve estar visível (sempre true agora)
    */
   get shouldShowExpanded(): boolean {
-    return true; // Menu sempre expandido quando visível
+    if (!this.isDesktop) {
+      return true;
+    }
+    return this.menuState === 'open';
   }
 
   /**
@@ -294,7 +309,8 @@ export class NavigationComponent implements OnInit, OnDestroy {
       'feather-layers': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>',
       'feather-alert-circle': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>',
       'feather-briefcase': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path><path d="M2 13h20"></path></svg>',
-      'feather-target': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>'
+      'feather-target': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>',
+      'feather-activity': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'
     };
     
     const iconSvg = icons[iconName] || icons['feather-settings'];

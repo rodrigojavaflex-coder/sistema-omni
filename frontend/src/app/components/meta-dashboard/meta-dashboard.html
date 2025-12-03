@@ -1,0 +1,399 @@
+<div class="dashboard-wrapper">
+  <section class="cards-panel">
+    <div class="panel-header">
+      <div>
+        <h2>Painel de Metas</h2>
+        <p>Acompanhe o avanço das metas dos seus departamentos.</p>
+        <div class="active-filters" *ngIf="hasAppliedFilters">
+          <span class="filter-chip" *ngFor="let chip of appliedFiltersChips">
+            {{ chip.label }}: <strong>{{ chip.value }}</strong>
+          </span>
+        </div>
+      </div>
+      <button class="btn btn-secondary" (click)="toggleFilters()" [disabled]="cardsLoading">
+        {{ showFilters ? 'Ocultar filtros' : 'Filtros' }}
+      </button>
+    </div>
+
+    <form
+      *ngIf="showFilters"
+      class="filters-card"
+      [formGroup]="filtersForm"
+      (ngSubmit)="onApplyFilters()"
+    >
+      <div class="filters-grid">
+        <label class="filter-field">
+          <span>Exercício</span>
+          <select formControlName="anoExercicio" class="form-select">
+            <option value="">Todos os anos</option>
+            <option *ngFor="let ano of availableYears" [value]="ano">
+              {{ ano }}
+            </option>
+          </select>
+        </label>
+        <label class="filter-field">
+          <span>Departamento</span>
+          <select formControlName="departamentoId" class="form-select">
+            <option value="">Todos os departamentos</option>
+            <option *ngFor="let dep of departamentos" [value]="dep.id">
+              {{ dep.nomeDepartamento }}
+            </option>
+          </select>
+        </label>
+      </div>
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary">
+          Aplicar filtros
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="onClearFilters()">
+          Limpar
+        </button>
+        <button type="button" class="btn btn-link" (click)="refreshCardsOnly()" [disabled]="cardsLoading">
+          {{ cardsLoading ? 'Atualizando...' : 'Atualizar dados' }}
+        </button>
+      </div>
+    </form>
+
+    <div *ngIf="cardsLoading" class="loading-state">Carregando metas...</div>
+    <div *ngIf="!cardsLoading && cards.length === 0" class="empty-state">
+      Nenhuma meta disponível para os departamentos associados ao seu usuário.
+    </div>
+
+    <div *ngIf="!cardsLoading && cards.length" class="cards-grid">
+      <button
+        type="button"
+        class="meta-card"
+        *ngFor="let card of cards"
+        [class.active]="selectedMeta?.id === card.id"
+        (click)="openMetaModal(card)"
+      >
+        <div class="card-accent" [style.background]="getCardColor(card)"></div>
+        <div class="card-content">
+          <div class="card-title-row">
+            <h3>{{ card.tituloDaMeta }}</h3>
+            <span class="polaridade-pill">
+              {{ polaridadeLabels[card.polaridade] }}
+              <span
+                class="info-icon"
+                [title]="
+                  card.polaridade === polaridadeEnum.MENOR_MELHOR
+                    ? 'Polaridade da meta: o objetivo é ficar menor ou igual ao valor planejado.'
+                    : 'Polaridade da meta: o objetivo é ficar maior ou igual ao valor planejado.'
+                "
+              >
+                i
+              </span>
+            </span>
+          </div>
+          <p class="card-departamento">{{ card.departamentoNome | uppercase }}</p>
+
+          <div class="progress-wrapper">
+            <div class="progress-bar">
+              <div
+                class="progress-fill"
+                [style.width.%]="card.progressoPercentual"
+                [style.background]="getCardColor(card)"
+              ></div>
+            </div>
+            <span class="progress-value">{{ card.progressoPercentual }}%</span>
+          </div>
+
+          <div class="card-stats">
+            <div>
+              <span>Meta planejada</span>
+              <strong>
+                {{ card.valorMeta ?? '-' }}
+                <small *ngIf="card.valorMeta">
+                  ({{ unidadeLabels[card.unidade] || '-' }})
+                </small>
+              </strong>
+            </div>
+            <div *ngIf="card.indicador !== indicadorEnum.POR_MEDIA">
+              <span>Total executado</span>
+              <strong>
+                {{ formatValorComUnidade(card.totalExecutado, card.unidade) }}
+              </strong>
+            </div>
+            <div>
+              <span>Indicador</span>
+              <strong>{{ indicadorLabels[card.indicador] }}</strong>
+            </div>
+          </div>
+
+          <div
+            class="card-stats card-stats-extra"
+            *ngIf="card.indicador === indicadorEnum.POR_MEDIA"
+          >
+            <div>
+              <span>Total de meses</span>
+              <span
+                class="info-icon"
+                title="Quantidade de meses entre o início e o prazo final da meta."
+              >
+                i
+              </span>
+              <strong>{{ card.totalMesesIntervalo }}</strong>
+            </div>
+            <div>
+              <span>Status atual</span>
+              <span
+                class="info-icon"
+                title="Status da meta considerando somente as execuções já realizadas."
+              >
+                i
+              </span>
+              <strong>
+                {{
+                  formatValorComUnidade(
+                    card.mediaExecucaoMesAtivo,
+                    card.unidade
+                  )
+                }}
+              </strong>
+            </div>
+            <div>
+              <span>Status global</span>
+              <span
+                class="info-icon"
+                title="Status calculado com base no total já executado e a meta planejada."
+              >
+                i
+              </span>
+              <strong>
+                {{
+                  formatValorComUnidade(card.statusAtualMeta, card.unidade)
+                }}
+              </strong>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <div class="deadline">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>
+                {{ formatPrazoFinal(card.prazoFinal) }}
+              </span>
+            </div>
+            <div class="exec-count">{{ card.totalExecucoes }} execuções</div>
+          </div>
+        </div>
+      </button>
+    </div>
+  </section>
+
+  <div
+    class="exec-modal-overlay"
+    *ngIf="execModalVisible && selectedMeta as meta"
+    (click)="closeExecModal()"
+  >
+    <div class="exec-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>{{ meta.tituloDaMeta }}</h2>
+          <p>
+            {{ meta.departamentoNome }}
+            •
+            {{ polaridadeLabels[meta.polaridade] }}
+            •
+            {{ indicadorLabels[meta.indicador] }}
+            •
+            Início: {{ meta.inicioDaMeta | date:'dd/MM/yyyy' }}
+          </p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="refreshSelected()" [disabled]="execLoading">
+            Atualizar dados
+          </button>
+          <button
+            *ngIf="canCreateExecucao"
+            class="btn btn-primary"
+            (click)="openCreateExecucao()"
+          >
+            Nova Execução
+          </button>
+          <button type="button" class="icon-button" aria-label="Fechar" (click)="closeExecModal()">✕</button>
+        </div>
+      </div>
+
+      <div class="details-summary">
+        <div>
+          <span>Meta planejada</span>
+          <strong>
+            {{ meta.valorMeta ?? '-' }}
+            <small *ngIf="meta.valorMeta">
+              ({{ unidadeLabels[meta.unidade] || '-' }})
+            </small>
+          </strong>
+        </div>
+        <div *ngIf="meta.indicador !== indicadorEnum.POR_MEDIA">
+          <span>Total executado</span>
+          <strong>
+            {{ formatValorComUnidade(meta.totalExecutado, meta.unidade) }}
+          </strong>
+        </div>
+        <div>
+          <span>Indicador</span>
+          <strong>{{ indicadorLabels[meta.indicador] }}</strong>
+        </div>
+        <div>
+          <span>Última execução</span>
+          <strong>
+            {{
+              meta.ultimaExecucaoEm
+                ? (meta.ultimaExecucaoEm | date:'dd/MM/yyyy')
+                : '-'
+            }}
+          </strong>
+        </div>
+        <ng-container *ngIf="meta.indicador === indicadorEnum.POR_MEDIA">
+          <div>
+            <span>Total de meses</span>
+            <strong>{{ meta.totalMesesIntervalo }}</strong>
+          </div>
+          <div>
+            <span>Status atual</span>
+            <strong>
+              {{ formatValorComUnidade(meta.mediaExecucaoMesAtivo, meta.unidade) }}
+            </strong>
+          </div>
+          <div>
+            <span>Status global</span>
+            <strong>
+              {{ formatValorComUnidade(meta.statusAtualMeta, meta.unidade) }}
+            </strong>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="modal-section">
+        <div *ngIf="execLoading" class="loading-state">Carregando execuções...</div>
+        <div *ngIf="!execLoading && execucoes.length === 0" class="empty-state">
+          Nenhuma execução registrada para esta meta ainda.
+        </div>
+
+        <table *ngIf="!execLoading && execucoes.length" class="data-table exec-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Valor Realizado</th>
+              <th>Justificativa</th>
+              <th class="actions-col">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let execucao of execucoes">
+              <td>{{ execucao.dataRealizado | date:'dd/MM/yyyy' }}</td>
+              <td>{{ execucao.valorRealizado }}</td>
+              <td>{{ execucao.justificativa || '-' }}</td>
+              <td class="actions-col">
+                <div class="table-actions">
+                  <button
+                    class="btn btn-small btn-primary"
+                    *ngIf="canUpdateExecucao"
+                    (click)="editExecucao(execucao)"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    class="btn btn-small btn-danger"
+                    *ngIf="canDeleteExecucao"
+                    (click)="confirmDelete(execucao)"
+                  >
+                    Excluir
+                  </button>
+                  <button
+                    class="btn btn-small btn-audit"
+                    *ngIf="canAudit"
+                    (click)="openAudit(execucao)"
+                  >
+                    Auditar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="execucao-form-overlay" *ngIf="formVisible">
+  <div class="execucao-form-card">
+    <div class="form-header">
+      <div>
+        <h3>{{ editingExecucaoId ? 'Editar execução' : 'Nova execução' }}</h3>
+        <p>{{ selectedMeta?.tituloDaMeta }}</p>
+      </div>
+      <button type="button" class="icon-button" (click)="closeExecucaoForm()">✕</button>
+    </div>
+
+    <form [formGroup]="execucaoForm" (ngSubmit)="saveExecucao()">
+      <div class="form-group">
+        <label>Data realizada *</label>
+        <input type="date" formControlName="dataRealizado" class="form-input" />
+        <div class="form-error" *ngIf="isFieldInvalid('dataRealizado')">
+          Informe uma data válida.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Valor realizado *</label>
+        <input type="number" step="0.01" formControlName="valorRealizado" class="form-input" />
+        <div class="form-error" *ngIf="isFieldInvalid('valorRealizado')">
+          Informe um número com até duas casas decimais.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Justificativa</label>
+        <textarea
+          rows="3"
+          formControlName="justificativa"
+          class="form-input"
+          placeholder="Detalhes sobre o avanço desta execução"
+        ></textarea>
+        <div class="form-error" *ngIf="isFieldInvalid('justificativa')">
+          Justificativa pode ter no máximo 1000 caracteres.
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+          {{ editingExecucaoId ? 'Salvar alterações' : 'Registrar execução' }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="closeExecucaoForm()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<app-confirmation-modal
+  [isVisible]="showDeleteModal"
+  title="Confirmação de exclusão"
+  [message]="deleteModalMessage"
+  confirmText="Excluir"
+  cancelText="Cancelar"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()"
+></app-confirmation-modal>
+
+<app-historico-auditoria
+  *ngIf="execucaoParaAuditoria"
+  [entidade]="'meta_execucoes'"
+  [entidadeId]="execucaoParaAuditoria ? execucaoParaAuditoria.id : ''"
+  [entityDisplayName]="'Execução de Meta'"
+  [fieldLabels]="{
+    dataRealizado: 'Data realizada',
+    valorRealizado: 'Valor realizado',
+    justificativa: 'Justificativa'
+  }"
+  [showModal]="showAuditModal"
+  (modalClosed)="closeAudit()"
+></app-historico-auditoria>
+

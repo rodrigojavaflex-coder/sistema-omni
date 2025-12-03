@@ -1,14 +1,14 @@
-import { 
-  IsString, 
-  IsNotEmpty, 
-  IsOptional, 
-  IsEnum, 
-  IsDateString, 
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsDateString,
   IsUUID,
   IsInt,
   Min,
   MaxLength,
-  IsObject
+  IsObject,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { TipoOcorrencia } from '../../../common/enums/tipo-ocorrencia.enum';
@@ -120,12 +120,12 @@ export class CreateOcorrenciaDto {
   @MaxLength(50)
   documentoDaVitima?: string;
 
-  @Transform(({ value }) => value === '' ? null : value)
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsDateString({}, { message: 'Informe a data de nascimento da vítima' })
   @IsOptional()
   dataNascimentoDaVitima?: string;
 
-  @Transform(({ value }) => value === '' ? null : value)
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsEnum(Sexo, { message: 'Informe o gênero da vítima' })
   @IsOptional()
   sexoDaVitima?: Sexo;

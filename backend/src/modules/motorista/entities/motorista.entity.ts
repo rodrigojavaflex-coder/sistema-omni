@@ -42,7 +42,7 @@ export class Motorista extends BaseEntity {
   @Column({
     type: 'enum',
     enum: Sexo,
-    nullable: true
+    nullable: true,
   })
   sexo: Sexo;
 
@@ -67,7 +67,7 @@ export class Motorista extends BaseEntity {
   @Column({
     type: 'enum',
     enum: Terceirizado,
-    nullable: true
+    nullable: true,
   })
   terceirizado: Terceirizado;
 
@@ -75,7 +75,7 @@ export class Motorista extends BaseEntity {
     type: 'enum',
     enum: StatusMotorista,
     default: StatusMotorista.ATIVO,
-    nullable: false
+    nullable: false,
   })
   status: StatusMotorista;
 }

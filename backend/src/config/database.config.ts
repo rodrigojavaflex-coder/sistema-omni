@@ -10,10 +10,7 @@ export default registerAs('database', () => ({
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   synchronize: true, // ✅ Sempre true para criar tabelas automaticamente
   // Configuração de logging otimizada
-  logging:
-    process.env.DATABASE_LOGGING === 'true'
-      ? true
-      : ['error', 'warn'],
+  logging: process.env.DATABASE_LOGGING === 'true' ? true : ['error', 'warn'],
   ssl: false, // Desabilitar SSL para compatibilidade com PostgreSQL local
   timezone: 'UTC',
   // ✅ Configurações de charset UTF-8 para PostgreSQL

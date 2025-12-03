@@ -1,1 +1,22 @@
-/* Nenhuma customização necessária - usando 100% classes globais do design system */
+:host {
+  display: block;
+  height: 100%;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.search-section {
+  flex: 0 0 auto;
+  padding-right: var(--layout-shell-padding);
+}
+
+.sidebar-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-right: calc(var(--layout-shell-padding) - 4px);
+}
+

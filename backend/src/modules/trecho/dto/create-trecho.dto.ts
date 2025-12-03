@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, MaxLength, IsOptional, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  IsOptional,
+  IsObject,
+} from 'class-validator';
 
 export class CreateTrechoDto {
   @IsString()

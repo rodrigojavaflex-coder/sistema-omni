@@ -25,6 +25,10 @@
     <thead>
       <tr>
         <th>Título da Meta</th>
+        <th>Polaridade</th>
+        <th>Unidade</th>
+        <th>Indicador</th>
+        <th>Início</th>
         <th>Departamento</th>
         <th>Prazo Final</th>
         <th>Meta</th>
@@ -34,10 +38,14 @@
     </thead>
     <tbody>
       <tr *ngFor="let meta of items">
-        <td>{{ meta.nomeDaMeta }}</td>
+        <td>{{ meta.tituloDaMeta }}</td>
+        <td>{{ polaridadeLabels[meta.polaridade] || '-' }}</td>
+        <td>{{ unidadeLabels[meta.unidade] || '-' }}</td>
+        <td>{{ indicadorLabels[meta.indicador] || '-' }}</td>
+        <td>{{ meta.inicioDaMeta | date:'dd/MM/yyyy' }}</td>
         <td>{{ meta.departamento?.nomeDepartamento || '-' }}</td>
         <td>{{ meta.prazoFinal | date:'dd/MM/yyyy' }}</td>
-        <td>{{ meta.meta ?? '-' }}</td>
+        <td>{{ meta.valorMeta ?? '-' }}</td>
         <td>{{ meta.criadoEm | date:'dd/MM/yyyy' }}</td>
         <td class="actions-col">
           <div class="table-actions">
@@ -66,11 +74,14 @@
   [entidadeId]="selectedForAudit ? selectedForAudit.id : ''"
   [entityDisplayName]="'Meta'"
   [fieldLabels]="{
-    nomeDaMeta: 'Título da Meta',
+    tituloDaMeta: 'Título da Meta',
+    polaridade: 'Polaridade',
+    unidade: 'Unidade',
+    indicador: 'Indicador',
     descricaoDetalhada: 'Descrição',
     departamentoId: 'Departamento',
     prazoFinal: 'Prazo Final',
-    meta: 'Valor da Meta'
+    valorMeta: 'Meta'
   }"
   [showModal]="showAuditModal"
   (modalClosed)="closeAudit()"

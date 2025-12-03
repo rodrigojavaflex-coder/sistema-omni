@@ -59,6 +59,11 @@ export enum Permission {
   META_UPDATE = 'meta:update',
   META_DELETE = 'meta:delete',
   META_AUDIT = 'meta:audit',
+  META_EXECUCAO_CREATE = 'meta_execucao:create',
+  META_EXECUCAO_READ = 'meta_execucao:read',
+  META_EXECUCAO_UPDATE = 'meta_execucao:update',
+  META_EXECUCAO_DELETE = 'meta_execucao:delete',
+  META_EXECUCAO_AUDIT = 'meta_execucao:audit',
 }
 
 export interface PermissionGroup {

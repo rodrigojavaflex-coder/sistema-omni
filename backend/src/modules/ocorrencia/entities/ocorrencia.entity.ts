@@ -44,7 +44,7 @@ export class Ocorrencia extends BaseEntity {
   @Column({
     type: 'enum',
     enum: TipoOcorrencia,
-    nullable: false
+    nullable: false,
   })
   tipo: TipoOcorrencia;
 
@@ -57,28 +57,28 @@ export class Ocorrencia extends BaseEntity {
   @Column({
     type: 'enum',
     enum: Linha,
-    nullable: true
+    nullable: true,
   })
   linha: Linha;
 
   @Column({
     type: 'enum',
     enum: Arco,
-    nullable: true
+    nullable: true,
   })
   arco: Arco;
 
   @Column({
     type: 'enum',
     enum: SentidoVia,
-    nullable: true
+    nullable: true,
   })
   sentidoVia: SentidoVia;
 
   @Column({
     type: 'enum',
     enum: TipoLocal,
-    nullable: true
+    nullable: true,
   })
   tipoLocal: TipoLocal;
 
@@ -89,14 +89,14 @@ export class Ocorrencia extends BaseEntity {
     type: 'geography',
     spatialFeatureType: 'Point',
     srid: 4326,
-    nullable: true
+    nullable: true,
   })
   localizacao: any; // GeoJSON Point: { type: 'Point', coordinates: [longitude, latitude] }
 
   @Column({
     type: 'enum',
     enum: Culpabilidade,
-    nullable: true
+    nullable: true,
   })
   culpabilidade: Culpabilidade;
 
@@ -112,7 +112,7 @@ export class Ocorrencia extends BaseEntity {
   @Column({
     type: 'enum',
     enum: SimNao,
-    nullable: false
+    nullable: false,
   })
   houveVitimas: SimNao;
 
@@ -134,7 +134,7 @@ export class Ocorrencia extends BaseEntity {
   @Column({
     type: 'enum',
     enum: Sexo,
-    nullable: true
+    nullable: true,
   })
   sexoDaVitima: Sexo;
 

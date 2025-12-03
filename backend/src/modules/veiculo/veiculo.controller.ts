@@ -59,15 +59,47 @@ export class VeiculoController {
   })
   @ApiQuery({ name: 'page', required: false, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, description: 'Itens por página' })
-  @ApiQuery({ name: 'descricao', required: false, description: 'Filtrar por descrição' })
-  @ApiQuery({ name: 'placa', required: false, description: 'Filtrar por placa' })
+  @ApiQuery({
+    name: 'descricao',
+    required: false,
+    description: 'Filtrar por descrição',
+  })
+  @ApiQuery({
+    name: 'placa',
+    required: false,
+    description: 'Filtrar por placa',
+  })
   @ApiQuery({ name: 'ano', required: false, description: 'Filtrar por ano' })
-  @ApiQuery({ name: 'marca', required: false, description: 'Filtrar por marca' })
-  @ApiQuery({ name: 'modelo', required: false, description: 'Filtrar por modelo' })
-  @ApiQuery({ name: 'combustivel', required: false, description: 'Filtrar por combustível' })
-  @ApiQuery({ name: 'status', required: false, description: 'Filtrar por status' })
-  @ApiQuery({ name: 'marcaDaCarroceria', required: false, description: 'Filtrar por marca da carroceria' })
-  @ApiQuery({ name: 'modeloDaCarroceria', required: false, description: 'Filtrar por modelo da carroceria' })
+  @ApiQuery({
+    name: 'marca',
+    required: false,
+    description: 'Filtrar por marca',
+  })
+  @ApiQuery({
+    name: 'modelo',
+    required: false,
+    description: 'Filtrar por modelo',
+  })
+  @ApiQuery({
+    name: 'combustivel',
+    required: false,
+    description: 'Filtrar por combustível',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filtrar por status',
+  })
+  @ApiQuery({
+    name: 'marcaDaCarroceria',
+    required: false,
+    description: 'Filtrar por marca da carroceria',
+  })
+  @ApiQuery({
+    name: 'modeloDaCarroceria',
+    required: false,
+    description: 'Filtrar por modelo da carroceria',
+  })
   findAll(@Query() findVeiculoDto: FindVeiculoDto) {
     return this.veiculoService.findAll(findVeiculoDto);
   }
@@ -79,7 +111,10 @@ export class VeiculoController {
     description: 'Veículo encontrado',
     type: Veiculo,
   })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Veículo não encontrado' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Veículo não encontrado',
+  })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.veiculoService.findOne(id);
   }
@@ -88,10 +123,24 @@ export class VeiculoController {
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions(Permission.VEICULO_UPDATE)
   @ApiOperation({ summary: 'Atualizar veículo' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Veículo atualizado com sucesso', type: Veiculo })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Veículo não encontrado' })
-  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Sem permissão para editar veículos' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateVeiculoDto: UpdateVeiculoDto, @Req() req: Request) {
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Veículo atualizado com sucesso',
+    type: Veiculo,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Veículo não encontrado',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Sem permissão para editar veículos',
+  })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateVeiculoDto: UpdateVeiculoDto,
+    @Req() req: Request,
+  ) {
     const previous = this.veiculoService.findOne(id);
     (req as any).previousUserData = previous;
     return this.veiculoService.update(id, updateVeiculoDto);
@@ -101,9 +150,18 @@ export class VeiculoController {
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @Permissions(Permission.VEICULO_DELETE)
   @ApiOperation({ summary: 'Remover veículo' })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Veículo removido com sucesso' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Veículo não encontrado' })
-  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Sem permissão para excluir veículos' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Veículo removido com sucesso',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Veículo não encontrado',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Sem permissão para excluir veículos',
+  })
   remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const entity = this.veiculoService.findOne(id);
     (req as any).entityToDelete = entity;

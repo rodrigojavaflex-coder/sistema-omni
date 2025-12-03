@@ -14,6 +14,20 @@
 @use 'utilities';
 
 // ========================================
+// TOKENS DE LAYOUT
+// ========================================
+
+:root {
+  --layout-header-height: 64px;
+  --layout-sidebar-width: 320px;
+  --layout-sidebar-width-collapsed: 88px;
+  --layout-content-max-width: 1440px;
+  --layout-content-gap: #{$spacing-lg};
+  --layout-shell-padding: #{$spacing-lg};
+  --layout-overlay-color: rgba(15, 23, 42, 0.55);
+}
+
+// ========================================
 // RESET E BASE
 // ========================================
 

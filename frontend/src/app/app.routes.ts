@@ -152,6 +152,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'meta/dashboard',
+    loadComponent: () => import('./components/meta-dashboard/meta-dashboard').then(m => m.MetaDashboardComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'meta/new',
     loadComponent: () => import('./components/meta-form/meta-form').then(m => m.MetaFormComponent),
     canActivate: [authGuard]

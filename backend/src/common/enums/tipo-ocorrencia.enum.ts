@@ -7,5 +7,5 @@ export enum TipoOcorrencia {
   SINISTRO = 'Sinistro',
   VANDALISMO = 'Vandalismo',
   VIAGEM_INCOMPLETA = 'Viagem incompleta',
-  VIAGEM_NAO_REALIZADA = 'Viagem não realizada'
+  VIAGEM_NAO_REALIZADA = 'Viagem não realizada',
 }

@@ -1,4 +1,11 @@
-import { Entity, Column, Index, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  Index,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Perfil } from '../../perfil/entities/perfil.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';

@@ -114,11 +114,9 @@ export class RollbackService {
 
     // Só permite undo para operações de CREATE, UPDATE, DELETE
     if (
-      ![
-        AuditAction.CREATE,
-        AuditAction.UPDATE,
-        AuditAction.DELETE,
-      ].includes(log.acao)
+      ![AuditAction.CREATE, AuditAction.UPDATE, AuditAction.DELETE].includes(
+        log.acao,
+      )
     ) {
       return false;
     }
@@ -171,7 +169,10 @@ export class RollbackService {
       case AuditAction.UPDATE:
         // Para UPDATE, restaurar dados anteriores
         if (log.dadosAnteriores) {
-          await this.usuariosService.update(log.entidadeId, log.dadosAnteriores);
+          await this.usuariosService.update(
+            log.entidadeId,
+            log.dadosAnteriores,
+          );
           return {
             success: true,
             message: `Usuário ${log.entidadeId} restaurado para versão anterior`,
@@ -230,11 +231,7 @@ export class RollbackService {
     return this.auditLogRepository.find({
       where: {
         usuario: { id: userId },
-        acao: In([
-          AuditAction.CREATE,
-          AuditAction.UPDATE,
-          AuditAction.DELETE,
-        ]),
+        acao: In([AuditAction.CREATE, AuditAction.UPDATE, AuditAction.DELETE]),
         criadoEm: MoreThanOrEqual(twentyFourHoursAgo),
       },
       order: { criadoEm: 'DESC' },

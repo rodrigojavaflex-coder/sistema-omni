@@ -17,16 +17,19 @@ export class AppService {
    * e CORS no backend
    */
   getGoogleMapsKey(): { key: string } {
-    const apiKey = this.configService.get<string>('googleMaps.apiKey') || 
-                   this.configService.get<string>('app.googleMapsApiKey') || 
-                   process.env.GOOGLE_MAPS_API_KEY;
+    const apiKey =
+      this.configService.get<string>('googleMaps.apiKey') ||
+      this.configService.get<string>('app.googleMapsApiKey') ||
+      process.env.GOOGLE_MAPS_API_KEY;
 
     if (!apiKey) {
       this.logger.error('Google Maps API Key não configurada');
       throw new Error('Google Maps API Key não configurada');
     }
 
-    this.logger.log(`Retornando chave do Google Maps (ambiente: ${process.env.NODE_ENV || 'development'})`);
+    this.logger.log(
+      `Retornando chave do Google Maps (ambiente: ${process.env.NODE_ENV || 'development'})`,
+    );
     return { key: apiKey };
   }
 }

@@ -18,9 +18,7 @@ export class DepartamentoService {
   }
 
   findAll(nome?: string): Promise<Departamento[]> {
-    const where = nome
-      ? { nomeDepartamento: ILike(`%${nome}%`) }
-      : {};
+    const where = nome ? { nomeDepartamento: ILike(`%${nome}%`) } : {};
     return this.departamentoRepository.find({
       where,
       order: { nomeDepartamento: 'ASC' },

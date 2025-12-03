@@ -1,67 +1,63 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, OnDestroy } from '@angular/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { BehaviorSubject, Subject } from 'rxjs';
+import { distinctUntilChanged, map, takeUntil } from 'rxjs/operators';
+
+export type MenuState = 'open' | 'hidden';
+export type ViewportMode = 'desktop' | 'mobile';
 
 @Injectable({
   providedIn: 'root'
 })
+export class NavigationService implements OnDestroy {
+  private readonly destroy$ = new Subject<void>();
+  private menuStateSubject = new BehaviorSubject<MenuState>('open');
+  private viewportSubject = new BehaviorSubject<ViewportMode>('desktop');
 
-export class NavigationService {
-  private isMobileOpenSubject = new BehaviorSubject<boolean>(false); // Menu sempre inicia fechado
+  public menuState$ = this.menuStateSubject.asObservable();
+  public viewport$ = this.viewportSubject.asObservable();
 
-  public isMobileOpen$ = this.isMobileOpenSubject.asObservable();
-
-  constructor() {
-    this.setupMobileDetection();
+  constructor(private breakpointObserver: BreakpointObserver) {
+    this.observeViewport();
   }
 
-  get isMobileOpen(): boolean {
-    return this.isMobileOpenSubject.value;
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  toggleMobile(): void {
-    const isDesktop = window.innerWidth > 768;
-    if (isDesktop) {
-      // Em desktop, apenas alternamos o estado de "aberto"
-      const newValue = !this.isMobileOpenSubject.value;
-      this.isMobileOpenSubject.next(newValue);
-    } else {
-      // Em mobile, usamos o comportamento de abrir/fechar
-      const newValue = !this.isMobileOpenSubject.value;
-      this.isMobileOpenSubject.next(newValue);
-    }
+  get isMenuOpen(): boolean {
+    return this.menuStateSubject.value === 'open';
   }
 
-  closeMobile(): void {
-    const isDesktop = window.innerWidth > 768;
-    if (!isDesktop) {
-      this.isMobileOpenSubject.next(false);
-    }
+  toggleMenu(): void {
+    const nextState = this.menuStateSubject.value === 'open' ? 'hidden' : 'open';
+    this.menuStateSubject.next(nextState);
   }
 
-  /**
-   * Fecha o menu ao navegar (funciona tanto em mobile quanto desktop)
-   */
+  closeMenu(): void {
+    this.menuStateSubject.next('hidden');
+  }
+
   closeOnNavigation(): void {
-    this.isMobileOpenSubject.next(false);
+    this.closeMenu();
   }
 
-  private setupMobileDetection(): void {
-    // Detectar mudanças de tamanho da tela
-    if (typeof window !== 'undefined') {
-      const mediaQuery = window.matchMedia('(max-width: 768px)');
-      
-      const handleMobileChange = (e: MediaQueryListEvent | MediaQueryList) => {
-        if (e.matches) {
-          // Modo mobile - fechar menu mobile por padrão
-          this.isMobileOpenSubject.next(false);
+  private observeViewport(): void {
+    this.breakpointObserver
+      .observe(['(min-width: 1024px)'])
+      .pipe(
+        map(result => (result.matches ? 'desktop' : 'mobile') as ViewportMode),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(viewport => {
+        this.viewportSubject.next(viewport);
+        if (viewport === 'desktop') {
+          this.menuStateSubject.next('open');
         } else {
-          // Modo desktop - manter menu fechado por padrão
-          this.isMobileOpenSubject.next(false);
+          this.menuStateSubject.next('hidden');
         }
-      };
-
-      mediaQuery.addEventListener('change', handleMobileChange);
-      handleMobileChange(mediaQuery);
-    }
+      });
   }
 }

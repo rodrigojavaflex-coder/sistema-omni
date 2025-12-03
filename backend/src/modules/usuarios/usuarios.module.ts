@@ -13,7 +13,12 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
 
 @Module({
   imports: [
-  TypeOrmModule.forFeature([Usuario, Perfil, Departamento, DepartamentoUsuario]),
+    TypeOrmModule.forFeature([
+      Usuario,
+      Perfil,
+      Departamento,
+      DepartamentoUsuario,
+    ]),
     JwtModule,
     ConfigModule,
     forwardRef(() => AuditoriaModule),

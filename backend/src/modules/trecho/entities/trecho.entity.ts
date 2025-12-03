@@ -7,7 +7,7 @@ export class Trecho extends BaseEntity {
     type: 'varchar',
     length: 150,
     nullable: false,
-    unique: true
+    unique: true,
   })
   descricao: string;
 
@@ -15,7 +15,7 @@ export class Trecho extends BaseEntity {
     type: 'geography',
     spatialFeatureType: 'Polygon',
     srid: 4326,
-    nullable: true
+    nullable: true,
   })
   area: any;
 

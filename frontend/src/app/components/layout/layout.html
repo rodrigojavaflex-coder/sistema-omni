@@ -7,19 +7,28 @@
 
 <app-toast></app-toast>
 
-<div class="layout-container" *ngIf="isAuthenticated">
-  <app-header></app-header>
-  <div class="main-content-wrapper">
-    <app-navigation 
-      class="layout-sidebar"
-      [class.is-open]="isMenuOpen"
-      [class.is-collapsed]="!isMenuOpen">
-    </app-navigation>
-    <main class="layout-content" [class.menu-collapsed]="!isMenuOpen">
+<div
+  class="layout-shell"
+  *ngIf="isAuthenticated"
+  [ngClass]="[
+    isDesktop ? 'layout-shell--desktop' : 'layout-shell--mobile',
+    'layout-shell--menu-' + menuState
+  ]"
+>
+  <app-header class="layout-shell__header"></app-header>
+  <div class="layout-shell__main">
+    <app-navigation
+      class="layout-shell__sidebar"
+    ></app-navigation>
+    <main class="layout-shell__content">
       <router-outlet></router-outlet>
     </main>
   </div>
-  <div class="mobile-overlay" [class.active]="isMenuOpen" (click)="closeMenu()"></div>
+  <div
+    class="layout-shell__overlay"
+    [class.active]="isMobileOverlayVisible"
+    (click)="closeMenu()"
+  ></div>
 </div>
 
 <div class="login-container" *ngIf="!isAuthenticated">

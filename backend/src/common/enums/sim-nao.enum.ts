@@ -1,4 +1,4 @@
 export enum SimNao {
   SIM = 'Sim',
-  NAO = 'Não'
+  NAO = 'Não',
 }

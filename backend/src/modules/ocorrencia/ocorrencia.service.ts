@@ -1,10 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { Ocorrencia } from './entities/ocorrencia.entity';
 import { CreateOcorrenciaDto } from './dto/create-ocorrencia.dto';
 import { UpdateOcorrenciaDto } from './dto/update-ocorrencia.dto';
-import { validarCamposVitimas, ValidadorCamposVitimas } from '../../common/validators/validador-vitimas';
+import {
+  validarCamposVitimas,
+  ValidadorCamposVitimas,
+} from '../../common/validators/validador-vitimas';
 
 @Injectable()
 export class OcorrenciaService {
@@ -31,12 +38,14 @@ export class OcorrenciaService {
     };
 
     if (createOcorrenciaDto.localizacao) {
-      ocorrenciaData.localizacao = this.formatLocationForDB(createOcorrenciaDto.localizacao);
+      ocorrenciaData.localizacao = this.formatLocationForDB(
+        createOcorrenciaDto.localizacao,
+      );
     }
 
     const ocorrencia = this.ocorrenciaRepository.create(ocorrenciaData);
     const saved: any = await this.ocorrenciaRepository.save(ocorrencia);
-    
+
     // Buscar ocorrência completa com relações
     const id = Array.isArray(saved) ? saved[0].id : saved.id;
     return await this.findOne(id);
@@ -57,7 +66,12 @@ export class OcorrenciaService {
     culpabilidade?: string | string[],
     houveVitimas?: string | string[],
     terceirizado?: string | string[],
-  ): Promise<{ data: Ocorrencia[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: Ocorrencia[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const skip = (page - 1) * limit;
 
     let query = this.ocorrenciaRepository
@@ -143,7 +157,9 @@ export class OcorrenciaService {
 
     // Filtro por culpabilidade - suporta múltiplos valores
     if (culpabilidade) {
-      const culpabilidades = Array.isArray(culpabilidade) ? culpabilidade : [culpabilidade];
+      const culpabilidades = Array.isArray(culpabilidade)
+        ? culpabilidade
+        : [culpabilidade];
       if (culpabilidades.length > 0) {
         conditions.push('ocorrencia.culpabilidade IN (:...culpabilidades)');
         parameters.culpabilidades = culpabilidades;
@@ -152,7 +168,9 @@ export class OcorrenciaService {
 
     // Filtro por houve vítimas - suporta múltiplos valores
     if (houveVitimas) {
-      const vitimas = Array.isArray(houveVitimas) ? houveVitimas : [houveVitimas];
+      const vitimas = Array.isArray(houveVitimas)
+        ? houveVitimas
+        : [houveVitimas];
       if (vitimas.length > 0) {
         conditions.push('ocorrencia.houveVitimas IN (:...vitimas)');
         parameters.vitimas = vitimas;
@@ -161,7 +179,9 @@ export class OcorrenciaService {
 
     // Filtro por terceirizado - suporta múltiplos valores
     if (terceirizado) {
-      const terceirizados = Array.isArray(terceirizado) ? terceirizado : [terceirizado];
+      const terceirizados = Array.isArray(terceirizado)
+        ? terceirizado
+        : [terceirizado];
       if (terceirizados.length > 0) {
         conditions.push('motorista.terceirizado IN (:...terceirizados)');
         parameters.terceirizados = terceirizados;
@@ -193,7 +213,7 @@ export class OcorrenciaService {
   async findOne(id: string): Promise<Ocorrencia> {
     const ocorrencia = await this.ocorrenciaRepository.findOne({
       where: { id },
-      relations: ['veiculo', 'motorista']
+      relations: ['veiculo', 'motorista'],
     });
 
     if (!ocorrencia) {
@@ -203,7 +223,10 @@ export class OcorrenciaService {
     return ocorrencia;
   }
 
-  async update(id: string, updateOcorrenciaDto: UpdateOcorrenciaDto): Promise<Ocorrencia> {
+  async update(
+    id: string,
+    updateOcorrenciaDto: UpdateOcorrenciaDto,
+  ): Promise<Ocorrencia> {
     const ocorrencia = await this.findOne(id);
 
     // Mesclar os dados atualizados com os dados existentes para validação completa
@@ -214,7 +237,7 @@ export class OcorrenciaService {
 
     // Validar campos de vítima condicionalmente
     const errosVitimas = await validarCamposVitimas(dadosMergidos);
-    
+
     if (errosVitimas.length > 0) {
       throw new BadRequestException(errosVitimas[0]);
     }
@@ -230,7 +253,9 @@ export class OcorrenciaService {
     };
 
     if (updateOcorrenciaDto.localizacao) {
-      updateData.localizacao = this.formatLocationForDB(updateOcorrenciaDto.localizacao);
+      updateData.localizacao = this.formatLocationForDB(
+        updateOcorrenciaDto.localizacao,
+      );
     }
 
     // Usar update() do queryBuilder para atualizar direto no banco
@@ -246,13 +271,13 @@ export class OcorrenciaService {
     const ocorrenciaCompleta = await this.ocorrenciaRepository.findOne({
       where: { id },
       relations: ['veiculo', 'motorista', 'trecho'],
-      cache: false
+      cache: false,
     });
 
     if (!ocorrenciaCompleta) {
       throw new NotFoundException('Ocorrência não encontrada após atualização');
     }
-    
+
     return ocorrenciaCompleta;
   }
 
@@ -265,14 +290,16 @@ export class OcorrenciaService {
    * Estatísticas de ocorrências
    */
   async getStatistics(dataInicio?: string, dataFim?: string): Promise<any> {
-    let query = this.ocorrenciaRepository
-      .createQueryBuilder('ocorrencia');
+    let query = this.ocorrenciaRepository.createQueryBuilder('ocorrencia');
 
     if (dataInicio && dataFim) {
-      query = query.where('ocorrencia.dataHora BETWEEN :dataInicio AND :dataFim', {
-        dataInicio,
-        dataFim
-      });
+      query = query.where(
+        'ocorrencia.dataHora BETWEEN :dataInicio AND :dataFim',
+        {
+          dataInicio,
+          dataFim,
+        },
+      );
     }
 
     const total = await query.getCount();
@@ -293,14 +320,14 @@ export class OcorrenciaService {
       .getRawMany();
 
     const comVitimas = await this.ocorrenciaRepository.count({
-      where: { houveVitimas: 'Sim' as any }
+      where: { houveVitimas: 'Sim' as any },
     });
 
     return {
       total,
       comVitimas,
       porTipo,
-      porLinha
+      porLinha,
     };
   }
 
@@ -310,7 +337,7 @@ export class OcorrenciaService {
   async findByLocation(
     latitude: number,
     longitude: number,
-    radiusMeters: number = 1000
+    radiusMeters: number = 1000,
   ): Promise<Ocorrencia[]> {
     // Usar PostGIS ST_DWithin para busca por proximidade
     const query = `
@@ -330,7 +357,7 @@ export class OcorrenciaService {
     return await this.ocorrenciaRepository.query(query, [
       longitude,
       latitude,
-      radiusMeters
+      radiusMeters,
     ]);
   }
 

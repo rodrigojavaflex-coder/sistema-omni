@@ -16,8 +16,27 @@
       <div class="form-inline">
         <div class="form-group" style="flex: 2;">
           <label class="form-label">Título da Meta *</label>
-          <input type="text" formControlName="nomeDaMeta" class="form-input" />
-          <div class="form-error" *ngIf="isFieldInvalid('nomeDaMeta')">{{ getFieldError('nomeDaMeta') }}</div>
+          <input type="text" formControlName="tituloDaMeta" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('tituloDaMeta')">{{ getFieldError('tituloDaMeta') }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Polaridade *</label>
+          <select formControlName="polaridade" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let opcao of polaridadeOpcoes" [value]="opcao">
+              {{ polaridadeLabels[opcao] }}
+            </option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('polaridade')">
+            {{ getFieldError('polaridade') || 'Selecione uma polaridade' }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Início da Meta *</label>
+          <input type="date" formControlName="inicioDaMeta" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('inicioDaMeta')">
+            {{ getFieldError('inicioDaMeta') || 'Início da meta é obrigatório' }}
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Prazo Final</label>
@@ -25,19 +44,47 @@
           <div class="form-error" *ngIf="isFieldInvalid('prazoFinal')">{{ getFieldError('prazoFinal') || 'Prazo final é obrigatório' }}</div>
         </div>
         <div class="form-group">
-          <label class="form-label">Valor da Meta</label>
-          <input type="number" formControlName="meta" class="form-input" />
-          <div class="form-error" *ngIf="isFieldInvalid('meta')">{{ getFieldError('meta') || 'Meta é obrigatória e deve ser um número inteiro' }}</div>
+          <label class="form-label">Meta</label>
+          <input type="number" step="0.01" formControlName="valorMeta" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('valorMeta')">
+            {{ getFieldError('valorMeta') || 'Meta é obrigatória e deve ser um número com até duas casas decimais' }}
+          </div>
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Departamento *</label>
-        <select formControlName="departamentoId" class="form-select">
-          <option value="">Selecione</option>
-          <option *ngFor="let dep of departamentos" [value]="dep.id">{{ dep.nomeDepartamento }}</option>
-        </select>
-        <div class="form-error" *ngIf="isFieldInvalid('departamentoId')">{{ getFieldError('departamentoId') }}</div>
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Unidade *</label>
+          <select formControlName="unidade" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let opcao of unidadeOpcoes" [value]="opcao">
+              {{ unidadeLabels[opcao] }}
+            </option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('unidade')">
+            {{ getFieldError('unidade') || 'Selecione uma unidade' }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Indicador *</label>
+          <select formControlName="indicador" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let opcao of indicadorOpcoes" [value]="opcao">
+              {{ indicadorLabels[opcao] }}
+            </option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('indicador')">
+            {{ getFieldError('indicador') || 'Selecione um indicador' }}
+          </div>
+        </div>
+        <div class="form-group" style="flex: 2;">
+          <label class="form-label">Departamento *</label>
+          <select formControlName="departamentoId" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let dep of departamentos" [value]="dep.id">{{ dep.nomeDepartamento }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('departamentoId')">{{ getFieldError('departamentoId') }}</div>
+        </div>
       </div>
 
       <div class="form-group">

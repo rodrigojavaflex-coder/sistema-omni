@@ -37,10 +37,10 @@ export class UsuariosService {
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
     this.logger.debug('UserService.create called with:', createUsuarioDto);
     try {
-    // Verificar se já existe um usuário com este email
-    const existingUser = await this.usuarioRepository.findOneBy({
-      email: createUsuarioDto.email,
-    });
+      // Verificar se já existe um usuário com este email
+      const existingUser = await this.usuarioRepository.findOneBy({
+        email: createUsuarioDto.email,
+      });
       if (existingUser) {
         throw new ConflictException(
           `Já existe um usuário cadastrado com este email: ${existingUser.nome} (${existingUser.email})`,
@@ -87,7 +87,10 @@ export class UsuariosService {
       const savedUser = await this.usuarioRepository.save(user);
 
       if (createUsuarioDto.departamentoIds?.length) {
-        await this.syncDepartamentos(savedUser.id, createUsuarioDto.departamentoIds);
+        await this.syncDepartamentos(
+          savedUser.id,
+          createUsuarioDto.departamentoIds,
+        );
       }
       this.logger.log('User saved successfully:', {
         id: savedUser.id,
@@ -147,7 +150,8 @@ export class UsuariosService {
   ): Promise<PaginatedResponseDto<Usuario>> {
     const { page = 1, limit = 10, nome, email } = findUsuariosDto;
 
-    const queryBuilder = this.usuarioRepository.createQueryBuilder('user')
+    const queryBuilder = this.usuarioRepository
+      .createQueryBuilder('user')
       .leftJoinAndSelect('user.perfil', 'perfil')
       .leftJoinAndSelect('user.departamentosUsuario', 'du')
       .leftJoinAndSelect('du.departamento', 'departamento');
@@ -168,7 +172,9 @@ export class UsuariosService {
 
     users.forEach((u: any) => {
       if (u.departamentosUsuario) {
-        u.departamentos = u.departamentosUsuario.map((du: any) => du.departamento);
+        u.departamentos = u.departamentosUsuario.map(
+          (du: any) => du.departamento,
+        );
       }
     });
 
@@ -191,7 +197,9 @@ export class UsuariosService {
       where: { usuarioId: id },
       relations: ['departamento'],
     });
-    (user as any).departamentos = departamentosUsuario.map((du) => du.departamento);
+    (user as any).departamentos = departamentosUsuario.map(
+      (du) => du.departamento,
+    );
 
     return user;
   }
@@ -340,7 +348,10 @@ export class UsuariosService {
     return this.perfilRepository.find();
   }
 
-  private async syncDepartamentos(userId: string, departamentoIds: string[]): Promise<void> {
+  private async syncDepartamentos(
+    userId: string,
+    departamentoIds: string[],
+  ): Promise<void> {
     const uniqueIds = Array.from(new Set(departamentoIds)).filter(Boolean);
 
     if (!uniqueIds.length) {
@@ -358,7 +369,10 @@ export class UsuariosService {
     await this.departamentoUsuarioRepository.delete({ usuarioId: userId });
 
     const links = validIds.map((departamentoId) =>
-      this.departamentoUsuarioRepository.create({ usuarioId: userId, departamentoId }),
+      this.departamentoUsuarioRepository.create({
+        usuarioId: userId,
+        departamentoId,
+      }),
     );
     if (links.length) {
       await this.departamentoUsuarioRepository.save(links);

@@ -24,7 +24,10 @@ export class Veiculo extends BaseEntity {
   @Column('int')
   ano: number;
 
-  @ApiProperty({ description: 'Número do chassi', example: '9BWZZZ377VT004251' })
+  @ApiProperty({
+    description: 'Número do chassi',
+    example: '9BWZZZ377VT004251',
+  })
   @Column({ length: 30 })
   chassi: string;
 
@@ -40,7 +43,11 @@ export class Veiculo extends BaseEntity {
   @Column({ length: 30 })
   combustivel: Combustivel;
 
-  @ApiProperty({ description: 'Status do veículo', enum: StatusVeiculo, default: StatusVeiculo.ATIVO })
+  @ApiProperty({
+    description: 'Status do veículo',
+    enum: StatusVeiculo,
+    default: StatusVeiculo.ATIVO,
+  })
   @Column({ length: 20, default: StatusVeiculo.ATIVO })
   status: StatusVeiculo;
 

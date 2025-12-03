@@ -1,0 +1,70 @@
+<div class="user-profile">
+  <span class="user-name">{{ user.nome }}</span>
+
+  <div class="user-dropdown-container">
+    <button class="user-avatar" type="button" (click)="toggleUserDropdown()">
+      <span>{{ user.nome | slice: 0:1 }}</span>
+    </button>
+
+    <div class="user-dropdown" [class.show]="showUserDropdown">
+      <div class="dropdown-header">
+        <div class="user-info">
+          <div class="user-name-horizontal">{{ user.nome }}</div>
+          <div class="user-email">{{ user.email }}</div>
+          <div class="user-meta">
+            <div class="user-meta-line">Perfil: {{ user.perfil.nomePerfil || 'N/D' }}</div>
+            <div class="user-meta-line">
+              Departamentos: {{ formatDepartamentos(user.departamentos) }}
+            </div>
+            <div class="user-meta-line">Sessão ativa há {{ sessionActiveFor }}</div>
+            <div class="user-meta-line">Expira em {{ tokenExpiresIn }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dropdown-divider"></div>
+
+      <div class="dropdown-section">
+        <button class="dropdown-item change-password-btn" type="button" (click)="requestPasswordChange()">
+          <i class="fas fa-key"></i>
+          Alterar Senha
+        </button>
+      </div>
+
+      <div class="dropdown-divider"></div>
+
+      <div class="dropdown-section">
+        <span class="dropdown-section-title">Selecione o tema:</span>
+        <div class="theme-options">
+          <button
+            class="theme-option"
+            type="button"
+            [class.active]="currentTheme === 'light'"
+            (click)="onThemeSelected('light')"
+            title="Tema Claro"
+          >
+            Claro
+          </button>
+          <button
+            class="theme-option"
+            type="button"
+            [class.active]="currentTheme === 'dark'"
+            (click)="onThemeSelected('dark')"
+            title="Tema Escuro"
+          >
+            Escuro
+          </button>
+        </div>
+      </div>
+
+      <div class="dropdown-divider"></div>
+
+      <button class="dropdown-item logout-item" type="button" (click)="requestLogout()">
+        Sair do Sistema
+      </button>
+    </div>
+  </div>
+
+  <div class="dropdown-overlay" [class.show]="showUserDropdown" (click)="closeUserDropdown()"></div>
+</div>
+

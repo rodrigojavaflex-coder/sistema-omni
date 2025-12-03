@@ -43,7 +43,7 @@ export class AuditoriaController {
   private async shouldAuditAction(action: AuditAction): Promise<boolean> {
     try {
       const config = await this.configuracaoRepository.findOne({ where: {} });
-      
+
       if (!config) {
         // Se não há configuração, auditar tudo por padrão
         return true;
@@ -54,22 +54,22 @@ export class AuditoriaController {
         case AuditAction.LOGOUT:
         case AuditAction.LOGIN_FAILED:
           return config.auditarLoginLogOff;
-        
+
         case AuditAction.CREATE:
           return config.auditarCriacao;
-        
+
         case AuditAction.READ:
           return config.auditarConsultas;
-        
+
         case AuditAction.UPDATE:
           return config.auditarAlteracao;
-        
+
         case AuditAction.DELETE:
           return config.auditarExclusao;
-        
+
         case AuditAction.CHANGE_PASSWORD:
           return config.auditarSenhaAlterada;
-        
+
         default:
           return true; // Para ações não mapeadas, auditar por segurança
       }
@@ -89,7 +89,10 @@ export class AuditoriaController {
     status: 200,
     description: 'Logs de auditoria retornados com sucesso',
   })
-  async findAll(@Query() findDto: FindAuditoriaDto, @Req() req: Request & { user: Usuario }): Promise<any> {
+  async findAll(
+    @Query() findDto: FindAuditoriaDto,
+    @Req() req: Request & { user: Usuario },
+  ): Promise<any> {
     // Auditar acesso aos logs de auditoria
     if (await this.shouldAuditAction(AuditAction.READ)) {
       await this.auditoriaService.createLog({
@@ -113,7 +116,10 @@ export class AuditoriaController {
     status: 200,
     description: 'Log de auditoria encontrado',
   })
-  async findOne(@Param('id') id: string, @Req() req: Request & { user: Usuario }): Promise<Auditoria | null> {
+  async findOne(
+    @Param('id') id: string,
+    @Req() req: Request & { user: Usuario },
+  ): Promise<Auditoria | null> {
     // Auditar acesso aos logs de auditoria
     if (await this.shouldAuditAction(AuditAction.READ)) {
       await this.auditoriaService.createLog({
@@ -137,7 +143,9 @@ export class AuditoriaController {
     status: 200,
     description: 'Lista de alterações que podem ser desfeitas',
   })
-  async getUndoableChanges(@Req() req: Request & { user: Usuario }): Promise<any> {
+  async getUndoableChanges(
+    @Req() req: Request & { user: Usuario },
+  ): Promise<any> {
     return this.rollbackService.getUndoableChanges(req.user?.id);
   }
 
@@ -159,14 +167,18 @@ export class AuditoriaController {
     status: 403,
     description: 'Sem permissão para desfazer esta alteração',
   })
-  async undoChange(@Param('id') logId: string, @Req() req: Request & { user: Usuario }): Promise<any> {
+  async undoChange(
+    @Param('id') logId: string,
+    @Req() req: Request & { user: Usuario },
+  ): Promise<any> {
     return this.rollbackService.undoChange(logId, req.user?.id);
   }
 
   @Get('entity/:entidade/:entidadeId')
   @ApiOperation({
     summary: 'Buscar histórico de auditoria por entidade',
-    description: 'Retorna o histórico completo de alterações de um registro específico'
+    description:
+      'Retorna o histórico completo de alterações de um registro específico',
   })
   @ApiResponse({
     status: 200,
@@ -175,7 +187,7 @@ export class AuditoriaController {
   async getHistoryByEntity(
     @Param('entidade') entidade: string,
     @Param('entidadeId') entidadeId: string,
-    @Req() req: Request & { user: Usuario }
+    @Req() req: Request & { user: Usuario },
   ): Promise<any> {
     // Auditar acesso ao histórico
     if (await this.shouldAuditAction(AuditAction.READ)) {

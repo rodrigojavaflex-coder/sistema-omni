@@ -12,13 +12,13 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: true,
   });
-  
+
   // Configurações de encoding UTF-8
   app.use((req: Request, res: Response, next) => {
     res.charset = 'utf-8';
     next();
   });
-  
+
   // Middleware para HEAD /
   app.use((req: Request, res: Response, next) => {
     if (req.method === 'HEAD' && req.path === '/') {
@@ -47,21 +47,22 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // Configuração de CORS
-  const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? [
-        'https://gestaodetransporte.com',
-        'https://www.gestaodetransporte.com',
-        'http://gestaodetransporte.com',
-        'http://www.gestaodetransporte.com'
-      ]
-    : [
-        'http://localhost:4200',
-        'http://localhost:3000',
-        'http://localhost:8080',
-        'http://127.0.0.1:4200',
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:8080'
-      ];
+  const allowedOrigins =
+    process.env.NODE_ENV === 'production'
+      ? [
+          'https://gestaodetransporte.com',
+          'https://www.gestaodetransporte.com',
+          'http://gestaodetransporte.com',
+          'http://www.gestaodetransporte.com',
+        ]
+      : [
+          'http://localhost:4200',
+          'http://localhost:3000',
+          'http://localhost:8080',
+          'http://127.0.0.1:4200',
+          'http://127.0.0.1:3000',
+          'http://127.0.0.1:8080',
+        ];
 
   app.enableCors({
     origin: allowedOrigins,
@@ -86,10 +87,14 @@ async function bootstrap() {
 
   // Debug do ambiente
   console.log(`🔍 NODE_ENV: "${process.env.NODE_ENV}"`);
-  console.log(`🔍 Ambiente detectado: ${process.env.NODE_ENV === 'production' ? 'PRODUÇÃO' : 'DESENVOLVIMENTO'}`);
+  console.log(
+    `🔍 Ambiente detectado: ${process.env.NODE_ENV === 'production' ? 'PRODUÇÃO' : 'DESENVOLVIMENTO'}`,
+  );
 
   const isProduction = process.env.NODE_ENV === 'production';
-  const port = isProduction ? 8080 : (process.env.PORT || configService.get('app.port') || 3000);
+  const port = isProduction
+    ? 8080
+    : process.env.PORT || configService.get('app.port') || 3000;
 
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 Aplicação rodando na porta ${port}`);
@@ -97,7 +102,9 @@ async function bootstrap() {
   if (isProduction) {
     console.log(`📱 Frontend: http://gestaodetransporte.com/omni`);
     console.log(`🔧 API: http://gestaodetransporte.com/api`);
-    console.log(`📚 Documentação Swagger: http://gestaodetransporte.com/api/docs`);
+    console.log(
+      `📚 Documentação Swagger: http://gestaodetransporte.com/api/docs`,
+    );
   } else {
     console.log(`📱 Frontend: http://localhost:${port}`);
     console.log(`🔧 API: http://localhost:${port}/api`);

@@ -52,18 +52,18 @@ export class OcorrenciaController {
     return this.ocorrenciaService.findAll(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 10,
-      tipo as string | string[] | undefined,
-      linha as string | string[] | undefined,
+      tipo,
+      linha,
       dataInicio,
       dataFim,
       idVeiculo,
       idMotorista,
-      arco as string | string[] | undefined,
-      sentidoVia as string | string[] | undefined,
-      tipoLocal as string | string[] | undefined,
-      culpabilidade as string | string[] | undefined,
-      houveVitimas as string | string[] | undefined,
-      terceirizado as string | string[] | undefined,
+      arco,
+      sentidoVia,
+      tipoLocal,
+      culpabilidade,
+      houveVitimas,
+      terceirizado,
     );
   }
 
@@ -98,7 +98,10 @@ export class OcorrenciaController {
 
   @Patch(':id')
   @Permissions(Permission.OCORRENCIA_UPDATE)
-  update(@Param('id') id: string, @Body() updateOcorrenciaDto: UpdateOcorrenciaDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateOcorrenciaDto: UpdateOcorrenciaDto,
+  ) {
     return this.ocorrenciaService.update(id, updateOcorrenciaDto);
   }
 

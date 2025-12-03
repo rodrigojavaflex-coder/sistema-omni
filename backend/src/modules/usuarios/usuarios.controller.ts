@@ -72,7 +72,7 @@ export class UsuariosController {
   getPermissions() {
     return PERMISSION_GROUPS;
   }
-  
+
   @Get('profiles')
   @ApiOperation({ summary: 'Listar perfis disponíveis' })
   @ApiResponse({
@@ -83,7 +83,6 @@ export class UsuariosController {
   getProfiles(): Promise<Perfil[]> {
     return this.usuariosService.getProfiles();
   }
-  
 
   @Get()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)

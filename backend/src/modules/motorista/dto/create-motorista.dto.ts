@@ -1,4 +1,13 @@
-import { IsString, IsNotEmpty, IsEmail, IsOptional, IsEnum, IsDateString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEmail,
+  IsOptional,
+  IsEnum,
+  IsDateString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { Sexo } from '../../../common/enums/sexo.enum';
 import { Terceirizado } from '../../../common/enums/terceirizado.enum';
 import { StatusMotorista } from '../../../common/enums/status-motorista.enum';

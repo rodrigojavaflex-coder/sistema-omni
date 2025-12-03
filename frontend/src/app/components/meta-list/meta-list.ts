@@ -3,7 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { Observable } from 'rxjs';
 import { BaseListComponent } from '../base-list.component';
-import { Meta } from '../../models/meta.model';
+import {
+  Meta,
+  POLARIDADE_META_LABELS,
+  UNIDADE_META_LABELS,
+  INDICADOR_META_LABELS,
+} from '../../models/meta.model';
 import { MetaService } from '../../services/meta.service';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
 import { HistoricoAuditoriaComponent } from '../historico-auditoria/historico-auditoria.component';
@@ -25,6 +30,9 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   canAudit = false;
   showAuditModal = false;
   selectedForAudit: Meta | null = null;
+  polaridadeLabels = POLARIDADE_META_LABELS;
+  unidadeLabels = UNIDADE_META_LABELS;
+  indicadorLabels = INDICADOR_META_LABELS;
 
   protected override loadItems(): void {
     this.loading = true;
@@ -50,24 +58,52 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   }
 
   protected override getExportDataExcel(items: Meta[]) {
-    const headers = ['Nome da Meta', 'Departamento', 'Prazo Final', 'Meta', 'Registrado em'];
+    const headers = [
+      'Título da Meta',
+      'Polaridade',
+      'Unidade',
+      'Indicador',
+      'Início',
+      'Departamento',
+      'Prazo Final',
+      'Meta',
+      'Registrado em',
+    ];
     const data = items.map(m => [
-      m.nomeDaMeta,
+      m.tituloDaMeta,
+      this.polaridadeLabels[m.polaridade] || '-',
+      this.unidadeLabels[m.unidade] || '-',
+      this.indicadorLabels[m.indicador] || '-',
+      m.inicioDaMeta ? new Date(m.inicioDaMeta).toISOString().split('T')[0] : '-',
       m.departamento?.nomeDepartamento || '-',
       m.prazoFinal || '-',
-      m.meta ?? '-',
+      m.valorMeta ?? '-',
       m.criadoEm,
     ]);
     return { headers, data };
   }
 
   protected override getExportDataPDF(items: Meta[]) {
-    const headers = ['Nome da Meta', 'Departamento', 'Prazo Final', 'Meta', 'Registrado em'];
+    const headers = [
+      'Título da Meta',
+      'Polaridade',
+      'Unidade',
+      'Indicador',
+      'Início',
+      'Departamento',
+      'Prazo Final',
+      'Meta',
+      'Registrado em',
+    ];
     const data = items.map(m => [
-      m.nomeDaMeta,
+      m.tituloDaMeta,
+      this.polaridadeLabels[m.polaridade] || '-',
+      this.unidadeLabels[m.unidade] || '-',
+      this.indicadorLabels[m.indicador] || '-',
+      m.inicioDaMeta ? new Date(m.inicioDaMeta).toLocaleDateString('pt-BR') : '-',
       m.departamento?.nomeDepartamento || '-',
       m.prazoFinal || '-',
-      m.meta ?? '-',
+      m.valorMeta ?? '-',
       m.criadoEm,
     ]);
     return { headers, data };
@@ -90,7 +126,7 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   }
 
   delete(item: Meta): void {
-    this.confirmDelete(item, `Deseja excluir a meta "${item.nomeDaMeta}"?`);
+    this.confirmDelete(item, `Deseja excluir a meta "${item.tituloDaMeta}"?`);
   }
 
   override ngOnInit(): void {

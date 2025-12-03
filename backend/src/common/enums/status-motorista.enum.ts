@@ -4,5 +4,5 @@ export enum StatusMotorista {
   A_DISPOSICAO = 'À Disposição',
   APOIO = 'Apoio',
   DISPOSICAO_OUTRA_GERENCIA = 'Disposição de outra Gerência',
-  INSS = 'Inss'
+  INSS = 'Inss',
 }

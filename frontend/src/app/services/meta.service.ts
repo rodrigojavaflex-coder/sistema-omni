@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Meta, CreateMetaDto, UpdateMetaDto } from '../models/meta.model';
+import { Meta, CreateMetaDto, UpdateMetaDto, MetaDashboardCard } from '../models/meta.model';
 
 @Injectable({ providedIn: 'root' })
 export class MetaService {
@@ -11,6 +11,10 @@ export class MetaService {
 
   getAll(): Observable<Meta[]> {
     return this.http.get<Meta[]>(this.apiUrl);
+  }
+
+  getDashboardCards(): Observable<MetaDashboardCard[]> {
+    return this.http.get<MetaDashboardCard[]>(`${this.apiUrl}/dashboard`);
   }
 
   getById(id: string): Observable<Meta> {

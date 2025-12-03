@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { MetaService } from './meta.service';
@@ -27,6 +37,13 @@ export class MetaController {
   @Permissions(Permission.META_READ)
   findAll(@Req() req: any) {
     return this.metaService.findAll(req.user.id);
+  }
+
+  @Get('dashboard')
+  @ApiOperation({ summary: 'Obter painel de metas do usuário' })
+  @Permissions(Permission.META_READ)
+  dashboard(@Req() req: any) {
+    return this.metaService.getDashboard(req.user.id);
   }
 
   @Get(':id')

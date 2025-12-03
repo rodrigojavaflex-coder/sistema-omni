@@ -37,21 +37,30 @@ export class ConfiguracaoController {
   )
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateConfiguracaoDto })
-  async create(
-    @UploadedFile() file?: any,
-    @Req() req?: any,
-  ) {
+  async create(@UploadedFile() file?: any, @Req() req?: any) {
     // Processar FormData manualmente
     const body: CreateConfiguracaoDto = {
       nomeCliente: req.body.nomeCliente,
       logoRelatorio: file ? `/uploads/${file.filename}` : undefined,
       // Processar campos booleanos - converter strings para booleanos
-      auditarConsultas: req.body.auditarConsultas ? req.body.auditarConsultas === 'true' : true,
-      auditarLoginLogOff: req.body.auditarLoginLogOff ? req.body.auditarLoginLogOff === 'true' : true,
-      auditarCriacao: req.body.auditarCriacao ? req.body.auditarCriacao === 'true' : true,
-      auditarAlteracao: req.body.auditarAlteracao ? req.body.auditarAlteracao === 'true' : true,
-      auditarExclusao: req.body.auditarExclusao ? req.body.auditarExclusao === 'true' : true,
-      auditarSenhaAlterada: req.body.auditarSenhaAlterada ? req.body.auditarSenhaAlterada === 'true' : true,
+      auditarConsultas: req.body.auditarConsultas
+        ? req.body.auditarConsultas === 'true'
+        : true,
+      auditarLoginLogOff: req.body.auditarLoginLogOff
+        ? req.body.auditarLoginLogOff === 'true'
+        : true,
+      auditarCriacao: req.body.auditarCriacao
+        ? req.body.auditarCriacao === 'true'
+        : true,
+      auditarAlteracao: req.body.auditarAlteracao
+        ? req.body.auditarAlteracao === 'true'
+        : true,
+      auditarExclusao: req.body.auditarExclusao
+        ? req.body.auditarExclusao === 'true'
+        : true,
+      auditarSenhaAlterada: req.body.auditarSenhaAlterada
+        ? req.body.auditarSenhaAlterada === 'true'
+        : true,
     };
 
     return this.configuracaoService.create(body, req?.user?.id);
@@ -85,19 +94,31 @@ export class ConfiguracaoController {
   ) {
     // Capturar dados anteriores para auditoria
     const previousConfig = await this.configuracaoService.findOne();
-    (req as any).previousUserData = previousConfig;
-    
+    req.previousUserData = previousConfig;
+
     // Processar FormData manualmente
     const body: UpdateConfiguracaoDto = {
       nomeCliente: req.body.nomeCliente,
       logoRelatorio: file ? `/uploads/${file.filename}` : undefined,
       // Processar campos booleanos - converter strings para booleanos
-      auditarConsultas: req.body.auditarConsultas ? req.body.auditarConsultas === 'true' : undefined,
-      auditarLoginLogOff: req.body.auditarLoginLogOff ? req.body.auditarLoginLogOff === 'true' : undefined,
-      auditarCriacao: req.body.auditarCriacao ? req.body.auditarCriacao === 'true' : undefined,
-      auditarAlteracao: req.body.auditarAlteracao ? req.body.auditarAlteracao === 'true' : undefined,
-      auditarExclusao: req.body.auditarExclusao ? req.body.auditarExclusao === 'true' : undefined,
-      auditarSenhaAlterada: req.body.auditarSenhaAlterada ? req.body.auditarSenhaAlterada === 'true' : undefined,
+      auditarConsultas: req.body.auditarConsultas
+        ? req.body.auditarConsultas === 'true'
+        : undefined,
+      auditarLoginLogOff: req.body.auditarLoginLogOff
+        ? req.body.auditarLoginLogOff === 'true'
+        : undefined,
+      auditarCriacao: req.body.auditarCriacao
+        ? req.body.auditarCriacao === 'true'
+        : undefined,
+      auditarAlteracao: req.body.auditarAlteracao
+        ? req.body.auditarAlteracao === 'true'
+        : undefined,
+      auditarExclusao: req.body.auditarExclusao
+        ? req.body.auditarExclusao === 'true'
+        : undefined,
+      auditarSenhaAlterada: req.body.auditarSenhaAlterada
+        ? req.body.auditarSenhaAlterada === 'true'
+        : undefined,
     };
 
     return this.configuracaoService.update(id, body, req?.user?.id);

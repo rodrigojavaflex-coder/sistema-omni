@@ -45,7 +45,7 @@ export class TrechoController {
       limit ? parseInt(limit, 10) : 10,
       descricao,
       orderBy,
-      order
+      order,
     );
   }
 
@@ -58,7 +58,7 @@ export class TrechoController {
     try {
       return await this.trechoService.findByLocation(
         parseFloat(latitude),
-        parseFloat(longitude)
+        parseFloat(longitude),
       );
     } catch (error) {
       console.error('Erro no controller findByLocation:', error);
@@ -74,10 +74,7 @@ export class TrechoController {
 
   @Patch(':id')
   @Permissions(Permission.TRECHO_UPDATE)
-  update(
-    @Param('id') id: string,
-    @Body() updateTrechoDto: UpdateTrechoDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateTrechoDto: UpdateTrechoDto) {
     return this.trechoService.update(id, updateTrechoDto);
   }
 

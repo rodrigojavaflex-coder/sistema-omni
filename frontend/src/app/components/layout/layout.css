@@ -1,1 +1,82 @@
-/* Nenhuma customização necessária - usando 100% classes globais do design system */
+:host {
+  display: block;
+  height: 100%;
+}
+
+.layout-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--layout-header-height);
+}
+
+.layout-shell__main {
+  min-height: calc(100vh - var(--layout-header-height));
+}
+
+.layout-shell__sidebar {
+  position: fixed;
+  top: var(--layout-header-height);
+  left: 0;
+  bottom: 0;
+  width: var(--layout-sidebar-width);
+  background: inherit;
+  box-shadow: 4px 0 12px rgba(15, 23, 42, 0.08);
+  transform: translateX(-100%);
+  transition: transform 220ms ease;
+  z-index: 30;
+}
+
+.layout-shell--menu-open .layout-shell__sidebar {
+  transform: translateX(0);
+}
+
+.layout-shell__content {
+  padding: 0 var(--layout-shell-padding) var(--layout-shell-padding) var(--layout-shell-padding);
+  padding-top: calc(var(--layout-shell-padding) / 2);
+  transition: margin-left 220ms ease;
+}
+
+@media (min-width: 1024px) {
+  .layout-shell__content {
+    margin-left: 0;
+  }
+
+  .layout-shell--menu-open .layout-shell__content {
+    margin-left: var(--layout-sidebar-width);
+  }
+
+  .layout-shell__overlay {
+    display: none;
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .layout-shell__content {
+    margin-left: 0;
+  }
+}
+
+.layout-shell__overlay {
+  position: fixed;
+  inset: var(--layout-header-height) 0 0 0;
+  background: rgba(15, 23, 42, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+  z-index: 20;
+}
+
+.layout-shell__overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--layout-shell-padding);
+}
+

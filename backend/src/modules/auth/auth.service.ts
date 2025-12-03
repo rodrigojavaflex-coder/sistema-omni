@@ -21,6 +21,12 @@ import { Departamento } from '../departamento/entities/departamento.entity';
 
 @Injectable()
 export class AuthService {
+  private readonly auditConfigCacheTtlMs = 5 * 60 * 1000;
+  private auditConfigCache: { data: Configuracao | null; fetchedAt: number } = {
+    data: null,
+    fetchedAt: 0,
+  };
+
   constructor(
     @InjectRepository(Usuario)
     private readonly userRepository: Repository<Usuario>,
@@ -40,8 +46,8 @@ export class AuthService {
    */
   private async shouldAuditAction(action: AuditAction): Promise<boolean> {
     try {
-      const config = await this.configuracaoRepository.findOne({ where: {} });
-      
+      const config = await this.getAuditConfig();
+
       if (!config) {
         // Se não há configuração, auditar tudo por padrão
         return true;
@@ -52,22 +58,22 @@ export class AuthService {
         case AuditAction.LOGOUT:
         case AuditAction.LOGIN_FAILED:
           return config.auditarLoginLogOff;
-        
+
         case AuditAction.CREATE:
           return config.auditarCriacao;
-        
+
         case AuditAction.READ:
           return config.auditarConsultas;
-        
+
         case AuditAction.UPDATE:
           return config.auditarAlteracao;
-        
+
         case AuditAction.DELETE:
           return config.auditarExclusao;
-        
+
         case AuditAction.CHANGE_PASSWORD:
           return config.auditarSenhaAlterada;
-        
+
         default:
           return true; // Para ações não mapeadas, auditar por segurança
       }
@@ -75,6 +81,20 @@ export class AuthService {
       console.error('Erro ao verificar configurações de auditoria', error);
       return true; // Em caso de erro, auditar por segurança
     }
+  }
+
+  private async getAuditConfig(): Promise<Configuracao | null> {
+    const now = Date.now();
+    if (
+      this.auditConfigCache.data &&
+      now - this.auditConfigCache.fetchedAt < this.auditConfigCacheTtlMs
+    ) {
+      return this.auditConfigCache.data;
+    }
+
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    this.auditConfigCache = { data: config, fetchedAt: now };
+    return config;
   }
 
   async login(loginDto: LoginDto, req?: any): Promise<AuthResponseDto> {
@@ -126,20 +146,6 @@ export class AuthService {
       throw new UnauthorizedException('Email ou senha inválidos');
     }
 
-  // Gerar tokens
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-    };
-
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: this.configService.get('JWT_EXPIRES_IN', '1h'),
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
-    });
-
     if (await this.shouldAuditAction(AuditAction.LOGIN)) {
       await this.auditoriaService.createLog({
         acao: AuditAction.LOGIN,
@@ -149,37 +155,16 @@ export class AuthService {
       });
     }
 
-    const departamentosUsuario = await this.departamentoUsuarioRepository.find({
-      where: { usuarioId: user.id },
-      relations: ['departamento'],
-    });
-
-    // Retornar usuário sem senha e incluindo perfil e departamentos
-    const safeUser = {
-      id: user.id,
-      nome: user.nome,
-      email: user.email,
-      ativo: user.ativo,
-      perfil: user.perfil,
-      tema: user.tema || 'Claro',
-      criadoEm: user.criadoEm,
-      atualizadoEm: user.atualizadoEm,
-      departamentos: departamentosUsuario.map((du) => du.departamento),
-    } as unknown as Usuario;
-
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      token_type: 'Bearer',
-      expires_in: 3600, // 1 hora em segundos
-      user: safeUser,
-    };
+    return this.createAuthResponse(user);
   }
 
   async refreshToken(refreshToken: string): Promise<AuthResponseDto> {
     try {
-    const payload = this.jwtService.verify(refreshToken);
-    const user = await this.userRepository.findOne({ where: { id: payload.sub }, relations: ['perfil'] });
+      const payload = this.jwtService.verify(refreshToken);
+      const user = await this.userRepository.findOne({
+        where: { id: payload.sub },
+        relations: ['perfil'],
+      });
 
       if (!user || !user.ativo) {
         // Auditar tentativa de refresh com token inválido
@@ -204,7 +189,7 @@ export class AuthService {
         });
       }
 
-    return this.login({ email: user.email, password: user.senha });
+      return this.createAuthResponse(user);
     } catch (error) {
       // Auditar falha geral no refresh
       if (await this.shouldAuditAction(AuditAction.READ)) {
@@ -218,8 +203,51 @@ export class AuthService {
     }
   }
 
+  private async createAuthResponse(user: Usuario): Promise<AuthResponseDto> {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: this.configService.get('JWT_EXPIRES_IN', '1h'),
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
+    });
+
+    const departamentosUsuario = await this.departamentoUsuarioRepository.find({
+      where: { usuarioId: user.id },
+      relations: ['departamento'],
+    });
+
+    const safeUser = {
+      id: user.id,
+      nome: user.nome,
+      email: user.email,
+      ativo: user.ativo,
+      perfil: user.perfil,
+      tema: user.tema || 'Claro',
+      criadoEm: user.criadoEm,
+      atualizadoEm: user.atualizadoEm,
+      departamentos: departamentosUsuario.map((du) => du.departamento),
+    } as unknown as Usuario;
+
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      token_type: 'Bearer',
+      expires_in: 3600,
+      user: safeUser,
+    };
+  }
+
   async validateUserById(userId: string): Promise<Usuario | null> {
-    const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['perfil'] });
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['perfil'],
+    });
     if (user && user.ativo) {
       return user;
     }
@@ -227,8 +255,11 @@ export class AuthService {
   }
 
   async getProfile(userId: string): Promise<Usuario> {
-  const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['perfil'] });
-  if (!user) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['perfil'],
+    });
+    if (!user) {
       // Auditar tentativa de acesso a perfil inexistente
       if (await this.shouldAuditAction(AuditAction.READ)) {
         await this.auditoriaService.createLog({
@@ -280,7 +311,7 @@ export class AuthService {
   async logout(userId: string, request?: any): Promise<void> {
     // Buscar usuário para obter informações
     const user = await this.userRepository.findOneBy({ id: userId });
-    
+
     // Auditar logout se configurado
     if (await this.shouldAuditAction(AuditAction.LOGOUT)) {
       await this.auditoriaService.createLog({

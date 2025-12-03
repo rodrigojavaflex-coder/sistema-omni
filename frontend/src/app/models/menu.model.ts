@@ -147,11 +147,18 @@ export const MENU_CONFIGURATION: MenuConfig = {
       ]
     },
     {
+      label: 'Painel de Metas',
+      route: '/meta/dashboard',
+      icon: 'feather-activity',
+      requiredPermissions: [Permission.META_EXECUCAO_READ],
+      order: 3
+    },
+    {
       label: 'Relatórios',
       route: '/reports',
       icon: 'feather-bar-chart-2',
       requiredPermissions: [Permission.REPORTS_VIEW],
-      order: 3
+      order: 4
     }
   ]
 };

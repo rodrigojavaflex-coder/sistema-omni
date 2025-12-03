@@ -15,24 +15,24 @@ export enum Permission {
 
   // Perfis
   PROFILE_CREATE = 'perfil:create',
-  PROFILE_READ   = 'perfil:read',
+  PROFILE_READ = 'perfil:read',
   PROFILE_UPDATE = 'perfil:update',
   PROFILE_DELETE = 'perfil:delete',
-  
+
   // Veículos
   VEICULO_CREATE = 'veiculo:create',
   VEICULO_READ = 'veiculo:read',
   VEICULO_UPDATE = 'veiculo:update',
   VEICULO_DELETE = 'veiculo:delete',
   VEICULO_AUDIT = 'veiculo:audit',
-  
+
   // Motoristas
   MOTORISTA_CREATE = 'motorista:create',
   MOTORISTA_READ = 'motorista:read',
   MOTORISTA_UPDATE = 'motorista:update',
   MOTORISTA_DELETE = 'motorista:delete',
   MOTORISTA_AUDIT = 'motorista:audit',
-  
+
   // Ocorrências
   OCORRENCIA_CREATE = 'ocorrencia:create',
   OCORRENCIA_READ = 'ocorrencia:read',
@@ -59,6 +59,11 @@ export enum Permission {
   META_UPDATE = 'meta:update',
   META_DELETE = 'meta:delete',
   META_AUDIT = 'meta:audit',
+  META_EXECUCAO_CREATE = 'meta_execucao:create',
+  META_EXECUCAO_READ = 'meta_execucao:read',
+  META_EXECUCAO_UPDATE = 'meta_execucao:update',
+  META_EXECUCAO_DELETE = 'meta_execucao:delete',
+  META_EXECUCAO_AUDIT = 'meta_execucao:audit',
 }
 
 export const PERMISSION_GROUPS = {
@@ -76,7 +81,7 @@ export const PERMISSION_GROUPS = {
     { key: Permission.USER_AUDIT, label: 'Visualizar auditoria' },
   ],
   Relatórios: [
-    { key: Permission.REPORTS_VIEW, label: 'Visualizar relatórios' },
+    { key: Permission.REPORTS_VIEW, label: 'Acessar menu Relatórios' },
   ],
   Auditoria: [
     { key: Permission.AUDIT_VIEW, label: 'Visualizar logs de auditoria' },
@@ -127,6 +132,26 @@ export const PERMISSION_GROUPS = {
     { key: Permission.META_UPDATE, label: 'Editar metas' },
     { key: Permission.META_DELETE, label: 'Excluir metas' },
     { key: Permission.META_AUDIT, label: 'Auditar metas' },
+    {
+      key: Permission.META_EXECUCAO_CREATE,
+      label: 'Registrar execuções de metas',
+    },
+    {
+      key: Permission.META_EXECUCAO_READ,
+      label: 'Visualizar execuções de metas',
+    },
+    {
+      key: Permission.META_EXECUCAO_UPDATE,
+      label: 'Editar execuções de metas',
+    },
+    {
+      key: Permission.META_EXECUCAO_DELETE,
+      label: 'Excluir execuções de metas',
+    },
+    {
+      key: Permission.META_EXECUCAO_AUDIT,
+      label: 'Auditar execuções de metas',
+    },
   ],
 };
 

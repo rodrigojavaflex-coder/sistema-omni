@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { ErrorModalService, AuthService, NavigationService } from '../../services';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
@@ -7,6 +7,8 @@ import { HeaderComponent } from '../header/header'; // Importar HeaderComponent
 
 import { ErrorModalComponent } from '../error-modal/error-modal.component';
 import { ToastComponent } from '../toast/toast.component';
+import { Subject, takeUntil } from 'rxjs';
+import { MenuState } from '../../services/navigation.service';
 
 @Component({
   selector: 'app-layout',
@@ -15,35 +17,44 @@ import { ToastComponent } from '../toast/toast.component';
   templateUrl: './layout.html',
   styleUrls: ['./layout.css']
 })
-export class LayoutComponent implements OnInit {
+export class LayoutComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private navigationService = inject(NavigationService);
   public errorModalService = inject(ErrorModalService);
+  private destroy$ = new Subject<void>();
   
   isAuthenticated = false;
-  isMenuOpen = false; // Menu inicia fechado por padrão
-  isDesktop = window.innerWidth > 768;
+  isDesktop = true;
+  menuState: MenuState = 'open';
 
   ngOnInit() {
-    this.authService.isAuthenticated$.subscribe(
-      authenticated => this.isAuthenticated = authenticated
-    );
+    this.authService.isAuthenticated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(authenticated => (this.isAuthenticated = authenticated));
     
-    // Para desktop, usar o estado isMobileOpen para controlar visibilidade
-    // Para mobile, também usar isMobileOpen
-    this.navigationService.isMobileOpen$.subscribe(
-      isOpen => {
-        this.isMenuOpen = isOpen;
-      }
-    );
+    this.navigationService.menuState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(state => {
+        this.menuState = state;
+      });
 
-    // Detectar mudanças de tamanho da tela
-    window.addEventListener('resize', () => {
-      this.isDesktop = window.innerWidth > 768;
-    });
+    this.navigationService.viewport$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(viewport => {
+        this.isDesktop = viewport === 'desktop';
+      });
   }
 
   closeMenu() {
-    this.navigationService.closeMobile();
+    this.navigationService.closeMenu();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  get isMobileOverlayVisible(): boolean {
+    return !this.isDesktop && this.menuState === 'open';
   }
 }

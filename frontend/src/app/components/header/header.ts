@@ -3,15 +3,15 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService, NavigationService, ThemeService } from '../../services/index';
-import { Usuario, Permission } from '../../models/usuario.model';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
 import { ChangePasswordModalComponent } from '../change-password-modal/change-password-modal';
 import { ToastNotificationComponent } from '../toast-notification/toast-notification';
+import { UserMenuComponent } from './user-menu/user-menu.component';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, ConfirmationModalComponent, ChangePasswordModalComponent, ToastNotificationComponent],
+  imports: [CommonModule, RouterModule, ConfirmationModalComponent, ChangePasswordModalComponent, ToastNotificationComponent, UserMenuComponent],
   templateUrl: './header.html',
   styleUrls: ['./header.css', './dropdown-item.css']
 })
@@ -28,8 +28,6 @@ export class HeaderComponent {
   // Propriedades para o modal de confirmação
   showLogoutModal = false;
   
-  // Propriedade para controlar o dropdown do avatar
-  showUserDropdown = false;
   sessionActiveFor = '--';
   tokenExpiresIn = '--';
   private sessionInfoIntervalId?: any;
@@ -69,7 +67,7 @@ export class HeaderComponent {
   }
 
   toggleMenu() {
-    this.navigationService.toggleMobile();
+    this.navigationService.toggleMenu();
   }
 
   logout() {
@@ -86,23 +84,11 @@ export class HeaderComponent {
     this.showLogoutModal = false;
   }
   
-  toggleUserDropdown() {
-    this.showUserDropdown = !this.showUserDropdown;
-  }
-  
-  closeUserDropdown() {
-    this.showUserDropdown = false;
-  }
-  
   setTheme(theme: 'light' | 'dark') {
     this.themeService.setTheme(theme);
-    // Fechar o dropdown após alterar o tema
-    this.showUserDropdown = false;
   }
 
-  changePassword() {
-    // Fechar o dropdown antes de abrir o modal
-    this.showUserDropdown = false;
+  openChangePasswordModal() {
     this.showChangePasswordModal = true;
   }
 
@@ -136,15 +122,6 @@ export class HeaderComponent {
     this.showToast = false;
   }
   
-  toggleTheme() {
-    this.themeService.toggleTheme();
-  }
-
-  formatDepartamentos(deps: { nomeDepartamento: string }[] | undefined): string {
-    if (!deps || deps.length === 0) return 'N/D';
-    return deps.map((d) => d.nomeDepartamento).join(', ');
-  }
-
   private updateSessionInfo() {
     const sessionMs = this.authService.getSessionDurationMs();
     const expiresMs = this.authService.getAccessTokenExpiresInMs();

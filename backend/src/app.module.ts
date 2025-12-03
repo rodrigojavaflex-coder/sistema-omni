@@ -29,30 +29,30 @@ import { MetaModule } from './modules/meta/meta.module';
       load: [databaseConfig, appConfig, googleMapsConfig],
       envFilePath: '.env',
     }),
-    
+
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
       }),
     }),
-      UsuariosModule,
-      // VEICULO MODULE
-      VeiculoModule,
-      // MOTORISTA MODULE
-      MotoristaModule,
-      // OCORRENCIA MODULE
-      OcorrenciaModule,
-      // TRECHO MODULE
-      TrechoModule,
-  AuthModule,
-  // Shared (global guards/providers)
-  SharedModule,
+    UsuariosModule,
+    // VEICULO MODULE
+    VeiculoModule,
+    // MOTORISTA MODULE
+    MotoristaModule,
+    // OCORRENCIA MODULE
+    OcorrenciaModule,
+    // TRECHO MODULE
+    TrechoModule,
+    AuthModule,
+    // Shared (global guards/providers)
+    SharedModule,
     AuditoriaModule,
-  ConfiguracaoModule,
-  PerfilModule,
-  DepartamentoModule,
-  MetaModule,
+    ConfiguracaoModule,
+    PerfilModule,
+    DepartamentoModule,
+    MetaModule,
     TypeOrmModule.forFeature([Configuracao]),
   ],
   controllers: [AppController],

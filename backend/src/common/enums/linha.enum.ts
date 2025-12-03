@@ -7,5 +7,5 @@ export enum Linha {
   LINHA_116 = 'Linha 116',
   LINHA_117 = 'Linha 117',
   LINHA_118 = 'Linha 118',
-  LINHA_120 = 'Linha 120'
+  LINHA_120 = 'Linha 120',
 }
