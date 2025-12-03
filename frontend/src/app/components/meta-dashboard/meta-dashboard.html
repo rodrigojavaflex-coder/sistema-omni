@@ -192,23 +192,18 @@
     (click)="closeExecModal()"
   >
     <div class="exec-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <div>
+      <div class="modal-header compact-header">
+        <div class="header-info">
           <h2>{{ meta.tituloDaMeta }}</h2>
-          <p>
-            {{ meta.departamentoNome }}
-            •
-            {{ polaridadeLabels[meta.polaridade] }}
-            •
-            {{ indicadorLabels[meta.indicador] }}
-            •
-            Início: {{ meta.inicioDaMeta | date:'dd/MM/yyyy' }}
-          </p>
+          <div class="header-meta">
+            <span>{{ meta.departamentoNome }}</span>
+            <span>• {{ polaridadeLabels[meta.polaridade] }}</span>
+            <span>• {{ indicadorLabels[meta.indicador] }}</span>
+            <span>• Início: {{ meta.inicioDaMeta | date:'dd/MM/yyyy' }}</span>
+            <span>• Prazo final: {{ meta.prazoFinal ? (meta.prazoFinal | date:'dd/MM/yyyy') : '-' }}</span>
+          </div>
         </div>
         <div class="modal-actions">
-          <button class="btn btn-secondary" (click)="refreshSelected()" [disabled]="execLoading">
-            Atualizar dados
-          </button>
           <button
             *ngIf="canCreateExecucao"
             class="btn btn-primary"
@@ -220,7 +215,7 @@
         </div>
       </div>
 
-      <div class="details-summary">
+      <div class="details-summary wide">
         <div>
           <span>Meta planejada</span>
           <strong>
@@ -339,7 +334,7 @@
           *ngIf="canDeleteExecucao"
           (click)="onMenuDelete()"
         >
-          🗑️ Excluir
+          Excluir
         </button>
       </div>
     </div>

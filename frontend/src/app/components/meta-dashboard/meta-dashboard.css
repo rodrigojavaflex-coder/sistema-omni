@@ -113,6 +113,8 @@
   text-align: left;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .meta-card:hover,
@@ -133,6 +135,9 @@
 
 .card-content {
   padding: 16px 18px 18px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-title-row {
@@ -251,10 +256,10 @@
 
 .details-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-  padding: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
   border-radius: 12px;
   background: var(--bg-tertiary, rgba(15, 23, 42, 0.04));
 }
@@ -262,12 +267,12 @@
 .details-summary span {
   display: block;
   color: var(--text-secondary, #6b7280);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  margin-bottom: 2px;
 }
 
 .details-summary strong {
-  font-size: 1.3rem;
-
+  font-size: 1.1rem;
   color: var(--text-primary, #111);
 }
 
@@ -291,6 +296,7 @@
   padding: 10px 16px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.1);
   font-weight: 600;
+  gap: 16px;
 }
 
 .execucao-menu .menu-close {
@@ -298,12 +304,8 @@
   border: none;
   font-size: 1rem;
   cursor: pointer;
-  border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
-  display: flex;
-  flex-direction: column;
-  min-width: 160px;
-  overflow: hidden;
+  padding: 0;
+  line-height: 1;
 }
 
 .execucao-menu .menu-item {
@@ -316,10 +318,18 @@
   color: var(--text-primary, #111);
   display: flex;
   width: 100%;
+  gap: 8px;
+  align-items: center;
 }
 
 .execucao-menu .menu-item:hover {
   background: rgba(59, 130, 246, 0.1);
+}
+
+.execucao-menu .menu-item .menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .link-button {
@@ -434,12 +444,12 @@ textarea.form-input {
 }
 
 .exec-modal {
-  width: min(1100px, 100%);
+  width: min(1300px, 100%);
   max-height: calc(100vh - var(--app-header-offset, 72px) - 40px);
   overflow-y: auto;
   background: var(--bg-primary, #fff);
   border-radius: 20px;
-  padding: 28px;
+  padding: 20px 28px 28px;
   box-shadow: 0 30px 70px rgba(15, 23, 42, 0.35);
 }
 
@@ -448,7 +458,7 @@ textarea.form-input {
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .modal-header h2 {
@@ -459,6 +469,29 @@ textarea.form-input {
 .modal-header p {
   margin: 6px 0 0;
   color: var(--text-secondary, #555);
+}
+
+.compact-header {
+  margin-bottom: 16px;
+}
+
+.header-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.compact-header .header-info h2 {
+  margin: 0;
+}
+
+.header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-secondary, #555);
+  font-size: 0.9rem;
 }
 
 .modal-actions {
