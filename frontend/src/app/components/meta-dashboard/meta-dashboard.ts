@@ -46,6 +46,10 @@ export class MetaDashboardComponent implements OnInit {
   execucoes: MetaExecucao[] = [];
   execLoading = false;
   execModalVisible = false;
+  execucaoMenuVisible = false;
+  execucaoMenuPosition = { x: 0, y: 0 };
+  contextExecucao: MetaExecucao | null = null;
+  private ignoreNextOutsideEvent = false;
 
   execucaoForm = this.fb.group({
     dataRealizado: ['', Validators.required],
@@ -194,6 +198,7 @@ export class MetaDashboardComponent implements OnInit {
     this.closeExecucaoForm();
     this.selectedMeta = null;
     this.execucoes = [];
+    this.closeExecucaoMenu();
   }
 
   async loadExecucoes(metaId: string): Promise<void> {
@@ -205,6 +210,7 @@ export class MetaDashboardComponent implements OnInit {
       this.execucoes = [];
     } finally {
       this.execLoading = false;
+      this.closeExecucaoMenu();
     }
   }
 
@@ -453,6 +459,7 @@ export class MetaDashboardComponent implements OnInit {
     if (!this.canAudit) return;
     this.execucaoParaAuditoria = execucao;
     this.showAuditModal = true;
+    this.closeExecucaoMenu();
   }
 
   closeAudit(): void {
@@ -484,6 +491,57 @@ export class MetaDashboardComponent implements OnInit {
     return typeof rawMessage === 'string' && rawMessage.trim().length
       ? rawMessage
       : fallback;
+  }
+
+  openExecucaoMenu(event: MouseEvent, execucao: MetaExecucao): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.closeExecucaoMenu();
+    this.contextExecucao = execucao;
+    this.execucaoMenuVisible = true;
+    this.execucaoMenuPosition = { x: event.clientX, y: event.clientY };
+    this.ignoreNextOutsideEvent = true;
+    document.addEventListener('click', this.handleOutsideClick, true);
+    document.addEventListener('contextmenu', this.handleOutsideClick, true);
+  }
+
+  private handleOutsideClick = (): void => {
+    if (this.ignoreNextOutsideEvent) {
+      this.ignoreNextOutsideEvent = false;
+      return;
+    }
+    this.closeExecucaoMenu();
+  };
+
+  closeExecucaoMenu(): void {
+    if (this.execucaoMenuVisible) {
+      document.removeEventListener('click', this.handleOutsideClick, true);
+      document.removeEventListener('contextmenu', this.handleOutsideClick, true);
+    }
+    this.execucaoMenuVisible = false;
+    this.contextExecucao = null;
+    this.ignoreNextOutsideEvent = false;
+  }
+
+  onMenuEdit(): void {
+    if (this.contextExecucao) {
+      this.editExecucao(this.contextExecucao);
+    }
+    this.closeExecucaoMenu();
+  }
+
+  onMenuDelete(): void {
+    if (this.contextExecucao) {
+      this.confirmDelete(this.contextExecucao);
+    }
+    this.closeExecucaoMenu();
+  }
+
+  onMenuAudit(): void {
+    if (this.contextExecucao) {
+      this.openAudit(this.contextExecucao);
+    }
+    this.closeExecucaoMenu();
   }
 }
 

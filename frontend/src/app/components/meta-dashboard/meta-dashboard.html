@@ -276,7 +276,10 @@
           Nenhuma execução registrada para esta meta ainda.
         </div>
 
-        <table *ngIf="!execLoading && execucoes.length" class="data-table exec-table">
+        <table
+          *ngIf="!execLoading && execucoes.length"
+          class="data-table exec-table"
+        >
           <thead>
             <tr>
               <th>Data</th>
@@ -286,38 +289,58 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let execucao of execucoes">
+            <tr
+              *ngFor="let execucao of execucoes"
+              (contextmenu)="openExecucaoMenu($event, execucao)"
+            >
               <td>{{ execucao.dataRealizado | date:'dd/MM/yyyy' }}</td>
-              <td>{{ execucao.valorRealizado }}</td>
+              <td>{{ formatValorComUnidade(execucao.valorRealizado, meta.unidade) }}</td>
               <td>{{ execucao.justificativa || '-' }}</td>
               <td class="actions-col">
-                <div class="table-actions">
-                  <button
-                    class="btn btn-small btn-primary"
-                    *ngIf="canUpdateExecucao"
-                    (click)="editExecucao(execucao)"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    class="btn btn-small btn-danger"
-                    *ngIf="canDeleteExecucao"
-                    (click)="confirmDelete(execucao)"
-                  >
-                    Excluir
-                  </button>
-                  <button
-                    class="btn btn-small btn-audit"
-                    *ngIf="canAudit"
-                    (click)="openAudit(execucao)"
-                  >
-                    Auditar
-                  </button>
-                </div>
+                <button
+                  class="link-button action-menu-trigger"
+                  (click)="openExecucaoMenu($event, execucao)"
+                >
+                  Opções
+                </button>
               </td>
             </tr>
           </tbody>
         </table>
+      </div>
+      <div
+        class="execucao-menu"
+        *ngIf="execucaoMenuVisible && contextExecucao"
+        [style.top.px]="execucaoMenuPosition.y"
+        [style.left.px]="execucaoMenuPosition.x"
+        (click)="$event.stopPropagation()"
+        (contextmenu)="$event.stopPropagation()"
+      >
+        <div class="menu-header">
+          <span>Opções</span>
+          <button class="menu-close" (click)="closeExecucaoMenu()">✕</button>
+        </div>
+        <button
+          class="menu-item"
+          *ngIf="canUpdateExecucao"
+          (click)="onMenuEdit()"
+        >
+          Editar
+        </button>
+        <button
+          class="menu-item"
+          *ngIf="canAudit"
+          (click)="onMenuAudit()"
+        >
+          Auditar
+        </button>
+        <button
+          class="menu-item menu-danger"
+          *ngIf="canDeleteExecucao"
+          (click)="onMenuDelete()"
+        >
+          🗑️ Excluir
+        </button>
       </div>
     </div>
   </div>

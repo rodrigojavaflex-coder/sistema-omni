@@ -277,6 +277,71 @@
   vertical-align: top;
 }
 
+.execucao-menu {
+  position: fixed;
+  z-index: 1200;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+}
+
+.execucao-menu .menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  font-weight: 600;
+}
+
+.execucao-menu .menu-close {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  overflow: hidden;
+}
+
+.execucao-menu .menu-item {
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--text-primary, #111);
+  display: flex;
+  width: 100%;
+}
+
+.execucao-menu .menu-item:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #1d4ed8;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+.execucao-menu .menu-item.menu-danger {
+  color: #e74c3c;
+}
+
+.execucao-menu .menu-item.menu-danger:hover {
+  background: rgba(231, 76, 60, 0.1);
+}
+
 .execucao-form-overlay {
   position: fixed;
   inset: 0;
