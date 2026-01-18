@@ -56,10 +56,27 @@ export class MetaExecucaoService {
     return execucao;
   }
 
+  private normalizeDateString(dateStr: string): string {
+    // Garante que a data está no formato YYYY-MM-DD (sem timezone)
+    // Remove qualquer informação de timezone que possa estar presente
+    const dateOnly = dateStr.split('T')[0].split(' ')[0];
+    const parts = dateOnly.split('-');
+    if (parts.length !== 3) return dateStr;
+    
+    // Valida e retorna no formato YYYY-MM-DD
+    const year = parts[0];
+    const month = parts[1].padStart(2, '0');
+    const day = parts[2].padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  }
+
   private toLocalDate(dateStr: string | null | undefined): Date | null {
     if (!dateStr) return null;
-    const normalized = `${dateStr}T00:00:00`;
-    const date = new Date(normalized);
+    // Usa a data normalizada para criar o objeto Date
+    const normalized = this.normalizeDateString(dateStr);
+    // Adiciona hora local para evitar problemas de timezone
+    const date = new Date(`${normalized}T12:00:00`);
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
@@ -110,11 +127,17 @@ export class MetaExecucaoService {
   ): Promise<MetaExecucao> {
     const meta = await this.ensureMetaAccess(userId, metaId);
     this.assertDataDentroDoPeriodo(meta, dto.dataRealizado);
+    
+    // Normaliza a data para garantir que seja tratada como data local (sem timezone)
+    const dataNormalizada = this.normalizeDateString(dto.dataRealizado);
+    
     const execucao = this.metaExecucaoRepository.create({
       ...dto,
+      dataRealizado: dataNormalizada,
       metaId,
       meta,
     });
+    
     return this.metaExecucaoRepository.save(execucao);
   }
 
@@ -129,8 +152,14 @@ export class MetaExecucaoService {
     if (dto.dataRealizado) {
       this.assertDataDentroDoPeriodo(meta, dto.dataRealizado);
     }
+    
+    // Normaliza a data se fornecida
+    const dataNormalizada = dto.dataRealizado 
+      ? this.normalizeDateString(dto.dataRealizado)
+      : execucao.dataRealizado;
+    
     Object.assign(execucao, {
-      dataRealizado: dto.dataRealizado ?? execucao.dataRealizado,
+      dataRealizado: dataNormalizada,
       valorRealizado: dto.valorRealizado ?? execucao.valorRealizado,
       justificativa: dto.justificativa ?? execucao.justificativa,
     });

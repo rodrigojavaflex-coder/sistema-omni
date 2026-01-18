@@ -148,6 +148,9 @@ export class MetaService {
     const monthlyMap = await this.loadMonthlyExecutions(
       rows.map((row) => row.id),
     );
+    const lastExecutionMap = await this.loadLastExecution(
+      rows.map((row) => row.id),
+    );
 
     return rows.map((row) => {
       const valorPlanejado =
@@ -169,11 +172,22 @@ export class MetaService {
       const mediaExecucaoMesAtivo =
         monthlyInfo.months > 0 ? monthlyInfo.sum / monthlyInfo.months : 0;
       const mesesSemExecucao = Math.max(mesesIntervalo - monthlyInfo.months, 0);
-      let statusAtualMeta =
-        indicador === IndicadorMeta.POR_MEDIA && mesesIntervalo > 0
-          ? totalExecutado / mesesIntervalo
-          : totalExecutado;
+      
+      let statusAtualMeta: number;
+      
+      // Tratamento específico para DEMONSTRATIVO
+      if (indicador === IndicadorMeta.DEMONSTRATIVO) {
+        // Para demonstrativo, usa o último lançamento
+        statusAtualMeta = lastExecutionMap.get(row.id) ?? 0;
+      } else if (indicador === IndicadorMeta.POR_MEDIA && mesesIntervalo > 0) {
+        // Mantém lógica original do POR_MEDIA
+        statusAtualMeta = totalExecutado / mesesIntervalo;
+      } else {
+        // Mantém lógica original do RESULTADO_ACUMULADO
+        statusAtualMeta = totalExecutado;
+      }
 
+      // Esta parte só afeta POR_MEDIA (mantém lógica original)
       if (
         indicador === IndicadorMeta.POR_MEDIA &&
         mesesIntervalo > 0 &&
@@ -184,10 +198,21 @@ export class MetaService {
           totalExecutado + mesesSemExecucao * valorPlanejado;
         statusAtualMeta = totalProjetado / mesesIntervalo;
       }
-      const referencia =
-        indicador === IndicadorMeta.POR_MEDIA
-          ? statusAtualMeta
-          : totalExecutado;
+      
+      // Determina a referência para cálculo do progresso
+      let referencia: number;
+      if (indicador === IndicadorMeta.DEMONSTRATIVO) {
+        // Para demonstrativo, compara último lançamento com meta
+        referencia = statusAtualMeta; // que já é o último lançamento
+      } else if (indicador === IndicadorMeta.POR_MEDIA) {
+        // Mantém lógica original do POR_MEDIA
+        referencia = statusAtualMeta;
+      } else {
+        // Mantém lógica original do RESULTADO_ACUMULADO
+        referencia = totalExecutado;
+      }
+      
+      // Cálculo do progresso percentual
       const progressoPercentual =
         totalExecucoesNum === 0
           ? 0
@@ -324,6 +349,37 @@ export class MetaService {
         months: value.monthsSet.size,
       });
     });
+
+    return result;
+  }
+
+  private async loadLastExecution(
+    metaIds: string[],
+  ): Promise<Map<string, number>> {
+    const result = new Map<string, number>();
+    if (!metaIds.length) {
+      return result;
+    }
+
+    // Busca todas as execuções para as metas ordenando por dataRealizado desc e criadoEm desc
+    const execucoes = await this.metaExecucaoRepository.find({
+      where: { metaId: In(metaIds) },
+      select: ['metaId', 'dataRealizado', 'valorRealizado'],
+      order: { dataRealizado: 'DESC', criadoEm: 'DESC' },
+    });
+
+    // Processa para pegar apenas a última execução de cada meta
+    const processed = new Set<string>();
+    for (const execucao of execucoes) {
+      if (
+        execucao.metaId &&
+        !processed.has(execucao.metaId) &&
+        execucao.valorRealizado !== null
+      ) {
+        result.set(execucao.metaId, Number(execucao.valorRealizado));
+        processed.add(execucao.metaId);
+      }
+    }
 
     return result;
   }

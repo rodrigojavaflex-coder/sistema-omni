@@ -54,7 +54,7 @@ export class MetaDashboardComponent implements OnInit {
   private ignoreNextOutsideEvent = false;
 
   execucaoForm = this.fb.group({
-    dataRealizado: ['', Validators.required],
+    mesAno: ['', Validators.required],
     valorRealizado: [
       null as number | null,
       [Validators.required, Validators.pattern(/^-?\d+(\.\d{1,2})?$/)],
@@ -92,6 +92,7 @@ export class MetaDashboardComponent implements OnInit {
   canUpdateExecucao = false;
   canDeleteExecucao = false;
   canAudit = false;
+  mesesAnoDisponiveis: Array<{ value: string; label: string; month: number; year: number }> = [];
   private readonly colorSuccess = '#27ae60';
   private readonly colorMedium = '#2980b9';
   private readonly colorAlert = '#e74c3c';
@@ -108,6 +109,10 @@ export class MetaDashboardComponent implements OnInit {
     'Out',
     'Nov',
     'Dez',
+  ];
+  private readonly monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
 
   private formatNumber(valor: number): string {
@@ -161,6 +166,26 @@ export class MetaDashboardComponent implements OnInit {
     return `${month}/${year}`;
   }
 
+  formatDataMesAno(data: string): string {
+    if (!data) return '-';
+    
+    // Extrai apenas a parte da data (sem hora) para evitar problemas de timezone
+    const dateOnly = data.split('T')[0].split(' ')[0];
+    const parts = dateOnly.split('-');
+    
+    if (parts.length !== 3) return '-';
+    
+    const ano = Number(parts[0]);
+    const mes = Number(parts[1]); // mês no formato 1-12
+    
+    if (Number.isNaN(ano) || Number.isNaN(mes) || mes < 1 || mes > 12) {
+      return '-';
+    }
+    
+    // monthNames é indexado de 0-11, então subtrai 1
+    return `${this.monthNames[mes - 1]}-${ano}`;
+  }
+
   async ngOnInit(): Promise<void> {
     this.canCreateExecucao = this.authService.hasPermission(Permission.META_EXECUCAO_CREATE);
     this.canUpdateExecucao = this.authService.hasPermission(Permission.META_EXECUCAO_UPDATE);
@@ -176,6 +201,16 @@ export class MetaDashboardComponent implements OnInit {
       const cards = await firstValueFrom(this.metaService.getDashboardCards());
       this.allCards = cards;
       this.updateAvailableYears(cards);
+      
+      // Aplica o filtro do ano atual na primeira carga
+      if (!preserveSelection && this.appliedFilters.anoExercicio === '') {
+        const anoAtual = String(new Date().getFullYear());
+        if (this.availableYears.includes(anoAtual)) {
+          this.appliedFilters.anoExercicio = anoAtual;
+          this.filtersForm.patchValue({ anoExercicio: anoAtual }, { emitEvent: false });
+        }
+      }
+      
       await this.filterCards(preserveSelection, false);
     } catch (error) {
       this.errorModalService.show('Erro ao carregar painel de metas', 'Erro');
@@ -252,8 +287,9 @@ export class MetaDashboardComponent implements OnInit {
   }
 
   openCreateExecucao(): void {
+    this.gerarMesesAnoDisponiveis();
     this.execucaoForm.reset({
-      dataRealizado: '',
+      mesAno: '',
       valorRealizado: null,
       justificativa: '',
     });
@@ -374,8 +410,10 @@ export class MetaDashboardComponent implements OnInit {
   }
 
   editExecucao(execucao: MetaExecucao): void {
+    this.gerarMesesAnoDisponiveis();
+    const mesAnoValue = this.converterDataParaMesAno(execucao.dataRealizado);
     this.execucaoForm.reset({
-      dataRealizado: execucao.dataRealizado,
+      mesAno: mesAnoValue,
       valorRealizado: execucao.valorRealizado ?? null,
       justificativa: execucao.justificativa || '',
     });
@@ -402,8 +440,15 @@ export class MetaDashboardComponent implements OnInit {
     }
 
     const formValue = this.execucaoForm.value;
+    const dataRealizado = this.converterMesAnoParaData(formValue.mesAno || '');
+    
+    if (!dataRealizado) {
+      this.errorModalService.show('Erro ao converter data selecionada', 'Erro');
+      return;
+    }
+
     const payload: CreateMetaExecucaoDto = {
-      dataRealizado: formValue.dataRealizado || '',
+      dataRealizado,
       valorRealizado: Number(formValue.valorRealizado),
       justificativa: formValue.justificativa?.trim() || undefined,
     };
@@ -571,6 +616,146 @@ export class MetaDashboardComponent implements OnInit {
       this.openAudit(this.contextExecucao);
     }
     this.closeExecucaoMenu();
+  }
+
+  private gerarMesesAnoDisponiveis(): void {
+    if (!this.selectedMeta) {
+      this.mesesAnoDisponiveis = [];
+      return;
+    }
+
+    const inicio = this.selectedMeta.inicioDaMeta;
+    const fim = this.selectedMeta.prazoFinal;
+
+    if (!inicio) {
+      this.mesesAnoDisponiveis = [];
+      return;
+    }
+
+    // Extrai apenas a parte da data para evitar problemas de timezone
+    const parseDateOnly = (dateStr: string | null | undefined): { ano: number; mes: number } | null => {
+      if (!dateStr) return null;
+      const dateOnly = dateStr.split('T')[0]; // Pega apenas YYYY-MM-DD
+      const parts = dateOnly.split('-');
+      if (parts.length !== 3) return null;
+      const ano = Number(parts[0]);
+      const mes = Number(parts[1]);
+      if (Number.isNaN(ano) || Number.isNaN(mes)) return null;
+      return { ano, mes };
+    };
+
+    const inicioParsed = parseDateOnly(inicio);
+    const fimParsed = parseDateOnly(fim);
+
+    if (!inicioParsed) {
+      this.mesesAnoDisponiveis = [];
+      return;
+    }
+
+    const meses: Array<{ value: string; label: string; month: number; year: number }> = [];
+    
+    let mesAtual = inicioParsed.mes; // mês no formato 1-12
+    let anoAtual = inicioParsed.ano;
+
+    const mesFim = fimParsed ? fimParsed.mes : new Date().getMonth() + 1;
+    const anoFim = fimParsed ? fimParsed.ano : new Date().getFullYear();
+
+    while (
+      anoAtual < anoFim ||
+      (anoAtual === anoFim && mesAtual <= mesFim)
+    ) {
+      const value = `${anoAtual}-${String(mesAtual).padStart(2, '0')}`;
+      const label = `${this.monthNames[mesAtual - 1]}-${anoAtual}`;
+      
+      meses.push({
+        value,
+        label,
+        month: mesAtual,
+        year: anoAtual,
+      });
+
+      mesAtual++;
+      if (mesAtual > 12) {
+        mesAtual = 1;
+        anoAtual++;
+      }
+    }
+
+    this.mesesAnoDisponiveis = meses;
+  }
+
+  private converterMesAnoParaData(mesAnoValue: string): string {
+    if (!mesAnoValue || !this.selectedMeta) {
+      return '';
+    }
+
+    // O valor vem no formato "2026-02" (ano-mes)
+    const parts = mesAnoValue.split('-');
+    if (parts.length !== 2) {
+      return '';
+    }
+
+    const ano = Number(parts[0]);
+    const mesNumero = Number(parts[1]); // mês no formato 1-12
+
+    if (Number.isNaN(ano) || Number.isNaN(mesNumero) || mesNumero < 1 || mesNumero > 12) {
+      return '';
+    }
+
+    // Extrai apenas a parte da data (sem hora) para evitar problemas de timezone
+    const parseDateOnly = (dateStr: string | null | undefined): { ano: number; mes: number; dia: number } | null => {
+      if (!dateStr) return null;
+      const dateOnly = dateStr.split('T')[0]; // Pega apenas YYYY-MM-DD
+      const dateParts = dateOnly.split('-');
+      if (dateParts.length !== 3) return null;
+      const parsedAno = Number(dateParts[0]);
+      const parsedMes = Number(dateParts[1]);
+      const parsedDia = Number(dateParts[2]);
+      if (Number.isNaN(parsedAno) || Number.isNaN(parsedMes) || Number.isNaN(parsedDia)) {
+        return null;
+      }
+      return {
+        ano: parsedAno,
+        mes: parsedMes,
+        dia: parsedDia,
+      };
+    };
+
+    const inicioParsed = parseDateOnly(this.selectedMeta.inicioDaMeta);
+    const fimParsed = parseDateOnly(this.selectedMeta.prazoFinal);
+
+    let dia: number;
+
+    // Verifica se é o mês de início
+    if (inicioParsed && ano === inicioParsed.ano && mesNumero === inicioParsed.mes) {
+      dia = inicioParsed.dia;
+    }
+    // Verifica se é o mês de fim
+    else if (fimParsed && ano === fimParsed.ano && mesNumero === fimParsed.mes) {
+      dia = fimParsed.dia;
+    }
+    // Caso contrário, usa o primeiro dia do mês
+    else {
+      dia = 1;
+    }
+
+    // Constrói a data no formato YYYY-MM-DD
+    const anoStr = String(ano);
+    const mesStr = String(mesNumero).padStart(2, '0');
+    const diaStr = String(dia).padStart(2, '0');
+
+    return `${anoStr}-${mesStr}-${diaStr}`;
+  }
+
+  private converterDataParaMesAno(data: string): string {
+    if (!data) return '';
+
+    const date = new Date(data);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const ano = date.getFullYear();
+    const mes = date.getMonth() + 1;
+    return `${ano}-${String(mes).padStart(2, '0')}`;
   }
 }
 

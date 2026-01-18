@@ -108,10 +108,16 @@
                 </small>
               </strong>
             </div>
-            <div *ngIf="card.indicador !== indicadorEnum.POR_MEDIA">
+            <div *ngIf="card.indicador !== indicadorEnum.POR_MEDIA && card.indicador !== indicadorEnum.DEMONSTRATIVO">
               <span>Total executado</span>
               <strong>
                 {{ formatValorComUnidade(card.totalExecutado, card.unidade) }}
+              </strong>
+            </div>
+            <div *ngIf="card.indicador === indicadorEnum.DEMONSTRATIVO">
+              <span>Último lançamento</span>
+              <strong>
+                {{ formatValorComUnidade(card.statusAtualMeta, card.unidade) }}
               </strong>
             </div>
             <div>
@@ -225,10 +231,16 @@
             </small>
           </strong>
         </div>
-        <div *ngIf="meta.indicador !== indicadorEnum.POR_MEDIA">
+        <div *ngIf="meta.indicador !== indicadorEnum.POR_MEDIA && meta.indicador !== indicadorEnum.DEMONSTRATIVO">
           <span>Total executado</span>
           <strong>
             {{ formatValorComUnidade(meta.totalExecutado, meta.unidade) }}
+          </strong>
+        </div>
+        <div *ngIf="meta.indicador === indicadorEnum.DEMONSTRATIVO">
+          <span>Último lançamento</span>
+          <strong>
+            {{ formatValorComUnidade(meta.statusAtualMeta, meta.unidade) }}
           </strong>
         </div>
         <div>
@@ -240,7 +252,7 @@
           <strong>
             {{
               meta.ultimaExecucaoEm
-                ? (meta.ultimaExecucaoEm | date:'dd/MM/yyyy')
+                ? formatDataMesAno(meta.ultimaExecucaoEm)
                 : '-'
             }}
           </strong>
@@ -288,7 +300,7 @@
               *ngFor="let execucao of execucoes"
               (contextmenu)="openExecucaoMenu($event, execucao)"
             >
-              <td>{{ execucao.dataRealizado | date:'dd/MM/yyyy' }}</td>
+              <td>{{ formatDataMesAno(execucao.dataRealizado) }}</td>
               <td>{{ formatValorComUnidade(execucao.valorRealizado, meta.unidade) }}</td>
               <td>{{ execucao.justificativa || '-' }}</td>
               <td class="actions-col">
@@ -354,10 +366,15 @@
 
     <form [formGroup]="execucaoForm" (ngSubmit)="saveExecucao()">
       <div class="form-group">
-        <label>Data realizada *</label>
-        <input type="date" formControlName="dataRealizado" class="form-input" />
-        <div class="form-error" *ngIf="isFieldInvalid('dataRealizado')">
-          Informe uma data válida.
+        <label>Mês/Ano realizado *</label>
+        <select formControlName="mesAno" class="form-select">
+          <option value="">Selecione o mês/ano</option>
+          <option *ngFor="let opcao of mesesAnoDisponiveis" [value]="opcao.value">
+            {{ opcao.label }}
+          </option>
+        </select>
+        <div class="form-error" *ngIf="isFieldInvalid('mesAno')">
+          Selecione um mês/ano válido.
         </div>
       </div>
 

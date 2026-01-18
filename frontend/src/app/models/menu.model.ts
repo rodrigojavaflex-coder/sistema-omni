@@ -17,7 +17,7 @@ export interface MenuConfig {
 }
 
 export const MENU_CONFIGURATION: MenuConfig = {
-  title: 'Sistema de Gestão de Transporte',
+  title: 'Gestão e Controle',
   items: [
     {
       label: 'Administração',
