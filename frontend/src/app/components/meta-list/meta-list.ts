@@ -32,6 +32,9 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   private fb = inject(FormBuilder);
 
   canAudit = false;
+  canCreate = false;
+  canUpdate = false;
+  canDelete = false;
   showAuditModal = false;
   selectedForAudit: Meta | null = null;
   polaridadeLabels = POLARIDADE_META_LABELS;
@@ -137,19 +140,25 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   }
 
   create(): void {
+    if (!this.canCreate) return;
     this.router.navigate(['/meta/new']);
   }
 
   edit(item: Meta): void {
+    if (!this.canUpdate) return;
     this.router.navigate(['/meta/edit', item.id]);
   }
 
   delete(item: Meta): void {
+    if (!this.canDelete) return;
     this.confirmDelete(item, `Deseja excluir a meta "${item.tituloDaMeta}"?`);
   }
 
   override ngOnInit(): void {
     this.canAudit = this.authService.hasPermission(Permission.META_AUDIT);
+    this.canCreate = this.authService.hasPermission(Permission.META_CREATE);
+    this.canUpdate = this.authService.hasPermission(Permission.META_UPDATE);
+    this.canDelete = this.authService.hasPermission(Permission.META_DELETE);
     this.filterForm.valueChanges.subscribe(() => this.applyFilters());
     this.loadDepartamentos();
     super.ngOnInit();

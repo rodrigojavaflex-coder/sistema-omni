@@ -1,0 +1,33 @@
+<ion-app>
+  <ion-menu *ngIf="isAuthenticated && isNative" content-id="main-content">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Configurações</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="menu-content">
+      <ion-list class="menu-list">
+        <ion-item lines="none">
+          <ion-toggle
+            aria-label="Login por digital"
+            [checked]="biometricEnabled"
+            [disabled]="!biometricAvailable || biometricSaving"
+            (ionChange)="onBiometricToggle($event)">
+            Login por digital
+          </ion-toggle>
+        </ion-item>
+      </ion-list>
+      <div class="menu-footer">
+        <ion-button
+          expand="block"
+          color="danger"
+          (click)="logout()">
+          <ion-icon name="log-out-outline" slot="start"></ion-icon>
+          Sair
+        </ion-button>
+      </div>
+    </ion-content>
+  </ion-menu>
+
+  <ion-router-outlet id="main-content"></ion-router-outlet>
+</ion-app>

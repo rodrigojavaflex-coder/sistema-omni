@@ -1,0 +1,75 @@
+<ion-content [fullscreen]="true">
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <h1 class="login-title">Bem-vindo</h1>
+        <p class="login-subtitle">Entre com suas credenciais</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <div class="input-group">
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            class="form-input"
+            [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+            placeholder="Email"
+            required>
+          <label for="email" class="form-label">Email</label>
+          <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+            <span *ngIf="loginForm.get('email')?.errors?.['required']">Email é obrigatório</span>
+            <span *ngIf="loginForm.get('email')?.errors?.['email']">Email inválido</span>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <input
+            type="password"
+            id="password"
+            formControlName="password"
+            class="form-input"
+            [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+            placeholder="Senha"
+            required>
+          <label for="password" class="form-label">Senha</label>
+          <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+            <span *ngIf="loginForm.get('password')?.errors?.['required']">Senha é obrigatória</span>
+            <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Senha muito curta</span>
+          </div>
+        </div>
+
+        <div class="alert-error" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+
+        <button
+          type="submit"
+          class="login-button"
+          [disabled]="loginForm.invalid || isLoading">
+          <span class="button-text" *ngIf="!isLoading">Entrar</span>
+          <span class="button-text" *ngIf="isLoading">
+            <ion-spinner name="crescent"></ion-spinner>
+            Entrando...
+          </span>
+        </button>
+
+        <button
+          *ngIf="biometricAvailable && biometricEnabled"
+          type="button"
+          class="biometric-button"
+          [disabled]="isBiometricLoading || isLoading"
+          (click)="onBiometricLogin()">
+          <span class="button-text" *ngIf="!isBiometricLoading">
+            <ion-icon name="finger-print-outline"></ion-icon>
+            Entrar com digital
+          </span>
+          <span class="button-text" *ngIf="isBiometricLoading">
+            <ion-spinner name="crescent"></ion-spinner>
+            Verificando...
+          </span>
+        </button>
+      </form>
+    </div>
+  </div>
+</ion-content>

@@ -24,3 +24,32 @@
 - Siga as convenções atuais: nomes em snake_case, prefixos `fk_`/`idx_`, chaves primárias UUID por padrão.
 - Revise colunas para ter `NOT NULL`, defaults e constraints (CHECK/UNIQUE) sempre que aplicável, garantindo integridade no próprio banco.
 - Para cargas de dados grandes, considere `COPY`, bulk inserts ou jobs assíncronos para não degradar a aplicação online.
+
+# Mobile (Ionic/Capacitor)
+- Use componentes de `@ionic/angular/standalone`; evite `IonicModule`.
+- Evite `ion-menu` no web; condicione por plataforma quando necessário.
+- Preferir `androidScheme: 'https'` em produção e usar túnel HTTPS nos testes.
+
+# Endpoints (túneis Cloudflare)
+- DEV: https://api-dev.sistemasfarmamais.com/api  (localhost:3000)
+- PROD: https://api.sistemasfarmamais.com/api     (localhost:8080)
+- `environment.ts` deve apontar para o túnel DEV em `apiUrl` e `apiUrlNative`.
+- `environment.prod.ts` deve apontar para o túnel PROD em `apiUrl` e `apiUrlNative`.
+- Nunca usar `10.0.2.2` em APK para celular físico (apenas emulador).
+
+# Biometria
+- Só exibir opções se `NativeBiometric.isAvailable()` retornar true.
+- Guardar credenciais no secure storage; não usar `Preferences` para dados sensíveis.
+
+# UI/UX
+- Limpar formulário de login em `ionViewWillEnter`.
+- Evitar lógica pesada nos templates (mantenha no componente).
+
+# Logs/Erros
+- Mensagens de erro devem incluir status HTTP e detalhe do backend, sem expor URL em produção.
+
+# Testes no Android Studio (Emulador)
+- Emulador deve usar sempre o túnel DEV:
+  - https://api-dev.sistemasfarmamais.com/api
+- Nunca usar `10.0.2.2` em builds de teste (evitar divergência entre emulador e celular físico).
+- Ao gerar APK de teste, garantir `environment.ts` apontando para o túnel DEV.

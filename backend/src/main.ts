@@ -1,4 +1,4 @@
-﻿import { NestFactory } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
@@ -56,14 +56,28 @@ async function bootstrap() {
         'https://www.gestaodetransporte.com',
         'http://gestaodetransporte.com',
         'http://www.gestaodetransporte.com',
+        'https://api.sistemasfarmamais.com',
+        'https://localhost',
+        'http://localhost',
+        'capacitor://localhost',
+        'ionic://localhost',
       ]
     : [
         'http://localhost:4200',
         'http://localhost:3000',
         'http://localhost:8080',
+        'http://localhost:8100',
+        'http://localhost:8101',
         'http://127.0.0.1:4200',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:8080',
+        'http://127.0.0.1:8100',
+        'http://127.0.0.1:8101',
+        'https://localhost',
+        'http://localhost',
+        'https://api-dev.sistemasfarmamais.com',
+        'capacitor://localhost',
+        'ionic://localhost',
       ];
 
   app.enableCors({

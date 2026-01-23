@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/app.component.scss"],
+  "sourcesContent": [".menu-content {\r\n  display: flex;\r\n  flex-direction: column;\r\n}\r\n\r\n.menu-list {\r\n  flex: 1;\r\n}\r\n\r\n.menu-footer {\r\n  padding: 16px;\r\n}\r\n"],
+  "mappings": ";AAAA,CAAA;AACE,WAAA;AACA,kBAAA;;AAGF,CAAA;AACE,QAAA;;AAGF,CAAA;AACE,WAAA;;",
+  "names": []
+}

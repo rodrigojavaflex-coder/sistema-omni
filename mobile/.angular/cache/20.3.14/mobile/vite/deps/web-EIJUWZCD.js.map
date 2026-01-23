@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../node_modules/capacitor-native-biometric/dist/esm/web.js"],
+  "sourcesContent": ["import { WebPlugin } from \"@capacitor/core\";\nexport class NativeBiometricWeb extends WebPlugin {\n    constructor() {\n        super();\n    }\n    isAvailable() {\n        throw new Error(\"Method not implemented.\");\n    }\n    verifyIdentity(_options) {\n        throw new Error(\"Method not implemented.\");\n    }\n    getCredentials(_options) {\n        throw new Error(\"Method not implemented.\");\n    }\n    setCredentials(_options) {\n        throw new Error(\"Method not implemented.\");\n    }\n    deleteCredentials(_options) {\n        throw new Error(\"Method not implemented.\");\n    }\n}\n"],
+  "mappings": ";;;;;;AACO,IAAM,qBAAN,cAAiC,UAAU;AAAA,EAC9C,cAAc;AACV,UAAM;AAAA,EACV;AAAA,EACA,cAAc;AACV,UAAM,IAAI,MAAM,yBAAyB;AAAA,EAC7C;AAAA,EACA,eAAe,UAAU;AACrB,UAAM,IAAI,MAAM,yBAAyB;AAAA,EAC7C;AAAA,EACA,eAAe,UAAU;AACrB,UAAM,IAAI,MAAM,yBAAyB;AAAA,EAC7C;AAAA,EACA,eAAe,UAAU;AACrB,UAAM,IAAI,MAAM,yBAAyB;AAAA,EAC7C;AAAA,EACA,kBAAkB,UAAU;AACxB,UAAM,IAAI,MAAM,yBAAyB;AAAA,EAC7C;AACJ;",
+  "names": []
+}

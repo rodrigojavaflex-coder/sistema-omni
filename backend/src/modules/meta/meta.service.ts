@@ -175,9 +175,9 @@ export class MetaService {
       
       let statusAtualMeta: number;
       
-      // Tratamento específico para DEMONSTRATIVO
-      if (indicador === IndicadorMeta.DEMONSTRATIVO) {
-        // Para demonstrativo, usa o último lançamento
+      // Tratamento específico para PROGRESSO
+      if (indicador === IndicadorMeta.PROGRESSO) {
+        // Para progresso, usa o último lançamento
         statusAtualMeta = lastExecutionMap.get(row.id) ?? 0;
       } else if (indicador === IndicadorMeta.POR_MEDIA && mesesIntervalo > 0) {
         // Mantém lógica original do POR_MEDIA
@@ -201,8 +201,8 @@ export class MetaService {
       
       // Determina a referência para cálculo do progresso
       let referencia: number;
-      if (indicador === IndicadorMeta.DEMONSTRATIVO) {
-        // Para demonstrativo, compara último lançamento com meta
+      if (indicador === IndicadorMeta.PROGRESSO) {
+        // Para progresso, compara último lançamento com meta
         referencia = statusAtualMeta; // que já é o último lançamento
       } else if (indicador === IndicadorMeta.POR_MEDIA) {
         // Mantém lógica original do POR_MEDIA

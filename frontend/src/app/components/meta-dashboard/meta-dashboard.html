@@ -108,13 +108,13 @@
                 </small>
               </strong>
             </div>
-            <div *ngIf="card.indicador !== indicadorEnum.POR_MEDIA && card.indicador !== indicadorEnum.DEMONSTRATIVO">
+            <div *ngIf="card.indicador !== indicadorEnum.POR_MEDIA && card.indicador !== indicadorEnum.PROGRESSO">
               <span>Total executado</span>
               <strong>
                 {{ formatValorComUnidade(card.totalExecutado, card.unidade) }}
               </strong>
             </div>
-            <div *ngIf="card.indicador === indicadorEnum.DEMONSTRATIVO">
+            <div *ngIf="card.indicador === indicadorEnum.PROGRESSO">
               <span>Último lançamento</span>
               <strong>
                 {{ formatValorComUnidade(card.statusAtualMeta, card.unidade) }}
@@ -231,13 +231,13 @@
             </small>
           </strong>
         </div>
-        <div *ngIf="meta.indicador !== indicadorEnum.POR_MEDIA && meta.indicador !== indicadorEnum.DEMONSTRATIVO">
+        <div *ngIf="meta.indicador !== indicadorEnum.POR_MEDIA && meta.indicador !== indicadorEnum.PROGRESSO">
           <span>Total executado</span>
           <strong>
             {{ formatValorComUnidade(meta.totalExecutado, meta.unidade) }}
           </strong>
         </div>
-        <div *ngIf="meta.indicador === indicadorEnum.DEMONSTRATIVO">
+        <div *ngIf="meta.indicador === indicadorEnum.PROGRESSO">
           <span>Último lançamento</span>
           <strong>
             {{ formatValorComUnidade(meta.statusAtualMeta, meta.unidade) }}

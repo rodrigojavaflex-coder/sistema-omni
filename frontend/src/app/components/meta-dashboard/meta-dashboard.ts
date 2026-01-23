@@ -374,6 +374,14 @@ export class MetaDashboardComponent implements OnInit {
         this.departamentos = [];
         return;
       }
+      if (!this.authService.hasPermission(Permission.DEPARTAMENTO_READ)) {
+        this.departamentos = (user?.departamentos ?? []).map((dep) => ({
+          ...dep,
+          criadoEm: '',
+          atualizadoEm: '',
+        }));
+        return;
+      }
       const todos = await firstValueFrom(this.departamentoService.getAll());
       this.departamentos = todos.filter((dep) => ids.includes(dep.id));
     } catch (error) {
@@ -474,8 +482,13 @@ export class MetaDashboardComponent implements OnInit {
 
   confirmDelete(execucao: MetaExecucao): void {
     this.execucaoParaExcluir = execucao;
-    const data = new Date(execucao.dataRealizado).toLocaleDateString('pt-BR');
-    this.deleteModalMessage = `Deseja excluir a execução realizada em ${data}?`;
+    // Usa formatDataMesAno para evitar conversão de timezone
+    const dataFormatada = this.formatDataMesAno(execucao.dataRealizado);
+    // Converte para formato brasileiro (DD/MM/AAAA) se necessário
+    const dateOnly = execucao.dataRealizado.split('T')[0].split(' ')[0];
+    const parts = dateOnly.split('-');
+    const dataBR = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dataFormatada;
+    this.deleteModalMessage = `Deseja excluir a execução realizada em ${dataBR}?`;
     this.showDeleteModal = true;
   }
 
@@ -750,11 +763,19 @@ export class MetaDashboardComponent implements OnInit {
   private converterDataParaMesAno(data: string): string {
     if (!data) return '';
 
-    const date = new Date(data);
-    if (Number.isNaN(date.getTime())) return '';
-
-    const ano = date.getFullYear();
-    const mes = date.getMonth() + 1;
+    // Extrai apenas a parte da data (sem hora) para evitar problemas de timezone
+    const dateOnly = data.split('T')[0].split(' ')[0];
+    const parts = dateOnly.split('-');
+    
+    if (parts.length !== 3) return '';
+    
+    const ano = Number(parts[0]);
+    const mes = Number(parts[1]); // mês no formato 1-12
+    
+    if (Number.isNaN(ano) || Number.isNaN(mes) || mes < 1 || mes > 12) {
+      return '';
+    }
+    
     return `${ano}-${String(mes).padStart(2, '0')}`;
   }
 }

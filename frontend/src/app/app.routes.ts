@@ -4,6 +4,8 @@ import { UserListComponent } from './components/user-list/user-list';
 import { UserFormComponent } from './components/user-form/user-form';
 import { AuditoriaComponent } from './components/auditoria/auditoria';
 import { authGuard } from './guards/auth.guard';
+import { permissionGuard } from './guards/permission.guard';
+import { Permission } from './models/usuario.model';
 import { ConfiguracaoComponent } from './modules/configuracao/configuracao.component';
 import { HomeComponent } from './components/home/home';
 import { ChangePasswordComponent } from './components/change-password/change-password';
@@ -154,7 +156,8 @@ export const routes: Routes = [
   {
     path: 'meta/dashboard',
     loadComponent: () => import('./components/meta-dashboard/meta-dashboard').then(m => m.MetaDashboardComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.META_EXECUCAO_READ] }
   },
   {
     path: 'meta/new',

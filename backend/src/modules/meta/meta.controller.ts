@@ -41,7 +41,7 @@ export class MetaController {
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Obter painel de metas do usuário' })
-  @Permissions(Permission.META_READ)
+  @Permissions(Permission.META_READ, Permission.META_EXECUCAO_READ)
   dashboard(@Req() req: any) {
     return this.metaService.getDashboard(req.user.id);
   }
