@@ -1,0 +1,100 @@
+/* Nenhuma customização necessária - usando 100% classes globais do design system */
+
+.drag-col {
+  width: 120px;
+}
+
+.drag-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  cursor: grab;
+  background: rgba(15, 23, 42, 0.08);
+  color: #334155;
+  font-weight: 700;
+  user-select: none;
+}
+
+.drag-handle.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.checkbox-text {
+  font-size: 0.95rem;
+  color: var(--text-primary, #111827);
+}
+
+.reorder-hint {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.08);
+  color: #1e3a8a;
+  font-size: 0.85rem;
+}
+
+.table-container {
+  overflow: visible;
+}
+
+.data-table {
+  overflow: visible;
+}
+
+.data-table td,
+.data-table th {
+  overflow: visible;
+}
+
+.grid-input {
+  min-width: 120px;
+}
+
+.invalid-field {
+  border-color: #dc2626 !important;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.row-invalid {
+  background: rgba(220, 38, 38, 0.04);
+}
+
+.row-editing {
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.cdk-drag-preview {
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.4;
+}
+
+.cdk-drag-animating {
+  transition: transform 200ms ease;
+}

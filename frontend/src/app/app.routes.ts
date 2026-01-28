@@ -114,6 +114,34 @@ export const routes: Routes = [
     loadComponent: () => import('./components/trecho-form/trecho-form').then(m => m.TrechoFormComponent),
     canActivate: [authGuard]
   },
+  // Rotas de tipo de vistoria com lazy loading
+  {
+    path: 'tipo-vistoria',
+    loadComponent: () => import('./components/tipo-vistoria-list/tipo-vistoria-list').then(m => m.TipoVistoriaListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'tipo-vistoria/new',
+    loadComponent: () => import('./components/tipo-vistoria-form/tipo-vistoria-form').then(m => m.TipoVistoriaFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'tipo-vistoria/edit/:id',
+    loadComponent: () => import('./components/tipo-vistoria-form/tipo-vistoria-form').then(m => m.TipoVistoriaFormComponent),
+    canActivate: [authGuard]
+  },
+  // Rotas de item vistoriado com lazy loading
+  {
+    path: 'item-vistoriado',
+    loadComponent: () => import('./components/item-vistoriado-list/item-vistoriado-list').then(m => m.ItemVistoriadoListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'vistorias',
+    loadComponent: () => import('./components/vistoria-list/vistoria-list').then(m => m.VistoriaListComponent),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.VISTORIA_WEB_READ] }
+  },
   // Rotas de perfil: paths específicos antes da rota geral para evitar conflitos de prefixo
   {
     path: 'perfil/new',

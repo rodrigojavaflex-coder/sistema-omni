@@ -1,13 +1,15 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { Capacitor } from '@capacitor/core';
+import { RouterLink } from '@angular/router';
 import {
   IonContent,
   IonHeader,
   IonTitle,
   IonToolbar,
   IonMenuButton,
-  IonButtons
+  IonButtons,
+  IonButton
 } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
 import { Usuario } from '../../models/usuario.model';
@@ -19,12 +21,14 @@ import { Usuario } from '../../models/usuario.model';
   standalone: true,
   imports: [
     NgIf,
+    RouterLink,
     IonContent,
     IonHeader,
     IonTitle,
     IonToolbar,
     IonMenuButton,
-    IonButtons
+    IonButtons,
+    IonButton
   ]
 })
 export class HomePage implements OnInit {
@@ -35,5 +39,9 @@ export class HomePage implements OnInit {
 
   async ngOnInit() {
     this.user = this.authService.getCurrentUser();
+  }
+
+  get canStartVistoria(): boolean {
+    return this.authService.hasPermission('vistoria_mobile:create');
   }
 }

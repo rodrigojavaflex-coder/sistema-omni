@@ -21,6 +21,8 @@ import googleMapsConfig from './config/google-maps.config';
 import { Configuracao } from './modules/configuracao/entities/configuracao.entity';
 import { DepartamentoModule } from './modules/departamento/departamento.module';
 import { MetaModule } from './modules/meta/meta.module';
+import { VistoriaModule } from './modules/vistoria/vistoria.module';
+import { SystemModule } from './modules/system/system.module';
 
 @Module({
   imports: [
@@ -53,6 +55,8 @@ import { MetaModule } from './modules/meta/meta.module';
     PerfilModule,
     DepartamentoModule,
     MetaModule,
+    VistoriaModule,
+    SystemModule,
     TypeOrmModule.forFeature([Configuracao]),
   ],
   controllers: [AppController],

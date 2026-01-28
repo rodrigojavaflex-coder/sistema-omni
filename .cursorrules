@@ -29,6 +29,9 @@
 - Use componentes de `@ionic/angular/standalone`; evite `IonicModule`.
 - Evite `ion-menu` no web; condicione por plataforma quando necessário.
 - Preferir `androidScheme: 'https'` em produção e usar túnel HTTPS nos testes.
+- Priorizar soluções visuais e componentes que funcionem igual em Android e iOS.
+- Evitar depender de Shadow DOM/::part para estilos críticos no Android.
+- Para seletores binários (ex.: Conforme/Não conforme), preferir ion-chip/ion-button com classes ao invés de ion-segment.
 
 # Endpoints (túneis Cloudflare)
 - DEV: https://api-dev.sistemasfarmamais.com/api  (localhost:3000)

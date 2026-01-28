@@ -20,3 +20,12 @@
   padding-right: calc(var(--layout-shell-padding) - 4px);
 }
 
+.submenu-container.nested {
+  padding-left: 10px;
+}
+
+.nested-list {
+  padding-left: 12px;
+  margin-top: 6px;
+}
+

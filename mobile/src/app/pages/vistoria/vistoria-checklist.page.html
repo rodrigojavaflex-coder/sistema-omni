@@ -1,0 +1,103 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start" *ngIf="isNative">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Checklist</ion-title>
+    <ion-buttons slot="end">
+      <ion-button color="danger" (click)="cancelarVistoria()">Cancelar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-progress-bar *ngIf="itens.length > 0" [value]="progress"></ion-progress-bar>
+
+  <div class="content" *ngIf="loadingItens">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Carregando itens...</p>
+  </div>
+
+  <div class="content" *ngIf="!loadingItens && currentItem">
+    <div class="actions actions-top">
+      <ion-button fill="outline" (click)="anterior()" [disabled]="currentIndex === 0">
+        <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+        Anterior
+      </ion-button>
+      <ion-button (click)="salvarItem()" [disabled]="isSaving">
+        <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>
+        <span *ngIf="!isSaving">
+          Salvar item
+          <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+        </span>
+      </ion-button>
+    </div>
+
+    <div class="header">
+      <h2>{{ currentItem.sequencia }}. {{ currentItem.descricao }}</h2>
+      <ion-text color="success" *ngIf="savedIds.has(currentItem.id)">
+        <ion-icon name="checkmark-circle"></ion-icon>
+        Item salvo
+      </ion-text>
+    </div>
+
+    <ion-item class="situacao-item">
+      <div class="situacao-chips">
+        <ion-chip
+          [class.is-selected]="currentSituacao === 'conforme'"
+          [class.is-conforme]="currentSituacao === 'conforme'"
+          (click)="setSituacao('conforme')"
+        >
+          <ion-label>Conforme</ion-label>
+        </ion-chip>
+        <ion-chip
+          [class.is-selected]="currentSituacao === 'nao'"
+          [class.is-nao]="currentSituacao === 'nao'"
+          (click)="setSituacao('nao')"
+        >
+          <ion-label>Não conforme</ion-label>
+        </ion-chip>
+      </div>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Observação</ion-label>
+      <ion-textarea
+        #observacaoInput
+        [value]="currentObservacao"
+        placeholder="Observação opcional"
+        (ionInput)="currentObservacao = $event.detail.value ?? ''"
+      ></ion-textarea>
+    </ion-item>
+
+    <ion-item lines="none">
+      <ion-label>Fotos ({{ currentFotos.length }})</ion-label>
+      <ion-button fill="outline" (click)="adicionarFoto()">
+        <ion-icon slot="start" name="camera-outline"></ion-icon>
+        Adicionar
+      </ion-button>
+    </ion-item>
+
+    <ion-list *ngIf="currentFotos.length > 0">
+      <ion-item *ngFor="let foto of currentFotos; let i = index">
+        <img [src]="foto.preview" alt="Foto" />
+        <ion-label>
+          <p>{{ foto.nomeArquivo }}</p>
+          <p>{{ formatarTamanho(foto.tamanho) }}</p>
+        </ion-label>
+        <ion-button slot="end" fill="clear" color="danger" (click)="removerFoto(i)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-button>
+      </ion-item>
+    </ion-list>
+
+    <ion-text color="danger" *ngIf="errorMessage">
+      <p class="error-message">{{ errorMessage }}</p>
+    </ion-text>
+
+  </div>
+
+  <div class="content" *ngIf="!loadingItens && !currentItem">
+    <p>Nenhum item encontrado para este tipo de vistoria.</p>
+  </div>
+</ion-content>

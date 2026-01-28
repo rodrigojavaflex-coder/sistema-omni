@@ -85,15 +85,50 @@
                 <ul class="submenu-list">
                   @for (subItem of item.submenuItems; track subItem.label) {
                     <li class="submenu-item">
-                      <a 
-                        [routerLink]="subItem.route" 
-                        [class.active]="isRouteActive(subItem.route || '')"
-                        class="submenu-link"
-                        (click)="onMenuItemClick()"
-                      >
-                        <span class="submenu-icon" [innerHTML]="getMenuIcon(subItem.icon)"></span>
-                        <span class="submenu-text">{{ subItem.label }}</span>
-                      </a>
+                      @if (subItem.isSubmenu) {
+                        <div class="submenu-container nested">
+                          <button
+                            class="submenu-link submenu-toggle"
+                            [class.expanded]="isSubmenuExpanded(getSubmenuKey(item.label, subItem.label))"
+                            (click)="toggleSubmenu(getSubmenuKey(item.label, subItem.label))"
+                          >
+                            <span class="submenu-icon" [innerHTML]="getMenuIcon(subItem.icon)"></span>
+                            <span class="submenu-text">{{ subItem.label }}</span>
+                            <span class="submenu-arrow" [class.rotated]="isSubmenuExpanded(getSubmenuKey(item.label, subItem.label))">
+                              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 8 12 14 18 8"></polyline>
+                              </svg>
+                            </span>
+                          </button>
+                          @if (isSubmenuExpanded(getSubmenuKey(item.label, subItem.label))) {
+                            <ul class="submenu-list nested-list">
+                              @for (nestedItem of subItem.submenuItems; track nestedItem.label) {
+                                <li class="submenu-item">
+                                  <a 
+                                    [routerLink]="nestedItem.route" 
+                                    [class.active]="isRouteActive(nestedItem.route || '')"
+                                    class="submenu-link"
+                                    (click)="onMenuItemClick()"
+                                  >
+                                    <span class="submenu-icon" [innerHTML]="getMenuIcon(nestedItem.icon)"></span>
+                                    <span class="submenu-text">{{ nestedItem.label }}</span>
+                                  </a>
+                                </li>
+                              }
+                            </ul>
+                          }
+                        </div>
+                      } @else {
+                        <a 
+                          [routerLink]="subItem.route" 
+                          [class.active]="isRouteActive(subItem.route || '')"
+                          class="submenu-link"
+                          (click)="onMenuItemClick()"
+                        >
+                          <span class="submenu-icon" [innerHTML]="getMenuIcon(subItem.icon)"></span>
+                          <span class="submenu-text">{{ subItem.label }}</span>
+                        </a>
+                      }
                     </li>
                   }
                 </ul>

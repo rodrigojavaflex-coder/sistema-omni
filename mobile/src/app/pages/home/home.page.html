@@ -21,7 +21,7 @@
       <div class="profile-details">
         <div class="detail-row">
           <span class="detail-label">Perfil</span>
-          <span class="detail-value">{{ user.perfil.nome }}</span>
+          <span class="detail-value">{{ user.perfil.nomePerfil || 'Sem perfil' }}</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Status</span>
@@ -30,6 +30,12 @@
           </span>
         </div>
       </div>
+    </div>
+
+    <div class="home-actions" *ngIf="canStartVistoria">
+      <ion-button expand="block" routerLink="/vistoria/inicio">
+        Iniciar Vistoria
+      </ion-button>
     </div>
 
   </div>

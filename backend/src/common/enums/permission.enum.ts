@@ -64,6 +64,23 @@ export enum Permission {
   META_EXECUCAO_UPDATE = 'meta_execucao:update',
   META_EXECUCAO_DELETE = 'meta_execucao:delete',
   META_EXECUCAO_AUDIT = 'meta_execucao:audit',
+
+  // Vistoria Mobile
+  VISTORIA_CREATE = 'vistoria_mobile:create',
+  VISTORIA_READ = 'vistoria_mobile:read',
+  VISTORIA_UPDATE = 'vistoria_mobile:update',
+  // Vistoria Web
+  VISTORIA_WEB_READ = 'vistoria_web:read',
+  TIPOVISTORIA_CREATE = 'tipovistoria:create',
+  TIPOVISTORIA_READ = 'tipovistoria:read',
+  TIPOVISTORIA_UPDATE = 'tipovistoria:update',
+  TIPOVISTORIA_DELETE = 'tipovistoria:delete',
+  TIPOVISTORIA_AUDIT = 'tipovistoria:audit',
+  ITEMVISTORIADO_CREATE = 'itemvistoriado:create',
+  ITEMVISTORIADO_READ = 'itemvistoriado:read',
+  ITEMVISTORIADO_UPDATE = 'itemvistoriado:update',
+  ITEMVISTORIADO_DELETE = 'itemvistoriado:delete',
+  ITEMVISTORIADO_AUDIT = 'itemvistoriado:audit',
 }
 
 export const PERMISSION_GROUPS = {
@@ -152,6 +169,28 @@ export const PERMISSION_GROUPS = {
       key: Permission.META_EXECUCAO_AUDIT,
       label: 'Auditar execuções de metas',
     },
+  ],
+  'Tipo de Vistoria': [
+    { key: Permission.TIPOVISTORIA_CREATE, label: 'Criar tipos de vistoria' },
+    { key: Permission.TIPOVISTORIA_READ, label: 'Visualizar tipos de vistoria' },
+    { key: Permission.TIPOVISTORIA_UPDATE, label: 'Editar tipos de vistoria' },
+    { key: Permission.TIPOVISTORIA_DELETE, label: 'Excluir tipos de vistoria' },
+    { key: Permission.TIPOVISTORIA_AUDIT, label: 'Auditar tipos de vistoria' },
+  ],
+  'Vistoria Mobile': [
+    { key: Permission.VISTORIA_CREATE, label: 'Iniciar vistorias (mobile)' },
+    { key: Permission.VISTORIA_READ, label: 'Visualizar vistorias (mobile)' },
+    { key: Permission.VISTORIA_UPDATE, label: 'Atualizar vistorias (mobile)' },
+  ],
+  'Vistoria Web': [
+    { key: Permission.VISTORIA_WEB_READ, label: 'Visualizar vistorias (web)' },
+  ],
+  'Itens Vistoriados': [
+    { key: Permission.ITEMVISTORIADO_CREATE, label: 'Criar itens vistoriados' },
+    { key: Permission.ITEMVISTORIADO_READ, label: 'Visualizar itens vistoriados' },
+    { key: Permission.ITEMVISTORIADO_UPDATE, label: 'Editar itens vistoriados' },
+    { key: Permission.ITEMVISTORIADO_DELETE, label: 'Excluir itens vistoriados' },
+    { key: Permission.ITEMVISTORIADO_AUDIT, label: 'Auditar itens vistoriados' },
   ],
 };
 

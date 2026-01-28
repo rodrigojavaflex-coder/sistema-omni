@@ -1,0 +1,8 @@
+export interface ItemVistoriado {
+  id: string;
+  descricao: string;
+  sequencia: number;
+  tiposVistorias: string[];
+  obrigafoto: boolean;
+  ativo: boolean;
+}

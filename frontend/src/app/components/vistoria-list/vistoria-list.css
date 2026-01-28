@@ -1,0 +1,245 @@
+.vistoria-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.vistoria-list-header,
+.vistoria-row {
+  display: grid;
+  grid-template-columns:
+    minmax(160px, 2fr)
+    minmax(140px, 1.5fr)
+    minmax(140px, 1.2fr)
+    minmax(140px, 1fr)
+    minmax(120px, 0.8fr)
+    minmax(120px, 0.8fr)
+    minmax(100px, 0.7fr)
+    minmax(140px, 1fr)
+    minmax(90px, 0.7fr)
+    minmax(180px, 2fr)
+    minmax(120px, 0.8fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.vistoria-list-header {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #6b7280;
+  padding: 8px 12px;
+}
+
+.vistoria-row {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: #1f2937;
+}
+
+.row-title {
+  font-weight: 600;
+  color: #111827;
+}
+
+.row-subtitle {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.status-andamento {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.status-finalizada {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-cancelada {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-default {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.drawer-section {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+.drawer-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.checklist-list {
+  display: grid;
+  gap: 10px;
+}
+
+.checklist-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.checklist-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.checklist-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.checklist-status.conforme {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.checklist-status.nao-conforme {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.checklist-obs {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.item-images {
+  margin-top: 10px;
+}
+
+.image-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.image-card img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+
+.image-meta {
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  color: #6b7280;
+  display: grid;
+  gap: 2px;
+}
+
+.image-modal {
+  max-width: 980px;
+}
+
+.image-modal-body {
+  display: flex;
+  justify-content: center;
+}
+
+.image-modal-body img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+
+.btn-pagination {
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.btn-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.vistoria-modal {
+  max-width: 860px;
+}
+
+.vistoria-modal .modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vistoria-modal .modal-header-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.vistoria-modal .modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 1200px) {
+  .vistoria-modal {
+    max-width: 720px;
+  }
+}

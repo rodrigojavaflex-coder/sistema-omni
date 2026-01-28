@@ -1,0 +1,172 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start" *ngIf="isNative">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Nova Vistoria</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-card class="card">
+    <ion-item class="datetime-item">
+      <ion-label position="stacked">Data/Hora</ion-label>
+      <ion-input [value]="datavistoriaDisplay" readonly="true"></ion-input>
+      <ion-button
+        fill="clear"
+        size="small"
+        slot="end"
+        aria-label="Atualizar data/hora"
+        (click)="atualizarDataHora()"
+      >
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </ion-card>
+
+  <ion-card class="card" *ngIf="loadingAndamento || vistoriasEmAndamento.length > 0">
+    <ion-item>
+      <ion-label position="stacked">Vistorias em andamento</ion-label>
+    </ion-item>
+    <ion-item *ngIf="loadingAndamento">
+      <ion-spinner name="crescent"></ion-spinner>
+      <ion-label>Carregando vistorias...</ion-label>
+    </ion-item>
+    <ion-list *ngIf="!loadingAndamento && vistoriasEmAndamento.length > 0">
+      <ion-item *ngFor="let vistoria of vistoriasEmAndamento">
+        <ion-label>
+          <h3>{{ vistoria.veiculo?.descricao || 'Veículo' }}</h3>
+          <p>
+            Motorista: {{ vistoria.motorista?.nome || '---' }}
+            <span *ngIf="vistoria.motorista?.matricula">
+              • Matricula: {{ formatarMatricula(vistoria.motorista?.matricula || '') }}
+            </span>
+          </p>
+          <p>
+            Tipo: {{ vistoria.tipoVistoria?.descricao || '---' }}
+          </p>
+          <p>
+            Data: {{ vistoria.datavistoria | date:'short' }}
+          </p>
+        </ion-label>
+        <ion-button fill="outline" (click)="continuarVistoria(vistoria)">
+          Continuar
+        </ion-button>
+      </ion-item>
+    </ion-list>
+  </ion-card>
+
+  <ion-card class="card">
+    <ion-item>
+      <ion-label position="stacked">Veículo</ion-label>
+      <ion-searchbar
+        [debounce]="350"
+        placeholder="Buscar por descrição ou placa"
+        [value]="veiculoSearch"
+        (ionInput)="onBuscarVeiculos($event)"
+      ></ion-searchbar>
+    </ion-item>
+    <ion-list *ngIf="loadingVeiculos">
+      <ion-item>
+        <ion-spinner name="crescent"></ion-spinner>
+        <ion-label>Buscando veículos...</ion-label>
+      </ion-item>
+    </ion-list>
+    <ion-list *ngIf="!loadingVeiculos && veiculos.length > 0">
+      <ion-item
+        button
+        class="selection-item"
+        [class.is-selected]="selectedVeiculo?.id === veiculo.id"
+        *ngFor="let veiculo of veiculos"
+        (click)="selecionarVeiculo(veiculo)"
+      >
+        <ion-label>
+          <h3>{{ veiculo.descricao }}</h3>
+          <p>{{ veiculo.placa }}</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+  </ion-card>
+
+  <ion-card class="card">
+    <ion-item>
+      <ion-label position="stacked">Motorista</ion-label>
+      <ion-searchbar
+        [debounce]="350"
+        placeholder="Buscar por nome, matrícula ou CPF"
+        [value]="motoristaSearch"
+        (ionInput)="onBuscarMotoristas($event)"
+      ></ion-searchbar>
+    </ion-item>
+    <ion-list *ngIf="loadingMotoristas">
+      <ion-item>
+        <ion-spinner name="crescent"></ion-spinner>
+        <ion-label>Buscando motoristas...</ion-label>
+      </ion-item>
+    </ion-list>
+    <ion-list *ngIf="!loadingMotoristas && motoristas.length > 0">
+      <ion-item
+        button
+        class="selection-item"
+        [class.is-selected]="selectedMotorista?.id === motorista.id"
+        *ngFor="let motorista of motoristas"
+        (click)="selecionarMotorista(motorista)"
+      >
+        <ion-label>
+          <h3>{{ motorista.nome }}</h3>
+          <p>Matrícula: {{ formatarMatricula(motorista.matricula) }}</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+  </ion-card>
+
+  <ion-card class="card">
+    <ion-item class="select-item">
+      <ion-label position="stacked">Tipo de Vistoria</ion-label>
+      <ion-select
+        interface="popover"
+        placeholder="Selecione"
+        [(ngModel)]="selectedTipoId"
+      >
+        <ion-select-option
+          *ngFor="let tipo of tipos"
+          [value]="tipo.id"
+        >
+          {{ tipo.descricao }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+    <ion-item *ngIf="loadingTipos">
+      <ion-spinner name="crescent"></ion-spinner>
+      <ion-label>Carregando tipos...</ion-label>
+    </ion-item>
+  </ion-card>
+
+  <ion-card class="card">
+    <ion-item>
+      <ion-label position="stacked">Odômetro</ion-label>
+      <ion-input type="number" [(ngModel)]="odometro" placeholder="Ex: 12345"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-label position="stacked">% Bateria</ion-label>
+      <ion-input
+        type="number"
+        [(ngModel)]="bateria"
+        placeholder="0 a 100"
+        min="0"
+        max="100"
+      ></ion-input>
+    </ion-item>
+  </ion-card>
+
+  <ion-text color="danger" *ngIf="errorMessage">
+    <p class="error-message">{{ errorMessage }}</p>
+  </ion-text>
+
+  <div class="actions">
+    <ion-button expand="block" [disabled]="!canStart || isSaving" (click)="iniciarVistoria()">
+      <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>
+      <span *ngIf="!isSaving">Iniciar Checklist</span>
+    </ion-button>
+  </div>
+</ion-content>

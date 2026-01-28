@@ -1,0 +1,37 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start" *ngIf="isNative">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Finalizar Vistoria</ion-title>
+    <ion-buttons slot="end">
+      <ion-button color="danger" (click)="cancelarVistoria()">Cancelar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="content">
+    <ion-item>
+      <ion-label position="stacked">Tempo total (minutos)</ion-label>
+      <ion-text>{{ tempoMinutos }}</ion-text>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Observação geral</ion-label>
+      <ion-textarea
+        [(ngModel)]="observacao"
+        placeholder="Observação opcional"
+      ></ion-textarea>
+    </ion-item>
+
+    <ion-text color="danger" *ngIf="errorMessage">
+      <p class="error-message">{{ errorMessage }}</p>
+    </ion-text>
+
+    <ion-button expand="block" [disabled]="isSaving" (click)="finalizar()">
+      <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>
+      <span *ngIf="!isSaving">Finalizar vistoria</span>
+    </ion-button>
+  </div>
+</ion-content>

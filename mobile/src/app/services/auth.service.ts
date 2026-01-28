@@ -54,7 +54,12 @@ export class AuthService {
         this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password })
       );
 
-      await this.setTokens(response.accessToken, response.refreshToken);
+      const accessToken = response.accessToken ?? response.access_token;
+      const refreshToken = response.refreshToken ?? response.refresh_token;
+      if (!accessToken || !refreshToken) {
+        throw new Error('Tokens de autenticação não recebidos');
+      }
+      await this.setTokens(accessToken, refreshToken);
       await this.setUser(response.user);
       
       this.currentUserSubject.next(response.user);
@@ -118,6 +123,43 @@ export class AuthService {
    */
   getCurrentUser(): Usuario | null {
     return this.currentUserSubject.value;
+  }
+
+  /**
+   * Verifica se o usuário tem uma permissão específica
+   */
+  hasPermission(permission: string): boolean {
+    const permissoes = this.getUserPermissions();
+    return permissoes.includes(permission);
+  }
+
+  /**
+   * Verifica se o usuário tem alguma das permissões fornecidas
+   */
+  hasAnyPermission(permissions: string[]): boolean {
+    if (permissions.length === 0) {
+      return true;
+    }
+    const permissoes = this.getUserPermissions();
+    return permissions.some((permission) => permissoes.includes(permission));
+  }
+
+  private getUserPermissions(): string[] {
+    const user = this.currentUserSubject.value;
+    if (!user) {
+      return [];
+    }
+    const raw = user.perfil?.permissoes;
+    if (!raw) {
+      return [];
+    }
+    if (Array.isArray(raw)) {
+      return raw;
+    }
+    return raw
+      .split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
   }
 
   /**

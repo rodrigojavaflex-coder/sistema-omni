@@ -1,16 +1,17 @@
 # Plano de Desenvolvimento - Vistoria (Mobile/Backend/Frontend)
 
 ## Fases
-1) Migração: criação das tabelas e vínculos.
-2) Cadastro: TipoVistoria + ItensVistoriados (backend + frontend).
-3) Mobile: fluxo completo de vistoria.
+1) Cadastro: TipoVistoria + ItensVistoriados (backend + frontend).
+2) Mobile: fluxo completo de vistoria.
 
 ## Escopo e Regras de Negócio
 - Mostrar itens do checklist por `sequencia`.
 - Exibir apenas itens cujo `tiposvistorias` contenha o `idtipovistoria` da vistoria.
 - Se `conforme=false` e `obrigafoto=true`, foto é obrigatória.
-- `datavistoria` é carregada automaticamente no app (data e hora) e o usuário pode editar.
+- `datavistoria` é carregada automaticamente no app (data e hora) e não é editável.
 - `tempo` é calculado no app (em minutos).
+- Vistoria possui `status` para controle de fluxo: `EM_ANDAMENTO`, `FINALIZADA`, `CANCELADA`.
+- `datavistoria` deve usar hora do servidor (`GET /system/time`) e fallback local.
 
 ## Modelagem (todas herdam `baseentity`, campos em minúsculo)
 ### tipovistoria
@@ -33,6 +34,7 @@
 - datavistoria (timestamp enviado pelo app)
 - tempo (integer, minutos)
 - observacao (text)
+- status (enum: `EM_ANDAMENTO`, `FINALIZADA`, `CANCELADA`)
 
 ### imagensvistoria
 - nome_arquivo (varchar 255)
@@ -44,7 +46,7 @@
 - iditemvistoriado
 - conforme (booleano)
 - observacao (texto)
-- idimagensvistoria (FK)
+- imagens (1:N via `imagensvistoria`)
 
 ## Índices e Validações
 - Índice GIN em `itemvistoriado.tiposvistorias`.
@@ -55,11 +57,11 @@
 
 ## Matriz de Validações
 ### Vistoria
-- idveiculo: obrigatório (uuid válido)
-- idmotorista: obrigatório (uuid válido)
+- idveiculo: obrigatório (uuid válido, FK → tabela de veículos existente)
+- idmotorista: obrigatório (uuid válido, FK → tabela de motoristas existente)
 - odometro: obrigatório, > 0
 - porcentagembateria: obrigatório, 0–100
-- idtipovistoria: obrigatório (uuid válido)
+- idtipovistoria: obrigatório (uuid válido, FK → tipovistoria)
 - datavistoria: obrigatório (datetime ISO)
 - tempo: obrigatório, > 0
 - observacao: opcional
@@ -76,19 +78,27 @@
 - iditemvistoriado: obrigatório
 - conforme: obrigatório (boolean)
 - observacao: opcional
-- idimagensvistoria: obrigatório se conforme=false e obrigafoto=true
+- fotos: obrigatório se conforme=false e obrigafoto=true (upload multipart separado)
 
 ### ImagensVistoria
 - nome_arquivo: obrigatório
 - tamanho: obrigatório (>0)
 - dados_bytea: obrigatório
+- idchecklistvistoria (FK)
 
 ## Endpoints (mínimos)
-- `GET /tipovistoria`
-- `POST /tipovistoria`
+- `GET /system/time`
+- `GET /tiposvistoria`
+- `POST /tiposvistoria`
 - `GET /itemvistoriado?tipovistoria=ID`
 - `POST /itemvistoriado`
-- `POST /vistoria` (inclui checklist + imagens)
+- `POST /vistoria` (início)
+- `POST /vistoria/:id/checklist` (incremental por item, sem imagens)
+- `POST /vistoria/:id/checklist/:checklistId/imagens` (multipart)
+- `POST /vistoria/:id/finalizar`
+- `POST /vistoria/:id/cancelar`
+- `POST /vistoria/:id/retomar`
+- `GET /vistoria?status=EM_ANDAMENTO`
 - `GET /vistoria/:id`
 
 ## Telas (Frontend Admin)
@@ -105,35 +115,44 @@
 ## Fluxo Mobile (detalhado)
 ### Tela 1 - Início
 - veículo, motorista, odometro, % bateria, tipo de vistoria
-- `datavistoria` pré-preenchida (data/hora atual) com opção de editar
+- `datavistoria` pré-preenchida via serverTime (sem edição)
 - iniciar cronômetro
+- buscar veículos/motoristas apenas com status ativo
+- opção de continuar vistoria em andamento
 
 ### Tela 2 - Checklist
-- carregar itens filtrados por `idtipovistoria`
+- carregar itens filtrados por `idtipovistoria` e `ativo=true`
 - ordenar por `sequencia`
 - marcar `conforme`, `observacao`
 - exigir foto quando necessário
+- enviar cada item do checklist para o backend (incremental) e upload de fotos em multipart
+- permitir múltiplas fotos por item
+- opção de cancelar vistoria
 
 ### Tela 3 - Finalizar
 - observação geral
 - tempo total em minutos
-- enviar vistoria + checklist + imagens
+- finalizar vistoria (tempo + observação geral)
 
 ## Backlog
-### Fase 1 - Migração
-- [ ] Definir entidades e migrations
-- [ ] Criar índice GIN para `tiposvistorias`
-
-### Fase 2 - Cadastros (Backend + Frontend)
+### Fase 1 - Cadastros (Backend + Frontend)
 - [ ] CRUD `tipovistoria`
 - [ ] CRUD `itemvistoriado` (multi-select `tiposvistorias`)
 - [ ] Endpoint checklist por tipo (ordenado por `sequencia`)
 
-### Fase 3 - Mobile
+### Fase 2 - Mobile
 - [ ] Fluxo mobile completo (tela inicial, checklist, finalizar)
-- [ ] Endpoint `POST /vistoria` com checklist e imagens
-- [ ] Upload/armazenamento de imagens
+- [ ] Endpoint `POST /vistoria` (início)
+- [ ] Endpoint `POST /vistoria/:id/checklist` (incremental por item)
+- [ ] Endpoint `POST /vistoria/:id/checklist/:checklistId/imagens` (multipart)
+- [ ] Endpoint `POST /vistoria/:id/finalizar` (tempo + observação)
+- [ ] Endpoint `POST /vistoria/:id/cancelar` (status)
+- [ ] Endpoint `POST /vistoria/:id/retomar` (status)
+- [ ] Endpoint `GET /vistoria?status=EM_ANDAMENTO`
+- [ ] Upload/armazenamento de imagens (multipart, múltiplas por item)
 - [ ] Validações essenciais (odometro, bateria, tipos, obrigafoto)
+- [ ] Permissões no app baseadas nas permissões do backend
+- [ ] Status e retomada de vistoria no app (continuar fluxo)
 
 ## Concluído
 - [x] Regras de negócio definidas

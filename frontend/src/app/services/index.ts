@@ -7,3 +7,4 @@ export * from './perfil.service';
 export * from './error-modal.service';
 export * from './veiculo.service';
 export * from './export.service';
+export * from './vistoria.service';

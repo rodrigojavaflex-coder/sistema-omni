@@ -97,19 +97,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.visibleMenuItems = this.allMenuItems
-      .filter(menuItem => this.hasMenuPermission(menuItem))
-      .map(menuItem => ({
-        ...menuItem,
-        submenuItems: menuItem.submenuItems?.filter(subItem => this.hasMenuPermission(subItem)) || []
-      }))
-      .filter(menuItem => {
-        // Remover submenus vazios
-        if (menuItem.isSubmenu && (!menuItem.submenuItems || menuItem.submenuItems.length === 0)) {
-          return false;
-        }
-        return true;
-      })
+    this.visibleMenuItems = this.filterMenuItems(this.allMenuItems)
       .sort((a, b) => (a.order || 999) - (b.order || 999));
   }
 
@@ -117,6 +105,9 @@ export class NavigationComponent implements OnInit, OnDestroy {
    * Verifica se o usuário tem permissão para ver um item de menu
    */
   private hasMenuPermission(menuItem: MenuItem): boolean {
+    if (menuItem.isSubmenu && menuItem.submenuItems?.length) {
+      return menuItem.submenuItems.some((subItem) => this.hasMenuPermission(subItem));
+    }
     // Se não requer permissões, mostrar sempre
     if (menuItem.requiredPermissions.length === 0) {
       return true;
@@ -144,6 +135,10 @@ export class NavigationComponent implements OnInit, OnDestroy {
     return this.expandedSubmenus.has(menuLabel);
   }
 
+  getSubmenuKey(parentLabel: string, childLabel?: string): string {
+    return childLabel ? `${parentLabel}::${childLabel}` : parentLabel;
+  }
+
   /**
    * Atualiza os itens pesquisáveis baseado nas permissões do usuário
    */
@@ -152,25 +147,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
     
     if (!this.currentUser) return;
 
-    // Coletar todos os itens que o usuário tem acesso (incluindo subitems)
-    this.allMenuItems.forEach(item => {
-      if (this.hasMenuPermission(item)) {
-        if (item.isSubmenu && item.submenuItems) {
-          // Adicionar subitems que o usuário tem permissão
-          item.submenuItems.forEach(subItem => {
-            if (this.hasMenuPermission(subItem)) {
-              this.allSearchableItems.push({
-                ...subItem,
-                parentMenu: item.label
-              });
-            }
-          });
-        } else if (item.route) {
-          // Adicionar item direto (que tem rota)
-          this.allSearchableItems.push(item);
-        }
-      }
-    });
+    this.collectSearchableItems(this.allMenuItems);
   }
 
   /**
@@ -212,43 +189,97 @@ export class NavigationComponent implements OnInit, OnDestroy {
       .replace(/[\u0300-\u036f]/g, '');
   }
 
+  private filterMenuItems(items: MenuItem[]): MenuItem[] {
+    return items
+      .filter((menuItem) => this.hasMenuPermission(menuItem))
+      .map((menuItem) => {
+        if (menuItem.isSubmenu && menuItem.submenuItems) {
+          const filteredSub = this.filterMenuItems(menuItem.submenuItems);
+          return {
+            ...menuItem,
+            submenuItems: filteredSub,
+          };
+        }
+        return menuItem;
+      })
+      .filter((menuItem) => {
+        if (menuItem.isSubmenu) {
+          return !!menuItem.submenuItems?.length;
+        }
+        return true;
+      });
+  }
+
+  private collectSearchableItems(items: MenuItem[], parentPath: string[] = []): void {
+    items.forEach((item) => {
+      if (!this.hasMenuPermission(item)) return;
+
+      if (item.isSubmenu && item.submenuItems?.length) {
+        this.collectSearchableItems(item.submenuItems, [...parentPath, item.label]);
+        return;
+      }
+
+      if (item.route) {
+        const parentMenu = parentPath.length ? parentPath.join(' / ') : undefined;
+        this.allSearchableItems.push({
+          ...item,
+          parentMenu,
+        });
+      }
+    });
+  }
+
+  private filterMenuByQuery(
+    items: MenuItem[],
+    normalizedQuery: string,
+    parentLabel?: string,
+  ): MenuItem[] {
+    const results: MenuItem[] = [];
+
+    items.forEach((menuItem) => {
+      const normalizedLabel = this.normalizeString(menuItem.label);
+
+      if (menuItem.isSubmenu && menuItem.submenuItems?.length) {
+        const key = parentLabel
+          ? this.getSubmenuKey(parentLabel, menuItem.label)
+          : this.getSubmenuKey(menuItem.label);
+
+        if (normalizedLabel.includes(normalizedQuery)) {
+          results.push(menuItem);
+          this.expandedSubmenus.add(key);
+          return;
+        }
+
+        const filteredChildren = this.filterMenuByQuery(
+          menuItem.submenuItems,
+          normalizedQuery,
+          key,
+        );
+
+        if (filteredChildren.length) {
+          results.push({
+            ...menuItem,
+            submenuItems: filteredChildren,
+          });
+          this.expandedSubmenus.add(key);
+        }
+        return;
+      }
+
+      if (normalizedLabel.includes(normalizedQuery)) {
+        results.push(menuItem);
+      }
+    });
+
+    return results;
+  }
+
   /**
    * Aplica filtro visual no menu baseado na query de pesquisa
    */
   private applyMenuFilter(normalizedQuery: string): void {
     this.isFilterActive = true;
-    this.filteredMenuItems = [];
-
-    this.visibleMenuItems.forEach(menuItem => {
-      const normalizedMenuLabel = this.normalizeString(menuItem.label);
-      
-      if (menuItem.isSubmenu && menuItem.submenuItems) {
-        // Filtrar subitens que correspondem à pesquisa
-        const matchingSubitems = menuItem.submenuItems.filter(subItem => {
-          const normalizedSubLabel = this.normalizeString(subItem.label);
-          return normalizedSubLabel.includes(normalizedQuery);
-        });
-
-        // Se há subitens correspondentes, incluir o menu pai com apenas os subitens filtrados
-        if (matchingSubitems.length > 0) {
-          this.filteredMenuItems.push({
-            ...menuItem,
-            submenuItems: matchingSubitems
-          });
-          // Auto-expandir submenu que tem resultados
-          this.expandedSubmenus.add(menuItem.label);
-        } else if (normalizedMenuLabel.includes(normalizedQuery)) {
-          // Se o nome do submenu corresponde, mostrar todos os subitens
-          this.filteredMenuItems.push(menuItem);
-          this.expandedSubmenus.add(menuItem.label);
-        }
-      } else {
-        // Menu direto (sem submenu)
-        if (normalizedMenuLabel.includes(normalizedQuery)) {
-          this.filteredMenuItems.push(menuItem);
-        }
-      }
-    });
+    this.filteredMenuItems = this.filterMenuByQuery(this.visibleMenuItems, normalizedQuery);
   }
 
   /**
@@ -310,7 +341,10 @@ export class NavigationComponent implements OnInit, OnDestroy {
       'feather-alert-circle': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>',
       'feather-briefcase': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path><path d="M2 13h20"></path></svg>',
       'feather-target': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>',
-      'feather-activity': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'
+      'feather-activity': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
+      'feather-check': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+      'feather-check-square': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>',
+      'feather-grid': '<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>'
     };
     
     const iconSvg = icons[iconName] || icons['feather-settings'];

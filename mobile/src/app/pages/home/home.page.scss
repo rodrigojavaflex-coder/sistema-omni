@@ -1,7 +1,7 @@
 .home-container {
   padding: 24px;
   min-height: 100%;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 55%, #cbd5f5 100%);
 }
 
 .profile-card {
@@ -79,5 +79,9 @@
 .detail-badge.active {
   background: #dcfce7;
   color: #15803d;
+}
+
+.home-actions {
+  margin-top: 16px;
 }
 

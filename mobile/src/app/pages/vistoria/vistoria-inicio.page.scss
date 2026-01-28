@@ -1,0 +1,54 @@
+.card {
+  margin: 16px;
+}
+
+.actions {
+  padding: 0 16px 24px;
+}
+
+.datetime-item ion-button {
+  margin-top: 22px;
+}
+
+ion-item ion-button {
+  margin-left: 8px;
+}
+
+.selection-item,
+.select-item {
+  --background: #ffffff;
+  --color: #0f172a;
+  --border-color: #e2e8f0;
+  --border-width: 1px;
+  --border-style: solid;
+  --border-radius: 12px;
+  margin: 6px 12px;
+}
+
+.selection-item ion-label h3 {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.selection-item ion-label p {
+  color: #64748b;
+}
+
+.selection-item.is-selected {
+  --background: #e8f1ff;
+  --border-color: #3b82f6;
+  --color: #1d4ed8;
+}
+
+ion-select::part(placeholder) {
+  color: #64748b;
+}
+
+ion-select::part(text) {
+  color: #0f172a;
+}
+
+.error-message {
+  margin: 8px 16px;
+  font-size: 0.9rem;
+}

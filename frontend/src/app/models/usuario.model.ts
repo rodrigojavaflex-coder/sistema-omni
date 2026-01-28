@@ -64,6 +64,23 @@ export enum Permission {
   META_EXECUCAO_UPDATE = 'meta_execucao:update',
   META_EXECUCAO_DELETE = 'meta_execucao:delete',
   META_EXECUCAO_AUDIT = 'meta_execucao:audit',
+
+  // Vistoria Mobile
+  VISTORIA_CREATE = 'vistoria_mobile:create',
+  VISTORIA_READ = 'vistoria_mobile:read',
+  VISTORIA_UPDATE = 'vistoria_mobile:update',
+  // Vistoria Web
+  VISTORIA_WEB_READ = 'vistoria_web:read',
+  TIPOVISTORIA_CREATE = 'tipovistoria:create',
+  TIPOVISTORIA_READ = 'tipovistoria:read',
+  TIPOVISTORIA_UPDATE = 'tipovistoria:update',
+  TIPOVISTORIA_DELETE = 'tipovistoria:delete',
+  TIPOVISTORIA_AUDIT = 'tipovistoria:audit',
+  ITEMVISTORIADO_CREATE = 'itemvistoriado:create',
+  ITEMVISTORIADO_READ = 'itemvistoriado:read',
+  ITEMVISTORIADO_UPDATE = 'itemvistoriado:update',
+  ITEMVISTORIADO_DELETE = 'itemvistoriado:delete',
+  ITEMVISTORIADO_AUDIT = 'itemvistoriado:audit',
 }
 
 export interface PermissionGroup {

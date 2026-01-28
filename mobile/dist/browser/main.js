@@ -1,10 +1,12 @@
 import {
   addIcons,
   logOutOutline
-} from "./chunk-MUTBHDOA.js";
+} from "./chunk-MVYH7HIC.js";
+import {
+  AuthService
+} from "./chunk-APMN3AA5.js";
 import {
   AlertController,
-  AuthService,
   CUSTOM_ELEMENTS_SCHEMA,
   CommonModule,
   Component,
@@ -47,12 +49,12 @@ import {
   ɵɵrestoreView,
   ɵɵtemplate,
   ɵɵtext
-} from "./chunk-5RWCCC74.js";
+} from "./chunk-XXY565TE.js";
 import "./chunk-3EJ4SNN5.js";
 import "./chunk-T5LCTCQ6.js";
 import {
   Capacitor
-} from "./chunk-FUV7YCPE.js";
+} from "./chunk-RP3QMZ46.js";
 import "./chunk-JGROTZJO.js";
 import "./chunk-6JHPNCWP.js";
 import "./chunk-BH2QRXZH.js";
@@ -90,6 +92,22 @@ var authGuard = (route, state) => __async(null, null, function* () {
   return false;
 });
 
+// src/app/guards/permission.guard.ts
+var permissionGuard = (route) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const required = route.data?.["permissions"] ?? [];
+  if (!authService.isAuthenticated()) {
+    router.navigate(["/login"]);
+    return false;
+  }
+  if (authService.hasAnyPermission(required)) {
+    return true;
+  }
+  router.navigate(["/home"]);
+  return false;
+};
+
 // src/app/app.routes.ts
 var routes = [
   {
@@ -99,12 +117,30 @@ var routes = [
   },
   {
     path: "login",
-    loadComponent: () => import("./chunk-ABYTZ43W.js").then((m) => m.LoginPage)
+    loadComponent: () => import("./chunk-XS5IOD6X.js").then((m) => m.LoginPage)
   },
   {
     path: "home",
-    loadComponent: () => import("./chunk-RJXWXAHI.js").then((m) => m.HomePage),
+    loadComponent: () => import("./chunk-EKTBRE3E.js").then((m) => m.HomePage),
     canActivate: [authGuard]
+  },
+  {
+    path: "vistoria/inicio",
+    loadComponent: () => import("./chunk-5C3B5E4Y.js").then((m) => m.VistoriaInicioPage),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: ["vistoria_mobile:create"] }
+  },
+  {
+    path: "vistoria/checklist",
+    loadComponent: () => import("./chunk-NCFPIA4O.js").then((m) => m.VistoriaChecklistPage),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: ["vistoria_mobile:create"] }
+  },
+  {
+    path: "vistoria/finalizar",
+    loadComponent: () => import("./chunk-YHIBRWPB.js").then((m) => m.VistoriaFinalizarPage),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "**",

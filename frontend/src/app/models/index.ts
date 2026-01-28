@@ -8,3 +8,6 @@ export * from './status.enum';
 export * from './status-motorista.enum';
 export * from './combustivel.enum';
 export * from './meta.model';
+export * from './tipo-vistoria.model';
+export * from './item-vistoriado.model';
+export * from './vistoria.model';

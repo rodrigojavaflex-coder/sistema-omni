@@ -1,0 +1,219 @@
+<div class="list-container">
+  <div class="list-header">
+    <h2>Vistorias</h2>
+  </div>
+
+  <div class="filters" [formGroup]="filterForm">
+    <input
+      type="text"
+      placeholder="Veículo (descrição/placa)"
+      formControlName="veiculo"
+      class="filter-input"
+    >
+    <input
+      type="text"
+      placeholder="Motorista (nome/matrícula)"
+      formControlName="motorista"
+      class="filter-input"
+    >
+    <select formControlName="tipoId" class="filter-select">
+      <option value="">Tipo de vistoria</option>
+      @for (tipo of tipos; track tipo.id) {
+        <option [value]="tipo.id">{{ tipo.descricao }}</option>
+      }
+    </select>
+    <select formControlName="status" class="filter-select">
+      @for (status of statusOptions; track status.value) {
+        <option [value]="status.value">{{ status.label }}</option>
+      }
+    </select>
+    <select formControlName="usuarioId" class="filter-select">
+      <option value="">Usuário</option>
+      @for (usuario of usuarios; track usuario.id) {
+        <option [value]="usuario.id">{{ usuario.nome }}</option>
+      }
+    </select>
+    <input type="date" formControlName="dataInicio" class="filter-input">
+    <input type="date" formControlName="dataFim" class="filter-input">
+    <button class="btn btn-secondary" (click)="clearFilters()">Limpar</button>
+  </div>
+
+  @if (loading) {
+    <div class="loading">
+      Carregando vistorias...
+    </div>
+  }
+
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  @if (!loading && !error) {
+    <div class="vistoria-list">
+      <div class="vistoria-list-header">
+        <span>Veículo</span>
+        <span>Motorista</span>
+        <span>Tipo</span>
+        <span>Data</span>
+        <span>Status</span>
+        <span>Odômetro</span>
+        <span>Bateria</span>
+        <span>Vistoriador</span>
+        <span>Tempo</span>
+        <span>Observação</span>
+        <span></span>
+      </div>
+
+      @for (vistoria of paged; track vistoria.id) {
+        <div class="vistoria-row">
+          <div>
+            <div class="row-title">{{ vistoria.veiculo?.descricao || 'Veículo' }}</div>
+            <div class="row-subtitle">{{ vistoria.veiculo?.placa || '-' }}</div>
+          </div>
+          <div>{{ vistoria.motorista?.nome || '-' }}</div>
+          <div>{{ vistoria.tipoVistoria?.descricao || '-' }}</div>
+          <div>{{ vistoria.datavistoria | date: 'dd/MM/yyyy HH:mm' }}</div>
+          <div>
+            <span class="status-badge" [ngClass]="getStatusClass(vistoria.status)">
+              {{ getStatusLabel(vistoria.status) }}
+            </span>
+          </div>
+          <div>{{ formatNumero(vistoria.odometro) }}</div>
+          <div>
+            {{ vistoria.porcentagembateria === undefined ? '-' : (vistoria.porcentagembateria + '%') }}
+          </div>
+          <div>{{ getUsuarioNome(vistoria.idUsuario) }}</div>
+          <div>{{ formatTempo(vistoria.tempo) }}</div>
+          <div class="text-ellipsis">{{ vistoria.observacao || '-' }}</div>
+          <div>
+            <button class="btn btn-primary btn-small" (click)="openDrawer(vistoria)">
+              Detalhar
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (filtered.length === 0) {
+      <div class="no-data">
+        Nenhuma vistoria encontrada.
+      </div>
+    }
+
+    @if (totalPages > 1) {
+      <div class="pagination">
+        <button
+          class="btn-pagination"
+          (click)="onPageChange(currentPage - 1)"
+          [disabled]="currentPage === 1"
+        >
+          Anterior
+        </button>
+        <span class="page-info">
+          Página {{ currentPage }} de {{ totalPages }}
+        </span>
+        <button
+          class="btn-pagination"
+          (click)="onPageChange(currentPage + 1)"
+          [disabled]="currentPage === totalPages"
+        >
+          Próxima
+        </button>
+      </div>
+    }
+  }
+</div>
+
+@if (drawerOpen && selectedVistoria) {
+  <div class="modal-overlay" (click)="closeDrawer()">
+    <div class="modal-container-large vistoria-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <h3>Vistoria</h3>
+        </div>
+        <div class="modal-header-actions">
+          <button class="btn btn-secondary" (click)="printVistoria()">Imprimir</button>
+          <button class="btn btn-primary" (click)="downloadImages()">Baixar imagens</button>
+        </div>
+        <button class="modal-close" (click)="closeDrawer()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="drawer-section">
+          <div><strong>Veículo:</strong> {{ selectedVistoria.veiculo?.descricao || '-' }}</div>
+          <div><strong>Placa:</strong> {{ selectedVistoria.veiculo?.placa || '-' }}</div>
+          <div><strong>Motorista:</strong> {{ selectedVistoria.motorista?.nome || '-' }}</div>
+          <div><strong>Tipo:</strong> {{ selectedVistoria.tipoVistoria?.descricao || '-' }}</div>
+          <div><strong>Data:</strong> {{ selectedVistoria.datavistoria | date: 'dd/MM/yyyy HH:mm' }}</div>
+          <div><strong>Status:</strong> {{ getStatusLabel(selectedVistoria.status) }}</div>
+          <div><strong>Vistoriador:</strong> {{ getUsuarioNome(selectedVistoria.idUsuario) }}</div>
+          <div><strong>Odômetro:</strong> {{ formatNumero(selectedVistoria.odometro) }}</div>
+          <div>
+            <strong>Bateria:</strong>
+            {{ selectedVistoria.porcentagembateria === undefined ? '-' : (selectedVistoria.porcentagembateria + '%') }}
+          </div>
+          <div><strong>Tempo:</strong> {{ formatTempo(selectedVistoria.tempo) }}</div>
+          <div><strong>Observação:</strong> {{ selectedVistoria.observacao || '-' }}</div>
+        </div>
+        <div class="checklist-list">
+          @for (item of checklistItens; track item.iditemvistoriado) {
+            <div class="checklist-item">
+              <div class="checklist-title">
+                <span>{{ getItemTitulo(item) }}</span>
+                <span
+                  class="checklist-status"
+                  [class.conforme]="item.conforme"
+                  [class.nao-conforme]="!item.conforme"
+                >
+                  {{ item.conforme ? 'Conforme' : 'Não conforme' }}
+                </span>
+              </div>
+              @if (item.observacao) {
+                <div class="checklist-obs">{{ item.observacao }}</div>
+              }
+              <div class="item-images">
+                @if (imagensPorItem[item.iditemvistoriado]?.length) {
+                  <div class="image-grid">
+                    @for (img of imagensPorItem[item.iditemvistoriado]; track img.nomeArquivo) {
+                      <div class="image-card">
+                      <img
+                        [src]="getImagemPreview(img.dadosBase64)"
+                        [alt]="img.nomeArquivo"
+                        (click)="openImage(img.nomeArquivo, img.dadosBase64)"
+                      >
+                        <div class="image-meta">
+                          <span>{{ img.nomeArquivo }}</span>
+                          <small>{{ formatNumero(img.tamanho) }} bytes</small>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="no-data">Sem fotos para este item.</div>
+                }
+              </div>
+            </div>
+          }
+          @if (checklistItens.length === 0) {
+            <div class="no-data">Nenhum item registrado.</div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showImageModal && selectedImage) {
+  <div class="modal-overlay" (click)="closeImage()">
+    <div class="modal-container-large image-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ selectedImage.nomeArquivo }}</h3>
+        <button class="modal-close" (click)="closeImage()">×</button>
+      </div>
+      <div class="modal-body image-modal-body">
+        <img [src]="getImagemPreview(selectedImage.dadosBase64)" [alt]="selectedImage.nomeArquivo">
+      </div>
+    </div>
+  </div>
+}
