@@ -18,16 +18,11 @@ export class VeiculoService {
       return [];
     }
 
-    const placaRegex = /^[A-Za-z0-9-]+$/;
     const params: Record<string, string> = {
       status: 'ATIVO',
+      placa: trimmed,
+      descricao: trimmed,
     };
-
-    if (placaRegex.test(trimmed) && trimmed.length <= 10) {
-      params['placa'] = trimmed;
-    } else {
-      params['descricao'] = trimmed;
-    }
 
     const response = await firstValueFrom(
       this.http.get<{ data: Veiculo[] } | Veiculo[]>(

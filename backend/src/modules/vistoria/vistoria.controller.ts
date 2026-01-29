@@ -58,7 +58,7 @@ export class VistoriaController {
   }
 
   @Get(':id/checklist')
-  @Permissions(Permission.VISTORIA_READ)
+  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
   @ApiOperation({ summary: 'Listar itens salvos do checklist' })
   @ApiResponse({
     status: 200,
@@ -72,7 +72,7 @@ export class VistoriaController {
   }
 
   @Get(':id/checklist/imagens')
-  @Permissions(Permission.VISTORIA_READ)
+  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
   @ApiOperation({ summary: 'Listar imagens do checklist da vistoria' })
   @ApiResponse({
     status: 200,
@@ -118,7 +118,7 @@ export class VistoriaController {
   }
 
   @Get(':id')
-  @Permissions(Permission.VISTORIA_READ)
+  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
   @ApiOperation({ summary: 'Buscar vistoria por id' })
   @ApiResponse({ status: 200, description: 'Vistoria encontrada', type: Vistoria })
   findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Vistoria> {
@@ -126,7 +126,7 @@ export class VistoriaController {
   }
 
   @Get()
-  @Permissions(Permission.VISTORIA_READ)
+  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
   @ApiOperation({ summary: 'Listar vistorias (com filtro de status)' })
   @ApiResponse({ status: 200, description: 'Lista de vistorias', type: [Vistoria] })
   findAll(

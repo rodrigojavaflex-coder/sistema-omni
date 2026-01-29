@@ -36,7 +36,9 @@
               "canvg",
               "core-js",
               "html2canvas",
+              "jszip",
               "jspdf",
+              "file-saver",
               "rgbcolor",
               "raf"
             ]

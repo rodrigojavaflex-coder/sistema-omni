@@ -7,6 +7,7 @@ import { saveAs } from 'file-saver';
 import { TipoVistoriaService } from '../../services/tipo-vistoria.service';
 import { UserService } from '../../services/user.service';
 import { VistoriaService } from '../../services/vistoria.service';
+import { AuthService } from '../../services/auth.service';
 import {
   ChecklistImagemResumo,
   ChecklistItemResumo,
@@ -14,11 +15,20 @@ import {
 } from '../../models/vistoria.model';
 import { TipoVistoria } from '../../models/tipo-vistoria.model';
 import { Usuario } from '../../models/usuario.model';
+import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
+import { MotoristaAutocompleteComponent } from '../shared/motorista-autocomplete/motorista-autocomplete.component';
+import { UsuarioAutocompleteComponent } from '../shared/usuario-autocomplete/usuario-autocomplete.component';
 
 @Component({
   selector: 'app-vistoria-list',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    VeiculoAutocompleteComponent,
+    MotoristaAutocompleteComponent,
+    UsuarioAutocompleteComponent,
+  ],
   templateUrl: './vistoria-list.html',
   styleUrls: ['./vistoria-list.css'],
 })
@@ -26,6 +36,7 @@ export class VistoriaListComponent implements OnInit {
   private vistoriaService = inject(VistoriaService);
   private tipoVistoriaService = inject(TipoVistoriaService);
   private userService = inject(UserService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
 
   loading = false;
@@ -61,8 +72,8 @@ export class VistoriaListComponent implements OnInit {
   totalPages = 0;
 
   filterForm = this.fb.group({
-    veiculo: [''],
-    motorista: [''],
+    veiculoId: [''],
+    motoristaId: [''],
     tipoId: [''],
     status: [''],
     usuarioId: [''],
@@ -149,8 +160,8 @@ export class VistoriaListComponent implements OnInit {
 
   applyFilters(): void {
     const {
-      veiculo,
-      motorista,
+      veiculoId,
+      motoristaId,
       tipoId,
       status,
       usuarioId,
@@ -158,14 +169,9 @@ export class VistoriaListComponent implements OnInit {
       dataFim,
     } = this.filterForm.value;
 
-    const veiculoTerm = this.normalizeText(veiculo);
-    const motoristaTerm = this.normalizeText(motorista);
-
     const filtered = (this.vistorias ?? []).filter((vistoria) => {
-      const veiculoLabel = `${vistoria.veiculo?.descricao ?? ''} ${vistoria.veiculo?.placa ?? ''}`;
-      const motoristaLabel = `${vistoria.motorista?.nome ?? ''} ${vistoria.motorista?.matricula ?? ''}`;
-      const matchesVeiculo = !veiculoTerm || this.normalizeText(veiculoLabel).includes(veiculoTerm);
-      const matchesMotorista = !motoristaTerm || this.normalizeText(motoristaLabel).includes(motoristaTerm);
+      const matchesVeiculo = !veiculoId || vistoria.idVeiculo === veiculoId;
+      const matchesMotorista = !motoristaId || vistoria.idMotorista === motoristaId;
       const matchesTipo = !tipoId || vistoria.idTipoVistoria === tipoId;
       const matchesStatus = !status || vistoria.status === status;
       const matchesUsuario = !usuarioId || vistoria.idUsuario === usuarioId;
@@ -202,8 +208,8 @@ export class VistoriaListComponent implements OnInit {
 
   clearFilters(): void {
     this.filterForm.reset({
-      veiculo: '',
-      motorista: '',
+      veiculoId: '',
+      motoristaId: '',
       tipoId: '',
       status: '',
       usuarioId: '',
@@ -335,6 +341,10 @@ export class VistoriaListComponent implements OnInit {
     const printDate = new Date().toLocaleString('pt-BR');
     const dataVistoria = new Date(this.selectedVistoria.datavistoria).toLocaleString('pt-BR');
     const usuario = this.getUsuarioNome(this.selectedVistoria.idUsuario);
+    const usuarioImpressao =
+      this.authService.getCurrentUser()?.nome ||
+      this.authService.getCurrentUser()?.email ||
+      usuario;
     const veiculoDescricao = this.selectedVistoria.veiculo?.descricao ?? '-';
     const placa = this.selectedVistoria.veiculo?.placa ?? '-';
     const motoristaNome = this.selectedVistoria.motorista?.nome ?? '-';
@@ -410,7 +420,7 @@ export class VistoriaListComponent implements OnInit {
           </div>
           ${checklistHtml}
           <div class="footer">
-            <span>Vistoriador: ${usuario}</span>
+            <span>Impresso por: ${usuarioImpressao}</span>
             <span>Impresso em: ${printDate}</span>
           </div>
           <script>window.onload = () => window.print();</script>

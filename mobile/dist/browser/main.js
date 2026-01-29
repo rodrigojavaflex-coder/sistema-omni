@@ -126,7 +126,7 @@ var routes = [
   },
   {
     path: "vistoria/inicio",
-    loadComponent: () => import("./chunk-5C3B5E4Y.js").then((m) => m.VistoriaInicioPage),
+    loadComponent: () => import("./chunk-S4WCT7EI.js").then((m) => m.VistoriaInicioPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
@@ -206,6 +206,25 @@ var AppComponent = class _AppComponent {
   }
   logout() {
     return __async(this, null, function* () {
+      const alert = yield this.alertController.create({
+        header: "Sair do aplicativo",
+        message: "Deseja realmente sair?",
+        buttons: [
+          {
+            text: "Cancelar",
+            role: "cancel"
+          },
+          {
+            text: "Sair",
+            role: "confirm"
+          }
+        ]
+      });
+      yield alert.present();
+      const { role } = yield alert.onDidDismiss();
+      if (role !== "confirm") {
+        return;
+      }
       yield this.authService.logout();
     });
   }

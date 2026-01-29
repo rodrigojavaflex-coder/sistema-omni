@@ -34,14 +34,22 @@ export class TipoVistoriaController {
 
   @Get()
   @ApiOperation({ summary: 'Listar tipos de vistoria' })
-  @Permissions(Permission.TIPOVISTORIA_READ)
+  @Permissions(
+    Permission.TIPOVISTORIA_READ,
+    Permission.VISTORIA_WEB_READ,
+    Permission.VISTORIA_READ,
+  )
   findAll() {
     return this.tipoVistoriaService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Buscar tipo de vistoria por id' })
-  @Permissions(Permission.TIPOVISTORIA_READ)
+  @Permissions(
+    Permission.TIPOVISTORIA_READ,
+    Permission.VISTORIA_WEB_READ,
+    Permission.VISTORIA_READ,
+  )
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.tipoVistoriaService.findOne(id);
   }

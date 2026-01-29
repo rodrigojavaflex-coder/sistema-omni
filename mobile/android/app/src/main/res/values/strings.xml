@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">OMNI Sistema</string>
-    <string name="title_activity_main">OMNI Sistema</string>
+    <string name="app_name">Metrobus App</string>
+    <string name="title_activity_main">Metrobus App</string>
     <string name="package_name">com.omni.sistema</string>
     <string name="custom_url_scheme">com.omni.sistema</string>
 </resources>

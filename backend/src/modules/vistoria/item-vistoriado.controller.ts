@@ -35,7 +35,7 @@ export class ItemVistoriadoController {
 
   @Get()
   @ApiOperation({ summary: 'Listar itens vistoriados' })
-  @Permissions(Permission.ITEMVISTORIADO_READ)
+  @Permissions(Permission.ITEMVISTORIADO_READ, Permission.VISTORIA_READ)
   findAll(
     @Query('tipovistoria') tipovistoria?: string,
     @Query('ativo') ativo?: string,
@@ -47,7 +47,7 @@ export class ItemVistoriadoController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Buscar item vistoriado por id' })
-  @Permissions(Permission.ITEMVISTORIADO_READ)
+  @Permissions(Permission.ITEMVISTORIADO_READ, Permission.VISTORIA_READ)
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.itemService.findOne(id);
   }

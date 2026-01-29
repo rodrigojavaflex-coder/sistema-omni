@@ -32,7 +32,7 @@ export class MotoristaController {
   }
 
   @Get()
-  @Permissions(Permission.MOTORISTA_READ)
+  @Permissions(Permission.MOTORISTA_READ, Permission.VISTORIA_READ)
   findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,

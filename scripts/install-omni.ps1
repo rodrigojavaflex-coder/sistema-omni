@@ -466,7 +466,7 @@ function Configure-IIS {
         Write-Host "  ERRO: Falha ao criar web.config: $($_.Exception.Message)" -ForegroundColor Red
         return
     }
-
+    
     # =========================================================================
     # CRITICAL: Criar web.config na RAIZ do IIS para capturar /api/* GLOBAL
     # =========================================================================

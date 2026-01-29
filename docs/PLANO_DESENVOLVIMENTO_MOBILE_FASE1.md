@@ -1,4 +1,4 @@
-﻿# PLANO DESENVOLVIMENTO MOBILE - FASE 1: ESTRUTURA E AUTENTICAÇÃO
+# PLANO DESENVOLVIMENTO MOBILE - FASE 1: ESTRUTURA E AUTENTICAÇÃO
 
 **Data:** 21/01/2026  
 **Objetivo:** Aplicativo funcional com login seguro testado no telefone  

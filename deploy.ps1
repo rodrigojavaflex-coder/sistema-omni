@@ -178,15 +178,15 @@ Write-Host "   OK: Arquivos preparados em $deployPath" -ForegroundColor Green
 Write-Host "`n4. Copiando scripts para a raiz de C:\NovaVersao..." -ForegroundColor Cyan
 
 # Copiar scripts para a raiz
-Copy-Item "$PSScriptRoot\install-omni.ps1" "$deployPath\install-omni.ps1" -Force
+Copy-Item "$PSScriptRoot\scripts\install-omni.ps1" "$deployPath\install-omni.ps1" -Force
 Write-Host "  ✓ install-omni.ps1 copiado" -ForegroundColor Green
 
 # Copiar script de diagnóstico
-Copy-Item "$PSScriptRoot\diagnostico.ps1" "$deployPath\diagnostico.ps1" -Force
+Copy-Item "$PSScriptRoot\scripts\diagnostico.ps1" "$deployPath\diagnostico.ps1" -Force
 Write-Host "  ✓ diagnostico.ps1 copiado" -ForegroundColor Green
 
 # Copiar script de atualização rápida
-Copy-Item "$PSScriptRoot\atualizar-servidor.ps1" "$deployPath\atualizar-servidor.ps1" -Force
+Copy-Item "$PSScriptRoot\scripts\atualizar-servidor.ps1" "$deployPath\atualizar-servidor.ps1" -Force
 Write-Host "  ✓ atualizar-servidor.ps1 copiado" -ForegroundColor Green
 
 Write-Host "   OK: Scripts copiados para $deployPath" -ForegroundColor Green

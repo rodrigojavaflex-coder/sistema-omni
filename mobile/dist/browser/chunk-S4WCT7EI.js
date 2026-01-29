@@ -119,15 +119,11 @@ var VeiculoService = class _VeiculoService {
       if (!trimmed) {
         return [];
       }
-      const placaRegex = /^[A-Za-z0-9-]+$/;
       const params = {
-        status: "ATIVO"
+        status: "ATIVO",
+        placa: trimmed,
+        descricao: trimmed
       };
-      if (placaRegex.test(trimmed) && trimmed.length <= 10) {
-        params["placa"] = trimmed;
-      } else {
-        params["descricao"] = trimmed;
-      }
       const response = yield firstValueFrom(this.http.get(`${this.apiBaseUrl}/veiculo`, { params }));
       if (Array.isArray(response)) {
         return response;
@@ -965,4 +961,4 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
 export {
   VistoriaInicioPage
 };
-//# sourceMappingURL=chunk-5C3B5E4Y.js.map
+//# sourceMappingURL=chunk-S4WCT7EI.js.map

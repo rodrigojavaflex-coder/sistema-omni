@@ -6,11 +6,29 @@
 
 .autocomplete-input {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
   border: 1px solid var(--border-color, #ddd);
   border-radius: 4px;
   font-size: 0.875rem;
   transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.autocomplete-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.autocomplete-clear:hover {
+  color: #111827;
 }
 
 .autocomplete-input:focus {

@@ -86,29 +86,21 @@ export class VeiculoService {
       modeloDaCarroceria,
     } = findVeiculoDto as any;
 
-    this.logger.debug('🔍 VEICULO FINDALL - Filtros recebidos:', {
-      page,
-      limit,
-      descricao,
-      placa,
-      ano,
-      marca,
-      modelo,
-      combustivel,
-      status,
-      marcaDaCarroceria,
-      modeloDaCarroceria,
-    });
-
     const query = this.veiculoRepository.createQueryBuilder('v');
 
-    if (descricao) {
+    if (descricao && placa) {
+      query.andWhere(
+        '(v.descricao ILIKE :descricao OR v.placa ILIKE :placa)',
+        {
+          descricao: `%${descricao}%`,
+          placa: `%${placa}%`,
+        },
+      );
+    } else if (descricao) {
       query.andWhere('v.descricao ILIKE :descricao', {
         descricao: `%${descricao}%`,
       });
-    }
-
-    if (placa) {
+    } else if (placa) {
       query.andWhere('v.placa ILIKE :placa', { placa: `%${placa}%` });
     }
 
@@ -129,25 +121,16 @@ export class VeiculoService {
     }
 
     if (status) {
-      this.logger.debug('✅ Aplicando filtro de STATUS:', status);
       query.andWhere('v.status = :status', { status });
     }
 
     if (marcaDaCarroceria) {
-      this.logger.debug(
-        '✅ Aplicando filtro de MARCA CARROCERIA:',
-        marcaDaCarroceria,
-      );
       query.andWhere('v.marcaDaCarroceria ILIKE :marcaDaCarroceria', {
         marcaDaCarroceria: `%${marcaDaCarroceria}%`,
       });
     }
 
     if (modeloDaCarroceria) {
-      this.logger.debug(
-        '✅ Aplicando filtro de MODELO CARROCERIA:',
-        modeloDaCarroceria,
-      );
       query.andWhere('v.modeloDaCarroceria ILIKE :modeloDaCarroceria', {
         modeloDaCarroceria: `%${modeloDaCarroceria}%`,
       });

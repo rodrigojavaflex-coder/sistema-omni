@@ -4,18 +4,12 @@
   </div>
 
   <div class="filters" [formGroup]="filterForm">
-    <input
-      type="text"
-      placeholder="Veículo (descrição/placa)"
-      formControlName="veiculo"
-      class="filter-input"
-    >
-    <input
-      type="text"
-      placeholder="Motorista (nome/matrícula)"
-      formControlName="motorista"
-      class="filter-input"
-    >
+    <app-veiculo-autocomplete
+      formControlName="veiculoId"
+    ></app-veiculo-autocomplete>
+    <app-motorista-autocomplete
+      formControlName="motoristaId"
+    ></app-motorista-autocomplete>
     <select formControlName="tipoId" class="filter-select">
       <option value="">Tipo de vistoria</option>
       @for (tipo of tipos; track tipo.id) {
@@ -27,12 +21,10 @@
         <option [value]="status.value">{{ status.label }}</option>
       }
     </select>
-    <select formControlName="usuarioId" class="filter-select">
-      <option value="">Usuário</option>
-      @for (usuario of usuarios; track usuario.id) {
-        <option [value]="usuario.id">{{ usuario.nome }}</option>
-      }
-    </select>
+    <app-usuario-autocomplete
+      formControlName="usuarioId"
+      class="filter-vistoriador"
+    ></app-usuario-autocomplete>
     <input type="date" formControlName="dataInicio" class="filter-input">
     <input type="date" formControlName="dataFim" class="filter-input">
     <button class="btn btn-secondary" (click)="clearFilters()">Limpar</button>

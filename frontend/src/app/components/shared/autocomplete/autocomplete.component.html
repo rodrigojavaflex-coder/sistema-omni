@@ -11,6 +11,16 @@
     class="autocomplete-input"
     autocomplete="off"
   >
+  @if (searchText) {
+    <button
+      type="button"
+      class="autocomplete-clear"
+      (click)="clearSelection($event)"
+      aria-label="Limpar filtro"
+    >
+      ✕
+    </button>
+  }
   
   @if (isLoading) {
     <div class="autocomplete-dropdown autocomplete-dropdown-generic">

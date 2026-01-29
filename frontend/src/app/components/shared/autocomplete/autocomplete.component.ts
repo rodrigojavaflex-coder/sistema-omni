@@ -101,6 +101,17 @@ export class AutocompleteComponent<T extends { id: string }> implements ControlV
     this.itemSelected.emit(item);
   }
 
+  clearSelection(event?: MouseEvent): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.searchText = '';
+    this.filteredItems = [];
+    this.showDropdown = false;
+    this.selectedIndex = -1;
+    this.onChange('');
+    this.onTouched();
+  }
+
   onFocus(): void {
     this.selectedIndex = -1;
     const minChars = this.config.minChars || 2;

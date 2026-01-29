@@ -73,6 +73,27 @@ export class AppComponent {
   }
 
   async logout(): Promise<void> {
+    const alert = await this.alertController.create({
+      header: 'Sair do aplicativo',
+      message: 'Deseja realmente sair?',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+        },
+        {
+          text: 'Sair',
+          role: 'confirm',
+        },
+      ],
+    });
+
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role !== 'confirm') {
+      return;
+    }
+
     await this.authService.logout();
   }
 
