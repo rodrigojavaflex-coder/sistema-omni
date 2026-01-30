@@ -126,7 +126,7 @@ var routes = [
   },
   {
     path: "vistoria/inicio",
-    loadComponent: () => import("./chunk-LDIWFOX2.js").then((m) => m.VistoriaInicioPage),
+    loadComponent: () => import("./chunk-N4UUCDOV.js").then((m) => m.VistoriaInicioPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },

@@ -400,10 +400,10 @@ export class VistoriaInicioPage implements OnInit {
       normalized = raw.replace(/\./g, '').replace(',', '.');
     } else if (hasComma) {
       const parts = raw.split(',');
-      normalized = parts[1]?.length === 3 ? raw.replace(/,/g, '') : raw.replace(',', '.');
+      normalized = parts[parts.length - 1].length <= 2 ? raw.replace(',', '.') : raw.replace(/,/g, '');
     } else if (hasDot) {
       const parts = raw.split('.');
-      normalized = parts[parts.length - 1].length === 3 ? raw.replace(/\./g, '') : raw;
+      normalized = parts[parts.length - 1].length <= 2 ? raw : raw.replace(/\./g, '');
     }
     normalized = normalized.replace(/[^\d.]/g, '');
     if (!normalized) {

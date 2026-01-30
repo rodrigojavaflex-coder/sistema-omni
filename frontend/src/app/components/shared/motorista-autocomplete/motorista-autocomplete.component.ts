@@ -15,6 +15,7 @@ import { AutocompleteComponent, AutocompleteConfig } from '../autocomplete/autoc
       [config]="autocompleteConfig"
       [isInvalid]="isInvalid"
       [(ngModel)]="value"
+      (ngModelChange)="onInputChange($event)"
       (itemSelected)="onMotoristaSelected($event)">
     </app-autocomplete>
   `,
@@ -61,6 +62,12 @@ export class MotoristaAutocompleteComponent implements ControlValueAccessor, OnI
   onMotoristaSelected(motorista: Motorista): void {
     this.onChange(motorista.id);
     this.motoristaSelected.emit(motorista);
+  }
+
+  onInputChange(value: string): void {
+    if (!value) {
+      this.onChange('');
+    }
   }
 
   writeValue(value: string): void {

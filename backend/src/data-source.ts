@@ -1,25 +1,22 @@
-import { registerAs } from '@nestjs/config';
+import 'dotenv/config';
+import { DataSource } from 'typeorm';
 
-export default registerAs('database', () => ({
-  type: 'postgres' as const,
+export default new DataSource({
+  type: 'postgres',
   host: process.env.DATABASE_HOST || 'localhost',
   port: parseInt(process.env.DATABASE_PORT || '5432', 10),
   username: process.env.DATABASE_USERNAME || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'Ro112543*',
   database: process.env.DATABASE_NAME || 'omni',
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+  entities: [__dirname + '/**/*.entity{.ts,.js}'],
+  migrations: [__dirname + '/migrations/*{.ts,.js}'],
   synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
-  // Configuração de logging otimizada
   logging: process.env.DATABASE_LOGGING === 'true' ? true : ['error', 'warn'],
-  ssl: false, // Desabilitar SSL para compatibilidade com PostgreSQL local
-  timezone: 'UTC',
-  // ✅ Configurações de charset UTF-8 para PostgreSQL
+  ssl: false,
+  migrationsTableName: 'migrations',
   extra: {
     charset: 'utf8',
     client_encoding: 'UTF8',
   },
-  // ✅ Configurações adicionais para produção
   connectTimeoutMS: 60000,
-  acquireTimeoutMS: 60000,
-  timeout: 60000,
-}));
+});

@@ -239,6 +239,25 @@ if ($needsInstall) {
 }
 
 # =============================================================================
+# 6.1 EXECUTAR MIGRATIONS
+# =============================================================================
+Write-Host "`n6.1 Executando migrations..." -ForegroundColor Cyan
+try {
+    Push-Location $backendPath
+    npm run migration:run:prod
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  OK: Migrations executadas com sucesso!" -ForegroundColor Green
+    } else {
+        Write-Host "  AVISO: Erro ao executar migrations (codigo: $LASTEXITCODE)" -ForegroundColor Yellow
+        Write-Host "  Execute manualmente: cd C:\Deploy\OMNI && npm run migration:run:prod" -ForegroundColor Yellow
+    }
+} catch {
+    Write-Host "  ERRO: Falha ao executar migrations: $($_.Exception.Message)" -ForegroundColor Red
+} finally {
+    Pop-Location
+}
+
+# =============================================================================
 # 6. ATUALIZAR WEB.CONFIG (SE NECESSARIO)
 # =============================================================================
 Write-Host "`n6. Verificando configuracao do IIS (web.config)..." -ForegroundColor Cyan

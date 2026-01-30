@@ -15,6 +15,7 @@ import { map } from 'rxjs/operators';
       [config]="autocompleteConfig"
       [isInvalid]="isInvalid"
       [(ngModel)]="value"
+      (ngModelChange)="onInputChange($event)"
       (itemSelected)="onVeiculoSelected($event)">
     </app-autocomplete>
   `,
@@ -66,6 +67,12 @@ export class VeiculoAutocompleteComponent implements ControlValueAccessor, OnIni
   onVeiculoSelected(veiculo: Veiculo): void {
     this.onChange(veiculo.id);
     this.veiculoSelected.emit(veiculo);
+  }
+
+  onInputChange(value: string): void {
+    if (!value) {
+      this.onChange('');
+    }
   }
 
   writeValue(value: string): void {
