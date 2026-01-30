@@ -65,8 +65,9 @@ export class Vistoria extends BaseEntity {
     type: 'numeric',
     precision: 5,
     scale: 2,
+    nullable: true,
   })
-  porcentagembateria: number;
+  porcentagembateria: number | null;
 
   @ApiProperty({ description: 'Data/hora da vistoria' })
   @Column({ name: 'datavistoria', type: 'timestamp' })

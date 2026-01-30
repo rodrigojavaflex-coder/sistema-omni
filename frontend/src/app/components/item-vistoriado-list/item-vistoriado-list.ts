@@ -153,6 +153,10 @@ export class ItemVistoriadoListComponent
     return item.obrigafoto ? 'Sim' : 'Não';
   }
 
+  getPermitirFotoConformeLabel(item: ItemVistoriado): string {
+    return item.permitirfotoconforme ? 'Sim' : 'Não';
+  }
+
   getTipoDescricao(id: string): string {
     return this.tiposVistoria.find((tipo) => tipo.id === id)?.descricao || id;
   }
@@ -168,12 +172,20 @@ export class ItemVistoriadoListComponent
 
   protected getExportDataExcel(items: ItemVistoriado[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Sequência', 'Descrição', 'Tipos de Vistoria', 'Obrigatório Foto', 'Status'],
+      headers: [
+        'Sequência',
+        'Descrição',
+        'Tipos de Vistoria',
+        'Obrigatório Foto',
+        'Permite Foto Conforme',
+        'Status',
+      ],
       data: items.map((item) => [
         item.sequencia,
         item.descricao,
         this.getTiposLabel(item),
         this.getObrigafotoLabel(item),
+        this.getPermitirFotoConformeLabel(item),
         this.getStatusLabel(item),
       ]),
     };
@@ -181,12 +193,20 @@ export class ItemVistoriadoListComponent
 
   protected getExportDataPDF(items: ItemVistoriado[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Sequência', 'Descrição', 'Tipos de Vistoria', 'Obrigatório Foto', 'Status'],
+      headers: [
+        'Sequência',
+        'Descrição',
+        'Tipos de Vistoria',
+        'Obrigatório Foto',
+        'Permite Foto Conforme',
+        'Status',
+      ],
       data: items.map((item) => [
         item.sequencia,
         item.descricao,
         this.getTiposLabel(item),
         this.getObrigafotoLabel(item),
+        this.getPermitirFotoConformeLabel(item),
         this.getStatusLabel(item),
       ]),
     };
@@ -391,18 +411,21 @@ export class ItemVistoriadoListComponent
       sequencia: [item?.sequencia ?? null, [Validators.required, Validators.min(1)]],
       tiposvistorias: [tiposSelecionados, [Validators.required]],
       obrigafoto: [item?.obrigafoto ?? false],
+      permitirfotoconforme: [item?.permitirfotoconforme ?? true],
       ativo: [item?.ativo ?? true],
     });
   }
 
   private buildPayload(form: FormGroup) {
     const value = form.value;
+    const ativo = value.ativo === true || value.ativo === 'true';
     return {
       descricao: value.descricao,
       sequencia: Number(value.sequencia),
       tiposvistorias: this.mapTipoDescricoesToIds(value.tiposvistorias || []),
       obrigafoto: !!value.obrigafoto,
-      ativo: value.ativo,
+      permitirfotoconforme: value.permitirfotoconforme !== false,
+      ativo,
     };
   }
 

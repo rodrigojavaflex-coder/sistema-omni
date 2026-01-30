@@ -6,7 +6,7 @@ import {
   inject,
   setClassMetadata,
   ɵɵdefineInjectable
-} from "./chunk-XXY565TE.js";
+} from "./chunk-FWNB6FX6.js";
 import {
   Capacitor
 } from "./chunk-RP3QMZ46.js";
@@ -22,6 +22,23 @@ var VistoriaService = class _VistoriaService {
   iniciarVistoria(payload) {
     return __async(this, null, function* () {
       return firstValueFrom(this.http.post(`${this.apiBaseUrl}/vistoria`, payload));
+    });
+  }
+  atualizarVistoria(vistoriaId, payload) {
+    return __async(this, null, function* () {
+      return firstValueFrom(this.http.patch(`${this.apiBaseUrl}/vistoria/${vistoriaId}`, payload));
+    });
+  }
+  getById(vistoriaId) {
+    return __async(this, null, function* () {
+      return firstValueFrom(this.http.get(`${this.apiBaseUrl}/vistoria/${vistoriaId}`));
+    });
+  }
+  getUltimoOdometro(idveiculo, ignorarVistoriaId) {
+    return __async(this, null, function* () {
+      return firstValueFrom(this.http.get(`${this.apiBaseUrl}/vistoria/veiculo/${idveiculo}/ultimo-odometro`, {
+        params: ignorarVistoriaId ? { ignorarVistoriaId } : {}
+      }));
     });
   }
   salvarChecklistItem(vistoriaId, payload) {
@@ -63,12 +80,12 @@ var VistoriaService = class _VistoriaService {
       return firstValueFrom(this.http.post(`${this.apiBaseUrl}/vistoria/${vistoriaId}/retomar`, {}));
     });
   }
-  listarEmAndamento(idusuario) {
+  listarEmAndamento(idusuario, ignorarVistoriaId) {
     return __async(this, null, function* () {
       return firstValueFrom(this.http.get(`${this.apiBaseUrl}/vistoria`, {
-        params: __spreadValues({
+        params: __spreadValues(__spreadValues({
           status: "EM_ANDAMENTO"
-        }, idusuario ? { idusuario } : {})
+        }, idusuario ? { idusuario } : {}), ignorarVistoriaId ? { ignorarVistoriaId } : {})
       }));
     });
   }
@@ -90,12 +107,14 @@ var VistoriaFlowService = class _VistoriaFlowService {
   tipoVistoriaId = null;
   startedAt = null;
   veiculoDescricao = null;
+  tipoVistoriaDescricao = null;
   dataVistoriaIso = null;
   iniciar(vistoriaId, tipoVistoriaId, options) {
     this.vistoriaId = vistoriaId;
     this.tipoVistoriaId = tipoVistoriaId;
     this.startedAt = Date.now();
     this.veiculoDescricao = options?.veiculoDescricao ?? this.veiculoDescricao;
+    this.tipoVistoriaDescricao = options?.tipoVistoriaDescricao ?? this.tipoVistoriaDescricao;
     this.dataVistoriaIso = options?.datavistoria ?? this.dataVistoriaIso;
   }
   finalizar() {
@@ -103,6 +122,7 @@ var VistoriaFlowService = class _VistoriaFlowService {
     this.tipoVistoriaId = null;
     this.startedAt = null;
     this.veiculoDescricao = null;
+    this.tipoVistoriaDescricao = null;
     this.dataVistoriaIso = null;
   }
   getVistoriaId() {
@@ -111,8 +131,25 @@ var VistoriaFlowService = class _VistoriaFlowService {
   getTipoVistoriaId() {
     return this.tipoVistoriaId;
   }
+  updateContext(options) {
+    if (options.tipoVistoriaId) {
+      this.tipoVistoriaId = options.tipoVistoriaId;
+    }
+    if (options.veiculoDescricao !== void 0) {
+      this.veiculoDescricao = options.veiculoDescricao;
+    }
+    if (options.tipoVistoriaDescricao !== void 0) {
+      this.tipoVistoriaDescricao = options.tipoVistoriaDescricao;
+    }
+    if (options.datavistoria !== void 0) {
+      this.dataVistoriaIso = options.datavistoria;
+    }
+  }
   getVeiculoDescricao() {
     return this.veiculoDescricao;
+  }
+  getTipoVistoriaDescricao() {
+    return this.tipoVistoriaDescricao;
   }
   getDataVistoriaIso() {
     return this.dataVistoriaIso;
@@ -140,4 +177,4 @@ export {
   VistoriaService,
   VistoriaFlowService
 };
-//# sourceMappingURL=chunk-XDELGTKF.js.map
+//# sourceMappingURL=chunk-HOZ3DUWF.js.map

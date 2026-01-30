@@ -3,4 +3,5 @@ export interface Veiculo {
   descricao: string;
   placa: string;
   status: string;
+  combustivel?: string;
 }

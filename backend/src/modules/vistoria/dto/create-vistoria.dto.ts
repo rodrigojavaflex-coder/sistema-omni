@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsNumber, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsNumber, IsOptional, IsUUID, Max, Min } from 'class-validator';
 
 export class CreateVistoriaDto {
   @ApiProperty({ description: 'ID do usuário', format: 'uuid' })
@@ -19,6 +19,7 @@ export class CreateVistoriaDto {
   @Type(() => Number)
   @IsNumber()
   @Min(0.01)
+  @Max(9999999)
   odometro: number;
 
   @ApiProperty({ description: 'Percentual de bateria', example: 85 })
@@ -26,7 +27,8 @@ export class CreateVistoriaDto {
   @IsNumber()
   @Min(0)
   @Max(100)
-  porcentagembateria: number;
+  @IsOptional()
+  porcentagembateria?: number;
 
   @ApiProperty({ description: 'ID do tipo de vistoria', format: 'uuid' })
   @IsUUID()

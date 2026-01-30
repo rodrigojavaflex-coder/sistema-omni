@@ -32,5 +32,9 @@ export class CreateItemVistoriadoDto {
 
   @IsBoolean()
   @IsOptional()
+  permitirfotoconforme?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
   ativo?: boolean;
 }

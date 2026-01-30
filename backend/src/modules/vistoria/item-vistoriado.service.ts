@@ -18,6 +18,7 @@ export class ItemVistoriadoService {
       sequencia: dto.sequencia,
       tiposVistorias: dto.tiposvistorias,
       obrigafoto: dto.obrigafoto ?? false,
+      permitirfotoconforme: dto.permitirfotoconforme ?? true,
       ativo: dto.ativo ?? true,
     });
     return this.itemRepository.save(item);
@@ -56,6 +57,7 @@ export class ItemVistoriadoService {
       sequencia: dto.sequencia ?? item.sequencia,
       tiposVistorias: dto.tiposvistorias ?? item.tiposVistorias,
       obrigafoto: dto.obrigafoto ?? item.obrigafoto,
+      permitirfotoconforme: dto.permitirfotoconforme ?? item.permitirfotoconforme,
       ativo: dto.ativo ?? item.ativo,
     });
     return this.itemRepository.save(updated);

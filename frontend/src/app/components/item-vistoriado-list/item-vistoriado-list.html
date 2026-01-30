@@ -63,6 +63,7 @@
           <th>Descrição</th>
           <th>Tipos de Vistoria</th>
           <th>Obrigatório Foto</th>
+          <th>Permite Foto Conforme</th>
           <th>Status</th>
           <th>Ações</th>
         </tr>
@@ -112,9 +113,15 @@
             </label>
           </td>
           <td>
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="permitirfotoconforme" class="checkbox-input" />
+              <span class="checkbox-text">Sim</span>
+            </label>
+          </td>
+          <td>
             <select formControlName="ativo" class="form-select grid-input">
-              <option [value]="true">Ativo</option>
-              <option [value]="false">Inativo</option>
+              <option [ngValue]="true">Ativo</option>
+              <option [ngValue]="false">Inativo</option>
             </select>
           </td>
           <td>
@@ -203,10 +210,19 @@
             <ng-template #obrigafotoRead>{{ getObrigafotoLabel(item) }}</ng-template>
           </td>
           <td>
+            <ng-container *ngIf="isEditing(item.id); else permitirFotoRead">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="permitirfotoconforme" class="checkbox-input" />
+                <span class="checkbox-text">Sim</span>
+              </label>
+            </ng-container>
+            <ng-template #permitirFotoRead>{{ getPermitirFotoConformeLabel(item) }}</ng-template>
+          </td>
+          <td>
             <ng-container *ngIf="isEditing(item.id); else statusRead">
               <select formControlName="ativo" class="form-select grid-input">
-                <option [value]="true">Ativo</option>
-                <option [value]="false">Inativo</option>
+                <option [ngValue]="true">Ativo</option>
+                <option [ngValue]="false">Inativo</option>
               </select>
             </ng-container>
             <ng-template #statusRead>{{ getStatusLabel(item) }}</ng-template>
@@ -236,7 +252,7 @@
           </td>
         </tr>
         <tr *ngIf="items.length === 0">
-          <td colspan="6" class="table-empty-cell" style="text-align: center; padding: 2rem;">
+          <td colspan="7" class="table-empty-cell" style="text-align: center; padding: 2rem;">
             Nenhum item vistoriado encontrado
           </td>
         </tr>

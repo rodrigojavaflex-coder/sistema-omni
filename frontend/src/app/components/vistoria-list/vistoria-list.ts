@@ -350,6 +350,11 @@ export class VistoriaListComponent implements OnInit {
     const motoristaNome = this.selectedVistoria.motorista?.nome ?? '-';
     const motoristaMatricula = this.selectedVistoria.motorista?.matricula ?? '-';
     const tipoVistoria = this.selectedVistoria.tipoVistoria?.descricao ?? '-';
+    const bateriaTexto =
+      this.selectedVistoria.porcentagembateria === null ||
+      this.selectedVistoria.porcentagembateria === undefined
+        ? '-'
+        : `${this.selectedVistoria.porcentagembateria}%`;
 
     const checklistHtml = this.checklistItens.map((item) => {
       const imagens = (this.imagensPorItem[item.iditemvistoriado] ?? [])
@@ -414,7 +419,7 @@ export class VistoriaListComponent implements OnInit {
             <div><strong>Tipo:</strong> ${tipoVistoria}</div>
             <div><strong>Vistoriador:</strong> ${usuario}</div>
             <div><strong>Odômetro:</strong> ${this.formatNumero(this.selectedVistoria.odometro)}</div>
-            <div><strong>Bateria:</strong> ${this.selectedVistoria.porcentagembateria ?? '-'}%</div>
+            <div><strong>Bateria:</strong> ${bateriaTexto}</div>
             <div><strong>Tempo:</strong> ${this.formatTempo(this.selectedVistoria.tempo)}</div>
             <div><strong>Observação:</strong> ${this.selectedVistoria.observacao ?? '-'}</div>
           </div>

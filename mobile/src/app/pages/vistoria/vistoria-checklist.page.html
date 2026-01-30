@@ -34,7 +34,7 @@
     </div>
 
     <div class="header">
-      <h2>{{ currentItem.sequencia }}. {{ currentItem.descricao }}</h2>
+      <h2>{{ displayIndex }}. {{ currentItem.descricao }}</h2>
       <ion-text color="success" *ngIf="savedIds.has(currentItem.id)">
         <ion-icon name="checkmark-circle"></ion-icon>
         Item salvo
@@ -72,7 +72,7 @@
 
     <ion-item lines="none">
       <ion-label>Fotos ({{ currentFotos.length }})</ion-label>
-      <ion-button fill="outline" (click)="adicionarFoto()">
+      <ion-button fill="outline" (click)="adicionarFoto()" [disabled]="!podeAdicionarFoto">
         <ion-icon slot="start" name="camera-outline"></ion-icon>
         Adicionar
       </ion-button>

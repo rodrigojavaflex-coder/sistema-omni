@@ -4,5 +4,6 @@ export interface ItemVistoriado {
   sequencia: number;
   tiposVistorias: string[];
   obrigafoto: boolean;
+  permitirfotoconforme: boolean;
   ativo: boolean;
 }

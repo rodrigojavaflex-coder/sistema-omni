@@ -16,11 +16,13 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { CreateVistoriaDto } from './dto/create-vistoria.dto';
 import { CreateChecklistItemDto } from './dto/create-checklist-item.dto';
 import { FinalizeVistoriaDto } from './dto/finalize-vistoria.dto';
+import { UpdateVistoriaDto } from './dto/update-vistoria.dto';
 import { ChecklistItemResumoDto } from './dto/checklist-item-resumo.dto';
 import { ChecklistImagemResumoDto } from './dto/checklist-imagem-resumo.dto';
 import { StatusVeiculo } from '../../common/enums/status-veiculo.enum';
 import { StatusMotorista } from '../../common/enums/status-motorista.enum';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
+import { Combustivel } from '../../common/enums/combustivel.enum';
 
 @Injectable()
 export class VistoriaService {
@@ -63,6 +65,11 @@ export class VistoriaService {
     if (veiculo.status !== StatusVeiculo.ATIVO) {
       throw new BadRequestException('Veículo inativo');
     }
+    if (veiculo.combustivel === Combustivel.ELETRICO) {
+      if (dto.porcentagembateria === null || dto.porcentagembateria === undefined) {
+        throw new BadRequestException('Percentual de bateria é obrigatório para veículo elétrico');
+      }
+    }
 
     const motorista = await this.motoristaRepository.findOne({
       where: { id: dto.idmotorista },
@@ -90,13 +97,115 @@ export class VistoriaService {
       idMotorista: dto.idmotorista,
       idTipoVistoria: dto.idtipovistoria,
       odometro: dto.odometro,
-      porcentagembateria: dto.porcentagembateria,
+      porcentagembateria:
+        dto.porcentagembateria === undefined ? null : dto.porcentagembateria,
       datavistoria: new Date(dto.datavistoria),
       tempo: 0,
       status: StatusVistoria.EM_ANDAMENTO,
     });
 
     return this.vistoriaRepository.save(vistoria);
+  }
+
+  async update(id: string, dto: UpdateVistoriaDto): Promise<Vistoria> {
+    const vistoria = await this.findOne(id);
+    if (vistoria.status !== StatusVistoria.EM_ANDAMENTO) {
+      throw new BadRequestException('Somente vistorias em andamento podem ser atualizadas');
+    }
+
+    const veiculoId = dto.idveiculo ?? vistoria.idVeiculo;
+    const veiculo = await this.veiculoRepository.findOne({
+      where: { id: veiculoId },
+    });
+    if (!veiculo) {
+      throw new NotFoundException('Veículo não encontrado');
+    }
+    if (veiculo.status !== StatusVeiculo.ATIVO) {
+      throw new BadRequestException('Veículo inativo');
+    }
+
+    if (dto.idmotorista) {
+      const motorista = await this.motoristaRepository.findOne({
+        where: { id: dto.idmotorista },
+      });
+      if (!motorista) {
+        throw new NotFoundException('Motorista não encontrado');
+      }
+      if (motorista.status !== StatusMotorista.ATIVO) {
+        throw new BadRequestException('Motorista inativo');
+      }
+    }
+
+    if (dto.idtipovistoria) {
+      const tipo = await this.tipoRepository.findOne({
+        where: { id: dto.idtipovistoria },
+      });
+      if (!tipo) {
+        throw new NotFoundException('Tipo de vistoria não encontrado');
+      }
+      if (!tipo.ativo) {
+        throw new BadRequestException('Tipo de vistoria inativo');
+      }
+    }
+
+    const bateriaAtual =
+      dto.porcentagembateria !== undefined
+        ? dto.porcentagembateria
+        : vistoria.porcentagembateria;
+    if (veiculo.combustivel === Combustivel.ELETRICO) {
+      if (bateriaAtual === null || bateriaAtual === undefined) {
+        throw new BadRequestException('Percentual de bateria é obrigatório para veículo elétrico');
+      }
+    }
+
+    const bateriaFinal =
+      veiculo.combustivel === Combustivel.ELETRICO
+        ? bateriaAtual
+        : dto.porcentagembateria !== undefined
+          ? dto.porcentagembateria
+          : null;
+
+    const updated = this.vistoriaRepository.merge(vistoria, {
+      idVeiculo: dto.idveiculo ?? vistoria.idVeiculo,
+      idMotorista: dto.idmotorista ?? vistoria.idMotorista,
+      idTipoVistoria: dto.idtipovistoria ?? vistoria.idTipoVistoria,
+      odometro: dto.odometro ?? vistoria.odometro,
+      porcentagembateria: bateriaFinal,
+      datavistoria: dto.datavistoria ? new Date(dto.datavistoria) : vistoria.datavistoria,
+    });
+
+    return this.vistoriaRepository.save(updated);
+  }
+
+  async getUltimoOdometro(
+    idveiculo: string,
+    ignorarVistoriaId?: string,
+  ): Promise<{
+    odometro: number;
+    datavistoria: string;
+  } | null> {
+    const query = this.vistoriaRepository
+      .createQueryBuilder('vistoria')
+      .where('vistoria.idVeiculo = :idVeiculo', { idVeiculo: idveiculo })
+      .andWhere('vistoria.status != :statusCancelada', {
+        statusCancelada: StatusVistoria.CANCELADA,
+      })
+      .orderBy('vistoria.datavistoria', 'DESC');
+
+    if (ignorarVistoriaId) {
+      query.andWhere('vistoria.id != :ignorarVistoriaId', { ignorarVistoriaId });
+    }
+
+    const ultima = await query.getOne();
+    if (!ultima || ultima.odometro === null || ultima.odometro === undefined) {
+      return null;
+    }
+    return {
+      odometro: Number(ultima.odometro),
+      datavistoria: ultima.datavistoria
+        ? ultima.datavistoria.toISOString()
+        : new Date().toISOString(),
+    };
   }
 
   async addChecklistItem(
@@ -221,6 +330,11 @@ export class VistoriaService {
     const item = await this.itemRepository.findOne({
       where: { id: checklist.idItemVistoriado },
     });
+    if (checklist.conforme && item?.permitirfotoconforme === false) {
+      throw new BadRequestException(
+        'Fotos não permitidas para item conforme',
+      );
+    }
     if (!checklist.conforme && item?.obrigafoto && (!files || files.length === 0)) {
       throw new BadRequestException(
         'Foto obrigatória para item não conforme',
@@ -281,7 +395,11 @@ export class VistoriaService {
     return this.vistoriaRepository.save(vistoria);
   }
 
-  async findAll(status?: StatusVistoria, idUsuario?: string): Promise<Vistoria[]> {
+  async findAll(
+    status?: StatusVistoria,
+    idUsuario?: string,
+    ignorarVistoriaId?: string,
+  ): Promise<Vistoria[]> {
     const where: Record<string, unknown> = {};
     if (status) {
       where.status = status;
@@ -289,10 +407,18 @@ export class VistoriaService {
     if (idUsuario) {
       where.idUsuario = idUsuario;
     }
-    return this.vistoriaRepository.find({
-      where,
-      order: { datavistoria: 'DESC' },
-    });
+    if (!ignorarVistoriaId) {
+      return this.vistoriaRepository.find({
+        where,
+        order: { datavistoria: 'DESC' },
+      });
+    }
+    return this.vistoriaRepository
+      .createQueryBuilder('vistoria')
+      .where(where)
+      .andWhere('vistoria.id != :ignorarVistoriaId', { ignorarVistoriaId })
+      .orderBy('vistoria.datavistoria', 'DESC')
+      .getMany();
   }
 
   async findOne(id: string): Promise<Vistoria> {

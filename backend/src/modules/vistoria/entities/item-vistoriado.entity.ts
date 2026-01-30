@@ -29,6 +29,13 @@ export class ItemVistoriado extends BaseEntity {
   @Column({ name: 'obrigafoto', type: 'boolean', default: false })
   obrigafoto: boolean;
 
+  @ApiProperty({
+    description: 'Permitir fotos quando o item estiver conforme',
+    default: true,
+  })
+  @Column({ name: 'permitirfotoconforme', type: 'boolean', default: true })
+  permitirfotoconforme: boolean;
+
   @ApiProperty({ description: 'Item ativo', default: true })
   @Column({ name: 'ativo', type: 'boolean', default: true })
   ativo: boolean;

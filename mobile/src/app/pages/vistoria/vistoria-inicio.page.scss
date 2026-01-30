@@ -52,3 +52,8 @@ ion-select::part(text) {
   margin: 8px 16px;
   font-size: 0.9rem;
 }
+
+.campo-destaque::part(native) {
+  font-size: 1.25rem;
+  font-weight: 600;
+}

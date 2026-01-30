@@ -5,12 +5,12 @@ export interface Vistoria {
   idMotorista: string;
   idTipoVistoria: string;
   odometro: number;
-  porcentagembateria: number;
+  porcentagembateria?: number | null;
   datavistoria: string;
   tempo: number;
   observacao?: string;
   status?: string;
-  veiculo?: { descricao?: string; placa?: string };
+  veiculo?: { descricao?: string; placa?: string; combustivel?: string };
   motorista?: { nome?: string; matricula?: string };
   tipoVistoria?: { descricao?: string };
 }

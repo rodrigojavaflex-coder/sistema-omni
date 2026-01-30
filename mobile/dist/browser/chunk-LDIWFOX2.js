@@ -1,17 +1,19 @@
 import {
   VistoriaFlowService,
   VistoriaService
-} from "./chunk-XDELGTKF.js";
+} from "./chunk-HOZ3DUWF.js";
 import {
   addIcons,
   refreshOutline
 } from "./chunk-MVYH7HIC.js";
 import {
   AuthService
-} from "./chunk-APMN3AA5.js";
+} from "./chunk-6QPZWFDT.js";
 import {
+  AlertController,
   Component,
   DatePipe,
+  DecimalPipe,
   FormsModule,
   HttpClient,
   Injectable,
@@ -65,7 +67,7 @@ import {
   ɵɵtwoWayBindingSet,
   ɵɵtwoWayListener,
   ɵɵtwoWayProperty
-} from "./chunk-XXY565TE.js";
+} from "./chunk-FWNB6FX6.js";
 import "./chunk-3EJ4SNN5.js";
 import "./chunk-T5LCTCQ6.js";
 import {
@@ -84,7 +86,9 @@ import "./chunk-FDXV3QXU.js";
 import "./chunk-YPIUQMS2.js";
 import "./chunk-QGYUETGI.js";
 import {
-  __async
+  __async,
+  __spreadProps,
+  __spreadValues
 } from "./chunk-ZRCPYJMT.js";
 
 // src/app/services/tipo-vistoria.service.ts
@@ -342,7 +346,25 @@ function VistoriaInicioPage_ion_list_20_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", ctx_r2.veiculos);
   }
 }
-function VistoriaInicioPage_ion_list_26_Template(rf, ctx) {
+function VistoriaInicioPage_ion_item_21_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "ion-item")(1, "ion-label")(2, "p");
+    \u0275\u0275text(3);
+    \u0275\u0275pipe(4, "number");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "p");
+    \u0275\u0275text(6);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate1("Od\xF4metro atual: ", ctx_r2.ultimoOdometro === null ? "Sem hist\xF3rico" : \u0275\u0275pipeBind2(4, 2, ctx_r2.ultimoOdometro, "1.0-0"));
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate1("Combust\xEDvel: ", ctx_r2.selectedVeiculo.combustivel || "-");
+  }
+}
+function VistoriaInicioPage_ion_list_27_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-list")(1, "ion-item");
     \u0275\u0275element(2, "ion-spinner", 23);
@@ -351,11 +373,11 @@ function VistoriaInicioPage_ion_list_26_Template(rf, ctx) {
     \u0275\u0275elementEnd()()();
   }
 }
-function VistoriaInicioPage_ion_list_27_ion_item_1_Template(rf, ctx) {
+function VistoriaInicioPage_ion_list_28_ion_item_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r6 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "ion-item", 27);
-    \u0275\u0275listener("click", function VistoriaInicioPage_ion_list_27_ion_item_1_Template_ion_item_click_0_listener() {
+    \u0275\u0275listener("click", function VistoriaInicioPage_ion_list_28_ion_item_1_Template_ion_item_click_0_listener() {
       const motorista_r7 = \u0275\u0275restoreView(_r6).$implicit;
       const ctx_r2 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r2.selecionarMotorista(motorista_r7));
@@ -377,10 +399,10 @@ function VistoriaInicioPage_ion_list_27_ion_item_1_Template(rf, ctx) {
     \u0275\u0275textInterpolate1("Matr\xEDcula: ", ctx_r2.formatarMatricula(motorista_r7.matricula));
   }
 }
-function VistoriaInicioPage_ion_list_27_Template(rf, ctx) {
+function VistoriaInicioPage_ion_list_28_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-list");
-    \u0275\u0275template(1, VistoriaInicioPage_ion_list_27_ion_item_1_Template, 6, 4, "ion-item", 26);
+    \u0275\u0275template(1, VistoriaInicioPage_ion_list_28_ion_item_1_Template, 6, 4, "ion-item", 26);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -389,7 +411,7 @@ function VistoriaInicioPage_ion_list_27_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", ctx_r2.motoristas);
   }
 }
-function VistoriaInicioPage_ion_select_option_33_Template(rf, ctx) {
+function VistoriaInicioPage_ion_select_option_34_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-select-option", 28);
     \u0275\u0275text(1);
@@ -402,7 +424,7 @@ function VistoriaInicioPage_ion_select_option_33_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", tipo_r8.descricao, " ");
   }
 }
-function VistoriaInicioPage_ion_item_34_Template(rf, ctx) {
+function VistoriaInicioPage_ion_item_35_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-item");
     \u0275\u0275element(1, "ion-spinner", 23);
@@ -411,7 +433,19 @@ function VistoriaInicioPage_ion_item_34_Template(rf, ctx) {
     \u0275\u0275elementEnd()();
   }
 }
-function VistoriaInicioPage_ion_text_44_Template(rf, ctx) {
+function VistoriaInicioPage_ion_text_45_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "ion-text", 29)(1, "p", 30);
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r2.startValidationMessage);
+  }
+}
+function VistoriaInicioPage_ion_text_46_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-text", 29)(1, "p", 30);
     \u0275\u0275text(2);
@@ -423,12 +457,12 @@ function VistoriaInicioPage_ion_text_44_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r2.errorMessage);
   }
 }
-function VistoriaInicioPage_ion_spinner_47_Template(rf, ctx) {
+function VistoriaInicioPage_ion_spinner_49_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "ion-spinner", 23);
   }
 }
-function VistoriaInicioPage_span_48_Template(rf, ctx) {
+function VistoriaInicioPage_span_50_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, "Iniciar Checklist");
@@ -444,6 +478,7 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   router = inject(Router);
   systemService = inject(SystemService);
   authService = inject(AuthService);
+  alertController = inject(AlertController);
   tipos = [];
   veiculos = [];
   motoristas = [];
@@ -454,7 +489,10 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   selectedMotorista = null;
   selectedTipoId = "";
   odometro = null;
+  odometroDisplay = "";
   bateria = null;
+  ultimoOdometro = null;
+  ultimoOdometroData = null;
   datavistoriaDisplay = "";
   datavistoriaIso = "";
   loadingTipos = false;
@@ -481,7 +519,27 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       this.loadingAndamento = true;
       try {
         const user = this.authService.getCurrentUser();
-        this.vistoriasEmAndamento = yield this.vistoriaService.listarEmAndamento(user?.id);
+        this.vistoriasEmAndamento = yield this.vistoriaService.listarEmAndamento(user?.id, this.flowService.getVistoriaId() ?? void 0);
+      } catch {
+        this.vistoriasEmAndamento = [];
+      } finally {
+        this.loadingAndamento = false;
+      }
+      yield this.carregarVistoriaEmEdicao();
+    });
+  }
+  ionViewWillEnter() {
+    return __async(this, null, function* () {
+      yield this.carregarVistoriaEmEdicao();
+      yield this.atualizarListaEmAndamento();
+    });
+  }
+  atualizarListaEmAndamento() {
+    return __async(this, null, function* () {
+      this.loadingAndamento = true;
+      try {
+        const user = this.authService.getCurrentUser();
+        this.vistoriasEmAndamento = yield this.vistoriaService.listarEmAndamento(user?.id, this.flowService.getVistoriaId() ?? void 0);
       } catch {
         this.vistoriasEmAndamento = [];
       } finally {
@@ -515,6 +573,7 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
         const tipoId = atualizada.idTipoVistoria || vistoria.idTipoVistoria;
         this.flowService.iniciar(atualizada.id, tipoId, {
           veiculoDescricao: atualizada.veiculo?.descricao ?? vistoria.veiculo?.descricao,
+          tipoVistoriaDescricao: atualizada.tipoVistoria?.descricao ?? vistoria.tipoVistoria?.descricao,
           datavistoria: atualizada.datavistoria ?? vistoria.datavistoria
         });
         this.router.navigate(["/vistoria/checklist"]);
@@ -563,19 +622,76 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
     this.selectedVeiculo = veiculo;
     this.veiculos = [];
     this.veiculoSearch = `${veiculo.descricao} - ${veiculo.placa}`;
+    this.carregarUltimoOdometro(veiculo.id, this.flowService.getVistoriaId() ?? void 0);
+    if (!this.isBateriaObrigatoria()) {
+      this.bateria = null;
+    }
+  }
+  limparVeiculo() {
+    this.selectedVeiculo = null;
+    this.veiculoSearch = "";
+    this.veiculos = [];
+    this.odometro = null;
+    this.odometroDisplay = "";
+    this.ultimoOdometro = null;
+    this.ultimoOdometroData = null;
+    this.errorMessage = "";
+  }
+  onOdometroInput(value) {
+    const parsed = this.parseOdometroValue(value);
+    if (parsed === null) {
+      this.odometro = null;
+      this.odometroDisplay = "";
+      return;
+    }
+    this.odometro = parsed;
+    this.odometroDisplay = parsed.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
   selecionarMotorista(motorista) {
     this.selectedMotorista = motorista;
     this.motoristas = [];
     this.motoristaSearch = `${motorista.nome} - ${motorista.matricula}`;
   }
+  limparMotorista() {
+    this.selectedMotorista = null;
+    this.motoristaSearch = "";
+    this.motoristas = [];
+    this.errorMessage = "";
+  }
   get canStart() {
-    return Boolean(this.selectedVeiculo && this.selectedMotorista && this.selectedTipoId && this.odometro !== null && this.odometro > 0 && this.bateria !== null && this.bateria >= 0 && this.bateria <= 100);
+    const bateriaObrigatoria = this.isBateriaObrigatoria();
+    const bateriaValida = this.bateria === null ? !bateriaObrigatoria : this.bateria >= 0 && this.bateria <= 100;
+    return Boolean(this.selectedVeiculo && this.selectedMotorista && this.selectedTipoId && this.odometro !== null && this.odometro > 0 && this.odometro <= 9999999 && bateriaValida);
+  }
+  get startValidationMessage() {
+    if (!this.selectedVeiculo) {
+      return "Selecione um ve\xEDculo.";
+    }
+    if (!this.selectedMotorista) {
+      return "Selecione um motorista.";
+    }
+    if (!this.selectedTipoId) {
+      return "Selecione o tipo de vistoria.";
+    }
+    if (this.odometro === null || this.odometro <= 0) {
+      return "Informe o od\xF4metro.";
+    }
+    if (this.odometro > 9999999) {
+      return "Od\xF4metro n\xE3o pode ser maior que 9.999.999.";
+    }
+    if (this.isBateriaObrigatoria() && (this.bateria === null || this.bateria < 0 || this.bateria > 100)) {
+      return "Informe a bateria (0 a 100) para ve\xEDculo el\xE9trico.";
+    }
+    return null;
   }
   iniciarVistoria() {
     return __async(this, null, function* () {
       if (!this.canStart || !this.selectedVeiculo || !this.selectedMotorista) {
         this.errorMessage = "Preencha todos os campos obrigat\xF3rios.";
+        return;
+      }
+      const odometroOk = yield this.validarOdometro();
+      if (!odometroOk) {
         return;
       }
       const user = this.authService.getCurrentUser();
@@ -586,17 +702,38 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       this.isSaving = true;
       this.errorMessage = "";
       try {
-        const vistoria = yield this.vistoriaService.iniciarVistoria({
+        const tipoSelecionado = this.tipos.find((tipo) => tipo.id === this.selectedTipoId);
+        const vistoriaId = this.flowService.getVistoriaId();
+        if (vistoriaId) {
+          yield this.vistoriaService.atualizarVistoria(vistoriaId, {
+            idveiculo: this.selectedVeiculo.id,
+            idmotorista: this.selectedMotorista.id,
+            idtipovistoria: this.selectedTipoId,
+            odometro: Number(this.odometro),
+            porcentagembateria: this.bateria === null ? null : Number(this.bateria),
+            datavistoria: this.datavistoriaIso
+          });
+          this.flowService.updateContext({
+            tipoVistoriaId: this.selectedTipoId,
+            veiculoDescricao: this.selectedVeiculo.descricao,
+            tipoVistoriaDescricao: tipoSelecionado?.descricao,
+            datavistoria: this.datavistoriaIso
+          });
+          this.router.navigate(["/vistoria/checklist"]);
+          return;
+        }
+        const vistoria = yield this.vistoriaService.iniciarVistoria(__spreadProps(__spreadValues({
           idusuario: user.id,
           idveiculo: this.selectedVeiculo.id,
           idmotorista: this.selectedMotorista.id,
           idtipovistoria: this.selectedTipoId,
-          odometro: Number(this.odometro),
-          porcentagembateria: Number(this.bateria),
+          odometro: Number(this.odometro)
+        }, this.bateria !== null ? { porcentagembateria: Number(this.bateria) } : {}), {
           datavistoria: this.datavistoriaIso
-        });
+        }));
         this.flowService.iniciar(vistoria.id, this.selectedTipoId, {
           veiculoDescricao: this.selectedVeiculo.descricao,
+          tipoVistoriaDescricao: tipoSelecionado?.descricao,
           datavistoria: this.datavistoriaIso
         });
         this.router.navigate(["/vistoria/checklist"]);
@@ -607,10 +744,143 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       }
     });
   }
+  isBateriaObrigatoria() {
+    const combustivel = this.selectedVeiculo?.combustivel ?? "";
+    return combustivel.toLowerCase() === "eletrico";
+  }
+  parseOdometroValue(value) {
+    if (value === null || value === void 0) {
+      return null;
+    }
+    if (typeof value === "number") {
+      return Number.isNaN(value) ? null : Math.floor(value);
+    }
+    const raw = value.toString().trim();
+    if (!raw) {
+      return null;
+    }
+    const hasDot = raw.includes(".");
+    const hasComma = raw.includes(",");
+    let normalized = raw;
+    if (hasDot && hasComma) {
+      normalized = raw.replace(/\./g, "").replace(",", ".");
+    } else if (hasComma) {
+      const parts = raw.split(",");
+      normalized = parts[1]?.length === 3 ? raw.replace(/,/g, "") : raw.replace(",", ".");
+    } else if (hasDot) {
+      const parts = raw.split(".");
+      normalized = parts[parts.length - 1].length === 3 ? raw.replace(/\./g, "") : raw;
+    }
+    normalized = normalized.replace(/[^\d.]/g, "");
+    if (!normalized) {
+      return null;
+    }
+    const parsed = Number.parseFloat(normalized);
+    if (Number.isNaN(parsed)) {
+      return null;
+    }
+    return Math.floor(parsed);
+  }
+  carregarUltimoOdometro(idVeiculo, ignorarVistoriaId) {
+    return __async(this, null, function* () {
+      try {
+        const ultimo = yield this.vistoriaService.getUltimoOdometro(idVeiculo, ignorarVistoriaId);
+        this.ultimoOdometro = ultimo?.odometro ?? null;
+        this.ultimoOdometroData = ultimo?.datavistoria ?? null;
+      } catch {
+        this.ultimoOdometro = null;
+        this.ultimoOdometroData = null;
+      }
+    });
+  }
+  validarOdometro() {
+    return __async(this, null, function* () {
+      if (this.odometro === null || this.odometro <= 0) {
+        this.errorMessage = "Informe um od\xF4metro v\xE1lido.";
+        return false;
+      }
+      if (this.odometro > 9999999) {
+        this.errorMessage = "Od\xF4metro n\xE3o pode ser maior que 9.999.999.";
+        return false;
+      }
+      if (this.ultimoOdometro === null || this.ultimoOdometro === void 0) {
+        return true;
+      }
+      if (this.odometro <= this.ultimoOdometro) {
+        this.errorMessage = "Od\xF4metro deve ser maior que o da \xFAltima vistoria.";
+        return false;
+      }
+      const diff = this.odometro - this.ultimoOdometro;
+      if (diff > 200) {
+        const alert = yield this.alertController.create({
+          header: "Confirmar od\xF4metro",
+          message: `Ve\xEDculo rodou ${diff} km desde a \xFAltima vistoria. Deseja registrar o od\xF4metro?`,
+          buttons: [
+            { text: "Cancelar", role: "cancel" },
+            { text: "Confirmar", role: "confirm" }
+          ]
+        });
+        yield alert.present();
+        const { role } = yield alert.onDidDismiss();
+        return role === "confirm";
+      }
+      return true;
+    });
+  }
+  carregarVistoriaEmEdicao() {
+    return __async(this, null, function* () {
+      const vistoriaId = this.flowService.getVistoriaId();
+      if (!vistoriaId) {
+        return;
+      }
+      try {
+        const vistoria = yield this.vistoriaService.getById(vistoriaId);
+        if (vistoria?.veiculo) {
+          this.selectedVeiculo = {
+            id: vistoria.idVeiculo,
+            descricao: vistoria.veiculo?.descricao ?? "",
+            placa: vistoria.veiculo?.placa ?? "",
+            status: "ATIVO",
+            combustivel: vistoria.veiculo?.combustivel
+          };
+          this.veiculoSearch = `${this.selectedVeiculo.descricao} - ${this.selectedVeiculo.placa}`;
+          this.carregarUltimoOdometro(this.selectedVeiculo.id, vistoria.id);
+        }
+        if (vistoria?.motorista) {
+          this.selectedMotorista = {
+            id: vistoria.idMotorista,
+            nome: vistoria.motorista?.nome ?? "",
+            matricula: vistoria.motorista?.matricula ?? "",
+            status: "ATIVO"
+          };
+          this.motoristaSearch = `${this.selectedMotorista.nome} - ${this.selectedMotorista.matricula}`;
+        }
+        this.selectedTipoId = vistoria.idTipoVistoria;
+        this.onOdometroInput(vistoria.odometro);
+        if (this.isBateriaObrigatoria()) {
+          this.bateria = vistoria.porcentagembateria === null || vistoria.porcentagembateria === void 0 ? null : Number(vistoria.porcentagembateria);
+        } else {
+          this.bateria = null;
+        }
+        if (vistoria.datavistoria) {
+          const date = new Date(vistoria.datavistoria);
+          this.datavistoriaDisplay = date.toLocaleString("pt-BR");
+          this.datavistoriaIso = date.toISOString();
+        }
+        this.flowService.updateContext({
+          tipoVistoriaId: vistoria.idTipoVistoria,
+          veiculoDescricao: vistoria.veiculo?.descricao,
+          tipoVistoriaDescricao: vistoria.tipoVistoria?.descricao,
+          datavistoria: vistoria.datavistoria
+        });
+      } catch {
+      }
+    });
+  }
   static \u0275fac = function VistoriaInicioPage_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _VistoriaInicioPage)();
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VistoriaInicioPage, selectors: [["app-vistoria-inicio"]], decls: 49, vars: 22, consts: [[3, "translucent"], ["slot", "start", 4, "ngIf"], [3, "fullscreen"], [1, "card"], [1, "datetime-item"], ["position", "stacked"], ["readonly", "true", 3, "value"], ["fill", "clear", "size", "small", "slot", "end", "aria-label", "Atualizar data/hora", 3, "click"], ["name", "refresh-outline"], ["class", "card", 4, "ngIf"], ["placeholder", "Buscar por descri\xE7\xE3o ou placa", 3, "ionInput", "debounce", "value"], [4, "ngIf"], ["placeholder", "Buscar por nome, matr\xEDcula ou CPF", 3, "ionInput", "debounce", "value"], [1, "select-item"], ["interface", "popover", "placeholder", "Selecione", 3, "ngModelChange", "ngModel"], [3, "value", 4, "ngFor", "ngForOf"], ["type", "number", "placeholder", "Ex: 12345", 3, "ngModelChange", "ngModel"], ["type", "number", "placeholder", "0 a 100", "min", "0", "max", "100", 3, "ngModelChange", "ngModel"], ["color", "danger", 4, "ngIf"], [1, "actions"], ["expand", "block", 3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], ["slot", "start"], ["name", "crescent"], [4, "ngFor", "ngForOf"], ["fill", "outline", 3, "click"], ["button", "", "class", "selection-item", 3, "is-selected", "click", 4, "ngFor", "ngForOf"], ["button", "", 1, "selection-item", 3, "click"], [3, "value"], ["color", "danger"], [1, "error-message"]], template: function VistoriaInicioPage_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VistoriaInicioPage, selectors: [["app-vistoria-inicio"]], decls: 51, vars: 25, consts: [[3, "translucent"], ["slot", "start", 4, "ngIf"], [3, "fullscreen"], [1, "card"], [1, "datetime-item"], ["position", "stacked"], ["readonly", "true", 3, "value"], ["fill", "clear", "size", "small", "slot", "end", "aria-label", "Atualizar data/hora", 3, "click"], ["name", "refresh-outline"], ["class", "card", 4, "ngIf"], ["placeholder", "Buscar por descri\xE7\xE3o ou placa", 3, "ionInput", "ionClear", "debounce", "value"], [4, "ngIf"], ["placeholder", "Buscar por nome, matr\xEDcula ou CPF", 3, "ionInput", "ionClear", "debounce", "value"], [1, "select-item"], ["interface", "popover", "placeholder", "Selecione", 3, "ngModelChange", "ngModel"], [3, "value", 4, "ngFor", "ngForOf"], ["type", "text", "inputmode", "numeric", "placeholder", "Ex: 12345", 1, "campo-destaque", 3, "ionInput", "value"], ["type", "number", "placeholder", "0 a 100", "min", "0", "max", "100", 1, "campo-destaque", 3, "ngModelChange", "ngModel", "disabled"], ["color", "danger", 4, "ngIf"], [1, "actions"], ["expand", "block", 3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], ["slot", "start"], ["name", "crescent"], [4, "ngFor", "ngForOf"], ["fill", "outline", 3, "click"], ["button", "", "class", "selection-item", 3, "is-selected", "click", 4, "ngFor", "ngForOf"], ["button", "", 1, "selection-item", 3, "click"], [3, "value"], ["color", "danger"], [1, "error-message"]], template: function VistoriaInicioPage_Template(rf, ctx) {
     if (rf & 1) {
       \u0275\u0275elementStart(0, "ion-header", 0)(1, "ion-toolbar");
       \u0275\u0275template(2, VistoriaInicioPage_ion_buttons_2_Template, 2, 0, "ion-buttons", 1);
@@ -634,56 +904,59 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       \u0275\u0275elementStart(18, "ion-searchbar", 10);
       \u0275\u0275listener("ionInput", function VistoriaInicioPage_Template_ion_searchbar_ionInput_18_listener($event) {
         return ctx.onBuscarVeiculos($event);
+      })("ionClear", function VistoriaInicioPage_Template_ion_searchbar_ionClear_18_listener() {
+        return ctx.limparVeiculo();
       });
       \u0275\u0275elementEnd()();
-      \u0275\u0275template(19, VistoriaInicioPage_ion_list_19_Template, 5, 0, "ion-list", 11)(20, VistoriaInicioPage_ion_list_20_Template, 2, 1, "ion-list", 11);
+      \u0275\u0275template(19, VistoriaInicioPage_ion_list_19_Template, 5, 0, "ion-list", 11)(20, VistoriaInicioPage_ion_list_20_Template, 2, 1, "ion-list", 11)(21, VistoriaInicioPage_ion_item_21_Template, 7, 5, "ion-item", 11);
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(21, "ion-card", 3)(22, "ion-item")(23, "ion-label", 5);
-      \u0275\u0275text(24, "Motorista");
+      \u0275\u0275elementStart(22, "ion-card", 3)(23, "ion-item")(24, "ion-label", 5);
+      \u0275\u0275text(25, "Motorista");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(25, "ion-searchbar", 12);
-      \u0275\u0275listener("ionInput", function VistoriaInicioPage_Template_ion_searchbar_ionInput_25_listener($event) {
+      \u0275\u0275elementStart(26, "ion-searchbar", 12);
+      \u0275\u0275listener("ionInput", function VistoriaInicioPage_Template_ion_searchbar_ionInput_26_listener($event) {
         return ctx.onBuscarMotoristas($event);
+      })("ionClear", function VistoriaInicioPage_Template_ion_searchbar_ionClear_26_listener() {
+        return ctx.limparMotorista();
       });
       \u0275\u0275elementEnd()();
-      \u0275\u0275template(26, VistoriaInicioPage_ion_list_26_Template, 5, 0, "ion-list", 11)(27, VistoriaInicioPage_ion_list_27_Template, 2, 1, "ion-list", 11);
+      \u0275\u0275template(27, VistoriaInicioPage_ion_list_27_Template, 5, 0, "ion-list", 11)(28, VistoriaInicioPage_ion_list_28_Template, 2, 1, "ion-list", 11);
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(28, "ion-card", 3)(29, "ion-item", 13)(30, "ion-label", 5);
-      \u0275\u0275text(31, "Tipo de Vistoria");
+      \u0275\u0275elementStart(29, "ion-card", 3)(30, "ion-item", 13)(31, "ion-label", 5);
+      \u0275\u0275text(32, "Tipo de Vistoria");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(32, "ion-select", 14);
-      \u0275\u0275twoWayListener("ngModelChange", function VistoriaInicioPage_Template_ion_select_ngModelChange_32_listener($event) {
+      \u0275\u0275elementStart(33, "ion-select", 14);
+      \u0275\u0275twoWayListener("ngModelChange", function VistoriaInicioPage_Template_ion_select_ngModelChange_33_listener($event) {
         \u0275\u0275twoWayBindingSet(ctx.selectedTipoId, $event) || (ctx.selectedTipoId = $event);
         return $event;
       });
-      \u0275\u0275template(33, VistoriaInicioPage_ion_select_option_33_Template, 2, 2, "ion-select-option", 15);
+      \u0275\u0275template(34, VistoriaInicioPage_ion_select_option_34_Template, 2, 2, "ion-select-option", 15);
       \u0275\u0275elementEnd()();
-      \u0275\u0275template(34, VistoriaInicioPage_ion_item_34_Template, 4, 0, "ion-item", 11);
+      \u0275\u0275template(35, VistoriaInicioPage_ion_item_35_Template, 4, 0, "ion-item", 11);
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(35, "ion-card", 3)(36, "ion-item")(37, "ion-label", 5);
-      \u0275\u0275text(38, "Od\xF4metro");
+      \u0275\u0275elementStart(36, "ion-card", 3)(37, "ion-item")(38, "ion-label", 5);
+      \u0275\u0275text(39, "Od\xF4metro");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(39, "ion-input", 16);
-      \u0275\u0275twoWayListener("ngModelChange", function VistoriaInicioPage_Template_ion_input_ngModelChange_39_listener($event) {
-        \u0275\u0275twoWayBindingSet(ctx.odometro, $event) || (ctx.odometro = $event);
-        return $event;
+      \u0275\u0275elementStart(40, "ion-input", 16);
+      \u0275\u0275listener("ionInput", function VistoriaInicioPage_Template_ion_input_ionInput_40_listener($event) {
+        return ctx.onOdometroInput($event.detail.value);
       });
       \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(40, "ion-item")(41, "ion-label", 5);
-      \u0275\u0275text(42, "% Bateria");
+      \u0275\u0275elementStart(41, "ion-item")(42, "ion-label", 5);
+      \u0275\u0275text(43, "% Bateria");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(43, "ion-input", 17);
-      \u0275\u0275twoWayListener("ngModelChange", function VistoriaInicioPage_Template_ion_input_ngModelChange_43_listener($event) {
+      \u0275\u0275elementStart(44, "ion-input", 17);
+      \u0275\u0275twoWayListener("ngModelChange", function VistoriaInicioPage_Template_ion_input_ngModelChange_44_listener($event) {
         \u0275\u0275twoWayBindingSet(ctx.bateria, $event) || (ctx.bateria = $event);
         return $event;
       });
       \u0275\u0275elementEnd()()();
-      \u0275\u0275template(44, VistoriaInicioPage_ion_text_44_Template, 3, 1, "ion-text", 18);
-      \u0275\u0275elementStart(45, "div", 19)(46, "ion-button", 20);
-      \u0275\u0275listener("click", function VistoriaInicioPage_Template_ion_button_click_46_listener() {
+      \u0275\u0275template(45, VistoriaInicioPage_ion_text_45_Template, 3, 1, "ion-text", 18)(46, VistoriaInicioPage_ion_text_46_Template, 3, 1, "ion-text", 18);
+      \u0275\u0275elementStart(47, "div", 19)(48, "ion-button", 20);
+      \u0275\u0275listener("click", function VistoriaInicioPage_Template_ion_button_click_48_listener() {
         return ctx.iniciarVistoria();
       });
-      \u0275\u0275template(47, VistoriaInicioPage_ion_spinner_47_Template, 1, 0, "ion-spinner", 21)(48, VistoriaInicioPage_span_48_Template, 2, 0, "span", 11);
+      \u0275\u0275template(49, VistoriaInicioPage_ion_spinner_49_Template, 1, 0, "ion-spinner", 21)(50, VistoriaInicioPage_span_50_Template, 2, 0, "span", 11);
       \u0275\u0275elementEnd()()();
     }
     if (rf & 2) {
@@ -702,6 +975,8 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       \u0275\u0275property("ngIf", ctx.loadingVeiculos);
       \u0275\u0275advance();
       \u0275\u0275property("ngIf", !ctx.loadingVeiculos && ctx.veiculos.length > 0);
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", ctx.selectedVeiculo);
       \u0275\u0275advance(5);
       \u0275\u0275property("debounce", 350)("value", ctx.motoristaSearch);
       \u0275\u0275advance();
@@ -715,9 +990,12 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       \u0275\u0275advance();
       \u0275\u0275property("ngIf", ctx.loadingTipos);
       \u0275\u0275advance(5);
-      \u0275\u0275twoWayProperty("ngModel", ctx.odometro);
+      \u0275\u0275property("value", ctx.odometroDisplay);
       \u0275\u0275advance(4);
       \u0275\u0275twoWayProperty("ngModel", ctx.bateria);
+      \u0275\u0275property("disabled", !ctx.isBateriaObrigatoria());
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", !ctx.canStart && ctx.startValidationMessage);
       \u0275\u0275advance();
       \u0275\u0275property("ngIf", ctx.errorMessage);
       \u0275\u0275advance(2);
@@ -751,8 +1029,9 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
     IonSelectOption,
     IonSpinner,
     IonText,
-    DatePipe
-  ], styles: ["\n\n.card[_ngcontent-%COMP%] {\n  margin: 16px;\n}\n.actions[_ngcontent-%COMP%] {\n  padding: 0 16px 24px;\n}\n.datetime-item[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin-top: 22px;\n}\nion-item[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin-left: 8px;\n}\n.selection-item[_ngcontent-%COMP%], \n.select-item[_ngcontent-%COMP%] {\n  --background: #ffffff;\n  --color: #0f172a;\n  --border-color: #e2e8f0;\n  --border-width: 1px;\n  --border-style: solid;\n  --border-radius: 12px;\n  margin: 6px 12px;\n}\n.selection-item[_ngcontent-%COMP%]   ion-label[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  color: #0f172a;\n  font-weight: 600;\n}\n.selection-item[_ngcontent-%COMP%]   ion-label[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  color: #64748b;\n}\n.selection-item.is-selected[_ngcontent-%COMP%] {\n  --background: #e8f1ff;\n  --border-color: #3b82f6;\n  --color: #1d4ed8;\n}\nion-select[_ngcontent-%COMP%]::part(placeholder) {\n  color: #64748b;\n}\nion-select[_ngcontent-%COMP%]::part(text) {\n  color: #0f172a;\n}\n.error-message[_ngcontent-%COMP%] {\n  margin: 8px 16px;\n  font-size: 0.9rem;\n}\n/*# sourceMappingURL=vistoria-inicio.page.css.map */"] });
+    DatePipe,
+    DecimalPipe
+  ], styles: ["\n\n.card[_ngcontent-%COMP%] {\n  margin: 16px;\n}\n.actions[_ngcontent-%COMP%] {\n  padding: 0 16px 24px;\n}\n.datetime-item[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin-top: 22px;\n}\nion-item[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin-left: 8px;\n}\n.selection-item[_ngcontent-%COMP%], \n.select-item[_ngcontent-%COMP%] {\n  --background: #ffffff;\n  --color: #0f172a;\n  --border-color: #e2e8f0;\n  --border-width: 1px;\n  --border-style: solid;\n  --border-radius: 12px;\n  margin: 6px 12px;\n}\n.selection-item[_ngcontent-%COMP%]   ion-label[_ngcontent-%COMP%]   h3[_ngcontent-%COMP%] {\n  color: #0f172a;\n  font-weight: 600;\n}\n.selection-item[_ngcontent-%COMP%]   ion-label[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  color: #64748b;\n}\n.selection-item.is-selected[_ngcontent-%COMP%] {\n  --background: #e8f1ff;\n  --border-color: #3b82f6;\n  --color: #1d4ed8;\n}\nion-select[_ngcontent-%COMP%]::part(placeholder) {\n  color: #64748b;\n}\nion-select[_ngcontent-%COMP%]::part(text) {\n  color: #0f172a;\n}\n.error-message[_ngcontent-%COMP%] {\n  margin: 8px 16px;\n  font-size: 0.9rem;\n}\n.campo-destaque[_ngcontent-%COMP%]::part(native) {\n  font-size: 1.25rem;\n  font-weight: 600;\n}\n/*# sourceMappingURL=vistoria-inicio.page.css.map */"] });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(VistoriaInicioPage, [{
@@ -761,6 +1040,7 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       NgIf,
       NgForOf,
       DatePipe,
+      DecimalPipe,
       FormsModule,
       IonContent,
       IonHeader,
@@ -846,6 +1126,7 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
         placeholder="Buscar por descri\xE7\xE3o ou placa"\r
         [value]="veiculoSearch"\r
         (ionInput)="onBuscarVeiculos($event)"\r
+        (ionClear)="limparVeiculo()"\r
       ></ion-searchbar>\r
     </ion-item>\r
     <ion-list *ngIf="loadingVeiculos">\r
@@ -868,6 +1149,12 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
         </ion-label>\r
       </ion-item>\r
     </ion-list>\r
+    <ion-item *ngIf="selectedVeiculo">\r
+      <ion-label>\r
+        <p>Od\xF4metro atual: {{ ultimoOdometro === null ? 'Sem hist\xF3rico' : (ultimoOdometro | number:'1.0-0') }}</p>\r
+        <p>Combust\xEDvel: {{ selectedVeiculo.combustivel || '-' }}</p>\r
+      </ion-label>\r
+    </ion-item>\r
   </ion-card>\r
 \r
   <ion-card class="card">\r
@@ -878,6 +1165,7 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
         placeholder="Buscar por nome, matr\xEDcula ou CPF"\r
         [value]="motoristaSearch"\r
         (ionInput)="onBuscarMotoristas($event)"\r
+        (ionClear)="limparMotorista()"\r
       ></ion-searchbar>\r
     </ion-item>\r
     <ion-list *ngIf="loadingMotoristas">\r
@@ -927,7 +1215,14 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   <ion-card class="card">\r
     <ion-item>\r
       <ion-label position="stacked">Od\xF4metro</ion-label>\r
-      <ion-input type="number" [(ngModel)]="odometro" placeholder="Ex: 12345"></ion-input>\r
+      <ion-input\r
+        type="text"\r
+        inputmode="numeric"\r
+        placeholder="Ex: 12345"\r
+        class="campo-destaque"\r
+        [value]="odometroDisplay"\r
+        (ionInput)="onOdometroInput($event.detail.value)"\r
+      ></ion-input>\r
     </ion-item>\r
     <ion-item>\r
       <ion-label position="stacked">% Bateria</ion-label>\r
@@ -937,9 +1232,15 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
         placeholder="0 a 100"\r
         min="0"\r
         max="100"\r
+        [disabled]="!isBateriaObrigatoria()"\r
+        class="campo-destaque"\r
       ></ion-input>\r
     </ion-item>\r
   </ion-card>\r
+\r
+  <ion-text color="danger" *ngIf="!canStart && startValidationMessage">\r
+    <p class="error-message">{{ startValidationMessage }}</p>\r
+  </ion-text>\r
 \r
   <ion-text color="danger" *ngIf="errorMessage">\r
     <p class="error-message">{{ errorMessage }}</p>\r
@@ -952,13 +1253,13 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
     </ion-button>\r
   </div>\r
 </ion-content>\r
-`, styles: ["/* src/app/pages/vistoria/vistoria-inicio.page.scss */\n.card {\n  margin: 16px;\n}\n.actions {\n  padding: 0 16px 24px;\n}\n.datetime-item ion-button {\n  margin-top: 22px;\n}\nion-item ion-button {\n  margin-left: 8px;\n}\n.selection-item,\n.select-item {\n  --background: #ffffff;\n  --color: #0f172a;\n  --border-color: #e2e8f0;\n  --border-width: 1px;\n  --border-style: solid;\n  --border-radius: 12px;\n  margin: 6px 12px;\n}\n.selection-item ion-label h3 {\n  color: #0f172a;\n  font-weight: 600;\n}\n.selection-item ion-label p {\n  color: #64748b;\n}\n.selection-item.is-selected {\n  --background: #e8f1ff;\n  --border-color: #3b82f6;\n  --color: #1d4ed8;\n}\nion-select::part(placeholder) {\n  color: #64748b;\n}\nion-select::part(text) {\n  color: #0f172a;\n}\n.error-message {\n  margin: 8px 16px;\n  font-size: 0.9rem;\n}\n/*# sourceMappingURL=vistoria-inicio.page.css.map */\n"] }]
+`, styles: ["/* src/app/pages/vistoria/vistoria-inicio.page.scss */\n.card {\n  margin: 16px;\n}\n.actions {\n  padding: 0 16px 24px;\n}\n.datetime-item ion-button {\n  margin-top: 22px;\n}\nion-item ion-button {\n  margin-left: 8px;\n}\n.selection-item,\n.select-item {\n  --background: #ffffff;\n  --color: #0f172a;\n  --border-color: #e2e8f0;\n  --border-width: 1px;\n  --border-style: solid;\n  --border-radius: 12px;\n  margin: 6px 12px;\n}\n.selection-item ion-label h3 {\n  color: #0f172a;\n  font-weight: 600;\n}\n.selection-item ion-label p {\n  color: #64748b;\n}\n.selection-item.is-selected {\n  --background: #e8f1ff;\n  --border-color: #3b82f6;\n  --color: #1d4ed8;\n}\nion-select::part(placeholder) {\n  color: #64748b;\n}\nion-select::part(text) {\n  color: #0f172a;\n}\n.error-message {\n  margin: 8px 16px;\n  font-size: 0.9rem;\n}\n.campo-destaque::part(native) {\n  font-size: 1.25rem;\n  font-weight: 600;\n}\n/*# sourceMappingURL=vistoria-inicio.page.css.map */\n"] }]
   }], () => [], null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VistoriaInicioPage, { className: "VistoriaInicioPage", filePath: "src/app/pages/vistoria/vistoria-inicio.page.ts", lineNumber: 70 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VistoriaInicioPage, { className: "VistoriaInicioPage", filePath: "src/app/pages/vistoria/vistoria-inicio.page.ts", lineNumber: 72 });
 })();
 export {
   VistoriaInicioPage
 };
-//# sourceMappingURL=chunk-S4WCT7EI.js.map
+//# sourceMappingURL=chunk-LDIWFOX2.js.map

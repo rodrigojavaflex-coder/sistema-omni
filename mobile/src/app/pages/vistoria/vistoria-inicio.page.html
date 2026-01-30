@@ -64,6 +64,7 @@
         placeholder="Buscar por descrição ou placa"
         [value]="veiculoSearch"
         (ionInput)="onBuscarVeiculos($event)"
+        (ionClear)="limparVeiculo()"
       ></ion-searchbar>
     </ion-item>
     <ion-list *ngIf="loadingVeiculos">
@@ -86,6 +87,12 @@
         </ion-label>
       </ion-item>
     </ion-list>
+    <ion-item *ngIf="selectedVeiculo">
+      <ion-label>
+        <p>Odômetro atual: {{ ultimoOdometro === null ? 'Sem histórico' : (ultimoOdometro | number:'1.0-0') }}</p>
+        <p>Combustível: {{ selectedVeiculo.combustivel || '-' }}</p>
+      </ion-label>
+    </ion-item>
   </ion-card>
 
   <ion-card class="card">
@@ -96,6 +103,7 @@
         placeholder="Buscar por nome, matrícula ou CPF"
         [value]="motoristaSearch"
         (ionInput)="onBuscarMotoristas($event)"
+        (ionClear)="limparMotorista()"
       ></ion-searchbar>
     </ion-item>
     <ion-list *ngIf="loadingMotoristas">
@@ -145,7 +153,14 @@
   <ion-card class="card">
     <ion-item>
       <ion-label position="stacked">Odômetro</ion-label>
-      <ion-input type="number" [(ngModel)]="odometro" placeholder="Ex: 12345"></ion-input>
+      <ion-input
+        type="text"
+        inputmode="numeric"
+        placeholder="Ex: 12345"
+        class="campo-destaque"
+        [value]="odometroDisplay"
+        (ionInput)="onOdometroInput($event.detail.value)"
+      ></ion-input>
     </ion-item>
     <ion-item>
       <ion-label position="stacked">% Bateria</ion-label>
@@ -155,9 +170,15 @@
         placeholder="0 a 100"
         min="0"
         max="100"
+        [disabled]="!isBateriaObrigatoria()"
+        class="campo-destaque"
       ></ion-input>
     </ion-item>
   </ion-card>
+
+  <ion-text color="danger" *ngIf="!canStart && startValidationMessage">
+    <p class="error-message">{{ startValidationMessage }}</p>
+  </ion-text>
 
   <ion-text color="danger" *ngIf="errorMessage">
     <p class="error-message">{{ errorMessage }}</p>

@@ -1,8 +1,9 @@
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   AlertController,
+  Platform,
   IonButton,
   IonContent,
   IonHeader,
@@ -70,12 +71,14 @@ interface FotoChecklist {
     IonChip,
   ],
 })
-export class VistoriaChecklistPage implements OnInit {
+export class VistoriaChecklistPage implements OnInit, OnDestroy {
   private flowService = inject(VistoriaFlowService);
   private itemService = inject(ItemVistoriadoService);
   private vistoriaService = inject(VistoriaService);
   private router = inject(Router);
   private alertController = inject(AlertController);
+  private platform = inject(Platform);
+  private backButtonSub?: { unsubscribe: () => void };
 
   @ViewChild('observacaoInput', { read: IonTextarea })
   observacaoInput?: IonTextarea;
@@ -105,6 +108,9 @@ export class VistoriaChecklistPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    this.backButtonSub = this.platform.backButton.subscribeWithPriority(10, async () => {
+      await this.confirmarVoltarParaInicio();
+    });
     const tipoId = this.flowService.getTipoVistoriaId();
     const vistoriaId = this.flowService.getVistoriaId();
     if (!tipoId) {
@@ -152,6 +158,26 @@ export class VistoriaChecklistPage implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.backButtonSub?.unsubscribe();
+  }
+
+  async confirmarVoltarParaInicio(): Promise<void> {
+    const alert = await this.alertController.create({
+      header: 'Editar dados iniciais',
+      message: 'Deseja voltar para ajustar os dados da vistoria?',
+      buttons: [
+        { text: 'Continuar checklist', role: 'cancel' },
+        { text: 'Voltar', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role === 'confirm') {
+      this.router.navigate(['/vistoria/inicio']);
+    }
+  }
+
   get currentItem(): ItemVistoriado | null {
     return this.itens[this.currentIndex] ?? null;
   }
@@ -163,6 +189,10 @@ export class VistoriaChecklistPage implements OnInit {
     return (this.currentIndex + 1) / this.itens.length;
   }
 
+  get displayIndex(): number {
+    return this.currentIndex + 1;
+  }
+
   get currentFotos(): FotoChecklist[] {
     const item = this.currentItem;
     if (!item) {
@@ -171,9 +201,13 @@ export class VistoriaChecklistPage implements OnInit {
     return this.itemFotos[item.id] ?? [];
   }
 
+  get podeAdicionarFoto(): boolean {
+    return this.isFotoPermitida(this.currentItem);
+  }
+
   async adicionarFoto(): Promise<void> {
     const item = this.currentItem;
-    if (!item) {
+    if (!item || !this.isFotoPermitida(item)) {
       return;
     }
 
@@ -194,12 +228,15 @@ export class VistoriaChecklistPage implements OnInit {
     const veiculo = this.sanitizeFilename(
       this.flowService.getVeiculoDescricao() ?? 'veiculo',
     );
+    const tipo = this.sanitizeFilename(
+      this.flowService.getTipoVistoriaDescricao() ?? 'tipo',
+    );
     const data = this.formatDateFilename(
       this.flowService.getDataVistoriaIso() ?? new Date().toISOString(),
     );
     const itemNome = this.sanitizeFilename(item.descricao ?? 'item');
     const imageIndex = (this.itemFotos[item.id]?.length ?? 0) + 1;
-    const nomeArquivo = `${veiculo}_${itemNome}_${data}_IMG_${imageIndex}.jpg`;
+    const nomeArquivo = `${veiculo}_${tipo}_${itemNome}_${data}_IMG_${imageIndex}.jpg`;
     const tamanho = this.estimateBase64Size(base64);
 
     const foto: FotoChecklist = {
@@ -231,6 +268,7 @@ export class VistoriaChecklistPage implements OnInit {
       return;
     }
 
+    const permiteFotos = this.isFotoPermitida(item);
     if (!this.currentConforme && item.obrigafoto && this.currentFotos.length === 0) {
       this.errorMessage = 'Foto obrigatória para item não conforme.';
       return;
@@ -245,7 +283,10 @@ export class VistoriaChecklistPage implements OnInit {
         observacao: this.currentObservacao?.trim() || undefined,
       });
 
-      if (this.currentFotos.length > 0) {
+      if (!permiteFotos && this.currentFotos.length > 0) {
+        this.itemFotos[item.id] = [];
+      }
+      if (permiteFotos && this.currentFotos.length > 0) {
         const files = this.currentFotos.map((foto) => ({
           nomeArquivo: foto.nomeArquivo,
           blob: this.base64ToBlob(foto.dadosBase64),
@@ -375,6 +416,16 @@ export class VistoriaChecklistPage implements OnInit {
     const mm = pad(date.getMonth() + 1);
     const yyyy = date.getFullYear();
     return `${dd}${mm}${yyyy}`;
+  }
+
+  private isFotoPermitida(item?: ItemVistoriado | null): boolean {
+    if (!item) {
+      return false;
+    }
+    if (this.currentConforme && item.permitirfotoconforme === false) {
+      return false;
+    }
+    return true;
   }
 
   formatarTamanho(bytes: number): string {

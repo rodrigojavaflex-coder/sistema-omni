@@ -6,6 +6,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Patch,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -24,6 +25,7 @@ import { VistoriaService } from './vistoria.service';
 import { CreateVistoriaDto } from './dto/create-vistoria.dto';
 import { CreateChecklistItemDto } from './dto/create-checklist-item.dto';
 import { FinalizeVistoriaDto } from './dto/finalize-vistoria.dto';
+import { UpdateVistoriaDto } from './dto/update-vistoria.dto';
 import { ChecklistItemResumoDto } from './dto/checklist-item-resumo.dto';
 import { ChecklistImagemResumoDto } from './dto/checklist-imagem-resumo.dto';
 
@@ -117,6 +119,28 @@ export class VistoriaController {
     return this.vistoriaService.finalize(id, dto);
   }
 
+  @Patch(':id')
+  @Permissions(Permission.VISTORIA_UPDATE)
+  @ApiOperation({ summary: 'Atualizar dados iniciais da vistoria' })
+  @ApiResponse({ status: 200, description: 'Vistoria atualizada', type: Vistoria })
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateVistoriaDto,
+  ): Promise<Vistoria> {
+    return this.vistoriaService.update(id, dto);
+  }
+
+  @Get('veiculo/:id/ultimo-odometro')
+  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
+  @ApiOperation({ summary: 'Buscar último odômetro por veículo' })
+  @ApiResponse({ status: 200, description: 'Último odômetro encontrado' })
+  findUltimoOdometro(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Query('ignorarVistoriaId') ignorarVistoriaId?: string,
+  ): Promise<{ odometro: number; datavistoria: string } | null> {
+    return this.vistoriaService.getUltimoOdometro(id, ignorarVistoriaId);
+  }
+
   @Get(':id')
   @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
   @ApiOperation({ summary: 'Buscar vistoria por id' })
@@ -132,8 +156,9 @@ export class VistoriaController {
   findAll(
     @Query('status') status?: StatusVistoria,
     @Query('idusuario') idusuario?: string,
+    @Query('ignorarVistoriaId') ignorarVistoriaId?: string,
   ): Promise<Vistoria[]> {
-    return this.vistoriaService.findAll(status, idusuario);
+    return this.vistoriaService.findAll(status, idusuario, ignorarVistoriaId);
   }
 
   @Post(':id/cancelar')

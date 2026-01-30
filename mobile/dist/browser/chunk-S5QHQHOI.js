@@ -5,7 +5,7 @@ import {
 import {
   VistoriaFlowService,
   VistoriaService
-} from "./chunk-XDELGTKF.js";
+} from "./chunk-HOZ3DUWF.js";
 import {
   addIcons,
   arrowBackOutline,
@@ -38,6 +38,7 @@ import {
   IonToolbar,
   NgForOf,
   NgIf,
+  Platform,
   Router,
   ViewChild,
   environment,
@@ -67,7 +68,7 @@ import {
   ɵɵtextInterpolate1,
   ɵɵtextInterpolate2,
   ɵɵviewQuery
-} from "./chunk-XXY565TE.js";
+} from "./chunk-FWNB6FX6.js";
 import "./chunk-3EJ4SNN5.js";
 import "./chunk-T5LCTCQ6.js";
 import {
@@ -157,14 +158,14 @@ function VistoriaChecklistPage_div_11_span_7_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, " Salvar item ");
-    \u0275\u0275element(2, "ion-icon", 29);
+    \u0275\u0275element(2, "ion-icon", 28);
     \u0275\u0275elementEnd();
   }
 }
 function VistoriaChecklistPage_div_11_ion_text_11_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "ion-text", 30);
-    \u0275\u0275element(1, "ion-icon", 31);
+    \u0275\u0275elementStart(0, "ion-text", 29);
+    \u0275\u0275element(1, "ion-icon", 30);
     \u0275\u0275text(2, " Item salvo ");
     \u0275\u0275elementEnd();
   }
@@ -173,20 +174,20 @@ function VistoriaChecklistPage_div_11_ion_list_31_ion_item_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "ion-item");
-    \u0275\u0275element(1, "img", 33);
+    \u0275\u0275element(1, "img", 32);
     \u0275\u0275elementStart(2, "ion-label")(3, "p");
     \u0275\u0275text(4);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "p");
     \u0275\u0275text(6);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(7, "ion-button", 34);
+    \u0275\u0275elementStart(7, "ion-button", 33);
     \u0275\u0275listener("click", function VistoriaChecklistPage_div_11_ion_list_31_ion_item_1_Template_ion_button_click_7_listener() {
       const i_r4 = \u0275\u0275restoreView(_r3).index;
       const ctx_r0 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r0.removerFoto(i_r4));
     });
-    \u0275\u0275element(8, "ion-icon", 35);
+    \u0275\u0275element(8, "ion-icon", 34);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -203,7 +204,7 @@ function VistoriaChecklistPage_div_11_ion_list_31_ion_item_1_Template(rf, ctx) {
 function VistoriaChecklistPage_div_11_ion_list_31_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-list");
-    \u0275\u0275template(1, VistoriaChecklistPage_div_11_ion_list_31_ion_item_1_Template, 9, 3, "ion-item", 32);
+    \u0275\u0275template(1, VistoriaChecklistPage_div_11_ion_list_31_ion_item_1_Template, 9, 3, "ion-item", 31);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -214,7 +215,7 @@ function VistoriaChecklistPage_div_11_ion_list_31_Template(rf, ctx) {
 }
 function VistoriaChecklistPage_div_11_ion_text_32_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "ion-text", 36)(1, "p", 37);
+    \u0275\u0275elementStart(0, "ion-text", 35)(1, "p", 36);
     \u0275\u0275text(2);
     \u0275\u0275elementEnd()();
   }
@@ -280,16 +281,16 @@ function VistoriaChecklistPage_div_11_Template(rf, ctx) {
     \u0275\u0275elementStart(25, "ion-item", 25)(26, "ion-label");
     \u0275\u0275text(27);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(28, "ion-button", 26);
+    \u0275\u0275elementStart(28, "ion-button", 13);
     \u0275\u0275listener("click", function VistoriaChecklistPage_div_11_Template_ion_button_click_28_listener() {
       \u0275\u0275restoreView(_r2);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.adicionarFoto());
     });
-    \u0275\u0275element(29, "ion-icon", 27);
+    \u0275\u0275element(29, "ion-icon", 26);
     \u0275\u0275text(30, " Adicionar ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(31, VistoriaChecklistPage_div_11_ion_list_31_Template, 2, 1, "ion-list", 17)(32, VistoriaChecklistPage_div_11_ion_text_32_Template, 3, 1, "ion-text", 28);
+    \u0275\u0275template(31, VistoriaChecklistPage_div_11_ion_list_31_Template, 2, 1, "ion-list", 17)(32, VistoriaChecklistPage_div_11_ion_text_32_Template, 3, 1, "ion-text", 27);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -303,7 +304,7 @@ function VistoriaChecklistPage_div_11_Template(rf, ctx) {
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", !ctx_r0.isSaving);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate2("", ctx_r0.currentItem.sequencia, ". ", ctx_r0.currentItem.descricao);
+    \u0275\u0275textInterpolate2("", ctx_r0.displayIndex, ". ", ctx_r0.currentItem.descricao);
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r0.savedIds.has(ctx_r0.currentItem.id));
     \u0275\u0275advance(3);
@@ -314,7 +315,9 @@ function VistoriaChecklistPage_div_11_Template(rf, ctx) {
     \u0275\u0275property("value", ctx_r0.currentObservacao);
     \u0275\u0275advance(4);
     \u0275\u0275textInterpolate1("Fotos (", ctx_r0.currentFotos.length, ")");
-    \u0275\u0275advance(4);
+    \u0275\u0275advance();
+    \u0275\u0275property("disabled", !ctx_r0.podeAdicionarFoto);
+    \u0275\u0275advance(3);
     \u0275\u0275property("ngIf", ctx_r0.currentFotos.length > 0);
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r0.errorMessage);
@@ -333,6 +336,8 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
   vistoriaService = inject(VistoriaService);
   router = inject(Router);
   alertController = inject(AlertController);
+  platform = inject(Platform);
+  backButtonSub;
   observacaoInput;
   itens = [];
   currentIndex = 0;
@@ -357,6 +362,9 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
   }
   ngOnInit() {
     return __async(this, null, function* () {
+      this.backButtonSub = this.platform.backButton.subscribeWithPriority(10, () => __async(this, null, function* () {
+        yield this.confirmarVoltarParaInicio();
+      }));
       const tipoId = this.flowService.getTipoVistoriaId();
       const vistoriaId = this.flowService.getVistoriaId();
       if (!tipoId) {
@@ -401,6 +409,26 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
       }
     });
   }
+  ngOnDestroy() {
+    this.backButtonSub?.unsubscribe();
+  }
+  confirmarVoltarParaInicio() {
+    return __async(this, null, function* () {
+      const alert = yield this.alertController.create({
+        header: "Editar dados iniciais",
+        message: "Deseja voltar para ajustar os dados da vistoria?",
+        buttons: [
+          { text: "Continuar checklist", role: "cancel" },
+          { text: "Voltar", role: "confirm" }
+        ]
+      });
+      yield alert.present();
+      const { role } = yield alert.onDidDismiss();
+      if (role === "confirm") {
+        this.router.navigate(["/vistoria/inicio"]);
+      }
+    });
+  }
   get currentItem() {
     return this.itens[this.currentIndex] ?? null;
   }
@@ -410,6 +438,9 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
     }
     return (this.currentIndex + 1) / this.itens.length;
   }
+  get displayIndex() {
+    return this.currentIndex + 1;
+  }
   get currentFotos() {
     const item = this.currentItem;
     if (!item) {
@@ -417,10 +448,13 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
     }
     return this.itemFotos[item.id] ?? [];
   }
+  get podeAdicionarFoto() {
+    return this.isFotoPermitida(this.currentItem);
+  }
   adicionarFoto() {
     return __async(this, null, function* () {
       const item = this.currentItem;
-      if (!item) {
+      if (!item || !this.isFotoPermitida(item)) {
         return;
       }
       const photo = yield Camera.getPhoto({
@@ -436,10 +470,11 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
       }
       const base64 = photo.base64String;
       const veiculo = this.sanitizeFilename(this.flowService.getVeiculoDescricao() ?? "veiculo");
+      const tipo = this.sanitizeFilename(this.flowService.getTipoVistoriaDescricao() ?? "tipo");
       const data = this.formatDateFilename(this.flowService.getDataVistoriaIso() ?? (/* @__PURE__ */ new Date()).toISOString());
       const itemNome = this.sanitizeFilename(item.descricao ?? "item");
       const imageIndex = (this.itemFotos[item.id]?.length ?? 0) + 1;
-      const nomeArquivo = `${veiculo}_${itemNome}_${data}_IMG_${imageIndex}.jpg`;
+      const nomeArquivo = `${veiculo}_${tipo}_${itemNome}_${data}_IMG_${imageIndex}.jpg`;
       const tamanho = this.estimateBase64Size(base64);
       const foto = {
         nomeArquivo,
@@ -468,6 +503,7 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
       if (!item || !vistoriaId) {
         return;
       }
+      const permiteFotos = this.isFotoPermitida(item);
       if (!this.currentConforme && item.obrigafoto && this.currentFotos.length === 0) {
         this.errorMessage = "Foto obrigat\xF3ria para item n\xE3o conforme.";
         return;
@@ -480,7 +516,10 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
           conforme: this.currentConforme,
           observacao: this.currentObservacao?.trim() || void 0
         });
-        if (this.currentFotos.length > 0) {
+        if (!permiteFotos && this.currentFotos.length > 0) {
+          this.itemFotos[item.id] = [];
+        }
+        if (permiteFotos && this.currentFotos.length > 0) {
           const files = this.currentFotos.map((foto) => ({
             nomeArquivo: foto.nomeArquivo,
             blob: this.base64ToBlob(foto.dadosBase64)
@@ -590,6 +629,15 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
     const yyyy = date.getFullYear();
     return `${dd}${mm}${yyyy}`;
   }
+  isFotoPermitida(item) {
+    if (!item) {
+      return false;
+    }
+    if (this.currentConforme && item.permitirfotoconforme === false) {
+      return false;
+    }
+    return true;
+  }
   formatarTamanho(bytes) {
     const mb = bytes / 1048576;
     if (mb >= 1) {
@@ -617,7 +665,7 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
       let _t;
       \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.observacaoInput = _t.first);
     }
-  }, decls: 13, vars: 7, consts: [["observacaoInput", ""], [3, "translucent"], ["slot", "start", 4, "ngIf"], ["slot", "end"], ["color", "danger", 3, "click"], [3, "fullscreen"], [3, "value", 4, "ngIf"], ["class", "content", 4, "ngIf"], ["slot", "start"], [3, "value"], [1, "content"], ["name", "crescent"], [1, "actions", "actions-top"], ["fill", "outline", 3, "click", "disabled"], ["slot", "start", "name", "arrow-back-outline"], [3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], [4, "ngIf"], [1, "header"], ["color", "success", 4, "ngIf"], [1, "situacao-item"], [1, "situacao-chips"], [3, "click"], ["position", "stacked"], ["placeholder", "Observa\xE7\xE3o opcional", 3, "ionInput", "value"], ["lines", "none"], ["fill", "outline", 3, "click"], ["slot", "start", "name", "camera-outline"], ["color", "danger", 4, "ngIf"], ["slot", "end", "name", "arrow-forward-outline"], ["color", "success"], ["name", "checkmark-circle"], [4, "ngFor", "ngForOf"], ["alt", "Foto", 3, "src"], ["slot", "end", "fill", "clear", "color", "danger", 3, "click"], ["slot", "icon-only", "name", "trash-outline"], ["color", "danger"], [1, "error-message"]], template: function VistoriaChecklistPage_Template(rf, ctx) {
+  }, decls: 13, vars: 7, consts: [["observacaoInput", ""], [3, "translucent"], ["slot", "start", 4, "ngIf"], ["slot", "end"], ["color", "danger", 3, "click"], [3, "fullscreen"], [3, "value", 4, "ngIf"], ["class", "content", 4, "ngIf"], ["slot", "start"], [3, "value"], [1, "content"], ["name", "crescent"], [1, "actions", "actions-top"], ["fill", "outline", 3, "click", "disabled"], ["slot", "start", "name", "arrow-back-outline"], [3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], [4, "ngIf"], [1, "header"], ["color", "success", 4, "ngIf"], [1, "situacao-item"], [1, "situacao-chips"], [3, "click"], ["position", "stacked"], ["placeholder", "Observa\xE7\xE3o opcional", 3, "ionInput", "value"], ["lines", "none"], ["slot", "start", "name", "camera-outline"], ["color", "danger", 4, "ngIf"], ["slot", "end", "name", "arrow-forward-outline"], ["color", "success"], ["name", "checkmark-circle"], [4, "ngFor", "ngForOf"], ["alt", "Foto", 3, "src"], ["slot", "end", "fill", "clear", "color", "danger", 3, "click"], ["slot", "icon-only", "name", "trash-outline"], ["color", "danger"], [1, "error-message"]], template: function VistoriaChecklistPage_Template(rf, ctx) {
     if (rf & 1) {
       \u0275\u0275elementStart(0, "ion-header", 1)(1, "ion-toolbar");
       \u0275\u0275template(2, VistoriaChecklistPage_ion_buttons_2_Template, 2, 0, "ion-buttons", 2);
@@ -631,7 +679,7 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
       \u0275\u0275text(7, "Cancelar");
       \u0275\u0275elementEnd()()()();
       \u0275\u0275elementStart(8, "ion-content", 5);
-      \u0275\u0275template(9, VistoriaChecklistPage_ion_progress_bar_9_Template, 1, 1, "ion-progress-bar", 6)(10, VistoriaChecklistPage_div_10_Template, 4, 0, "div", 7)(11, VistoriaChecklistPage_div_11_Template, 33, 19, "div", 7)(12, VistoriaChecklistPage_div_12_Template, 3, 0, "div", 7);
+      \u0275\u0275template(9, VistoriaChecklistPage_ion_progress_bar_9_Template, 1, 1, "ion-progress-bar", 6)(10, VistoriaChecklistPage_div_10_Template, 4, 0, "div", 7)(11, VistoriaChecklistPage_div_11_Template, 33, 20, "div", 7)(12, VistoriaChecklistPage_div_12_Template, 3, 0, "div", 7);
       \u0275\u0275elementEnd();
     }
     if (rf & 2) {
@@ -730,7 +778,7 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
     </div>\r
 \r
     <div class="header">\r
-      <h2>{{ currentItem.sequencia }}. {{ currentItem.descricao }}</h2>\r
+      <h2>{{ displayIndex }}. {{ currentItem.descricao }}</h2>\r
       <ion-text color="success" *ngIf="savedIds.has(currentItem.id)">\r
         <ion-icon name="checkmark-circle"></ion-icon>\r
         Item salvo\r
@@ -768,7 +816,7 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
 \r
     <ion-item lines="none">\r
       <ion-label>Fotos ({{ currentFotos.length }})</ion-label>\r
-      <ion-button fill="outline" (click)="adicionarFoto()">\r
+      <ion-button fill="outline" (click)="adicionarFoto()" [disabled]="!podeAdicionarFoto">\r
         <ion-icon slot="start" name="camera-outline"></ion-icon>\r
         Adicionar\r
       </ion-button>\r
@@ -804,9 +852,9 @@ var VistoriaChecklistPage = class _VistoriaChecklistPage {
   }] });
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VistoriaChecklistPage, { className: "VistoriaChecklistPage", filePath: "src/app/pages/vistoria/vistoria-checklist.page.ts", lineNumber: 73 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VistoriaChecklistPage, { className: "VistoriaChecklistPage", filePath: "src/app/pages/vistoria/vistoria-checklist.page.ts", lineNumber: 74 });
 })();
 export {
   VistoriaChecklistPage
 };
-//# sourceMappingURL=chunk-NCFPIA4O.js.map
+//# sourceMappingURL=chunk-S5QHQHOI.js.map

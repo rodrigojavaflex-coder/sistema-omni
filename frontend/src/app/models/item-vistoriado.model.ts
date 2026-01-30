@@ -4,6 +4,7 @@ export interface ItemVistoriado {
   sequencia: number;
   tiposVistorias: string[];
   obrigafoto: boolean;
+  permitirfotoconforme: boolean;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;
@@ -14,6 +15,7 @@ export interface CreateItemVistoriadoDto {
   sequencia: number;
   tiposvistorias: string[];
   obrigafoto?: boolean;
+  permitirfotoconforme?: boolean;
   ativo?: boolean;
 }
 

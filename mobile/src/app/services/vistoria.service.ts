@@ -22,12 +22,50 @@ export class VistoriaService {
     idveiculo: string;
     idmotorista: string;
     odometro: number;
-    porcentagembateria: number;
+    porcentagembateria?: number;
     idtipovistoria: string;
     datavistoria: string;
   }): Promise<Vistoria> {
     return firstValueFrom(
       this.http.post<Vistoria>(`${this.apiBaseUrl}/vistoria`, payload),
+    );
+  }
+
+  async atualizarVistoria(
+    vistoriaId: string,
+    payload: {
+      idveiculo?: string;
+      idmotorista?: string;
+      idtipovistoria?: string;
+      odometro?: number;
+      porcentagembateria?: number | null;
+      datavistoria?: string;
+    },
+  ): Promise<Vistoria> {
+    return firstValueFrom(
+      this.http.patch<Vistoria>(`${this.apiBaseUrl}/vistoria/${vistoriaId}`, payload),
+    );
+  }
+
+  async getById(vistoriaId: string): Promise<Vistoria> {
+    return firstValueFrom(
+      this.http.get<Vistoria>(`${this.apiBaseUrl}/vistoria/${vistoriaId}`),
+    );
+  }
+
+  async getUltimoOdometro(
+    idveiculo: string,
+    ignorarVistoriaId?: string,
+  ): Promise<{ odometro: number; datavistoria: string } | null> {
+    return firstValueFrom(
+      this.http.get<{ odometro: number; datavistoria: string } | null>(
+        `${this.apiBaseUrl}/vistoria/veiculo/${idveiculo}/ultimo-odometro`,
+        {
+          params: ignorarVistoriaId
+            ? { ignorarVistoriaId }
+            : {},
+        },
+      ),
     );
   }
 
@@ -102,12 +140,16 @@ export class VistoriaService {
     );
   }
 
-  async listarEmAndamento(idusuario?: string): Promise<Vistoria[]> {
+  async listarEmAndamento(
+    idusuario?: string,
+    ignorarVistoriaId?: string,
+  ): Promise<Vistoria[]> {
     return firstValueFrom(
       this.http.get<Vistoria[]>(`${this.apiBaseUrl}/vistoria`, {
         params: {
           status: 'EM_ANDAMENTO',
           ...(idusuario ? { idusuario } : {}),
+          ...(ignorarVistoriaId ? { ignorarVistoriaId } : {}),
         },
       }),
     );

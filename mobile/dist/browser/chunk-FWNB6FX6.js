@@ -77144,6 +77144,7 @@ export {
   NgForOf,
   NgIf,
   DatePipe,
+  DecimalPipe,
   CommonModule,
   bootstrapApplication,
   HttpClient,
@@ -77164,6 +77165,7 @@ export {
   FormBuilder,
   FormsModule,
   ReactiveFormsModule,
+  Platform,
   IonRouterOutlet2 as IonRouterOutlet,
   IonApp,
   IonButton,
@@ -77366,4 +77368,4 @@ export {
    * (C) Ionic http://ionicframework.com - MIT License
    *)
 */
-//# sourceMappingURL=chunk-XXY565TE.js.map
+//# sourceMappingURL=chunk-FWNB6FX6.js.map

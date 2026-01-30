@@ -74,7 +74,11 @@
           </div>
           <div>{{ formatNumero(vistoria.odometro) }}</div>
           <div>
-            {{ vistoria.porcentagembateria === undefined ? '-' : (vistoria.porcentagembateria + '%') }}
+            {{
+              vistoria.porcentagembateria === undefined || vistoria.porcentagembateria === null
+                ? '-'
+                : (vistoria.porcentagembateria + '%')
+            }}
           </div>
           <div>{{ getUsuarioNome(vistoria.idUsuario) }}</div>
           <div>{{ formatTempo(vistoria.tempo) }}</div>

@@ -207,8 +207,8 @@ export const MENU_CONFIGURATION: MenuConfig = {
       ]
     },
     {
-      label: 'Controles',
-      icon: 'feather-clipboard',
+      label: 'Gestão',
+      icon: 'feather-briefcase',
       requiredPermissions: [],
       isSubmenu: true,
       order: 3,
@@ -218,14 +218,14 @@ export const MENU_CONFIGURATION: MenuConfig = {
           route: '/vistorias',
           icon: 'feather-check-square',
           requiredPermissions: [Permission.VISTORIA_WEB_READ],
-          parentMenu: 'Controles'
+          parentMenu: 'Gestão'
         },
         {
           label: 'Painel de Metas',
           route: '/meta/dashboard',
           icon: 'feather-activity',
           requiredPermissions: [Permission.META_EXECUCAO_READ],
-          parentMenu: 'Controles'
+          parentMenu: 'Gestão'
         }
       ]
     },
