@@ -9,6 +9,7 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { VeiculoModule } from '../veiculo/veiculo.module';
 import { MotoristaModule } from '../motorista/motorista.module';
 import { TrechoModule } from '../trecho/trecho.module';
+import { CategoriaOcorrenciaModule } from '../categoria-ocorrencia/categoria-ocorrencia.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { TrechoModule } from '../trecho/trecho.module';
     forwardRef(() => VeiculoModule),
     forwardRef(() => MotoristaModule),
     forwardRef(() => TrechoModule),
+    CategoriaOcorrenciaModule,
   ],
   controllers: [OcorrenciaController],
   providers: [OcorrenciaService],

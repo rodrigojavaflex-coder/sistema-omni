@@ -40,6 +40,24 @@ export enum Permission {
   OCORRENCIA_DELETE = 'ocorrencia:delete',
   OCORRENCIA_AUDIT = 'ocorrencia:audit',
 
+  // Origem da Ocorrência
+  ORIGEMOCORRENCIA_CREATE = 'origemocorrencia:create',
+  ORIGEMOCORRENCIA_READ = 'origemocorrencia:read',
+  ORIGEMOCORRENCIA_UPDATE = 'origemocorrencia:update',
+  ORIGEMOCORRENCIA_DELETE = 'origemocorrencia:delete',
+
+  // Categoria da Ocorrência
+  CATEGORIAOCORRENCIA_CREATE = 'categoriaocorrencia:create',
+  CATEGORIAOCORRENCIA_READ = 'categoriaocorrencia:read',
+  CATEGORIAOCORRENCIA_UPDATE = 'categoriaocorrencia:update',
+  CATEGORIAOCORRENCIA_DELETE = 'categoriaocorrencia:delete',
+
+  // Empresa Terceira
+  EMPRESATERCIRA_CREATE = 'empresaterceira:create',
+  EMPRESATERCIRA_READ = 'empresaterceira:read',
+  EMPRESATERCIRA_UPDATE = 'empresaterceira:update',
+  EMPRESATERCIRA_DELETE = 'empresaterceira:delete',
+
   // Trechos
   TRECHO_CREATE = 'trecho:create',
   TRECHO_READ = 'trecho:read',

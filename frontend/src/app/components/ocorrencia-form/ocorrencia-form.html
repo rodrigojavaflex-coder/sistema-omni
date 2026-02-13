@@ -29,12 +29,31 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Tipo de Ocorrência *</label>
+          <label class="form-label">Classificação da Ocorrência *</label>
           <select formControlName="tipo" class="form-select">
             <option value="">Selecione</option>
             <option *ngFor="let t of tipoOptions" [value]="t">{{ t }}</option>
           </select>
           <div class="form-error" *ngIf="isFieldInvalid('tipo')">{{ getFieldError('tipo') }}</div>
+        </div>
+      </div>
+
+      <div class="form-inline form-inline-origem-categoria">
+        <div class="form-group form-group-origem">
+          <label class="form-label">Origem da Ocorrência *</label>
+          <select formControlName="idOrigem" class="form-select" (change)="onOrigemSelected()">
+            <option value="">Selecione</option>
+            <option *ngFor="let o of origens" [value]="o.id">{{ o.descricao }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('idOrigem')">{{ getFieldError('idOrigem') }}</div>
+        </div>
+        <div class="form-group form-group-categoria">
+          <label class="form-label">Categoria da Ocorrência *</label>
+          <select formControlName="idCategoria" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let c of categorias" [value]="c.id">{{ c.descricao }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('idCategoria')">{{ getFieldError('idCategoria') }}</div>
         </div>
       </div>
 
@@ -48,6 +67,31 @@
         <label class="form-label">Observações Técnicas</label>
         <textarea formControlName="observacoesTecnicas" class="form-input" rows="3" placeholder="Informações técnicas relevantes"></textarea>
         <div class="form-error" *ngIf="isFieldInvalid('observacoesTecnicas')">{{ getFieldError('observacoesTecnicas') }}</div>
+      </div>
+
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Processo SEI</label>
+          <input type="text" formControlName="processoSei" class="form-input" maxlength="50" />
+          <div class="form-error" *ngIf="isFieldInvalid('processoSei')">{{ getFieldError('processoSei') }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número do Orçamento</label>
+          <input type="text" formControlName="numeroOrcamento" class="form-input" maxlength="50" />
+          <div class="form-error" *ngIf="isFieldInvalid('numeroOrcamento')">{{ getFieldError('numeroOrcamento') }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor do Orçamento</label>
+          <input
+            type="text"
+            class="form-input"
+            [value]="getValorOrcamentoDisplay()"
+            (input)="onValorOrcamentoInput($event)"
+            inputmode="decimal"
+            placeholder="0,00"
+          />
+          <div class="form-error" *ngIf="isFieldInvalid('valorDoOrcamento')">{{ getFieldError('valorDoOrcamento') }}</div>
+        </div>
       </div>
     </div>
 
@@ -74,6 +118,15 @@
             (motoristaSelected)="onMotoristaSelected($event)">
           </app-motorista-autocomplete>
           <div class="form-error" *ngIf="isFieldInvalid('idMotorista')">{{ getFieldError('idMotorista') }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Empresa do Motorista *</label>
+          <select formControlName="idEmpresaDoMotorista" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let e of empresas" [value]="e.id">{{ e.descricao }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('idEmpresaDoMotorista')">{{ getFieldError('idEmpresaDoMotorista') }}</div>
+          <small *ngIf="motoristaComEmpresa" class="form-hint">Empresa definida pelo cadastro do motorista</small>
         </div>
       </div>
     </div>

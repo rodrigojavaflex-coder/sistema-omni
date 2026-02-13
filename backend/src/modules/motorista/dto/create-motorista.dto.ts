@@ -5,9 +5,11 @@ import {
   IsOptional,
   IsEnum,
   IsDateString,
+  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { Sexo } from '../../../common/enums/sexo.enum';
 import { Terceirizado } from '../../../common/enums/terceirizado.enum';
 import { StatusMotorista } from '../../../common/enums/status-motorista.enum';
@@ -104,4 +106,9 @@ export class CreateMotoristaDto {
   @IsEnum(StatusMotorista, { message: 'Status inválido' })
   @IsOptional()
   status?: StatusMotorista;
+
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsUUID('4', { message: 'ID da empresa inválido' })
+  @IsOptional()
+  idEmpresa?: string;
 }

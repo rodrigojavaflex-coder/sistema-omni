@@ -23,6 +23,9 @@ import { DepartamentoModule } from './modules/departamento/departamento.module';
 import { MetaModule } from './modules/meta/meta.module';
 import { VistoriaModule } from './modules/vistoria/vistoria.module';
 import { SystemModule } from './modules/system/system.module';
+import { OrigemOcorrenciaModule } from './modules/origem-ocorrencia/origem-ocorrencia.module';
+import { CategoriaOcorrenciaModule } from './modules/categoria-ocorrencia/categoria-ocorrencia.module';
+import { EmpresaTerceiraModule } from './modules/empresa-terceira/empresa-terceira.module';
 
 @Module({
   imports: [
@@ -57,6 +60,9 @@ import { SystemModule } from './modules/system/system.module';
     MetaModule,
     VistoriaModule,
     SystemModule,
+    OrigemOcorrenciaModule,
+    CategoriaOcorrenciaModule,
+    EmpresaTerceiraModule,
     TypeOrmModule.forFeature([Configuracao]),
   ],
   controllers: [AppController],

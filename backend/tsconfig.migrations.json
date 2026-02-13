@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolvePackageJsonExports": false,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "noEmit": false
+  },
+  "include": [
+    "src/data-source.ts",
+    "src/migrations/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

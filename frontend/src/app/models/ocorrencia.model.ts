@@ -46,6 +46,12 @@ export interface Ocorrencia {
   informacoesVitimas?: string;
   enderecoVitimas?: string;
   informacoesTestemunhas?: string;
+  idOrigem?: string;
+  idCategoria?: string;
+  processoSei?: string;
+  numeroOrcamento?: string;
+  valorDoOrcamento?: number;
+  idEmpresaDoMotorista?: string;
   criadoEm: Date;
   atualizadoEm: Date;
 }
@@ -55,6 +61,12 @@ export interface CreateOcorrenciaDto {
   idVeiculo: string;
   idMotorista: string;
   idTrecho?: string;
+  idOrigem: string;
+  idCategoria: string;
+  processoSei?: string;
+  numeroOrcamento?: string;
+  valorDoOrcamento?: number;
+  idEmpresaDoMotorista: string;
   tipo: TipoOcorrencia;
   descricao: string;
   observacoesTecnicas?: string;

@@ -54,6 +54,14 @@
           </select>
           <div class="form-error" *ngIf="isFieldInvalid('status')">{{ getFieldError('status') }}</div>
         </div>
+
+        <div class="form-group">
+          <label class="form-label">Empresa</label>
+          <select formControlName="idEmpresa" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let e of empresas" [value]="e.id">{{ e.descricao }}</option>
+          </select>
+        </div>
       </div>
     </div>
 

@@ -9,19 +9,34 @@ import { Ocorrencia } from './entities/ocorrencia.entity';
 import { CreateOcorrenciaDto } from './dto/create-ocorrencia.dto';
 import { UpdateOcorrenciaDto } from './dto/update-ocorrencia.dto';
 import { validarCamposVitimas } from '../../common/validators/validador-vitimas';
+import { CategoriaOcorrenciaService } from '../categoria-ocorrencia/categoria-ocorrencia.service';
 
 @Injectable()
 export class OcorrenciaService {
   constructor(
     @InjectRepository(Ocorrencia)
     private readonly ocorrenciaRepository: Repository<Ocorrencia>,
+    private readonly categoriaOcorrenciaService: CategoriaOcorrenciaService,
   ) {}
 
-  async create(createOcorrenciaDto: CreateOcorrenciaDto): Promise<Ocorrencia> {
+  async create(
+    createOcorrenciaDto: CreateOcorrenciaDto,
+    idUsuario?: string,
+  ): Promise<Ocorrencia> {
     // Validar campos de vítima condicionalmente
     const errosVitimas = validarCamposVitimas(createOcorrenciaDto);
     if (errosVitimas.length > 0) {
       throw new BadRequestException(errosVitimas[0]);
+    }
+
+    // Validar categoria pertence à origem (origem e categoria são obrigatórios)
+    const categoria = await this.categoriaOcorrenciaService.findOne(
+      createOcorrenciaDto.idCategoria,
+    );
+    if (categoria.idOrigem !== createOcorrenciaDto.idOrigem) {
+      throw new BadRequestException(
+        'A categoria selecionada não pertence à origem informada',
+      );
     }
 
     // Validar localização se fornecida
@@ -38,6 +53,10 @@ export class OcorrenciaService {
       ocorrenciaData.localizacao = this.formatLocationForDB(
         createOcorrenciaDto.localizacao,
       );
+    }
+
+    if (idUsuario) {
+      ocorrenciaData.idUsuario = idUsuario;
     }
 
     const ocorrencia = this.ocorrenciaRepository.create(ocorrenciaData);
@@ -75,6 +94,10 @@ export class OcorrenciaService {
       .createQueryBuilder('ocorrencia')
       .leftJoinAndSelect('ocorrencia.veiculo', 'veiculo')
       .leftJoinAndSelect('ocorrencia.motorista', 'motorista')
+      .leftJoinAndSelect('ocorrencia.origem', 'origem')
+      .leftJoinAndSelect('ocorrencia.categoria', 'categoria')
+      .leftJoinAndSelect('ocorrencia.empresaDoMotorista', 'empresaDoMotorista')
+      .leftJoinAndSelect('ocorrencia.usuario', 'usuario')
       .take(limit)
       .skip(skip)
       .orderBy('ocorrencia.atualizadoEm', 'DESC');
@@ -210,7 +233,15 @@ export class OcorrenciaService {
   async findOne(id: string): Promise<Ocorrencia> {
     const ocorrencia = await this.ocorrenciaRepository.findOne({
       where: { id },
-      relations: ['veiculo', 'motorista'],
+      relations: [
+        'veiculo',
+        'motorista',
+        'trecho',
+        'origem',
+        'categoria',
+        'empresaDoMotorista',
+        'usuario',
+      ],
     });
 
     if (!ocorrencia) {
@@ -237,6 +268,21 @@ export class OcorrenciaService {
 
     if (errosVitimas.length > 0) {
       throw new BadRequestException(errosVitimas[0]);
+    }
+
+    // Validar categoria pertence à origem quando ambos forem enviados
+    if (
+      updateOcorrenciaDto.idCategoria != null &&
+      updateOcorrenciaDto.idOrigem != null
+    ) {
+      const categoria = await this.categoriaOcorrenciaService.findOne(
+        updateOcorrenciaDto.idCategoria,
+      );
+      if (categoria.idOrigem !== updateOcorrenciaDto.idOrigem) {
+        throw new BadRequestException(
+          'A categoria selecionada não pertence à origem informada',
+        );
+      }
     }
 
     // Validar localização se fornecida

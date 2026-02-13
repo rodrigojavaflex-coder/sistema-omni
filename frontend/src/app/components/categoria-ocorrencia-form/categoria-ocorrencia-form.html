@@ -1,0 +1,48 @@
+<div class="form-container">
+  <h2>{{ getFormTitle() }} Categoria da Ocorrência</h2>
+
+  <div class="form-actions form-actions-top">
+    <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+      <span *ngIf="loading" class="spinner"></span>
+      {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-section">
+      <h3>Informações</h3>
+      <div class="form-group">
+        <label class="form-label">Origem da Ocorrência *</label>
+        <select formControlName="idOrigem" class="form-select">
+          <option value="">Selecione</option>
+          <option *ngFor="let o of origens" [value]="o.id">{{ o.descricao }}</option>
+        </select>
+        <div class="form-error" *ngIf="isFieldInvalid('idOrigem')">
+          {{ getFieldError('idOrigem') }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição *</label>
+        <input type="text" formControlName="descricao" class="form-input" />
+        <div class="form-error" *ngIf="isFieldInvalid('descricao')">
+          {{ getFieldError('descricao') }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Responsável</label>
+        <input type="text" formControlName="responsavel" class="form-input" />
+        <div class="form-error" *ngIf="isFieldInvalid('responsavel')">
+          {{ getFieldError('responsavel') }}
+        </div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </form>
+</div>

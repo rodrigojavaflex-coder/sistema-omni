@@ -98,6 +98,54 @@ export const routes: Routes = [
     loadComponent: () => import('./components/ocorrencia-form/ocorrencia-form').then(m => m.OcorrenciaFormComponent),
     canActivate: [authGuard]
   },
+  // Rotas de origem da ocorrência
+  {
+    path: 'origem-ocorrencia',
+    loadComponent: () => import('./components/origem-ocorrencia-list/origem-ocorrencia-list').then(m => m.OrigemOcorrenciaListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'origem-ocorrencia/new',
+    loadComponent: () => import('./components/origem-ocorrencia-form/origem-ocorrencia-form').then(m => m.OrigemOcorrenciaFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'origem-ocorrencia/edit/:id',
+    loadComponent: () => import('./components/origem-ocorrencia-form/origem-ocorrencia-form').then(m => m.OrigemOcorrenciaFormComponent),
+    canActivate: [authGuard]
+  },
+  // Rotas de categoria da ocorrência
+  {
+    path: 'categoria-ocorrencia',
+    loadComponent: () => import('./components/categoria-ocorrencia-list/categoria-ocorrencia-list').then(m => m.CategoriaOcorrenciaListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'categoria-ocorrencia/new',
+    loadComponent: () => import('./components/categoria-ocorrencia-form/categoria-ocorrencia-form').then(m => m.CategoriaOcorrenciaFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'categoria-ocorrencia/edit/:id',
+    loadComponent: () => import('./components/categoria-ocorrencia-form/categoria-ocorrencia-form').then(m => m.CategoriaOcorrenciaFormComponent),
+    canActivate: [authGuard]
+  },
+  // Rotas de empresa terceira
+  {
+    path: 'empresa-terceira',
+    loadComponent: () => import('./components/empresa-terceira-list/empresa-terceira-list').then(m => m.EmpresaTerceiraListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'empresa-terceira/new',
+    loadComponent: () => import('./components/empresa-terceira-form/empresa-terceira-form').then(m => m.EmpresaTerceiraFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'empresa-terceira/edit/:id',
+    loadComponent: () => import('./components/empresa-terceira-form/empresa-terceira-form').then(m => m.EmpresaTerceiraFormComponent),
+    canActivate: [authGuard]
+  },
   // Rotas de trecho com lazy loading
   {
     path: 'trechos',

@@ -1,8 +1,9 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Sexo } from '../../../common/enums/sexo.enum';
 import { Terceirizado } from '../../../common/enums/terceirizado.enum';
 import { StatusMotorista } from '../../../common/enums/status-motorista.enum';
+import { EmpresaTerceira } from '../../empresa-terceira/entities/empresa-terceira.entity';
 
 @Entity('motoristas')
 export class Motorista extends BaseEntity {
@@ -78,4 +79,11 @@ export class Motorista extends BaseEntity {
     nullable: false,
   })
   status: StatusMotorista;
+
+  @ManyToOne(() => EmpresaTerceira, { nullable: true, eager: false })
+  @JoinColumn({ name: 'idEmpresa' })
+  empresa?: EmpresaTerceira;
+
+  @Column({ type: 'uuid', nullable: true })
+  idEmpresa?: string;
 }

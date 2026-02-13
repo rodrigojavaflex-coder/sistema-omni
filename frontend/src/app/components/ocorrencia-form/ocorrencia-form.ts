@@ -6,6 +6,9 @@ import { OcorrenciaService } from '../../services/ocorrencia.service';
 import { VeiculoService } from '../../services/veiculo.service';
 import { MotoristaService } from '../../services/motorista.service';
 import { TrechoService } from '../../services/trecho.service';
+import { OrigemOcorrenciaService } from '../../services/origem-ocorrencia.service';
+import { CategoriaOcorrenciaService } from '../../services/categoria-ocorrencia.service';
+import { EmpresaTerceiraService } from '../../services/empresa-terceira.service';
 import { CreateOcorrenciaDto, UpdateOcorrenciaDto } from '../../models/ocorrencia.model';
 import { TipoOcorrencia } from '../../models/tipo-ocorrencia.enum';
 import { Linha } from '../../models/linha.enum';
@@ -48,8 +51,16 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
   private veiculoService = inject(VeiculoService);
   private motoristaService = inject(MotoristaService);
   private trechoService = inject(TrechoService);
+  private origemService = inject(OrigemOcorrenciaService);
+  private categoriaService = inject(CategoriaOcorrenciaService);
+  private empresaService = inject(EmpresaTerceiraService);
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
+
+  origens: { id: string; descricao: string }[] = [];
+  categorias: { id: string; descricao: string; idOrigem: string }[] = [];
+  empresas: { id: string; descricao: string }[] = [];
+  motoristaComEmpresa = false;
 
   @ViewChild(MapaLocalizacaoComponent) mapaComponent!: MapaLocalizacaoComponent;
 
@@ -79,9 +90,8 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       this.editMode = true;
       this.entityId = id;
     }
-
-    // Não carregamos veículos e motoristas inicialmente
-    // Eles serão carregados sob demanda ao digitar
+    this.origemService.getAll().subscribe((list) => (this.origens = list));
+    this.empresaService.getAll().subscribe((list) => (this.empresas = list));
     super.ngOnInit();
   }
 
@@ -91,6 +101,12 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       idVeiculo: ['', [Validators.required]],
       idMotorista: ['', [Validators.required]],
       idTrecho: [''],
+      idOrigem: ['', [Validators.required]],
+      idCategoria: ['', [Validators.required]],
+      processoSei: ['', [Validators.maxLength(50)]],
+      numeroOrcamento: ['', [Validators.maxLength(50)]],
+      valorDoOrcamento: [null as number | null, [Validators.min(0)]],
+      idEmpresaDoMotorista: ['', [Validators.required]],
       tipo: ['', [Validators.required]],
       descricao: ['', [Validators.required, Validators.minLength(10)]],
       observacoesTecnicas: [''],
@@ -115,10 +131,12 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       enderecoVitimas: [''],
       informacoesTestemunhas: ['']
     });
+    // Categoria só fica habilitada quando houver origem selecionada (evita [disabled] no template)
+    this.form.get('idCategoria')?.disable();
   }
 
   protected buildFormData(): CreateOcorrenciaDto | UpdateOcorrenciaDto {
-    const formValue = this.form.value;
+    const formValue = this.form.getRawValue();
     
     console.log('🔍 buildFormData - Valores do formulário:', {
       idVeiculo: formValue.idVeiculo,
@@ -131,6 +149,15 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       idVeiculo: formValue.idVeiculo,
       idMotorista: formValue.idMotorista,
       idTrecho: formValue.idTrecho,
+      idOrigem: formValue.idOrigem || undefined,
+      idCategoria: formValue.idCategoria || undefined,
+      processoSei: formValue.processoSei || undefined,
+      numeroOrcamento: formValue.numeroOrcamento || undefined,
+      valorDoOrcamento:
+        formValue.valorDoOrcamento != null && formValue.valorDoOrcamento !== ''
+          ? Number(formValue.valorDoOrcamento)
+          : undefined,
+      idEmpresaDoMotorista: formValue.idEmpresaDoMotorista || undefined,
       tipo: formValue.tipo,
       descricao: formValue.descricao,
       houveVitimas: formValue.houveVitimas
@@ -216,11 +243,25 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       this.localizacaoSelecionada = { latitude, longitude };
     }
     
+    if (ocorrencia.idOrigem) {
+      this.categoriaService.getByOrigem(ocorrencia.idOrigem).subscribe((list) => {
+        this.categorias = list;
+      });
+    }
     this.form.patchValue({
       dataHora: dataHoraFormatted,
       idVeiculo: ocorrencia.idVeiculo,
       idMotorista: ocorrencia.idMotorista,
       idTrecho: ocorrencia.idTrecho,
+      idOrigem: ocorrencia.idOrigem,
+      idCategoria: ocorrencia.idCategoria,
+      processoSei: ocorrencia.processoSei,
+      numeroOrcamento: ocorrencia.numeroOrcamento,
+      valorDoOrcamento:
+        ocorrencia.valorDoOrcamento != null
+          ? Number(ocorrencia.valorDoOrcamento)
+          : null,
+      idEmpresaDoMotorista: ocorrencia.idEmpresaDoMotorista,
       tipo: ocorrencia.tipo,
       descricao: ocorrencia.descricao,
       observacoesTecnicas: ocorrencia.observacoesTecnicas,
@@ -245,6 +286,19 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       enderecoVitimas: ocorrencia.enderecoVitimas,
       informacoesTestemunhas: ocorrencia.informacoesTestemunhas
     });
+    const mot = (ocorrencia as any).motorista;
+    this.motoristaComEmpresa = !!(mot?.idEmpresa ?? mot?.empresa);
+    if (this.motoristaComEmpresa && mot?.idEmpresa) {
+      this.form.get('idEmpresaDoMotorista')?.disable();
+    } else {
+      this.form.get('idEmpresaDoMotorista')?.enable();
+    }
+    // Categoria: habilitar só se houver origem ao editar
+    if (ocorrencia.idOrigem) {
+      this.form.get('idCategoria')?.enable();
+    } else {
+      this.form.get('idCategoria')?.disable();
+    }
   }
 
   protected override getListRoute(): string {
@@ -260,6 +314,79 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
   onMotoristaSelected(motorista: Motorista): void {
     this.form.patchValue({ idMotorista: motorista.id });
     this.form.get('idMotorista')?.markAsTouched();
+    const temEmpresa = !!(motorista as any).idEmpresa || !!(motorista as any).empresa;
+    this.motoristaComEmpresa = temEmpresa;
+    if (temEmpresa) {
+      const idEmpresa = (motorista as any).idEmpresa ?? (motorista as any).empresa?.id;
+      this.form.patchValue({ idEmpresaDoMotorista: idEmpresa });
+      this.form.get('idEmpresaDoMotorista')?.disable();
+    } else {
+      this.form.get('idEmpresaDoMotorista')?.enable();
+      this.form.patchValue({ idEmpresaDoMotorista: '' });
+    }
+  }
+
+  onOrigemSelected(): void {
+    const idOrigem = this.form.get('idOrigem')?.value;
+    this.form.patchValue({ idCategoria: '' });
+    if (!idOrigem) {
+      this.categorias = [];
+      this.form.get('idCategoria')?.disable();
+      return;
+    }
+    this.form.get('idCategoria')?.enable();
+    this.categoriaService.getByOrigem(idOrigem).subscribe((list) => {
+      this.categorias = list;
+    });
+  }
+
+  /** Exibe o valor do orçamento formatado (pt-BR: 1.234,56) */
+  getValorOrcamentoDisplay(): string {
+    const v = this.form.get('valorDoOrcamento')?.value;
+    if (v == null || v === '') return '';
+    const n = Number(v);
+    if (isNaN(n) || n < 0) return '';
+    return n.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  /** Formata o valor ao digitar (pt-BR). Aceita vírgula; se houver mais de 2 decimais, os extras viram parte inteira (ex.: "3,000" -> 30,00). */
+  onValorOrcamentoInput(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    let raw = input.value.replace(/[^\d,]/g, '');
+    const commaIdx = raw.indexOf(',');
+    let intPart: string;
+    let decPart: string;
+    if (commaIdx >= 0) {
+      intPart = raw.slice(0, commaIdx).replace(/\D/g, '');
+      const after = raw.slice(commaIdx + 1).replace(/\D/g, '');
+      if (after.length > 2) {
+        intPart = intPart + after.slice(0, -2);
+        decPart = after.slice(-2);
+      } else {
+        decPart = after;
+      }
+    } else {
+      intPart = raw;
+      decPart = '';
+    }
+    if (intPart === '' && decPart === '') {
+      this.form.patchValue({ valorDoOrcamento: null });
+      this.form.get('valorDoOrcamento')?.updateValueAndValidity();
+      input.value = '';
+      return;
+    }
+    const num = parseFloat(`${intPart || '0'}.${(decPart || '00').padEnd(2, '0').slice(0, 2)}`);
+    if (!isNaN(num) && num >= 0) {
+      this.form.patchValue({ valorDoOrcamento: num });
+      this.form.get('valorDoOrcamento')?.updateValueAndValidity();
+      input.value = num.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    }
   }
 
   onTrechoSelected(trecho: any): void {

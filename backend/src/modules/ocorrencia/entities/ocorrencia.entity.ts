@@ -11,6 +11,10 @@ import { Sexo } from '../../../common/enums/sexo.enum';
 import { Veiculo } from '../../veiculo/entities/veiculo.entity';
 import { Motorista } from '../../motorista/entities/motorista.entity';
 import { Trecho } from '../../trecho/entities/trecho.entity';
+import { OrigemOcorrencia } from '../../origem-ocorrencia/entities/origem-ocorrencia.entity';
+import { CategoriaOcorrencia } from '../../categoria-ocorrencia/entities/categoria-ocorrencia.entity';
+import { EmpresaTerceira } from '../../empresa-terceira/entities/empresa-terceira.entity';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 @Entity('ocorrencias')
 @Index(['dataHora'])
@@ -149,6 +153,43 @@ export class Ocorrencia extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   informacoesTestemunhas: string;
+
+  @ManyToOne(() => OrigemOcorrencia, { nullable: true, eager: false })
+  @JoinColumn({ name: 'idOrigem' })
+  origem?: OrigemOcorrencia;
+
+  @Column({ type: 'uuid', nullable: true })
+  idOrigem?: string;
+
+  @ManyToOne(() => CategoriaOcorrencia, { nullable: true, eager: false })
+  @JoinColumn({ name: 'idCategoria' })
+  categoria?: CategoriaOcorrencia;
+
+  @Column({ type: 'uuid', nullable: true })
+  idCategoria?: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  processoSei?: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  numeroOrcamento?: string;
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true })
+  valorDoOrcamento?: number;
+
+  @ManyToOne(() => EmpresaTerceira, { nullable: true, eager: false })
+  @JoinColumn({ name: 'idEmpresaDoMotorista' })
+  empresaDoMotorista?: EmpresaTerceira;
+
+  @Column({ type: 'uuid', nullable: true })
+  idEmpresaDoMotorista?: string;
+
+  @ManyToOne(() => Usuario, { nullable: true, eager: false })
+  @JoinColumn({ name: 'idUsuario' })
+  usuario?: Usuario;
+
+  @Column({ type: 'uuid', nullable: true })
+  idUsuario?: string;
 
   static get nomeAmigavel(): string {
     return 'Ocorrência';

@@ -40,6 +40,24 @@ export enum Permission {
   OCORRENCIA_DELETE = 'ocorrencia:delete',
   OCORRENCIA_AUDIT = 'ocorrencia:audit',
 
+  // Origem da Ocorrência
+  ORIGEMOCORRENCIA_CREATE = 'origemocorrencia:create',
+  ORIGEMOCORRENCIA_READ = 'origemocorrencia:read',
+  ORIGEMOCORRENCIA_UPDATE = 'origemocorrencia:update',
+  ORIGEMOCORRENCIA_DELETE = 'origemocorrencia:delete',
+
+  // Categoria da Ocorrência
+  CATEGORIAOCORRENCIA_CREATE = 'categoriaocorrencia:create',
+  CATEGORIAOCORRENCIA_READ = 'categoriaocorrencia:read',
+  CATEGORIAOCORRENCIA_UPDATE = 'categoriaocorrencia:update',
+  CATEGORIAOCORRENCIA_DELETE = 'categoriaocorrencia:delete',
+
+  // Empresa Terceira
+  EMPRESATERCIRA_CREATE = 'empresaterceira:create',
+  EMPRESATERCIRA_READ = 'empresaterceira:read',
+  EMPRESATERCIRA_UPDATE = 'empresaterceira:update',
+  EMPRESATERCIRA_DELETE = 'empresaterceira:delete',
+
   // Trechos
   TRECHO_CREATE = 'trecho:create',
   TRECHO_READ = 'trecho:read',
@@ -129,6 +147,24 @@ export const PERMISSION_GROUPS = {
     { key: Permission.OCORRENCIA_UPDATE, label: 'Editar ocorrências' },
     { key: Permission.OCORRENCIA_DELETE, label: 'Excluir ocorrências' },
     { key: Permission.OCORRENCIA_AUDIT, label: 'Auditar ocorrências' },
+  ],
+  'Origem da Ocorrência': [
+    { key: Permission.ORIGEMOCORRENCIA_CREATE, label: 'Criar origens' },
+    { key: Permission.ORIGEMOCORRENCIA_READ, label: 'Visualizar origens' },
+    { key: Permission.ORIGEMOCORRENCIA_UPDATE, label: 'Editar origens' },
+    { key: Permission.ORIGEMOCORRENCIA_DELETE, label: 'Excluir origens' },
+  ],
+  'Categoria da Ocorrência': [
+    { key: Permission.CATEGORIAOCORRENCIA_CREATE, label: 'Criar categorias' },
+    { key: Permission.CATEGORIAOCORRENCIA_READ, label: 'Visualizar categorias' },
+    { key: Permission.CATEGORIAOCORRENCIA_UPDATE, label: 'Editar categorias' },
+    { key: Permission.CATEGORIAOCORRENCIA_DELETE, label: 'Excluir categorias' },
+  ],
+  'Empresa Terceira': [
+    { key: Permission.EMPRESATERCIRA_CREATE, label: 'Criar empresas' },
+    { key: Permission.EMPRESATERCIRA_READ, label: 'Visualizar empresas' },
+    { key: Permission.EMPRESATERCIRA_UPDATE, label: 'Editar empresas' },
+    { key: Permission.EMPRESATERCIRA_DELETE, label: 'Excluir empresas' },
   ],
   Trechos: [
     { key: Permission.TRECHO_CREATE, label: 'Criar trechos' },

@@ -1,11 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { BaseFormComponent } from '../base/base-form.component';
 import { MotoristaService } from '../../services/motorista.service';
+import { EmpresaTerceiraService } from '../../services/empresa-terceira.service';
 import { CreateMotoristaDto, UpdateMotoristaDto, Sexo, Terceirizado, StatusMotorista } from '../../models';
 import { firstValueFrom } from 'rxjs';
+import { EmpresaTerceira } from '../../models/empresa-terceira.model';
 
 @Component({
   selector: 'app-motorista-form',
@@ -15,9 +17,12 @@ import { firstValueFrom } from 'rxjs';
   styleUrls: ['./motorista-form.css']
 })
 export class MotoristaFormComponent extends BaseFormComponent<CreateMotoristaDto | UpdateMotoristaDto> implements OnInit {
+  private empresaService = inject(EmpresaTerceiraService);
+
   sexoOptions = Object.values(Sexo);
   terceirizadoOptions = Object.values(Terceirizado);
   statusOptions = Object.values(StatusMotorista);
+  empresas: EmpresaTerceira[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -34,7 +39,7 @@ export class MotoristaFormComponent extends BaseFormComponent<CreateMotoristaDto
       this.editMode = true;
       this.entityId = id;
     }
-
+    this.empresaService.getAll().subscribe((list) => (this.empresas = list));
     super.ngOnInit();
   }
 
@@ -59,7 +64,8 @@ export class MotoristaFormComponent extends BaseFormComponent<CreateMotoristaDto
       telefone: ['', Validators.maxLength(20)],
       celular: ['', Validators.maxLength(20)],
       terceirizado: [''],
-      status: ['Ativo', Validators.required]
+      status: ['Ativo', Validators.required],
+      idEmpresa: ['']
     });
   }
 
@@ -85,7 +91,8 @@ export class MotoristaFormComponent extends BaseFormComponent<CreateMotoristaDto
     if (!data.celular) delete data.celular;
     if (!data.terceirizado) delete data.terceirizado;
     if (!data.status) data.status = 'Ativo';
-    
+    if (!data.idEmpresa) delete data.idEmpresa;
+
     return data;
   }
 
@@ -140,7 +147,8 @@ export class MotoristaFormComponent extends BaseFormComponent<CreateMotoristaDto
       telefone: motorista.telefone,
       celular: motorista.celular,
       terceirizado: motorista.terceirizado,
-      status: motorista.status
+      status: motorista.status,
+      idEmpresa: motorista.idEmpresa ?? ''
     });
 
     // Aplicar formatação visual nos inputs após patchValue

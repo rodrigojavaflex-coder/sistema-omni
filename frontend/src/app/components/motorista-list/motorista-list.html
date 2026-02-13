@@ -96,6 +96,7 @@
         <tr>
           <th style="width: 25%;">Nome</th>
           <th>Matrícula</th>
+          <th>Empresa</th>
           <th>Terceirizado</th>
           <th>Data Habilitação</th>
           <th title="Validade Habilitação">Validade Hab.</th>
@@ -109,6 +110,7 @@
         <tr *ngFor="let item of items">
           <td>{{ item.nome }}</td>
           <td>{{ item.matricula }}</td>
+          <td>{{ item.empresa?.descricao || '-' }}</td>
           <td>{{ item.terceirizado || '-' }}</td>
           <td>{{ formatDate(item.dataHabilitacao) }}</td>
           <td>{{ item.validadeDaHabilitacao ? formatDate(item.validadeDaHabilitacao) : '-' }}</td>
@@ -132,7 +134,7 @@
           </td>
         </tr>
         <tr *ngIf="items.length === 0">
-          <td colspan="9" class="table-empty-cell" style="text-align: center; padding: 2rem;">Nenhum motorista encontrado</td>
+          <td colspan="10" class="table-empty-cell" style="text-align: center; padding: 2rem;">Nenhum motorista encontrado</td>
         </tr>
       </tbody>
     </table>
@@ -173,6 +175,7 @@
     telefone: 'Telefone',
     celular: 'Celular',
     terceirizado: 'Terceirizado',
+    idEmpresa: 'Empresa',
     status: 'Status'
   }"
   [showModal]="showAuditModal"

@@ -61,6 +61,7 @@ export class MotoristaService {
 
     let query = this.motoristaRepository
       .createQueryBuilder('motorista')
+      .leftJoinAndSelect('motorista.empresa', 'empresa')
       .take(limit)
       .skip(skip)
       .orderBy('motorista.atualizadoEm', 'DESC');
@@ -144,6 +145,7 @@ export class MotoristaService {
   async findOne(id: string): Promise<Motorista> {
     const motorista = await this.motoristaRepository.findOne({
       where: { id },
+      relations: ['empresa'],
     });
 
     if (!motorista) {

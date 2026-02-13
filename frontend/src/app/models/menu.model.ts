@@ -2,6 +2,7 @@ import { Permission } from './usuario.model';
 
 export interface MenuItem {
   label: string;
+  title?: string; // tooltip (ex.: nome completo quando o label é abreviado)
   route?: string;
   icon: string;
   requiredPermissions: Permission[];
@@ -145,6 +146,45 @@ export const MENU_CONFIGURATION: MenuConfig = {
                 Permission.TRECHO_READ,
                 Permission.TRECHO_UPDATE,
                 Permission.TRECHO_DELETE
+              ],
+              parentMenu: 'Cadastros'
+            },
+            {
+              label: 'Origem',
+              title: 'Origem da Ocorrência',
+              route: '/origem-ocorrencia',
+              icon: 'feather-layers',
+              requiredPermissions: [
+                Permission.ORIGEMOCORRENCIA_CREATE,
+                Permission.ORIGEMOCORRENCIA_READ,
+                Permission.ORIGEMOCORRENCIA_UPDATE,
+                Permission.ORIGEMOCORRENCIA_DELETE
+              ],
+              parentMenu: 'Cadastros'
+            },
+            {
+              label: 'Categoria',
+              title: 'Categoria da Ocorrência',
+              route: '/categoria-ocorrencia',
+              icon: 'feather-tag',
+              requiredPermissions: [
+                Permission.CATEGORIAOCORRENCIA_CREATE,
+                Permission.CATEGORIAOCORRENCIA_READ,
+                Permission.CATEGORIAOCORRENCIA_UPDATE,
+                Permission.CATEGORIAOCORRENCIA_DELETE
+              ],
+              parentMenu: 'Cadastros'
+            },
+            {
+              label: 'Empresas',
+              title: 'Empresas Terceiras',
+              route: '/empresa-terceira',
+              icon: 'feather-briefcase',
+              requiredPermissions: [
+                Permission.EMPRESATERCIRA_CREATE,
+                Permission.EMPRESATERCIRA_READ,
+                Permission.EMPRESATERCIRA_UPDATE,
+                Permission.EMPRESATERCIRA_DELETE
               ],
               parentMenu: 'Cadastros'
             },

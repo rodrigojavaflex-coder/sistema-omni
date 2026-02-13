@@ -9,8 +9,10 @@ import {
   Query,
   UseGuards,
   UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
 import { OcorrenciaService } from './ocorrencia.service';
 import { CreateOcorrenciaDto } from './dto/create-ocorrencia.dto';
 import { UpdateOcorrenciaDto } from './dto/update-ocorrencia.dto';
@@ -18,6 +20,7 @@ import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Permission } from '../../common/enums/permission.enum';
 import { AuditoriaInterceptor } from '../../common/interceptors/auditoria.interceptor';
+import { Usuario } from '../usuarios/entities/usuario.entity';
 
 @Controller('ocorrencias')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -27,8 +30,12 @@ export class OcorrenciaController {
 
   @Post()
   @Permissions(Permission.OCORRENCIA_CREATE)
-  create(@Body() createOcorrenciaDto: CreateOcorrenciaDto) {
-    return this.ocorrenciaService.create(createOcorrenciaDto);
+  create(
+    @Body() createOcorrenciaDto: CreateOcorrenciaDto,
+    @Req() req: Request & { user: Usuario },
+  ) {
+    const idUsuario = req.user?.id;
+    return this.ocorrenciaService.create(createOcorrenciaDto, idUsuario);
   }
 
   @Get()

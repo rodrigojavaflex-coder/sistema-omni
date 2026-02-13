@@ -91,6 +91,7 @@
                             class="submenu-link submenu-toggle"
                             [class.expanded]="isSubmenuExpanded(getSubmenuKey(item.label, subItem.label))"
                             (click)="toggleSubmenu(getSubmenuKey(item.label, subItem.label))"
+                            [attr.title]="subItem.title || subItem.label"
                           >
                             <span class="submenu-icon" [innerHTML]="getMenuIcon(subItem.icon)"></span>
                             <span class="submenu-text">{{ subItem.label }}</span>
@@ -108,6 +109,7 @@
                                     [routerLink]="nestedItem.route" 
                                     [class.active]="isRouteActive(nestedItem.route || '')"
                                     class="submenu-link"
+                                    [attr.title]="nestedItem.title || nestedItem.label"
                                     (click)="onMenuItemClick()"
                                   >
                                     <span class="submenu-icon" [innerHTML]="getMenuIcon(nestedItem.icon)"></span>
@@ -123,6 +125,7 @@
                           [routerLink]="subItem.route" 
                           [class.active]="isRouteActive(subItem.route || '')"
                           class="submenu-link"
+                          [attr.title]="subItem.title || subItem.label"
                           (click)="onMenuItemClick()"
                         >
                           <span class="submenu-icon" [innerHTML]="getMenuIcon(subItem.icon)"></span>

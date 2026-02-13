@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import path from 'path';
 
 export default new DataSource({
   type: 'postgres',
@@ -8,8 +9,8 @@ export default new DataSource({
   username: process.env.DATABASE_USERNAME || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'Ro112543*',
   database: process.env.DATABASE_NAME || 'omni',
-  entities: [__dirname + '/**/*.entity{.ts,.js}'],
-  migrations: [__dirname + '/migrations/*{.ts,.js}'],
+  entities: [path.join(__dirname, '**', '*.entity{.ts,.js}')],
+  migrations: [path.join(__dirname, 'migrations', '*.{ts,js}')],
   synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
   logging: process.env.DATABASE_LOGGING === 'true' ? true : ['error', 'warn'],
   ssl: false,

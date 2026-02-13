@@ -214,6 +214,7 @@ export class MotoristaListComponent extends BaseListComponent<Motorista> {
     const headers = [
       'Nome',
       'Matrícula',
+      'Empresa',
       'CPF',
       'Identidade',
       'Sexo',
@@ -237,6 +238,7 @@ export class MotoristaListComponent extends BaseListComponent<Motorista> {
     const data = items.map(item => [
       item.nome || '-',
       item.matricula || '-',
+      item.empresa?.descricao || '-',
       this.formatCPF(item.cpf),
       item.identidade || '-',
       item.sexo || '-',
@@ -264,6 +266,7 @@ export class MotoristaListComponent extends BaseListComponent<Motorista> {
     const headers = [
       'Nome',
       'Matrícula',
+      'Empresa',
       'CPF',
       'Telefone',
       'Celular',
@@ -273,6 +276,7 @@ export class MotoristaListComponent extends BaseListComponent<Motorista> {
     const data = items.map(item => [
       item.nome || '-',
       item.matricula || '-',
+      item.empresa?.descricao || '-',
       this.formatCPF(item.cpf),
       item.telefone || '-',
       item.celular || '-',

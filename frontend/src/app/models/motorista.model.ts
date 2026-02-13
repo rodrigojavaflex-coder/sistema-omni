@@ -24,6 +24,8 @@ export interface Motorista {
   celular?: string;
   terceirizado?: Terceirizado;
   status: Status;
+  idEmpresa?: string;
+  empresa?: { id: string; descricao: string };
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -49,6 +51,7 @@ export interface CreateMotoristaDto {
   celular?: string;
   terceirizado?: Terceirizado;
   status?: Status;
+  idEmpresa?: string;
 }
 
 export interface UpdateMotoristaDto extends Partial<CreateMotoristaDto> {}

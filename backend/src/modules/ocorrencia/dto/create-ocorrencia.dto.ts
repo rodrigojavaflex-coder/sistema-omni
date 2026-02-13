@@ -6,6 +6,7 @@ import {
   IsDateString,
   IsUUID,
   IsInt,
+  IsNumber,
   Min,
   MaxLength,
   IsObject,
@@ -37,6 +38,39 @@ export class CreateOcorrenciaDto {
   @IsUUID('4', { message: 'ID do trecho inválido' })
   @IsOptional()
   idTrecho?: string;
+
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsUUID('4', { message: 'ID da origem inválido' })
+  @IsNotEmpty({ message: 'Origem da ocorrência é obrigatória' })
+  idOrigem: string;
+
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsUUID('4', { message: 'ID da categoria inválido' })
+  @IsNotEmpty({ message: 'Categoria da ocorrência é obrigatória' })
+  idCategoria: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  processoSei?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  numeroOrcamento?: string;
+
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === '' || value == null ? undefined : Number(value),
+  )
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Valor do orçamento inválido' })
+  @Min(0, { message: 'Valor do orçamento não pode ser negativo' })
+  valorDoOrcamento?: number;
+
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsUUID('4', { message: 'ID da empresa inválido' })
+  @IsNotEmpty({ message: 'Empresa do motorista é obrigatória' })
+  idEmpresaDoMotorista: string;
 
   @IsEnum(TipoOcorrencia, { message: 'Tipo de ocorrência inválido' })
   @IsNotEmpty({ message: 'Tipo de ocorrência é obrigatório' })

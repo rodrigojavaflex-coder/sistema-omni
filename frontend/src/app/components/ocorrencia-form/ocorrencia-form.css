@@ -1,3 +1,13 @@
+/* Larguras: Origem = mesma da Data e Hora; Categoria = maior */
+.form-inline-origem-categoria .form-group-origem {
+  flex: 0 0 200px;
+  min-width: 200px;
+}
+.form-inline-origem-categoria .form-group-categoria {
+  flex: 1;
+  min-width: 280px;
+}
+
 /* Estilos globais do design system aplicados */
 
 /* Header do formulário */
