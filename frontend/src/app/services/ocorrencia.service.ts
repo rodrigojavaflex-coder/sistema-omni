@@ -57,12 +57,45 @@ export class OcorrenciaService {
           params = params.append('terceirizado', t);
         });
       }
+      if (find.idOrigem && find.idOrigem.length > 0) {
+        find.idOrigem.forEach(id => {
+          params = params.append('idOrigem', id);
+        });
+      }
+      if (find.idCategoria && find.idCategoria.length > 0) {
+        find.idCategoria.forEach(id => {
+          params = params.append('idCategoria', id);
+        });
+      }
+      if (find.numero) params = params.set('numero', find.numero);
     }
     return this.http.get<OcorrenciaListResponse>(`${environment.apiUrl}/ocorrencias`, { params });
   }
 
   getById(id: string): Observable<Ocorrencia> {
     return this.http.get<Ocorrencia>(`${environment.apiUrl}/ocorrencias/${id}`);
+  }
+
+  /** Verifica se já existe ocorrência para o motorista na mesma data (aviso, não bloqueia). */
+  verificarOcorrenciaMotoristaDataHora(
+    idMotorista: string,
+    dataHora: string,
+    idOcorrenciaExcluir?: string,
+  ): Observable<{
+    existe: boolean;
+    numero?: string;
+    origem?: string;
+    categoria?: string;
+  }> {
+    let params = new HttpParams()
+      .set('idMotorista', idMotorista)
+      .set('dataHora', dataHora);
+    if (idOcorrenciaExcluir) {
+      params = params.set('idOcorrenciaExcluir', idOcorrenciaExcluir);
+    }
+    return this.http.get<
+      { existe: boolean; numero?: string; origem?: string; categoria?: string }
+    >(`${environment.apiUrl}/ocorrencias/check-motorista-data`, { params });
   }
 
   create(dto: CreateOcorrenciaDto): Observable<Ocorrencia> {

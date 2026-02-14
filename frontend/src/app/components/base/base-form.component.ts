@@ -98,7 +98,6 @@ export abstract class BaseFormComponent<T> implements OnInit, OnDestroy {
   }
 
   cancel(): void {
-    console.log('🔵 Cancel clicked - navigating to:', this.getListRoute());
     this.router.navigate([this.getListRoute()]);
   }
 
@@ -123,7 +122,6 @@ export abstract class BaseFormComponent<T> implements OnInit, OnDestroy {
       }
 
       // Volta para a listagem SEM exibir mensagem de sucesso
-      console.log('✅ Save successful - navigating to:', this.getListRoute());
       this.router.navigate([this.getListRoute()]);
     } catch (error) {
       // Apenas erros são exibidos
@@ -158,8 +156,6 @@ export abstract class BaseFormComponent<T> implements OnInit, OnDestroy {
    * Trata erros do backend com mensagens amigáveis
    */
   protected handleError(error: any, defaultMessage: string): void {
-    console.error('❌ ERROR:', error);
-
     let message = defaultMessage;
 
     // Verifica se é erro HTTP

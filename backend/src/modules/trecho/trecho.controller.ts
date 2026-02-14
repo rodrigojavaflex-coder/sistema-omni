@@ -32,7 +32,7 @@ export class TrechoController {
   }
 
   @Get()
-  @Permissions(Permission.TRECHO_READ)
+  @Permissions(Permission.TRECHO_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
   findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -50,7 +50,7 @@ export class TrechoController {
   }
 
   @Get('by-location/:latitude/:longitude')
-  @Permissions(Permission.TRECHO_READ)
+  @Permissions(Permission.TRECHO_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
   async findByLocation(
     @Param('latitude') latitude: string,
     @Param('longitude') longitude: string,
@@ -67,7 +67,7 @@ export class TrechoController {
   }
 
   @Get(':id')
-  @Permissions(Permission.TRECHO_READ)
+  @Permissions(Permission.TRECHO_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
   findOne(@Param('id') id: string) {
     return this.trechoService.findOne(id);
   }

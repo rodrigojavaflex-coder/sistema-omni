@@ -9,7 +9,7 @@ import { TrechoService } from '../../services/trecho.service';
 import { OrigemOcorrenciaService } from '../../services/origem-ocorrencia.service';
 import { CategoriaOcorrenciaService } from '../../services/categoria-ocorrencia.service';
 import { EmpresaTerceiraService } from '../../services/empresa-terceira.service';
-import { CreateOcorrenciaDto, UpdateOcorrenciaDto } from '../../models/ocorrencia.model';
+import { CreateOcorrenciaDto, UpdateOcorrenciaDto, Ocorrencia } from '../../models/ocorrencia.model';
 import { TipoOcorrencia } from '../../models/tipo-ocorrencia.enum';
 import { Linha } from '../../models/linha.enum';
 import { Arco } from '../../models/arco.enum';
@@ -27,7 +27,10 @@ import { MotoristaAutocompleteComponent } from '../shared/motorista-autocomplete
 import { TrechoAutocompleteComponent } from '../shared/trecho-autocomplete/trecho-autocomplete.component';
 import { MapaLocalizacaoComponent, PontoLocalizacao } from '../shared/mapa-localizacao/mapa-localizacao.component';
 import { DataHoraPickerComponent } from '../shared/data-hora-picker/data-hora-picker.component';
+import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
+import { takeUntil, debounceTime } from 'rxjs/operators';
 import { ViewChild, ElementRef } from '@angular/core';
 
 @Component({
@@ -41,7 +44,8 @@ import { ViewChild, ElementRef } from '@angular/core';
     MotoristaAutocompleteComponent,
     TrechoAutocompleteComponent,
     MapaLocalizacaoComponent,
-    DataHoraPickerComponent
+    DataHoraPickerComponent,
+    ConfirmationModalComponent
   ],
   templateUrl: './ocorrencia-form.html',
   styleUrls: ['./ocorrencia-form.css']
@@ -56,11 +60,20 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
   private empresaService = inject(EmpresaTerceiraService);
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
+  private sanitizer = inject(DomSanitizer);
 
   origens: { id: string; descricao: string }[] = [];
   categorias: { id: string; descricao: string; idOrigem: string }[] = [];
   empresas: { id: string; descricao: string }[] = [];
   motoristaComEmpresa = false;
+
+  /** Ocorrência carregada em edição (para exibir numero) */
+  ocorrencia: Ocorrencia | null = null;
+
+  /** Modal de aviso: já existe ocorrência para o motorista na mesma data */
+  showOcorrenciaDuplicadaModal = false;
+  ocorrenciaDuplicadaMessage = '';
+  ocorrenciaDuplicadaMessageHtml?: SafeHtml;
 
   @ViewChild(MapaLocalizacaoComponent) mapaComponent!: MapaLocalizacaoComponent;
 
@@ -80,6 +93,10 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
 
   localizacaoSelecionada: PontoLocalizacao | null = null;
 
+  /** Valor "cru" do orçamento enquanto o campo está focado (sem máscara de milhar) */
+  valorOrcamentoRaw = '';
+  isValorOrcamentoFocused = false;
+
   constructor(router: Router) {
     super(router);
   }
@@ -89,10 +106,20 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
     if (id) {
       this.editMode = true;
       this.entityId = id;
+    } else {
+      this.ocorrencia = null;
     }
     this.origemService.getAll().subscribe((list) => (this.origens = list));
     this.empresaService.getAll().subscribe((list) => (this.empresas = list));
     super.ngOnInit();
+    // Disparo 2: quando Data ou Hora mudam (após preencher os dois), verifica novamente
+    this.form
+      .get('dataHora')
+      ?.valueChanges.pipe(
+        debounceTime(400),
+        takeUntil(this.destroy$),
+      )
+      .subscribe(() => this.verificarOcorrenciaMotoristaDataHora());
   }
 
   protected initializeForm(): void {
@@ -137,13 +164,7 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
 
   protected buildFormData(): CreateOcorrenciaDto | UpdateOcorrenciaDto {
     const formValue = this.form.getRawValue();
-    
-    console.log('🔍 buildFormData - Valores do formulário:', {
-      idVeiculo: formValue.idVeiculo,
-      idMotorista: formValue.idMotorista,
-      idTrecho: formValue.idTrecho
-    });
-    
+
     const data: any = {
       dataHora: formValue.dataHora,
       idVeiculo: formValue.idVeiculo,
@@ -162,12 +183,6 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       descricao: formValue.descricao,
       houveVitimas: formValue.houveVitimas
     };
-
-    console.log('📤 Dados a enviar para o backend:', {
-      idVeiculo: data.idVeiculo,
-      idMotorista: data.idMotorista,
-      idTrecho: data.idTrecho
-    });
 
     // Campos opcionais
     if (formValue.observacoesTecnicas) data.observacoesTecnicas = formValue.observacoesTecnicas;
@@ -220,6 +235,7 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
 
   protected async loadEntityById(id: string): Promise<void> {
     const ocorrencia = await firstValueFrom(this.ocorrenciaService.getById(id));
+    this.ocorrencia = ocorrencia;
     
     // A data vem como Date object que JavaScript já converteu para local time
     // Mas quando enviamos para o form input datetime-local, ele espera a hora LOCAL
@@ -299,6 +315,10 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
     } else {
       this.form.get('idCategoria')?.disable();
     }
+    // Em edição: disparar a verificação motorista+data após carregar (avisa se houver outra no mesmo minuto)
+    if (dataHoraFormatted && ocorrencia.idMotorista) {
+      setTimeout(() => this.verificarOcorrenciaMotoristaDataHora(), 300);
+    }
   }
 
   protected override getListRoute(): string {
@@ -324,6 +344,77 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       this.form.get('idEmpresaDoMotorista')?.enable();
       this.form.patchValue({ idEmpresaDoMotorista: '' });
     }
+    // Disparo 1: ao selecionar motorista (rodar após o próximo tick para o form já ter idMotorista)
+    setTimeout(() => this.verificarOcorrenciaMotoristaDataHora(), 0);
+  }
+
+  /**
+   * Verifica se já existe ocorrência para o motorista na mesma data/hora e exibe aviso (não bloqueia).
+   * Disparada em: (1) ao selecionar motorista no autocomplete; (2) ao alterar Data ou Hora (valueChanges).
+   * Só chama a API quando há idMotorista e dataHora preenchidos (Data e Hora são os dois campos do picker).
+   */
+  private verificarOcorrenciaMotoristaDataHora(): void {
+    const idMotorista = this.form.get('idMotorista')?.value;
+    const dataHora = this.form.get('dataHora')?.value;
+    const dataHoraStr = typeof dataHora === 'string' ? dataHora.trim() : '';
+
+    if (!idMotorista || !dataHoraStr) return;
+    // Formato esperado pelo backend: "YYYY-MM-DDTHH:mm" (DataHoraPicker emite assim quando data e hora estão preenchidos)
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dataHoraStr)) return;
+    // Em edição: enviar o id da ocorrência atual para o backend desconsiderar (não mostrar aviso do próprio registro)
+    const idExcluir =
+      this.editMode && (this.entityId || this.ocorrencia?.id)
+        ? (this.entityId || this.ocorrencia?.id)
+        : undefined;
+
+    this.ocorrenciaService
+      .verificarOcorrenciaMotoristaDataHora(idMotorista, dataHoraStr, idExcluir)
+      .subscribe({
+        next: (res) => {
+          if (res.existe) {
+            const dataFormatada = this.formatDataParaMsg(dataHoraStr);
+            const esc = (s: string) =>
+              String(s ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+            const numero = res.numero ? esc(res.numero) : '';
+            const origem = res.origem ? esc(res.origem) : '';
+            const categoria = res.categoria ? esc(res.categoria) : '';
+            const linhas: string[] = [
+              `Já existe ocorrência para este motorista na data ${dataFormatada}`,
+            ];
+            if (numero) linhas.push(`<strong>Nº ${numero}</strong>`);
+            if (origem || categoria) {
+              linhas.push('Registro existente:');
+              if (origem) linhas.push(`Origem: ${origem}`);
+              if (categoria) linhas.push(`Categoria: ${categoria}`);
+            }
+            this.ocorrenciaDuplicadaMessage = linhas.join(' ').replace(/<[^>]+>/g, '');
+            this.ocorrenciaDuplicadaMessageHtml = this.sanitizer.bypassSecurityTrustHtml(
+              linhas.join('<br>'),
+            );
+            this.showOcorrenciaDuplicadaModal = true;
+          }
+        },
+        error: () => {
+          // Não bloquear o usuário em caso de erro na verificação
+        },
+      });
+  }
+
+  /** Formata "YYYY-MM-DD" ou "YYYY-MM-DDTHH:mm" para dd/MM/yyyy */
+  private formatDataParaMsg(dataHoraStr: string): string {
+    const s = dataHoraStr.replace('T', ' ').substring(0, 10);
+    const [y, m, d] = s.split('-');
+    return d && m && y ? `${d}/${m}/${y}` : s;
+  }
+
+  closeOcorrenciaDuplicadaModal(): void {
+    this.showOcorrenciaDuplicadaModal = false;
+    this.ocorrenciaDuplicadaMessage = '';
+    this.ocorrenciaDuplicadaMessageHtml = undefined;
   }
 
   onOrigemSelected(): void {
@@ -340,10 +431,14 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
     });
   }
 
-  /** Exibe o valor do orçamento formatado (pt-BR: 1.234,56) */
+  /** Valor exibido no campo: ao focar é o valor cru; ao sair é o formatado (pt-BR). */
   getValorOrcamentoDisplay(): string {
-    const v = this.form.get('valorDoOrcamento')?.value;
-    if (v == null || v === '') return '';
+    if (this.isValorOrcamentoFocused) return this.valorOrcamentoRaw;
+    return this.formatValorOrcamentoParaExibicao(this.form.get('valorDoOrcamento')?.value);
+  }
+
+  private formatValorOrcamentoParaExibicao(v: number | null | undefined): string {
+    if (v == null) return '';
     const n = Number(v);
     if (isNaN(n) || n < 0) return '';
     return n.toLocaleString('pt-BR', {
@@ -352,40 +447,49 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
     });
   }
 
-  /** Formata o valor ao digitar (pt-BR). Aceita vírgula; se houver mais de 2 decimais, os extras viram parte inteira (ex.: "3,000" -> 30,00). */
+  /** Converte número para string crua (ex.: 12345.67 -> "12345,67") para edição. */
+  private valorOrcamentoToRaw(v: number | null | undefined): string {
+    if (v == null) return '';
+    const n = Number(v);
+    if (isNaN(n) || n < 0) return '';
+    return n.toFixed(2).replace('.', ',');
+  }
+
+  onValorOrcamentoFocus(): void {
+    this.isValorOrcamentoFocused = true;
+    this.valorOrcamentoRaw = this.valorOrcamentoToRaw(this.form.get('valorDoOrcamento')?.value);
+  }
+
+  onValorOrcamentoBlur(): void {
+    this.isValorOrcamentoFocused = false;
+    this.valorOrcamentoRaw = '';
+  }
+
+  /**
+   * Enquanto digita: só sanitiza (dígitos e uma vírgula, máx. 2 decimais).
+   * Não formata com milhar, para não deslocar cursor e respeitar backspace.
+   */
   onValorOrcamentoInput(e: Event): void {
     const input = e.target as HTMLInputElement;
     let raw = input.value.replace(/[^\d,]/g, '');
     const commaIdx = raw.indexOf(',');
-    let intPart: string;
-    let decPart: string;
     if (commaIdx >= 0) {
-      intPart = raw.slice(0, commaIdx).replace(/\D/g, '');
-      const after = raw.slice(commaIdx + 1).replace(/\D/g, '');
-      if (after.length > 2) {
-        intPart = intPart + after.slice(0, -2);
-        decPart = after.slice(-2);
-      } else {
-        decPart = after;
-      }
-    } else {
-      intPart = raw;
-      decPart = '';
+      const before = raw.slice(0, commaIdx);
+      const after = raw.slice(commaIdx + 1).slice(0, 2);
+      raw = `${before},${after}`;
     }
-    if (intPart === '' && decPart === '') {
+    if (raw === '') {
       this.form.patchValue({ valorDoOrcamento: null });
       this.form.get('valorDoOrcamento')?.updateValueAndValidity();
-      input.value = '';
+      this.valorOrcamentoRaw = '';
       return;
     }
-    const num = parseFloat(`${intPart || '0'}.${(decPart || '00').padEnd(2, '0').slice(0, 2)}`);
+    const normalized = raw === ',' ? '0' : raw.replace(',', '.');
+    const num = parseFloat(normalized);
     if (!isNaN(num) && num >= 0) {
       this.form.patchValue({ valorDoOrcamento: num });
       this.form.get('valorDoOrcamento')?.updateValueAndValidity();
-      input.value = num.toLocaleString('pt-BR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+      this.valorOrcamentoRaw = raw;
     }
   }
 

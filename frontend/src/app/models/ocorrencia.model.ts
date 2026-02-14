@@ -12,6 +12,8 @@ import { Trecho } from './trecho.model';
 
 export interface Ocorrencia {
   id: string;
+  /** Número único: AAAA + sequencial 6 dígitos no ano (ex.: 2026000001) */
+  numero?: string;
   dataHora: Date;
   veiculo: Veiculo;
   idVeiculo: string;
@@ -48,10 +50,13 @@ export interface Ocorrencia {
   informacoesTestemunhas?: string;
   idOrigem?: string;
   idCategoria?: string;
+  origem?: { id: string; descricao: string };
+  categoria?: { id: string; descricao: string };
   processoSei?: string;
   numeroOrcamento?: string;
   valorDoOrcamento?: number;
   idEmpresaDoMotorista?: string;
+  empresaDoMotorista?: { id: string; descricao: string };
   criadoEm: Date;
   atualizadoEm: Date;
 }
@@ -113,6 +118,9 @@ export interface FindOcorrenciaDto {
   culpabilidade?: string[];
   houveVitimas?: string[];
   terceirizado?: string[];
+  idOrigem?: string[];
+  idCategoria?: string[];
+  numero?: string;
 }
 
 export interface OcorrenciaListResponse {

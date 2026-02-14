@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-confirmation-modal',
@@ -11,7 +12,8 @@ import { CommonModule } from '@angular/common';
           <h3>{{ title }}</h3>
         </div>
         <div class="modal-body">
-          <p>{{ message }}</p>
+          <p *ngIf="!messageHtml">{{ message }}</p>
+          <div *ngIf="messageHtml" [innerHTML]="messageHtml"></div>
         </div>
         <div class="modal-footer">
           <button *ngIf="cancelText" class="btn btn-secondary" (click)="onCancel()">
@@ -30,6 +32,8 @@ export class ConfirmationModalComponent {
   @Input() isVisible = false;
   @Input() title = 'Confirmação';
   @Input() message = 'Tem certeza que deseja continuar?';
+  /** Quando informado, exibe HTML em vez de message (use conteúdo confiável/sanitizado). */
+  @Input() messageHtml?: SafeHtml;
   @Input() confirmText = 'Sim';
   @Input() cancelText = 'Cancelar';
   

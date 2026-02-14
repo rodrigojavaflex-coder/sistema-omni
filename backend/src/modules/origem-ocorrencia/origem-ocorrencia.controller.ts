@@ -32,13 +32,13 @@ export class OrigemOcorrenciaController {
   }
 
   @Get()
-  @Permissions(Permission.ORIGEMOCORRENCIA_READ)
+  @Permissions(Permission.ORIGEMOCORRENCIA_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
   findAll() {
     return this.service.findAll();
   }
 
   @Get(':id')
-  @Permissions(Permission.ORIGEMOCORRENCIA_READ)
+  @Permissions(Permission.ORIGEMOCORRENCIA_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.service.findOne(id);
   }

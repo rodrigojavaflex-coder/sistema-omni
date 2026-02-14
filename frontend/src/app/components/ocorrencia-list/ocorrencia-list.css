@@ -1,4 +1,4 @@
-﻿/* Layout responsivo para filtros */
+/* Layout responsivo para filtros */
 .list-container {
   padding: 1.5rem;
   max-width: 100%;
@@ -64,6 +64,11 @@
   background: white;
 }
 
+.filter-numero {
+  min-width: 120px;
+  max-width: 140px;
+}
+
 .filter-input:focus,
 .filter-select:focus {
   outline: none;
@@ -80,11 +85,11 @@
 
 /* Filtros com multi-select - dropdowns com z-index alto */
 
-/* Filtros autocomplete - dropdowns com z-index alto */
+/* Filtros autocomplete - dropdowns com z-index alto (largura maior) */
 .filters app-veiculo-autocomplete,
 .filters app-motorista-autocomplete {
   flex: 0 1 auto;
-  min-width: 130px;
+  min-width: 220px;
   display: block;
   position: relative;
 }
@@ -248,7 +253,7 @@
 
   .filters app-veiculo-autocomplete,
   .filters app-motorista-autocomplete {
-    min-width: 110px;
+    min-width: 180px;
   }
 
   .advanced-filters app-multi-select {

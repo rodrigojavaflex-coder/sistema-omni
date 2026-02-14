@@ -1,3 +1,9 @@
+/* Campo somente leitura (ex.: Nº da Ocorrência) */
+.form-input-readonly {
+  background: #f5f5f5;
+  cursor: default;
+}
+
 /* Larguras: Origem = mesma da Data e Hora; Categoria = maior */
 .form-inline-origem-categoria .form-group-origem {
   flex: 0 0 200px;

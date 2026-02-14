@@ -7,7 +7,11 @@ import { Observable } from 'rxjs';
 import { OcorrenciaService } from '../../services/ocorrencia.service';
 import { VeiculoService } from '../../services/veiculo.service';
 import { MotoristaService } from '../../services/motorista.service';
+import { OrigemOcorrenciaService } from '../../services/origem-ocorrencia.service';
+import { CategoriaOcorrenciaService } from '../../services/categoria-ocorrencia.service';
 import { Ocorrencia, FindOcorrenciaDto, OcorrenciaListResponse } from '../../models/ocorrencia.model';
+import { OrigemOcorrencia } from '../../models/origem-ocorrencia.model';
+import { CategoriaOcorrencia } from '../../models/categoria-ocorrencia.model';
 import { TipoOcorrencia } from '../../models/tipo-ocorrencia.enum';
 import { Linha } from '../../models/linha.enum';
 import { Arco } from '../../models/arco.enum';
@@ -45,6 +49,8 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   private ocorrenciaService = inject(OcorrenciaService);
   private veiculoService = inject(VeiculoService);
   private motoristaService = inject(MotoristaService);
+  private origemService = inject(OrigemOcorrenciaService);
+  private categoriaService = inject(CategoriaOcorrenciaService);
   private router = inject(Router);
 
   currentPage = 1;
@@ -56,6 +62,7 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   showAdvancedFilters = false;
 
   // Filtros básicos
+  numeroOcorrenciaFilter = '';
   tipoFilter: string[] = [];
   linhaFilter: string[] = [];
   dataInicioFilter = '';
@@ -70,6 +77,8 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   culpabilidadeFilter: string[] = [];
   houveVitimasFilter: string[] = [];
   terceirizadoFilter: string[] = [];
+  origemFilter: string[] = [];
+  classificacaoFilter: string[] = [];
 
   // Opções de filtros básicos
   tipoOptions = Object.values(TipoOcorrencia);
@@ -82,6 +91,8 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   culpabilidadeOptions = Object.values(Culpabilidade);
   houveVitimasOptions = Object.values(SimNao);
   terceirizadoOptions = Object.values(Terceirizado);
+  origemOptions: string[] = [];
+  classificacaoOptions: string[] = [];
 
   filterTimeout: any = null;
 
@@ -91,8 +102,19 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   showAuditModal = false;
   selectedItemForAudit: Ocorrencia | null = null;
 
+  private origensList: OrigemOcorrencia[] = [];
+  private categoriasList: CategoriaOcorrencia[] = [];
+
   override ngOnInit(): void {
     super.ngOnInit();
+    this.origemService.getAll().subscribe((list) => {
+      this.origensList = list;
+      this.origemOptions = list.map((o) => o.descricao);
+    });
+    this.categoriaService.getAll().subscribe((list) => {
+      this.categoriasList = list;
+      this.classificacaoOptions = list.map((c) => c.descricao);
+    });
   }
 
   loadItems(): void {
@@ -114,6 +136,9 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
     }
     if (this.dataFimFilter) {
       filters.dataFim = this.dataFimFilter;
+    }
+    if (this.numeroOcorrenciaFilter?.trim()) {
+      filters.numero = this.numeroOcorrenciaFilter.trim();
     }
     if (this.veiculoFilter) {
       filters.idVeiculo = this.veiculoFilter;
@@ -138,6 +163,16 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
     }
     if (this.terceirizadoFilter.length > 0) {
       filters.terceirizado = this.terceirizadoFilter;
+    }
+    if (this.origemFilter.length > 0) {
+      filters.idOrigem = this.origemFilter.map(
+        (d) => this.origensList.find((o) => o.descricao === d)?.id
+      ).filter((id): id is string => !!id);
+    }
+    if (this.classificacaoFilter.length > 0) {
+      filters.idCategoria = this.classificacaoFilter.map(
+        (d) => this.categoriasList.find((c) => c.descricao === d)?.id
+      ).filter((id): id is string => !!id);
     }
 
     this.ocorrenciaService.getOcorrencias(filters).subscribe({
@@ -173,6 +208,7 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   }
 
   clearFilters(): void {
+    this.numeroOcorrenciaFilter = '';
     this.tipoFilter = [];
     this.linhaFilter = [];
     this.dataInicioFilter = '';
@@ -185,6 +221,8 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
     this.culpabilidadeFilter = [];
     this.houveVitimasFilter = [];
     this.terceirizadoFilter = [];
+    this.origemFilter = [];
+    this.classificacaoFilter = [];
     this.onFilterChange();
   }
 
@@ -270,6 +308,7 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
       limit: 100000
     };
 
+    if (this.numeroOcorrenciaFilter?.trim()) filters.numero = this.numeroOcorrenciaFilter.trim();
     if (this.tipoFilter.length > 0) filters.tipo = this.tipoFilter;
     if (this.linhaFilter.length > 0) filters.linha = this.linhaFilter;
     if (this.dataInicioFilter) filters.dataInicio = this.dataInicioFilter;
@@ -282,6 +321,16 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
     if (this.culpabilidadeFilter.length > 0) filters.culpabilidade = this.culpabilidadeFilter;
     if (this.houveVitimasFilter.length > 0) filters.houveVitimas = this.houveVitimasFilter;
     if (this.terceirizadoFilter.length > 0) filters.terceirizado = this.terceirizadoFilter;
+    if (this.origemFilter.length > 0) {
+      filters.idOrigem = this.origemFilter.map(
+        (d) => this.origensList.find((o) => o.descricao === d)?.id
+      ).filter((id): id is string => !!id);
+    }
+    if (this.classificacaoFilter.length > 0) {
+      filters.idCategoria = this.classificacaoFilter.map(
+        (d) => this.categoriasList.find((c) => c.descricao === d)?.id
+      ).filter((id): id is string => !!id);
+    }
 
     return new Observable(observer => {
       this.ocorrenciaService.getOcorrencias(filters).subscribe({

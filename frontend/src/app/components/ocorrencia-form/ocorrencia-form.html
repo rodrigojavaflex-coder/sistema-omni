@@ -1,6 +1,6 @@
 <div class="form-container">
   <div class="form-header">
-    <h2>{{ getFormTitle() }} Ocorrência</h2>
+    <h2>{{ getFormTitle() }} Ocorrência {{ editMode && ocorrencia?.numero ? '#' + (ocorrencia?.numero ?? '') : '' }}</h2>
     
     <!-- Botões ao lado do título -->
     <div class="form-actions form-actions-header">
@@ -17,7 +17,12 @@
     <!-- Dados Básicos -->
     <div class="form-section">
       <h3>Dados Básicos</h3>
-      
+      @if (editMode && ocorrencia?.numero) {
+        <div class="form-group">
+          <label class="form-label">Nº da Ocorrência</label>
+          <div class="form-input form-input-readonly">{{ ocorrencia?.numero }}</div>
+        </div>
+      }
       <div class="form-inline">
         <div class="form-group">
           <label class="form-label">Data e Hora *</label>
@@ -87,6 +92,8 @@
             class="form-input"
             [value]="getValorOrcamentoDisplay()"
             (input)="onValorOrcamentoInput($event)"
+            (focus)="onValorOrcamentoFocus()"
+            (blur)="onValorOrcamentoBlur()"
             inputmode="decimal"
             placeholder="0,00"
           />
@@ -352,3 +359,15 @@
     </div>
   </form>
 </div>
+
+<!-- Modal de aviso: ocorrência duplicada (mesmo motorista na mesma data) -->
+<app-confirmation-modal
+  [isVisible]="showOcorrenciaDuplicadaModal"
+  title="Atenção"
+  [message]="ocorrenciaDuplicadaMessage"
+  [messageHtml]="ocorrenciaDuplicadaMessageHtml"
+  confirmText="OK"
+  [cancelText]="''"
+  (confirmed)="closeOcorrenciaDuplicadaModal()"
+  (cancelled)="closeOcorrenciaDuplicadaModal()">
+</app-confirmation-modal>

@@ -134,19 +134,31 @@ export class ExportDataTransformer {
   }
 
   /**
+   * Formata valor monetário em pt-BR (ex.: 1234.56 -> "1.234,56")
+   */
+  static formatValorMonetario(valor: number | null | undefined): string {
+    if (valor == null || isNaN(valor)) return '';
+    return valor.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  /**
    * Extrai dados formatados de uma ocorrência para exportação em Excel
    * @param item Ocorrência a ser processada
    * @returns Array com dados formatados na sequência correta
    */
   static transformOcorrenciaToExcelRow(item: Ocorrencia): any[] {
     return [
+      this.formatCampo(item.numero),                                           // Número
       // Data e Hora
       this.formatData(item.dataHora),                                          // Data da Ocorrência
       this.formatHora(item.dataHora),                                          // Hora da Ocorrência
 
-      // Veículo e Tipo
+      // Veículo e Classificação (tipo)
       this.formatCampo(item.veiculo?.descricao),                               // Veículo
-      this.formatCampo(item.tipo),                                             // Tipo de Ocorrência
+      this.formatCampo(item.tipo),                                             // Classificação
       this.formatCampo(item.descricao),                                        // Descrição da ocorrência
       this.formatCampo(item.observacoesTecnicas),                              // Observações Técnicas
       this.formatCampo(item.aberturaPAP),                                      // Abertura de PAP
@@ -156,7 +168,16 @@ export class ExportDataTransformer {
       this.calculateIdadeMotorista(item.motorista?.dataNascimento),            // Idade do motorista
       this.formatTerceirizado(item.motorista?.terceirizado),                   // Motorista terceirizado
       this.formatCampo(item.motorista?.matricula),                             // Matrícula do Motorista
+      this.formatCampo(item.empresaDoMotorista?.descricao),                     // Empresa do Motorista
 
+      // Processo SEI, Orçamento
+      this.formatCampo(item.processoSei),                                      // Processo SEI
+      this.formatCampo(item.numeroOrcamento),                                   // Número do Orçamento
+      this.formatValorMonetario(item.valorDoOrcamento),                         // Valor do Orçamento
+
+      // Origem e Categoria
+      this.formatCampo(item.origem?.descricao),                                // Origem
+      this.formatCampo(item.categoria?.descricao),                              // Categoria
       // Localização
       this.formatCampo(item.localDetalhado),                                   // Local Detalhado
       this.formatCampo(item.linha),                                            // Linha
@@ -193,10 +214,11 @@ export class ExportDataTransformer {
    */
   static getExcelHeaders(): string[] {
     return [
+      'Número',
       'Data da Ocorrência',
       'Hora da Ocorrência',
       'Veículo',
-      'Tipo de Ocorrência',
+      'Classificação',
       'Descrição da Ocorrência',
       'Observações Técnicas',
       'Abertura de PAP',
@@ -204,6 +226,12 @@ export class ExportDataTransformer {
       'Idade do Motorista',
       'Motorista Terceirizado',
       'Matrícula do Motorista',
+      'Empresa do Motorista',
+      'Processo SEI',
+      'Número do Orçamento',
+      'Valor do Orçamento',
+      'Origem',
+      'Categoria',
       'Local Detalhado',
       'Linha',
       'Extensão',

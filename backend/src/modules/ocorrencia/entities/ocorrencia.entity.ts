@@ -20,7 +20,12 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 @Index(['dataHora'])
 @Index(['tipo'])
 @Index(['linha'])
+@Index(['numero'], { unique: true })
 export class Ocorrencia extends BaseEntity {
+  /** Número único: AAAA + sequencial 6 dígitos no ano (ex.: 2026000001) */
+  @Column({ type: 'varchar', length: 20, nullable: true, unique: true })
+  numero?: string;
+
   @Column({ type: 'timestamp', nullable: false })
   dataHora: Date;
 

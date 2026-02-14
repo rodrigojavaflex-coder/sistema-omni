@@ -59,6 +59,10 @@ export class OcorrenciaService {
       ocorrenciaData.idUsuario = idUsuario;
     }
 
+    const dataHoraDate = new Date(createOcorrenciaDto.dataHora);
+    const ano = dataHoraDate.getFullYear();
+    ocorrenciaData.numero = await this.getProximoNumeroOcorrencia(ano);
+
     const ocorrencia = this.ocorrenciaRepository.create(ocorrenciaData);
     const saved: any = await this.ocorrenciaRepository.save(ocorrencia);
 
@@ -82,6 +86,9 @@ export class OcorrenciaService {
     culpabilidade?: string | string[],
     houveVitimas?: string | string[],
     terceirizado?: string | string[],
+    idOrigem?: string | string[],
+    idCategoria?: string | string[],
+    numero?: string,
   ): Promise<{
     data: Ocorrencia[];
     total: number;
@@ -206,6 +213,30 @@ export class OcorrenciaService {
         conditions.push('motorista.terceirizado IN (:...terceirizados)');
         parameters.terceirizados = terceirizados;
       }
+    }
+
+    // Filtro por origem - suporta múltiplos valores
+    if (idOrigem) {
+      const origens = Array.isArray(idOrigem) ? idOrigem : [idOrigem];
+      if (origens.length > 0) {
+        conditions.push('ocorrencia.idOrigem IN (:...origens)');
+        parameters.origens = origens;
+      }
+    }
+
+    // Filtro por categoria - suporta múltiplos valores
+    if (idCategoria) {
+      const categorias = Array.isArray(idCategoria) ? idCategoria : [idCategoria];
+      if (categorias.length > 0) {
+        conditions.push('ocorrencia.idCategoria IN (:...categorias)');
+        parameters.categorias = categorias;
+      }
+    }
+
+    // Filtro por número da ocorrência (exato ou contém)
+    if (numero && numero.trim()) {
+      conditions.push('ocorrencia.numero LIKE :numero');
+      parameters.numero = '%' + numero.trim() + '%';
     }
 
     // Aplica as condições
@@ -402,6 +433,87 @@ export class OcorrenciaService {
       latitude,
       radiusMeters,
     ]);
+  }
+
+  /**
+   * Gera o próximo número da ocorrência no ano: AAAA + sequencial 6 dígitos (ex.: 2026000001)
+   */
+  private async getProximoNumeroOcorrencia(ano: number): Promise<string> {
+    const prefix = String(ano);
+    const result = await this.ocorrenciaRepository
+      .createQueryBuilder('o')
+      .select('o.numero')
+      .where('o.numero IS NOT NULL')
+      .andWhere('o.numero LIKE :prefix', { prefix: prefix + '%' })
+      .orderBy('o.numero', 'DESC')
+      .limit(1)
+      .getOne();
+
+    let proximoSeq = 1;
+    if (result?.numero && result.numero.length >= 10) {
+      const seqStr = result.numero.slice(-6);
+      const seq = parseInt(seqStr, 10);
+      if (!isNaN(seq)) proximoSeq = seq + 1;
+    }
+    return prefix + String(proximoSeq).padStart(6, '0');
+  }
+
+  /**
+   * Verifica se já existe ocorrência para o motorista na mesma data (dia), sem considerar hora.
+   * Retorna { existe, numero?, origem?, categoria? }. Em edição, passa idOcorrenciaExcluir para ignorar a própria.
+   */
+  async existsOcorrenciaMotoristaDataHora(
+    idMotorista: string,
+    dataHora: string,
+    idOcorrenciaExcluir?: string,
+  ): Promise<{
+    existe: boolean;
+    numero?: string;
+    origem?: string;
+    categoria?: string;
+  }> {
+    // dataHora vem como "2025-10-18T15:00" -> considerar só a data: mesmo dia [00:00:00, dia seguinte)
+    const s = dataHora.replace('T', ' ').substring(0, 10); // "2025-10-18"
+    const dataInicio = s + ' 00:00:00';
+    const d = new Date(s + 'T12:00:00');
+    d.setDate(d.getDate() + 1);
+    const dataFim =
+      d.getFullYear() +
+      '-' +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      '-' +
+      String(d.getDate()).padStart(2, '0') +
+      ' 00:00:00';
+
+    let qb = this.ocorrenciaRepository
+      .createQueryBuilder('o')
+      .leftJoin('o.origem', 'origem')
+      .leftJoin('o.categoria', 'categoria')
+      .select('o.numero', 'numero')
+      .addSelect('origem.descricao', 'origem')
+      .addSelect('categoria.descricao', 'categoria')
+      .where('o.idMotorista = :idMotorista', { idMotorista })
+      .andWhere('o.dataHora >= :dataInicio AND o.dataHora < :dataFim', {
+        dataInicio,
+        dataFim,
+      });
+
+    if (idOcorrenciaExcluir) {
+      qb = qb.andWhere('o.id != :idOcorrenciaExcluir', {
+        idOcorrenciaExcluir,
+      });
+    }
+
+    const raw = await qb
+      .orderBy('o.dataHora', 'ASC')
+      .limit(1)
+      .getRawOne<{ numero: string; origem: string; categoria: string }>();
+    return {
+      existe: !!raw,
+      numero: raw?.numero,
+      origem: raw?.origem,
+      categoria: raw?.categoria,
+    };
   }
 
   /**

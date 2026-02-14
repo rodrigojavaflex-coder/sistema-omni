@@ -55,6 +55,9 @@ export class OcorrenciaController {
     @Query('culpabilidade') culpabilidade?: string | string[],
     @Query('houveVitimas') houveVitimas?: string | string[],
     @Query('terceirizado') terceirizado?: string | string[],
+    @Query('idOrigem') idOrigem?: string | string[],
+    @Query('idCategoria') idCategoria?: string | string[],
+    @Query('numero') numero?: string,
   ) {
     return this.ocorrenciaService.findAll(
       page ? parseInt(page, 10) : 1,
@@ -71,6 +74,9 @@ export class OcorrenciaController {
       culpabilidade,
       houveVitimas,
       terceirizado,
+      idOrigem,
+      idCategoria,
+      numero,
     );
   }
 
@@ -81,6 +87,20 @@ export class OcorrenciaController {
     @Query('dataFim') dataFim?: string,
   ) {
     return this.ocorrenciaService.getStatistics(dataInicio, dataFim);
+  }
+
+  @Get('check-motorista-data')
+  @Permissions(Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
+  checkMotoristaData(
+    @Query('idMotorista') idMotorista: string,
+    @Query('dataHora') dataHora: string,
+    @Query('idOcorrenciaExcluir') idOcorrenciaExcluir?: string,
+  ) {
+    return this.ocorrenciaService.existsOcorrenciaMotoristaDataHora(
+      idMotorista,
+      dataHora,
+      idOcorrenciaExcluir,
+    );
   }
 
   @Get('nearby')
