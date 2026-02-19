@@ -65,6 +65,7 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
 
   // Filtros básicos
   numeroOcorrenciaFilter = '';
+  statusFilter: string[] = [];
   tipoFilter: string[] = [];
   linhaFilter: string[] = [];
   dataInicioFilter = '';
@@ -83,6 +84,7 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   classificacaoFilter: string[] = [];
 
   // Opções de filtros básicos
+  statusOptions = Object.values(StatusOcorrencia);
   tipoOptions = Object.values(TipoOcorrencia);
   linhaOptions = Object.values(Linha);
 
@@ -116,7 +118,6 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   showNovoStatusModal = false;
   novoStatus: StatusOcorrencia | null = null;
   observacaoStatus = '';
-  statusOptions = Object.values(StatusOcorrencia);
   isSavingStatus = false;
 
   private origensList: OrigemOcorrencia[] = [];
@@ -156,6 +157,9 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
     }
     if (this.numeroOcorrenciaFilter?.trim()) {
       filters.numero = this.numeroOcorrenciaFilter.trim();
+    }
+    if (this.statusFilter.length > 0) {
+      filters.status = this.statusFilter;
     }
     if (this.veiculoFilter) {
       filters.idVeiculo = this.veiculoFilter;
@@ -226,6 +230,7 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
 
   clearFilters(): void {
     this.numeroOcorrenciaFilter = '';
+    this.statusFilter = [];
     this.tipoFilter = [];
     this.linhaFilter = [];
     this.dataInicioFilter = '';
@@ -335,6 +340,16 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
       default:
         return 'status-badge status-badge-default';
     }
+  }
+
+  /** Dias corridos: não concluída = abertura até hoje; concluída = abertura até dataConclusao */
+  getDias(item: Ocorrencia): number | string {
+    const abertura = new Date(item.dataHora).getTime();
+    const fim = item.status === StatusOcorrencia.CONCLUIDA && item.dataConclusao
+      ? new Date(item.dataConclusao).getTime()
+      : Date.now();
+    const dias = Math.floor((fim - abertura) / (24 * 60 * 60 * 1000));
+    return dias >= 0 ? dias : '-';
   }
 
   getAvailableStatuses(): StatusOcorrencia[] {

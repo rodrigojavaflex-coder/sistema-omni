@@ -153,7 +153,7 @@ export const MENU_CONFIGURATION: MenuConfig = {
               label: 'Origem',
               title: 'Origem da Ocorrência',
               route: '/origem-ocorrencia',
-              icon: 'feather-layers',
+              icon: 'feather-archive',
               requiredPermissions: [
                 Permission.ORIGEMOCORRENCIA_CREATE,
                 Permission.ORIGEMOCORRENCIA_READ,
@@ -270,7 +270,7 @@ export const MENU_CONFIGURATION: MenuConfig = {
         {
           label: 'Painel de Ocorrências',
           route: '/ocorrencia/painel',
-          icon: 'feather-pie-chart',
+          icon: 'feather-bar-chart-2',
           requiredPermissions: [Permission.OCORRENCIA_PAINEL_VIEW],
           parentMenu: 'Gestão'
         }

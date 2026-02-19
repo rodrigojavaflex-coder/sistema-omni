@@ -16,6 +16,8 @@ export interface Ocorrencia {
   /** Número único: AAAA + sequencial 6 dígitos no ano (ex.: 2026000001) */
   numero?: string;
   status?: StatusOcorrencia;
+  /** Data de conclusão (preenchida pelo backend na listagem quando status = Concluída) */
+  dataConclusao?: string;
   dataHora: Date;
   veiculo: Veiculo;
   idVeiculo: string;

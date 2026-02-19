@@ -101,7 +101,11 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Bordas laterais por status: Registrada (vermelho), Em Análise (amarelo), Concluída (verde) */
+/* Total (destaque) e bordas por status */
+.stat-total {
+  border-left: 4px solid #2563eb;
+}
+
 .stat-registrada {
   border-left: 4px solid #dc2626;
 }

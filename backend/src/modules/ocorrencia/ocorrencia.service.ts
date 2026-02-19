@@ -270,6 +270,33 @@ export class OcorrenciaService {
 
     const [data, total] = await query.getManyAndCount();
 
+    // Para ocorrências concluídas, buscar dataConclusao no histórico (dataAlteracao quando statusNovo = CONCLUIDA)
+    const idsConcluidas = data
+      .filter((o) => o.status === StatusOcorrencia.CONCLUIDA)
+      .map((o) => o.id);
+    if (idsConcluidas.length > 0) {
+      const conclusoes = await this.historicoRepository
+        .createQueryBuilder('h')
+        .select('h.idOcorrencia', 'idOcorrencia')
+        .addSelect('MAX(h.dataAlteracao)', 'dataConclusao')
+        .where('h.idOcorrencia IN (:...ids)', { ids: idsConcluidas })
+        .andWhere('h.statusNovo = :status', {
+          status: StatusOcorrencia.CONCLUIDA,
+        })
+        .groupBy('h.idOcorrencia')
+        .getRawMany<{ idOcorrencia: string; dataConclusao: Date }>();
+      const mapConclusao = new Map(
+        conclusoes.map((c) => [c.idOcorrencia, c.dataConclusao])
+      );
+      data.forEach((o) => {
+        const dt = mapConclusao.get(o.id);
+        if (dt) {
+          (o as Ocorrencia & { dataConclusao?: string }).dataConclusao =
+            dt instanceof Date ? dt.toISOString() : String(dt);
+        }
+      });
+    }
+
     return {
       data,
       total,

@@ -36,6 +36,7 @@ export class BackfillStatusOcorrencia1739332000000
     `);
 
     // 3. Histórico para 2025 e anteriores: registro de conclusão (statusNovo = 'Concluída')
+    // dataAlteracao = dataHora + 1 dia para ficar após o registro (evita ordem invertida no modal)
     await queryRunner.query(`
       INSERT INTO historicoocorrencias (id, "criadoEm", "atualizadoEm", "idOcorrencia", "statusAnterior", "statusNovo", "dataAlteracao", "observacao", "idUsuario")
       SELECT 
@@ -45,7 +46,7 @@ export class BackfillStatusOcorrencia1739332000000
         o.id,
         'Registrada',
         'Concluída',
-        o."dataHora",
+        o."dataHora" + INTERVAL '1 day',
         NULL,
         (SELECT a."usuarioId" FROM auditoria a WHERE a.entidade = 'ocorrencias' AND a."entidadeId" = o.id::text AND a.acao = 'create' ORDER BY a."criadoEm" ASC LIMIT 1)
       FROM ocorrencias o

@@ -22,6 +22,13 @@
         placeholder="Nº ocorrência"
       >
 
+      <app-multi-select 
+        [options]="statusOptions"
+        [(ngModel)]="statusFilter"
+        (selectionChange)="onFilterChange()"
+        placeholder="Status...">
+      </app-multi-select>
+
       <input 
         type="date" 
         placeholder="Data início"
@@ -198,13 +205,14 @@
             <th>Nº</th>
             <th>Data/Hora</th>
             <th>Classificação</th>
-            <th>Status</th>
             <th>Veículo</th>
             <th>Motorista</th>
             <th>Linha</th>
             <th>Origem</th>
             <th>Categoria</th>
             <th>Vítimas</th>
+            <th>Status</th>
+            <th>Dias</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -215,15 +223,6 @@
               <td>{{ formatDate(item.dataHora) }}</td>
               <td>{{ item.tipo }}</td>
               <td>
-                @if (item.status) {
-                  <span [class]="getStatusClass(item.status)" [title]="item.status">
-                    {{ item.status }}
-                  </span>
-                } @else {
-                  -
-                }
-              </td>
-              <td>
                 <div>{{ item.veiculo.descricao }}</div>
                 <small>{{ item.veiculo.placa }}</small>
               </td>
@@ -232,6 +231,16 @@
               <td>{{ item.origem?.descricao || '-' }}</td>
               <td>{{ item.categoria?.descricao || '-' }}</td>
               <td>{{ item.houveVitimas }}</td>
+              <td>
+                @if (item.status) {
+                  <span [class]="getStatusClass(item.status)" [title]="item.status">
+                    {{ item.status }}
+                  </span>
+                } @else {
+                  -
+                }
+              </td>
+              <td>{{ getDias(item) }}</td>
               <td class="table-actions">
                 @if (canUpdate()) {
                   <button class="btn btn-small btn-primary" (click)="editItem(item)">

@@ -151,6 +151,12 @@
     <div class="loading-state">Carregando estatísticas...</div>
   } @else {
     <div class="stats-cards">
+      <div class="stat-card stat-total">
+        <div class="stat-content">
+          <div class="stat-label">Total de Ocorrências</div>
+          <div class="stat-value">{{ stats.registrada + stats.emAnalise + stats.concluida }}</div>
+        </div>
+      </div>
       <div class="stat-card stat-registrada">
         <div class="stat-content">
           <div class="stat-label">Registradas</div>
