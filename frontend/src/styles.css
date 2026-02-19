@@ -657,6 +657,25 @@ body.theme-dark .btn-secondary:disabled {
   opacity: 0.6;
 }
 
+/* Botão andamento em tema escuro - mantém verde escuro */
+body.theme-dark .btn-andamento {
+  background-color: #047857 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .btn-andamento:hover:not(:disabled) {
+  background-color: #059669 !important;
+  border-color: #10b981 !important;
+}
+
+body.theme-dark .btn-andamento:disabled {
+  background-color: #065f46 !important;
+  border-color: #047857 !important;
+  color: #9ca3af !important;
+  opacity: 0.6;
+}
+
 body.theme-dark .btn,
 body.theme-dark button {
   color: #f7fafc !important;
@@ -871,6 +890,19 @@ body.theme-light .btn-secondary:disabled {
 .btn-audit:hover:not(:disabled) {
   background-color: #2d3748 !important;
   border-color: #4a5568 !important;
+}
+
+/* Botão específico para andamento/status - verde escuro */
+.btn-andamento {
+  background-color: #047857 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+  transition: all 0.3s ease;
+}
+
+.btn-andamento:hover:not(:disabled) {
+  background-color: #059669 !important;
+  border-color: #10b981 !important;
 }
 
 /* Dropdown específico do header */

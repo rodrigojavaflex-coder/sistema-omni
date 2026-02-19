@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { CreateOcorrenciaDto, UpdateOcorrenciaDto, FindOcorrenciaDto, Ocorrencia, OcorrenciaListResponse } from '../models/ocorrencia.model';
+import { HistoricoOcorrencia, UpdateStatusOcorrenciaDto, OcorrenciaStats } from '../models/historico-ocorrencia.model';
 
 @Injectable({ providedIn: 'root' })
 export class OcorrenciaService {
@@ -68,6 +69,11 @@ export class OcorrenciaService {
         });
       }
       if (find.numero) params = params.set('numero', find.numero);
+      if (find.status && find.status.length > 0) {
+        find.status.forEach(s => {
+          params = params.append('status', s);
+        });
+      }
     }
     return this.http.get<OcorrenciaListResponse>(`${environment.apiUrl}/ocorrencias`, { params });
   }
@@ -123,5 +129,74 @@ export class OcorrenciaService {
       .set('longitude', longitude.toString());
     if (radius) params = params.set('radius', radius.toString());
     return this.http.get<Ocorrencia[]>(`${environment.apiUrl}/ocorrencias/nearby`, { params });
+  }
+
+  getHistorico(idOcorrencia: string): Observable<HistoricoOcorrencia[]> {
+    return this.http.get<HistoricoOcorrencia[]>(`${environment.apiUrl}/ocorrencias/${idOcorrencia}/historico`);
+  }
+
+  updateStatus(idOcorrencia: string, dto: UpdateStatusOcorrenciaDto): Observable<Ocorrencia> {
+    return this.http.patch<Ocorrencia>(`${environment.apiUrl}/ocorrencias/${idOcorrencia}/status`, dto);
+  }
+
+  updateHistoricoObservacao(idOcorrencia: string, idHistorico: string, observacao?: string): Observable<HistoricoOcorrencia> {
+    return this.http.patch<HistoricoOcorrencia>(
+      `${environment.apiUrl}/ocorrencias/${idOcorrencia}/historico/${idHistorico}/observacao`,
+      { observacao }
+    );
+  }
+
+  getStats(
+    dataInicio?: string,
+    dataFim?: string,
+    linha?: string[],
+    tipo?: string[],
+    idOrigem?: string[],
+    idCategoria?: string[],
+    idVeiculo?: string,
+    idMotorista?: string,
+    arco?: string[],
+    sentidoVia?: string[],
+    tipoLocal?: string[],
+    culpabilidade?: string[],
+    houveVitimas?: string[],
+    terceirizado?: string[],
+  ): Observable<OcorrenciaStats> {
+    let params = new HttpParams();
+    if (dataInicio) params = params.set('dataInicio', dataInicio);
+    if (dataFim) params = params.set('dataFim', dataFim);
+    if (linha && linha.length > 0) {
+      linha.forEach(l => params = params.append('linha', l));
+    }
+    if (tipo && tipo.length > 0) {
+      tipo.forEach(t => params = params.append('tipo', t));
+    }
+    if (idOrigem && idOrigem.length > 0) {
+      idOrigem.forEach(id => params = params.append('idOrigem', id));
+    }
+    if (idCategoria && idCategoria.length > 0) {
+      idCategoria.forEach(id => params = params.append('idCategoria', id));
+    }
+    if (idVeiculo) params = params.set('idVeiculo', idVeiculo);
+    if (idMotorista) params = params.set('idMotorista', idMotorista);
+    if (arco && arco.length > 0) {
+      arco.forEach(a => params = params.append('arco', a));
+    }
+    if (sentidoVia && sentidoVia.length > 0) {
+      sentidoVia.forEach(s => params = params.append('sentidoVia', s));
+    }
+    if (tipoLocal && tipoLocal.length > 0) {
+      tipoLocal.forEach(t => params = params.append('tipoLocal', t));
+    }
+    if (culpabilidade && culpabilidade.length > 0) {
+      culpabilidade.forEach(c => params = params.append('culpabilidade', c));
+    }
+    if (houveVitimas && houveVitimas.length > 0) {
+      houveVitimas.forEach(h => params = params.append('houveVitimas', h));
+    }
+    if (terceirizado && terceirizado.length > 0) {
+      terceirizado.forEach(t => params = params.append('terceirizado', t));
+    }
+    return this.http.get<OcorrenciaStats>(`${environment.apiUrl}/ocorrencias/stats`, { params });
   }
 }

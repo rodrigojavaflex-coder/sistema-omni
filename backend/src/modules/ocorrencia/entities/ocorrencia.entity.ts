@@ -1,6 +1,7 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { TipoOcorrencia } from '../../../common/enums/tipo-ocorrencia.enum';
+import { StatusOcorrencia } from '../../../common/enums/status-ocorrencia.enum';
 import { Linha } from '../../../common/enums/linha.enum';
 import { Arco } from '../../../common/enums/arco.enum';
 import { SentidoVia } from '../../../common/enums/sentido-via.enum';
@@ -15,16 +16,26 @@ import { OrigemOcorrencia } from '../../origem-ocorrencia/entities/origem-ocorre
 import { CategoriaOcorrencia } from '../../categoria-ocorrencia/entities/categoria-ocorrencia.entity';
 import { EmpresaTerceira } from '../../empresa-terceira/entities/empresa-terceira.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { HistoricoOcorrencia } from './historico-ocorrencia.entity';
 
 @Entity('ocorrencias')
 @Index(['dataHora'])
 @Index(['tipo'])
 @Index(['linha'])
 @Index(['numero'], { unique: true })
+@Index(['status'])
 export class Ocorrencia extends BaseEntity {
   /** Número único: AAAA + sequencial 6 dígitos no ano (ex.: 2026000001) */
   @Column({ type: 'varchar', length: 20, nullable: true, unique: true })
   numero?: string;
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    nullable: false,
+    default: StatusOcorrencia.REGISTRADA,
+  })
+  status: StatusOcorrencia;
 
   @Column({ type: 'timestamp', nullable: false })
   dataHora: Date;
@@ -195,6 +206,11 @@ export class Ocorrencia extends BaseEntity {
 
   @Column({ type: 'uuid', nullable: true })
   idUsuario?: string;
+
+  @OneToMany(() => HistoricoOcorrencia, (historico) => historico.ocorrencia, {
+    lazy: true,
+  })
+  historicos?: HistoricoOcorrencia[];
 
   static get nomeAmigavel(): string {
     return 'Ocorrência';

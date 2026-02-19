@@ -266,6 +266,13 @@ export const MENU_CONFIGURATION: MenuConfig = {
           icon: 'feather-activity',
           requiredPermissions: [Permission.META_EXECUCAO_READ],
           parentMenu: 'Gestão'
+        },
+        {
+          label: 'Painel de Ocorrências',
+          route: '/ocorrencia/painel',
+          icon: 'feather-pie-chart',
+          requiredPermissions: [Permission.OCORRENCIA_PAINEL_VIEW],
+          parentMenu: 'Gestão'
         }
       ]
     },

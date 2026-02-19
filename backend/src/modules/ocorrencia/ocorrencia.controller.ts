@@ -16,6 +16,7 @@ import { Request } from 'express';
 import { OcorrenciaService } from './ocorrencia.service';
 import { CreateOcorrenciaDto } from './dto/create-ocorrencia.dto';
 import { UpdateOcorrenciaDto } from './dto/update-ocorrencia.dto';
+import { UpdateStatusOcorrenciaDto } from './dto/update-status-ocorrencia.dto';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Permission } from '../../common/enums/permission.enum';
@@ -58,6 +59,7 @@ export class OcorrenciaController {
     @Query('idOrigem') idOrigem?: string | string[],
     @Query('idCategoria') idCategoria?: string | string[],
     @Query('numero') numero?: string,
+    @Query('status') status?: string | string[],
   ) {
     return this.ocorrenciaService.findAll(
       page ? parseInt(page, 10) : 1,
@@ -77,6 +79,7 @@ export class OcorrenciaController {
       idOrigem,
       idCategoria,
       numero,
+      status,
     );
   }
 
@@ -117,10 +120,82 @@ export class OcorrenciaController {
     );
   }
 
+  @Get('stats')
+  @Permissions(Permission.OCORRENCIA_PAINEL_VIEW)
+  getStats(
+    @Query('dataInicio') dataInicio?: string,
+    @Query('dataFim') dataFim?: string,
+    @Query('linha') linha?: string | string[],
+    @Query('tipo') tipo?: string | string[],
+    @Query('idOrigem') idOrigem?: string | string[],
+    @Query('idCategoria') idCategoria?: string | string[],
+    @Query('idVeiculo') idVeiculo?: string,
+    @Query('idMotorista') idMotorista?: string,
+    @Query('arco') arco?: string | string[],
+    @Query('sentidoVia') sentidoVia?: string | string[],
+    @Query('tipoLocal') tipoLocal?: string | string[],
+    @Query('culpabilidade') culpabilidade?: string | string[],
+    @Query('houveVitimas') houveVitimas?: string | string[],
+    @Query('terceirizado') terceirizado?: string | string[],
+  ) {
+    return this.ocorrenciaService.getStats(
+      dataInicio,
+      dataFim,
+      linha,
+      tipo,
+      idOrigem,
+      idCategoria,
+      idVeiculo,
+      idMotorista,
+      arco,
+      sentidoVia,
+      tipoLocal,
+      culpabilidade,
+      houveVitimas,
+      terceirizado,
+    );
+  }
+
+  @Get(':id/historico')
+  @Permissions(Permission.OCORRENCIA_READ)
+  getHistorico(@Param('id') id: string) {
+    return this.ocorrenciaService.getHistorico(id);
+  }
+
   @Get(':id')
   @Permissions(Permission.OCORRENCIA_READ)
   findOne(@Param('id') id: string) {
     return this.ocorrenciaService.findOne(id);
+  }
+
+  @Patch(':id/status')
+  @Permissions(Permission.OCORRENCIA_UPDATE_STATUS)
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateStatusOcorrenciaDto,
+    @Req() req: Request & { user: Usuario },
+  ) {
+    const idUsuario = req.user?.id;
+    return this.ocorrenciaService.updateStatus(
+      id,
+      updateStatusDto.status,
+      updateStatusDto.observacao,
+      idUsuario,
+    );
+  }
+
+  @Patch(':id/historico/:idHistorico/observacao')
+  @Permissions(Permission.OCORRENCIA_UPDATE_STATUS)
+  updateHistoricoObservacao(
+    @Param('id') id: string,
+    @Param('idHistorico') idHistorico: string,
+    @Body() body: { observacao?: string },
+  ) {
+    return this.ocorrenciaService.updateHistoricoObservacao(
+      id,
+      idHistorico,
+      body.observacao,
+    );
   }
 
   @Patch(':id')

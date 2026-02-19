@@ -1,4 +1,5 @@
 import { TipoOcorrencia } from './tipo-ocorrencia.enum';
+import { StatusOcorrencia } from './status-ocorrencia.enum';
 import { Linha } from './linha.enum';
 import { Arco } from './arco.enum';
 import { SentidoVia } from './sentido-via.enum';
@@ -14,6 +15,7 @@ export interface Ocorrencia {
   id: string;
   /** Número único: AAAA + sequencial 6 dígitos no ano (ex.: 2026000001) */
   numero?: string;
+  status?: StatusOcorrencia;
   dataHora: Date;
   veiculo: Veiculo;
   idVeiculo: string;
@@ -121,6 +123,7 @@ export interface FindOcorrenciaDto {
   idOrigem?: string[];
   idCategoria?: string[];
   numero?: string;
+  status?: string[];
 }
 
 export interface OcorrenciaListResponse {

@@ -6,16 +6,20 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ocorrencia } from './entities/ocorrencia.entity';
+import { HistoricoOcorrencia } from './entities/historico-ocorrencia.entity';
 import { CreateOcorrenciaDto } from './dto/create-ocorrencia.dto';
 import { UpdateOcorrenciaDto } from './dto/update-ocorrencia.dto';
 import { validarCamposVitimas } from '../../common/validators/validador-vitimas';
 import { CategoriaOcorrenciaService } from '../categoria-ocorrencia/categoria-ocorrencia.service';
+import { StatusOcorrencia } from '../../common/enums/status-ocorrencia.enum';
 
 @Injectable()
 export class OcorrenciaService {
   constructor(
     @InjectRepository(Ocorrencia)
     private readonly ocorrenciaRepository: Repository<Ocorrencia>,
+    @InjectRepository(HistoricoOcorrencia)
+    private readonly historicoRepository: Repository<HistoricoOcorrencia>,
     private readonly categoriaOcorrenciaService: CategoriaOcorrenciaService,
   ) {}
 
@@ -68,7 +72,17 @@ export class OcorrenciaService {
 
     // Buscar ocorrência completa com relações
     const id = Array.isArray(saved) ? saved[0].id : saved.id;
-    return await this.findOne(id);
+    const ocorrenciaSalva = await this.findOne(id);
+
+    // Criar registro inicial no histórico (status REGISTRADA)
+    const historicoInicial = new HistoricoOcorrencia();
+    historicoInicial.idOcorrencia = ocorrenciaSalva.id;
+    historicoInicial.statusNovo = StatusOcorrencia.REGISTRADA;
+    historicoInicial.dataAlteracao = new Date(ocorrenciaSalva.dataHora);
+    historicoInicial.idUsuario = idUsuario || undefined;
+    await this.historicoRepository.save(historicoInicial);
+
+    return ocorrenciaSalva;
   }
 
   async findAll(
@@ -89,6 +103,7 @@ export class OcorrenciaService {
     idOrigem?: string | string[],
     idCategoria?: string | string[],
     numero?: string,
+    status?: string | string[],
   ): Promise<{
     data: Ocorrencia[];
     total: number;
@@ -237,6 +252,15 @@ export class OcorrenciaService {
     if (numero && numero.trim()) {
       conditions.push('ocorrencia.numero LIKE :numero');
       parameters.numero = '%' + numero.trim() + '%';
+    }
+
+    // Filtro por status - suporta múltiplos valores
+    if (status) {
+      const statuses = Array.isArray(status) ? status : [status];
+      if (statuses.length > 0) {
+        conditions.push('ocorrencia.status IN (:...statuses)');
+        parameters.statuses = statuses;
+      }
     }
 
     // Aplica as condições
@@ -513,6 +537,341 @@ export class OcorrenciaService {
       numero: raw?.numero,
       origem: raw?.origem,
       categoria: raw?.categoria,
+    };
+  }
+
+  /**
+   * Busca o histórico de alterações de status de uma ocorrência
+   */
+  async getHistorico(idOcorrencia: string): Promise<HistoricoOcorrencia[]> {
+    return await this.historicoRepository.find({
+      where: { idOcorrencia },
+      relations: ['usuario'],
+      order: { dataAlteracao: 'DESC' },
+    });
+  }
+
+  /**
+   * Atualiza o status de uma ocorrência e registra no histórico
+   */
+  async updateStatus(
+    idOcorrencia: string,
+    statusNovo: StatusOcorrencia,
+    observacao?: string,
+    idUsuario?: string,
+  ): Promise<Ocorrencia> {
+    const ocorrencia = await this.findOne(idOcorrencia);
+    const statusAnterior = ocorrencia.status;
+
+    // Atualizar status da ocorrência
+    ocorrencia.status = statusNovo;
+    await this.ocorrenciaRepository.save(ocorrencia);
+
+    // Criar registro no histórico
+    const historico = new HistoricoOcorrencia();
+    historico.idOcorrencia = ocorrencia.id;
+    historico.statusAnterior = statusAnterior;
+    historico.statusNovo = statusNovo;
+    historico.dataAlteracao = new Date();
+    historico.observacao = observacao || undefined;
+    historico.idUsuario = idUsuario || undefined;
+    await this.historicoRepository.save(historico);
+
+    return await this.findOne(idOcorrencia);
+  }
+
+  /**
+   * Atualiza a observação de um registro do histórico
+   */
+  async updateHistoricoObservacao(
+    idOcorrencia: string,
+    idHistorico: string,
+    observacao?: string,
+  ): Promise<HistoricoOcorrencia> {
+    // Verificar se a ocorrência existe
+    await this.findOne(idOcorrencia);
+
+    // Buscar o registro do histórico
+    const historico = await this.historicoRepository.findOne({
+      where: { id: idHistorico, idOcorrencia },
+    });
+
+    if (!historico) {
+      throw new NotFoundException(
+        'Registro do histórico não encontrado para esta ocorrência',
+      );
+    }
+
+    // Atualizar observação
+    historico.observacao = observacao || undefined;
+    await this.historicoRepository.save(historico);
+
+    // Retornar com relação de usuário
+    const atualizado = await this.historicoRepository.findOne({
+      where: { id: idHistorico },
+      relations: ['usuario'],
+    });
+    if (!atualizado) {
+      throw new NotFoundException(
+        'Registro do histórico não encontrado após atualização',
+      );
+    }
+    return atualizado;
+  }
+
+  /**
+   * Retorna estatísticas agregadas por status (para o painel)
+   */
+  async getStats(
+    dataInicio?: string,
+    dataFim?: string,
+    linha?: string | string[],
+    tipo?: string | string[],
+    idOrigem?: string | string[],
+    idCategoria?: string | string[],
+    idVeiculo?: string,
+    idMotorista?: string,
+    arco?: string | string[],
+    sentidoVia?: string | string[],
+    tipoLocal?: string | string[],
+    culpabilidade?: string | string[],
+    houveVitimas?: string | string[],
+    terceirizado?: string | string[],
+  ): Promise<{
+    registrada: number;
+    emAnalise: number;
+    concluida: number;
+    tempoMedioConclusaoDias: number | null;
+  }> {
+    const hasTerceirizadoFilter = terceirizado && (Array.isArray(terceirizado) ? terceirizado.length > 0 : !!terceirizado);
+
+    let query = this.ocorrenciaRepository
+      .createQueryBuilder('ocorrencia')
+      .select('ocorrencia.status', 'status')
+      .addSelect('COUNT(*)', 'total');
+
+    if (hasTerceirizadoFilter) {
+      query = query.leftJoin('ocorrencia.motorista', 'motorista');
+    }
+
+    const conditions: string[] = [];
+    const parameters: any = {};
+
+    // Filtro por período
+    if (dataInicio && dataFim) {
+      conditions.push('ocorrencia.dataHora BETWEEN :dataInicio AND :dataFim');
+      parameters.dataInicio = dataInicio;
+      parameters.dataFim = dataFim;
+    } else if (dataInicio) {
+      conditions.push('ocorrencia.dataHora >= :dataInicio');
+      parameters.dataInicio = dataInicio;
+    } else if (dataFim) {
+      conditions.push('ocorrencia.dataHora <= :dataFim');
+      parameters.dataFim = dataFim;
+    }
+
+    // Filtro por linha
+    if (linha) {
+      const linhas = Array.isArray(linha) ? linha : [linha];
+      if (linhas.length > 0) {
+        conditions.push('ocorrencia.linha IN (:...linhas)');
+        parameters.linhas = linhas;
+      }
+    }
+
+    // Filtro por tipo
+    if (tipo) {
+      const tipos = Array.isArray(tipo) ? tipo : [tipo];
+      if (tipos.length > 0) {
+        conditions.push('ocorrencia.tipo IN (:...tipos)');
+        parameters.tipos = tipos;
+      }
+    }
+
+    // Filtro por origem
+    if (idOrigem) {
+      const origens = Array.isArray(idOrigem) ? idOrigem : [idOrigem];
+      if (origens.length > 0) {
+        conditions.push('ocorrencia.idOrigem IN (:...origens)');
+        parameters.origens = origens;
+      }
+    }
+
+    // Filtro por categoria
+    if (idCategoria) {
+      const categorias = Array.isArray(idCategoria)
+        ? idCategoria
+        : [idCategoria];
+      if (categorias.length > 0) {
+        conditions.push('ocorrencia.idCategoria IN (:...categorias)');
+        parameters.categorias = categorias;
+      }
+    }
+
+    if (idVeiculo) {
+      conditions.push('ocorrencia.idVeiculo = :idVeiculo');
+      parameters.idVeiculo = idVeiculo;
+    }
+
+    if (idMotorista) {
+      conditions.push('ocorrencia.idMotorista = :idMotorista');
+      parameters.idMotorista = idMotorista;
+    }
+
+    if (arco) {
+      const arcos = Array.isArray(arco) ? arco : [arco];
+      if (arcos.length > 0) {
+        conditions.push('ocorrencia.arco IN (:...arcos)');
+        parameters.arcos = arcos;
+      }
+    }
+
+    if (sentidoVia) {
+      const sentidos = Array.isArray(sentidoVia) ? sentidoVia : [sentidoVia];
+      if (sentidos.length > 0) {
+        conditions.push('ocorrencia.sentidoVia IN (:...sentidos)');
+        parameters.sentidos = sentidos;
+      }
+    }
+
+    if (tipoLocal) {
+      const locais = Array.isArray(tipoLocal) ? tipoLocal : [tipoLocal];
+      if (locais.length > 0) {
+        conditions.push('ocorrencia.tipoLocal IN (:...locais)');
+        parameters.locais = locais;
+      }
+    }
+
+    if (culpabilidade) {
+      const culpabilidades = Array.isArray(culpabilidade)
+        ? culpabilidade
+        : [culpabilidade];
+      if (culpabilidades.length > 0) {
+        conditions.push('ocorrencia.culpabilidade IN (:...culpabilidades)');
+        parameters.culpabilidades = culpabilidades;
+      }
+    }
+
+    if (houveVitimas) {
+      const vitimas = Array.isArray(houveVitimas) ? houveVitimas : [houveVitimas];
+      if (vitimas.length > 0) {
+        conditions.push('ocorrencia.houveVitimas IN (:...vitimas)');
+        parameters.vitimas = vitimas;
+      }
+    }
+
+    if (terceirizado) {
+      const terceirizados = Array.isArray(terceirizado)
+        ? terceirizado
+        : [terceirizado];
+      if (terceirizados.length > 0) {
+        conditions.push('motorista.terceirizado IN (:...terceirizados)');
+        parameters.terceirizados = terceirizados;
+      }
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(conditions.join(' AND '), parameters);
+    }
+
+    const stats = await query
+      .groupBy('ocorrencia.status')
+      .getRawMany<{ status: string; total: string }>();
+
+    const registrada =
+      parseInt(
+        stats.find((s) => s.status === StatusOcorrencia.REGISTRADA)?.total ||
+          '0',
+        10,
+      ) || 0;
+    const emAnalise =
+      parseInt(
+        stats.find((s) => s.status === StatusOcorrencia.EM_ANALISE)?.total ||
+          '0',
+        10,
+      ) || 0;
+    const concluida =
+      parseInt(
+        stats.find((s) => s.status === StatusOcorrencia.CONCLUIDA)?.total ||
+          '0',
+        10,
+      ) || 0;
+
+    // Calcular tempo médio em dias do registro até a conclusão
+    // Buscar ocorrências concluídas que atendem aos filtros
+    let ocorrenciasConcluidasQuery = this.ocorrenciaRepository
+      .createQueryBuilder('ocorrencia')
+      .where('ocorrencia.status = :statusConcluida', {
+        statusConcluida: StatusOcorrencia.CONCLUIDA,
+      });
+
+    if (hasTerceirizadoFilter) {
+      ocorrenciasConcluidasQuery = ocorrenciasConcluidasQuery.leftJoin(
+        'ocorrencia.motorista',
+        'motoristaStats',
+      );
+    }
+    if (conditions.length > 0) {
+      const condStats = hasTerceirizadoFilter
+        ? conditions
+            .join(' AND ')
+            .replace(/motorista\./g, 'motoristaStats.')
+        : conditions.join(' AND ');
+      ocorrenciasConcluidasQuery = ocorrenciasConcluidasQuery.andWhere(
+        condStats,
+        parameters,
+      );
+    }
+
+    const ocorrenciasConcluidas = await ocorrenciasConcluidasQuery
+      .select('ocorrencia.id', 'id')
+      .getRawMany<{ id: string }>();
+
+    let tempoMedioConclusaoDias: number | null = null;
+
+    if (ocorrenciasConcluidas.length > 0) {
+      const idsOcorrencias = ocorrenciasConcluidas.map((o) => o.id);
+
+      // Para cada ocorrência concluída, buscar data do primeiro registro REGISTRADA e data do registro CONCLUIDA
+      const temposDias: number[] = [];
+
+      for (const idOcorrencia of idsOcorrencias) {
+        const historicoRegistro = await this.historicoRepository.findOne({
+          where: {
+            idOcorrencia,
+            statusNovo: StatusOcorrencia.REGISTRADA,
+          },
+          order: { dataAlteracao: 'ASC' },
+        });
+
+        const historicoConclusao = await this.historicoRepository.findOne({
+          where: {
+            idOcorrencia,
+            statusNovo: StatusOcorrencia.CONCLUIDA,
+          },
+          order: { dataAlteracao: 'ASC' },
+        });
+
+        if (historicoRegistro && historicoConclusao) {
+          const diffMs =
+            historicoConclusao.dataAlteracao.getTime() -
+            historicoRegistro.dataAlteracao.getTime();
+          const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+          temposDias.push(diffDias);
+        }
+      }
+
+      if (temposDias.length > 0) {
+        const soma = temposDias.reduce((acc, val) => acc + val, 0);
+        tempoMedioConclusaoDias = Math.round(soma / temposDias.length);
+      }
+    }
+
+    return {
+      registrada,
+      emAnalise,
+      concluida,
+      tempoMedioConclusaoDias,
     };
   }
 

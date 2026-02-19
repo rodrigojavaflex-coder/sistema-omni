@@ -37,8 +37,10 @@ export enum Permission {
   OCORRENCIA_CREATE = 'ocorrencia:create',
   OCORRENCIA_READ = 'ocorrencia:read',
   OCORRENCIA_UPDATE = 'ocorrencia:update',
+  OCORRENCIA_UPDATE_STATUS = 'ocorrencia:update_status',
   OCORRENCIA_DELETE = 'ocorrencia:delete',
   OCORRENCIA_AUDIT = 'ocorrencia:audit',
+  OCORRENCIA_PAINEL_VIEW = 'ocorrencia:painel_view',
 
   // Origem da Ocorrência
   ORIGEMOCORRENCIA_CREATE = 'origemocorrencia:create',
@@ -145,8 +147,13 @@ export const PERMISSION_GROUPS = {
     { key: Permission.OCORRENCIA_CREATE, label: 'Criar ocorrências' },
     { key: Permission.OCORRENCIA_READ, label: 'Visualizar ocorrências' },
     { key: Permission.OCORRENCIA_UPDATE, label: 'Editar ocorrências' },
+    {
+      key: Permission.OCORRENCIA_UPDATE_STATUS,
+      label: 'Registrar andamento da ocorrência',
+    },
     { key: Permission.OCORRENCIA_DELETE, label: 'Excluir ocorrências' },
     { key: Permission.OCORRENCIA_AUDIT, label: 'Auditar ocorrências' },
+    { key: Permission.OCORRENCIA_PAINEL_VIEW, label: 'Acessar painel de ocorrências' },
   ],
   'Origem da Ocorrência': [
     { key: Permission.ORIGEMOCORRENCIA_CREATE, label: 'Criar origens' },

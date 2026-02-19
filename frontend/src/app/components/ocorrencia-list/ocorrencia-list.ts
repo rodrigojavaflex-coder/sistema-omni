@@ -13,6 +13,8 @@ import { Ocorrencia, FindOcorrenciaDto, OcorrenciaListResponse } from '../../mod
 import { OrigemOcorrencia } from '../../models/origem-ocorrencia.model';
 import { CategoriaOcorrencia } from '../../models/categoria-ocorrencia.model';
 import { TipoOcorrencia } from '../../models/tipo-ocorrencia.enum';
+import { StatusOcorrencia } from '../../models/status-ocorrencia.enum';
+import { HistoricoOcorrencia, UpdateStatusOcorrenciaDto } from '../../models/historico-ocorrencia.model';
 import { Linha } from '../../models/linha.enum';
 import { Arco } from '../../models/arco.enum';
 import { SentidoVia } from '../../models/sentido-via.enum';
@@ -101,6 +103,21 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   // Modal de auditoria
   showAuditModal = false;
   selectedItemForAudit: Ocorrencia | null = null;
+
+  // Modal de status/histórico (só histórico)
+  showStatusModal = false;
+  selectedOcorrenciaForStatus: Ocorrencia | null = null;
+  historico: HistoricoOcorrencia[] = [];
+  isLoadingHistorico = false;
+  editingObservacaoId: string | null = null;
+  editingObservacaoTexto = '';
+
+  // Modal de novo status (status + observação)
+  showNovoStatusModal = false;
+  novoStatus: StatusOcorrencia | null = null;
+  observacaoStatus = '';
+  statusOptions = Object.values(StatusOcorrencia);
+  isSavingStatus = false;
 
   private origensList: OrigemOcorrencia[] = [];
   private categoriasList: CategoriaOcorrencia[] = [];
@@ -290,6 +307,10 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
     return this.authService.hasPermission(Permission.OCORRENCIA_AUDIT);
   }
 
+  canUpdateStatus(): boolean {
+    return this.authService.hasPermission(Permission.OCORRENCIA_UPDATE_STATUS);
+  }
+
   formatDate(date: Date | string): string {
     const d = new Date(date);
     return d.toLocaleDateString('pt-BR', {
@@ -299,6 +320,147 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  getStatusClass(status: string | null | undefined): string {
+    if (!status) return 'status-badge status-badge-default';
+    
+    switch (status) {
+      case StatusOcorrencia.REGISTRADA:
+        return 'status-badge status-badge-registrada';
+      case StatusOcorrencia.EM_ANALISE:
+        return 'status-badge status-badge-em-analise';
+      case StatusOcorrencia.CONCLUIDA:
+        return 'status-badge status-badge-concluida';
+      default:
+        return 'status-badge status-badge-default';
+    }
+  }
+
+  getAvailableStatuses(): StatusOcorrencia[] {
+    const currentStatus = this.selectedOcorrenciaForStatus?.status;
+    const allStatuses = Object.values(StatusOcorrencia);
+    
+    // Excluir "Registrada" (só para nova ocorrência)
+    let filtered = allStatuses.filter(s => s !== StatusOcorrencia.REGISTRADA);
+    
+    // Excluir o status atual, exceto se for "Em Análise"
+    // (sempre permitir registrar "Em Análise" novamente antes da conclusão)
+    if (currentStatus && currentStatus !== StatusOcorrencia.EM_ANALISE) {
+      filtered = filtered.filter(s => s !== currentStatus);
+    }
+    
+    // Garantir que "Em Análise" está sempre presente
+    if (!filtered.includes(StatusOcorrencia.EM_ANALISE)) {
+      filtered.push(StatusOcorrencia.EM_ANALISE);
+    }
+    
+    return filtered;
+  }
+
+  startEditObservacao(item: HistoricoOcorrencia): void {
+    this.editingObservacaoId = item.id;
+    this.editingObservacaoTexto = item.observacao || '';
+  }
+
+  cancelEditObservacao(): void {
+    this.editingObservacaoId = null;
+    this.editingObservacaoTexto = '';
+  }
+
+  saveObservacao(item: HistoricoOcorrencia): void {
+    if (!this.editingObservacaoId) return;
+
+    this.ocorrenciaService.updateHistoricoObservacao(
+      this.selectedOcorrenciaForStatus!.id,
+      this.editingObservacaoId,
+      this.editingObservacaoTexto.trim() || undefined
+    ).subscribe({
+      next: () => {
+        // Atualizar o item no histórico local
+        const historicoItem = this.historico.find(h => h.id === this.editingObservacaoId);
+        if (historicoItem) {
+          historicoItem.observacao = this.editingObservacaoTexto.trim() || undefined;
+        }
+        this.cancelEditObservacao();
+      },
+      error: (error) => {
+        alert('Erro ao atualizar observação: ' + (error.error?.message || error.message));
+      },
+    });
+  }
+
+  openStatusModal(item: Ocorrencia): void {
+    this.selectedOcorrenciaForStatus = item;
+    this.historico = [];
+    this.isLoadingHistorico = true;
+    this.showStatusModal = true;
+    this.showNovoStatusModal = false;
+
+    this.ocorrenciaService.getHistorico(item.id).subscribe({
+      next: (historico) => {
+        this.historico = historico;
+        this.isLoadingHistorico = false;
+      },
+      error: () => {
+        this.isLoadingHistorico = false;
+      },
+    });
+  }
+
+  closeStatusModal(): void {
+    this.showStatusModal = false;
+    this.showNovoStatusModal = false;
+    this.selectedOcorrenciaForStatus = null;
+    this.historico = [];
+    this.novoStatus = null;
+    this.observacaoStatus = '';
+    this.cancelEditObservacao();
+  }
+
+  openNovoStatusModal(): void {
+    this.novoStatus = null;
+    this.observacaoStatus = '';
+    this.showNovoStatusModal = true;
+  }
+
+  closeNovoStatusModal(): void {
+    this.showNovoStatusModal = false;
+    this.novoStatus = null;
+    this.observacaoStatus = '';
+  }
+
+  saveStatus(): void {
+    if (!this.selectedOcorrenciaForStatus || !this.novoStatus) {
+      return;
+    }
+
+    this.isSavingStatus = true;
+    const dto: UpdateStatusOcorrenciaDto = {
+      status: this.novoStatus,
+      observacao: this.observacaoStatus.trim() || undefined,
+    };
+
+    this.ocorrenciaService
+      .updateStatus(this.selectedOcorrenciaForStatus.id, dto)
+      .subscribe({
+        next: () => {
+          this.isSavingStatus = false;
+          this.closeNovoStatusModal();
+          // Atualizar status exibido e recarregar histórico no modal
+          this.selectedOcorrenciaForStatus!.status = this.novoStatus!;
+          this.ocorrenciaService.getHistorico(this.selectedOcorrenciaForStatus!.id).subscribe({
+            next: (historico) => {
+              this.historico = historico;
+            },
+          });
+          this.loadItems();
+        },
+        error: (error) => {
+          this.isSavingStatus = false;
+          alert('Erro ao atualizar status: ' + (error.error?.message || error.message));
+        },
+      });
   }
 
   // Métodos de exportação

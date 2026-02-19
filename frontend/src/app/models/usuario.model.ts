@@ -37,8 +37,10 @@ export enum Permission {
   OCORRENCIA_CREATE = 'ocorrencia:create',
   OCORRENCIA_READ = 'ocorrencia:read',
   OCORRENCIA_UPDATE = 'ocorrencia:update',
+  OCORRENCIA_UPDATE_STATUS = 'ocorrencia:update_status',
   OCORRENCIA_DELETE = 'ocorrencia:delete',
   OCORRENCIA_AUDIT = 'ocorrencia:audit',
+  OCORRENCIA_PAINEL_VIEW = 'ocorrencia:painel_view',
 
   // Origem da Ocorrência
   ORIGEMOCORRENCIA_CREATE = 'origemocorrencia:create',

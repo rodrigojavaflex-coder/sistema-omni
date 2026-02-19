@@ -245,6 +245,13 @@ export const routes: Routes = [
     loadComponent: () => import('./components/meta-form/meta-form').then(m => m.MetaFormComponent),
     canActivate: [authGuard]
   },
+  // Painel de Ocorrências
+  {
+    path: 'ocorrencia/painel',
+    loadComponent: () => import('./components/painel-ocorrencias/painel-ocorrencias').then(m => m.PainelOcorrenciasComponent),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.OCORRENCIA_PAINEL_VIEW] }
+  },
   
   // Home padrão
   {

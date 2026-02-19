@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { OcorrenciaService } from './ocorrencia.service';
 import { OcorrenciaController } from './ocorrencia.controller';
 import { Ocorrencia } from './entities/ocorrencia.entity';
+import { HistoricoOcorrencia } from './entities/historico-ocorrencia.entity';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { VeiculoModule } from '../veiculo/veiculo.module';
 import { MotoristaModule } from '../motorista/motorista.module';
@@ -13,7 +14,7 @@ import { CategoriaOcorrenciaModule } from '../categoria-ocorrencia/categoria-oco
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Ocorrencia]),
+    TypeOrmModule.forFeature([Ocorrencia, HistoricoOcorrencia]),
     JwtModule,
     ConfigModule,
     forwardRef(() => AuditoriaModule),

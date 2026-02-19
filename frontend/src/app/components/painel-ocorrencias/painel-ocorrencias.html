@@ -1,0 +1,186 @@
+<div class="painel-container">
+  <div class="painel-header">
+    <div>
+      <h2>Painel de Ocorrências</h2>
+      <p>Acompanhamento de ocorrências por status</p>
+    </div>
+    <button class="btn btn-secondary" (click)="toggleFilters()">
+      {{ showFilters ? 'Ocultar filtros' : 'Filtros' }}
+    </button>
+  </div>
+
+  <!-- Filtros (datas início/fim + demais da lista de ocorrências, sem Nº ocorrência) -->
+  @if (showFilters) {
+    <div class="filters-card">
+      <div class="filters-grid">
+        <div class="filter-field">
+          <label>Data Início</label>
+          <input 
+            type="date" 
+            [(ngModel)]="dataInicioFilter"
+            (change)="onFilterChange()"
+            class="form-control"
+          >
+        </div>
+        <div class="filter-field">
+          <label>Data Fim</label>
+          <input 
+            type="date" 
+            [(ngModel)]="dataFimFilter"
+            (change)="onFilterChange()"
+            class="form-control"
+          >
+        </div>
+        <div class="filter-field">
+          <label>Classificação</label>
+          <app-multi-select 
+            [options]="tipoOptions"
+            [(ngModel)]="tipoFilter"
+            (selectionChange)="onFilterChange()"
+            placeholder="Todas as classificações">
+          </app-multi-select>
+        </div>
+        <div class="filter-field">
+          <label>Linhas</label>
+          <app-multi-select 
+            [options]="linhaOptions"
+            [(ngModel)]="linhaFilter"
+            (selectionChange)="onFilterChange()"
+            placeholder="Todas as linhas">
+          </app-multi-select>
+        </div>
+        <div class="filter-field">
+          <label>Veículo</label>
+          <app-veiculo-autocomplete 
+            [(ngModel)]="veiculoFilter"
+            (veiculoSelected)="onVeiculoSelected($event)"
+            placeholder="Buscar veículo...">
+          </app-veiculo-autocomplete>
+        </div>
+        <div class="filter-field">
+          <label>Motorista</label>
+          <app-motorista-autocomplete 
+            [(ngModel)]="motoristaFilter"
+            (motoristaSelected)="onMotoristaSelected($event)"
+            placeholder="Buscar motorista...">
+          </app-motorista-autocomplete>
+        </div>
+        <div class="filter-field">
+          <label>Extensão</label>
+          <app-multi-select 
+            [options]="arcoOptions"
+            [(ngModel)]="arcoFilter"
+            (selectionChange)="onFilterChange()"
+            placeholder="Todas">
+          </app-multi-select>
+        </div>
+        <div class="filter-field">
+          <label>Sentido da via</label>
+          <app-multi-select 
+            [options]="sentidoViaOptions"
+            [(ngModel)]="sentidoViaFilter"
+            (selectionChange)="onFilterChange()"
+            placeholder="Todos">
+          </app-multi-select>
+        </div>
+        <div class="filter-field">
+          <label>Tipo de local</label>
+          <app-multi-select 
+            [options]="tipoLocalOptions"
+            [(ngModel)]="tipoLocalFilter"
+            (selectionChange)="onFilterChange()"
+            placeholder="Todos">
+          </app-multi-select>
+        </div>
+        <div class="filter-field">
+          <label>Culpabilidade</label>
+          <app-multi-select 
+            [options]="culpabilidadeOptions"
+            [(ngModel)]="culpabilidadeFilter"
+            (selectionChange)="onFilterChange()"
+            placeholder="Todas">
+          </app-multi-select>
+        </div>
+        <div class="filter-field">
+          <label>Houve vítimas</label>
+          <app-multi-select 
+            [options]="houveVitimasOptions"
+            [(ngModel)]="houveVitimasFilter"
+            (selectionChange)="onFilterChange()"
+            placeholder="Todos">
+          </app-multi-select>
+        </div>
+        <div class="filter-field">
+          <label>Terceirizados</label>
+          <app-multi-select 
+            [options]="terceirizadoOptions"
+            [(ngModel)]="terceirizadoFilter"
+            (selectionChange)="onFilterChange()"
+            placeholder="Todos">
+          </app-multi-select>
+        </div>
+        <div class="filter-field">
+          <label>Origem</label>
+          <app-multi-select 
+            [options]="origemOptions"
+            [(ngModel)]="origemFilter"
+            (selectionChange)="onFilterChange()"
+            placeholder="Todas as origens">
+          </app-multi-select>
+        </div>
+        <div class="filter-field">
+          <label>Categoria</label>
+          <app-multi-select 
+            [options]="categoriaOptions"
+            [(ngModel)]="categoriaFilter"
+            (selectionChange)="onFilterChange()"
+            placeholder="Todas as categorias">
+          </app-multi-select>
+        </div>
+      </div>
+      <div class="filter-actions">
+        <button type="button" class="btn btn-secondary" (click)="clearFilters()">
+          Limpar filtros
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Cards de resumo -->
+  @if (isLoadingStats) {
+    <div class="loading-state">Carregando estatísticas...</div>
+  } @else {
+    <div class="stats-cards">
+      <div class="stat-card stat-registrada">
+        <div class="stat-content">
+          <div class="stat-label">Registradas</div>
+          <div class="stat-value">{{ stats.registrada }}</div>
+        </div>
+      </div>
+      <div class="stat-card stat-analise">
+        <div class="stat-content">
+          <div class="stat-label">Em Análise</div>
+          <div class="stat-value">{{ stats.emAnalise }}</div>
+        </div>
+      </div>
+      <div class="stat-card stat-concluida">
+        <div class="stat-content">
+          <div class="stat-label">Concluídas</div>
+          <div class="stat-value">{{ stats.concluida }}</div>
+        </div>
+      </div>
+      <div class="stat-card stat-tempo">
+        <div class="stat-content">
+          <div class="stat-label">Tempo Médio até Conclusão</div>
+          <div class="stat-value">
+            @if (stats.tempoMedioConclusaoDias !== null) {
+              {{ stats.tempoMedioConclusaoDias }} dias
+            } @else {
+              -
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
