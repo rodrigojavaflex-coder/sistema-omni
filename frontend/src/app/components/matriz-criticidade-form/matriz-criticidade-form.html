@@ -1,0 +1,76 @@
+<div class="form-container">
+  <h2>{{ getFormTitle() }} Matriz de Criticidade</h2>
+
+  <div class="form-actions form-actions-top">
+    <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+      <span *ngIf="loading" class="spinner"></span>
+      {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-section">
+      <h3>Informações da Matriz</h3>
+
+      <div class="form-group">
+        <label class="form-label">Componente *</label>
+        <select formControlName="idcomponente" class="form-select">
+          <option value="">Selecione</option>
+          <option *ngFor="let componente of componentes" [value]="componente.id">
+            {{ componente.nome }}
+          </option>
+        </select>
+        <div class="form-error" *ngIf="isFieldInvalid('idcomponente')">
+          {{ getFieldError('idcomponente') }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Sintoma *</label>
+        <select formControlName="idsintoma" class="form-select">
+          <option value="">Selecione</option>
+          <option *ngFor="let sintoma of sintomas" [value]="sintoma.id">
+            {{ sintoma.descricao }}
+          </option>
+        </select>
+        <div class="form-error" *ngIf="isFieldInvalid('idsintoma')">
+          {{ getFieldError('idsintoma') }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Gravidade *</label>
+        <select formControlName="gravidade" class="form-select">
+          <option *ngFor="let gravidade of gravidades" [value]="gravidade">
+            {{ gravidade }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Exige foto</label>
+        <select formControlName="exige_foto" class="form-select">
+          <option [value]="true">Sim</option>
+          <option [value]="false">Não</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Permite áudio</label>
+        <select formControlName="permite_audio" class="form-select">
+          <option [value]="true">Sim</option>
+          <option [value]="false">Não</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </form>
+</div>

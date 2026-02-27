@@ -8,6 +8,7 @@ import {
   Matches,
   MinLength,
   IsOptional,
+  IsUUID,
 } from 'class-validator';
 import { Combustivel } from '../../../common/enums/combustivel.enum';
 import { StatusVeiculo } from '../../../common/enums/status-veiculo.enum';
@@ -63,16 +64,9 @@ export class CreateVeiculoDto {
   @MaxLength(50, { message: 'Marca não pode ter mais de 50 caracteres' })
   marca: string;
 
-  @ApiProperty({
-    description: 'Modelo do veículo',
-    example: 'Delivery',
-    maxLength: 50,
-  })
-  @IsNotEmpty({ message: 'Modelo é obrigatório' })
-  @IsString({ message: 'Modelo deve ser um texto' })
-  @MinLength(2, { message: 'Modelo deve ter pelo menos 2 caracteres' })
-  @MaxLength(50, { message: 'Modelo não pode ter mais de 50 caracteres' })
-  modelo: string;
+  @ApiProperty({ description: 'ID do modelo', format: 'uuid' })
+  @IsUUID()
+  idmodelo: string;
 
   @ApiProperty({ description: 'Combustível', enum: Combustivel })
   @IsNotEmpty({ message: 'Combustível é obrigatório' })

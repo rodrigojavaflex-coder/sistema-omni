@@ -166,7 +166,7 @@
               <td>{{ item.ano }}</td>
               <td>{{ item.chassi }}</td>
               <td>{{ item.marca }}</td>
-              <td>{{ item.modelo }}</td>
+              <td>{{ item.modeloVeiculo?.nome ?? item.modeloLegado ?? item.modelo ?? '-' }}</td>
               <td>{{ item.combustivel }}</td>
               <td>{{ item.status || '-' }}</td>
               <td>{{ item.marcaDaCarroceria || '-' }}</td>

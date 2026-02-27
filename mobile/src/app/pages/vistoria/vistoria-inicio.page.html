@@ -43,9 +43,6 @@
             </span>
           </p>
           <p>
-            Tipo: {{ vistoria.tipoVistoria?.descricao || '---' }}
-          </p>
-          <p>
             Data: {{ vistoria.datavistoria | date:'short' }}
           </p>
         </ion-label>
@@ -129,28 +126,6 @@
   </ion-card>
 
   <ion-card class="card">
-    <ion-item class="select-item">
-      <ion-label position="stacked">Tipo de Vistoria</ion-label>
-      <ion-select
-        interface="popover"
-        placeholder="Selecione"
-        [(ngModel)]="selectedTipoId"
-      >
-        <ion-select-option
-          *ngFor="let tipo of tipos"
-          [value]="tipo.id"
-        >
-          {{ tipo.descricao }}
-        </ion-select-option>
-      </ion-select>
-    </ion-item>
-    <ion-item *ngIf="loadingTipos">
-      <ion-spinner name="crescent"></ion-spinner>
-      <ion-label>Carregando tipos...</ion-label>
-    </ion-item>
-  </ion-card>
-
-  <ion-card class="card">
     <ion-item>
       <ion-label position="stacked">Odômetro</ion-label>
       <ion-input
@@ -187,7 +162,7 @@
   <div class="actions">
     <ion-button expand="block" [disabled]="!canStart || isSaving" (click)="iniciarVistoria()">
       <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>
-      <span *ngIf="!isSaving">Iniciar Checklist</span>
+      <span *ngIf="!isSaving">Iniciar Vistoria</span>
     </ion-button>
   </div>
 </ion-content>

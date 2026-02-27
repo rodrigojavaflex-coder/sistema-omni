@@ -352,10 +352,14 @@ body.theme-dark .panel,
 body.theme-dark .container,
 body.theme-dark .filters-section,
 body.theme-dark .filters-container,
-body.theme-dark .filters {
-  background-color: #2d3748 !important;
-  border-color: #4a5568 !important;
-  color: #f7fafc !important;
+body.theme-dark .filters,
+body.theme-dark .list-container,
+body.theme-dark .areas-accordion,
+body.theme-dark .componentes-panel,
+body.theme-dark .accordion-body {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
 }
 
 /* Headers */

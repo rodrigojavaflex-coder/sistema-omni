@@ -1,8 +1,9 @@
-import { Entity, Column, Index } from 'typeorm';
+import { Entity, Column, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Combustivel } from '../../../common/enums/combustivel.enum';
 import { StatusVeiculo } from '../../../common/enums/status-veiculo.enum';
+import { ModeloVeiculo } from './modelo-veiculo.entity';
 
 @Entity('veiculos')
 @Index('IDX_VEICULO_DESCRICAO', ['descricao'], { unique: true })
@@ -35,9 +36,18 @@ export class Veiculo extends BaseEntity {
   @Column({ length: 50 })
   marca: string;
 
-  @ApiProperty({ description: 'Modelo do veículo', example: 'Delivery' })
-  @Column({ length: 50 })
-  modelo: string;
+  @ApiProperty({ description: 'Modelo do veículo (legado)', example: 'Delivery' })
+  @Column({ name: 'modelo', type: 'varchar', length: 50, nullable: true })
+  modeloLegado: string | null;
+
+  @ApiProperty({ description: 'Modelo vinculado' })
+  @ManyToOne(() => ModeloVeiculo, { nullable: true, eager: true })
+  @JoinColumn({ name: 'idmodelo' })
+  modeloVeiculo: ModeloVeiculo;
+
+  @ApiProperty({ description: 'ID do modelo', format: 'uuid' })
+  @Column({ name: 'idmodelo', type: 'uuid', nullable: true })
+  idModelo: string | null;
 
   @ApiProperty({ description: 'Tipo de combustível', enum: Combustivel })
   @Column({ length: 30 })

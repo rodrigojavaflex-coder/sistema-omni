@@ -19,51 +19,6 @@ export class CreateVistoriaTables1730000000000 implements MigrationInterface {
       END $$;
     `);
 
-    if (!(await queryRunner.hasTable('tiposvistoria'))) {
-      await queryRunner.createTable(
-        new Table({
-          name: 'tiposvistoria',
-          columns: [
-            {
-              name: 'id',
-              type: 'uuid',
-              isPrimary: true,
-              default: 'uuid_generate_v4()',
-            },
-            {
-              name: 'criadoEm',
-              type: 'timestamp',
-              default: 'CURRENT_TIMESTAMP(6)',
-            },
-            {
-              name: 'atualizadoEm',
-              type: 'timestamp',
-              default: 'CURRENT_TIMESTAMP(6)',
-            },
-            {
-              name: 'descricao',
-              type: 'varchar',
-              length: '300',
-              isNullable: false,
-            },
-            {
-              name: 'ativo',
-              type: 'boolean',
-              default: true,
-            },
-          ],
-        }),
-      );
-      await queryRunner.createIndex(
-        'tiposvistoria',
-        new TableIndex({
-          name: 'IDX_TIPOVISTORIA_DESCRICAO',
-          columnNames: ['descricao'],
-          isUnique: true,
-        }),
-      );
-    }
-
     if (!(await queryRunner.hasTable('itensvistoriados'))) {
       await queryRunner.createTable(
         new Table({
@@ -163,10 +118,6 @@ export class CreateVistoriaTables1730000000000 implements MigrationInterface {
               type: 'uuid',
             },
             {
-              name: 'idtipovistoria',
-              type: 'uuid',
-            },
-            {
               name: 'idusuario',
               type: 'uuid',
             },
@@ -216,11 +167,6 @@ export class CreateVistoriaTables1730000000000 implements MigrationInterface {
         new TableForeignKey({
           columnNames: ['idmotorista'],
           referencedTableName: 'motoristas',
-          referencedColumnNames: ['id'],
-        }),
-        new TableForeignKey({
-          columnNames: ['idtipovistoria'],
-          referencedTableName: 'tiposvistoria',
           referencedColumnNames: ['id'],
         }),
         new TableForeignKey({
@@ -376,9 +322,6 @@ export class CreateVistoriaTables1730000000000 implements MigrationInterface {
     }
     if (await queryRunner.hasTable('itensvistoriados')) {
       await queryRunner.dropTable('itensvistoriados');
-    }
-    if (await queryRunner.hasTable('tiposvistoria')) {
-      await queryRunner.dropTable('tiposvistoria');
     }
     await queryRunner.query('DROP TYPE IF EXISTS "vistorias_status_enum"');
   }

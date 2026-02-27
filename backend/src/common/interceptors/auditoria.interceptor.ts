@@ -357,6 +357,9 @@ export class AuditoriaInterceptor implements NestInterceptor {
       map.set('users', 'usuarios');
       map.set('user', 'usuarios');
     }
+    if (tableName === 'areas_vistoriadas') {
+      map.set('areas', 'areas_vistoriadas');
+    }
   }
 
   /**

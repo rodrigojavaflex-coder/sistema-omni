@@ -8,3 +8,8 @@ export * from './error-modal.service';
 export * from './veiculo.service';
 export * from './export.service';
 export * from './vistoria.service';
+export * from './area-vistoriada.service';
+export * from './componente.service';
+export * from './sintoma.service';
+export * from './matriz-criticidade.service';
+export * from './modelo-veiculo.service';

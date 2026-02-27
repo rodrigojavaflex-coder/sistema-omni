@@ -7,6 +7,8 @@ import { CreateVeiculoDto, UpdateVeiculoDto, StatusVeiculo } from '../../models/
 import { Combustivel } from '../../models/combustivel.enum';
 import { BaseFormComponent } from '../base/base-form.component';
 import { firstValueFrom } from 'rxjs';
+import { ModeloVeiculo } from '../../models/modelo-veiculo.model';
+import { ModeloVeiculoService } from '../../services/modelo-veiculo.service';
 
 @Component({
   selector: 'app-veiculo-form',
@@ -19,10 +21,12 @@ export class VeiculoFormComponent extends BaseFormComponent<CreateVeiculoDto | U
   combustivelOptions = Object.values(Combustivel);
   statusOptions = Object.values(StatusVeiculo);
   currentYear = new Date().getFullYear();
+  modelos: ModeloVeiculo[] = [];
 
   constructor(
     private fb: FormBuilder,
     private veiculoService: VeiculoService,
+    private modeloService: ModeloVeiculoService,
     private route: ActivatedRoute,
     router: Router
   ) {
@@ -37,6 +41,7 @@ export class VeiculoFormComponent extends BaseFormComponent<CreateVeiculoDto | U
       this.entityId = id;
     }
 
+    this.loadModelos();
     super.ngOnInit();
   }
 
@@ -71,11 +76,7 @@ export class VeiculoFormComponent extends BaseFormComponent<CreateVeiculoDto | U
         Validators.minLength(2),
         Validators.maxLength(50)
       ]],
-      modelo: ['', [
-        Validators.required, 
-        Validators.minLength(2),
-        Validators.maxLength(50)
-      ]],
+      idmodelo: ['', [Validators.required]],
       combustivel: ['', [Validators.required]],
       status: [StatusVeiculo.ATIVO],
       marcaDaCarroceria: ['', [Validators.maxLength(50)]],
@@ -107,7 +108,7 @@ export class VeiculoFormComponent extends BaseFormComponent<CreateVeiculoDto | U
       ano: veiculo.ano,
       chassi: veiculo.chassi,
       marca: veiculo.marca,
-      modelo: veiculo.modelo,
+      idmodelo: veiculo.idModelo,
       combustivel: veiculo.combustivel,
       status: veiculo.status || StatusVeiculo.ATIVO,
       marcaDaCarroceria: veiculo.marcaDaCarroceria || '',
@@ -169,4 +170,12 @@ export class VeiculoFormComponent extends BaseFormComponent<CreateVeiculoDto | U
   get status() { return this.form.get('status'); }
   get marcaDaCarroceria() { return this.form.get('marcaDaCarroceria'); }
   get modeloDaCarroceria() { return this.form.get('modeloDaCarroceria'); }
+
+  private loadModelos(): void {
+    this.modeloService.getAll(true).subscribe({
+      next: (items) => {
+        this.modelos = items;
+      },
+    });
+  }
 }

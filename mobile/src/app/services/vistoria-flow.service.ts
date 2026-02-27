@@ -3,31 +3,35 @@ import { Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class VistoriaFlowService {
   private vistoriaId: string | null = null;
-  private tipoVistoriaId: string | null = null;
   private startedAt: number | null = null;
   private veiculoDescricao: string | null = null;
-  private tipoVistoriaDescricao: string | null = null;
+  private veiculoModeloId: string | null = null;
+  private veiculoModeloNome: string | null = null;
   private dataVistoriaIso: string | null = null;
 
   iniciar(
     vistoriaId: string,
-    tipoVistoriaId: string,
-    options?: { veiculoDescricao?: string; tipoVistoriaDescricao?: string; datavistoria?: string },
+    options?: {
+      veiculoDescricao?: string;
+      veiculoModeloId?: string;
+      veiculoModeloNome?: string;
+      datavistoria?: string;
+    },
   ): void {
     this.vistoriaId = vistoriaId;
-    this.tipoVistoriaId = tipoVistoriaId;
     this.startedAt = Date.now();
     this.veiculoDescricao = options?.veiculoDescricao ?? this.veiculoDescricao;
-    this.tipoVistoriaDescricao = options?.tipoVistoriaDescricao ?? this.tipoVistoriaDescricao;
+    this.veiculoModeloId = options?.veiculoModeloId ?? this.veiculoModeloId;
+    this.veiculoModeloNome = options?.veiculoModeloNome ?? this.veiculoModeloNome;
     this.dataVistoriaIso = options?.datavistoria ?? this.dataVistoriaIso;
   }
 
   finalizar(): void {
     this.vistoriaId = null;
-    this.tipoVistoriaId = null;
     this.startedAt = null;
     this.veiculoDescricao = null;
-    this.tipoVistoriaDescricao = null;
+    this.veiculoModeloId = null;
+    this.veiculoModeloNome = null;
     this.dataVistoriaIso = null;
   }
 
@@ -35,24 +39,20 @@ export class VistoriaFlowService {
     return this.vistoriaId;
   }
 
-  getTipoVistoriaId(): string | null {
-    return this.tipoVistoriaId;
-  }
-
   updateContext(options: {
-    tipoVistoriaId?: string;
     veiculoDescricao?: string;
-    tipoVistoriaDescricao?: string;
+    veiculoModeloId?: string;
+    veiculoModeloNome?: string;
     datavistoria?: string;
   }): void {
-    if (options.tipoVistoriaId) {
-      this.tipoVistoriaId = options.tipoVistoriaId;
-    }
     if (options.veiculoDescricao !== undefined) {
       this.veiculoDescricao = options.veiculoDescricao;
     }
-    if (options.tipoVistoriaDescricao !== undefined) {
-      this.tipoVistoriaDescricao = options.tipoVistoriaDescricao;
+    if (options.veiculoModeloId !== undefined) {
+      this.veiculoModeloId = options.veiculoModeloId;
+    }
+    if (options.veiculoModeloNome !== undefined) {
+      this.veiculoModeloNome = options.veiculoModeloNome;
     }
     if (options.datavistoria !== undefined) {
       this.dataVistoriaIso = options.datavistoria;
@@ -63,8 +63,12 @@ export class VistoriaFlowService {
     return this.veiculoDescricao;
   }
 
-  getTipoVistoriaDescricao(): string | null {
-    return this.tipoVistoriaDescricao;
+  getVeiculoModeloId(): string | null {
+    return this.veiculoModeloId;
+  }
+
+  getVeiculoModeloNome(): string | null {
+    return this.veiculoModeloNome;
   }
 
   getDataVistoriaIso(): string | null {

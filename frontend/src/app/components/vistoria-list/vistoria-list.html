@@ -10,12 +10,6 @@
     <app-motorista-autocomplete
       formControlName="motoristaId"
     ></app-motorista-autocomplete>
-    <select formControlName="tipoId" class="filter-select">
-      <option value="">Tipo de vistoria</option>
-      @for (tipo of tipos; track tipo.id) {
-        <option [value]="tipo.id">{{ tipo.descricao }}</option>
-      }
-    </select>
     <select formControlName="status" class="filter-select">
       @for (status of statusOptions; track status.value) {
         <option [value]="status.value">{{ status.label }}</option>
@@ -47,7 +41,6 @@
       <div class="vistoria-list-header">
         <span>Veículo</span>
         <span>Motorista</span>
-        <span>Tipo</span>
         <span>Data</span>
         <span>Status</span>
         <span>Odômetro</span>
@@ -65,7 +58,6 @@
             <div class="row-subtitle">{{ vistoria.veiculo?.placa || '-' }}</div>
           </div>
           <div>{{ vistoria.motorista?.nome || '-' }}</div>
-          <div>{{ vistoria.tipoVistoria?.descricao || '-' }}</div>
           <div>{{ vistoria.datavistoria | date: 'dd/MM/yyyy HH:mm' }}</div>
           <div>
             <span class="status-badge" [ngClass]="getStatusClass(vistoria.status)">

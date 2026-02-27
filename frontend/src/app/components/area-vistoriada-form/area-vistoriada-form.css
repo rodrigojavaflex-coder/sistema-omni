@@ -1,0 +1,69 @@
+.form-select-multiple {
+  min-height: 140px;
+  padding: 8px 12px;
+}
+
+.form-select-multiple option {
+  padding: 6px 8px;
+}
+
+.form-hint {
+  color: var(--text-muted, #666);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.form-row-3 .form-group {
+  flex: 1;
+  min-width: 120px;
+}
+
+.form-row-3 .form-group:first-child {
+  flex: 0 0 auto;
+  min-width: 80px;
+  max-width: 100px;
+}
+
+.form-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.form-section-header h3 {
+  margin: 0;
+}
+
+.componentes-table .grid-input {
+  width: 5rem;
+}
+
+.componentes-table .grid-select {
+  min-width: 6rem;
+}
+
+.grid-row-new {
+  background: var(--bg-secondary, #f8f9fa);
+}
+
+.grid-row-new td {
+  vertical-align: middle;
+}
+
+.grid-row-editing {
+  background: var(--bg-secondary, #f8f9fa);
+}
+
+.form-error-inline {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}

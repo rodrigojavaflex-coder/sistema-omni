@@ -50,8 +50,11 @@
 
         <div class="form-group">
           <label class="form-label">Modelo *</label>
-          <input type="text" formControlName="modelo" class="form-input" />
-          <div class="form-error" *ngIf="isFieldInvalid('modelo')">{{ getFieldError('modelo') }}</div>
+          <select formControlName="idmodelo" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let modelo of modelos" [value]="modelo.id">{{ modelo.nome }}</option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('idmodelo')">{{ getFieldError('idmodelo') }}</div>
         </div>
 
         <div class="form-group">

@@ -1,0 +1,631 @@
+<div class="list-container">
+  <div class="list-header">
+    <h2>Áreas Vistoriadas</h2>
+    <div class="header-actions">
+      <button *ngIf="canCreate" type="button" class="btn btn-primary" (click)="openNovaAreaModal()" title="Criar nova área vistoriada">
+        Nova Área
+      </button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-multi">
+      <label class="filter-label">Áreas</label>
+      <app-multi-select
+        [options]="areaOptions"
+        [(ngModel)]="filterAreasSelected"
+        (selectionChange)="onFilterChange()"
+        placeholder="Todas as áreas"
+      />
+    </div>
+    <div class="filter-multi">
+      <label class="filter-label">Modelos</label>
+      <app-multi-select
+        [options]="modeloOptions"
+        [(ngModel)]="filterModelosSelected"
+        (selectionChange)="onFilterChange()"
+        placeholder="Todos os modelos"
+      />
+    </div>
+    <div class="filter-multi">
+      <label class="filter-label">Status</label>
+      <app-multi-select
+        [options]="['Ativo', 'Inativo']"
+        [(ngModel)]="filterAtivoSelected"
+        (selectionChange)="onFilterChange()"
+        placeholder="Todos os status"
+      />
+    </div>
+    <div class="filter-multi">
+      <label class="filter-label">Sintomas</label>
+      <app-multi-select
+        [options]="sintomaOptionsForFilter"
+        [(ngModel)]="filterSintomasSelected"
+        (selectionChange)="onFilterChange()"
+        placeholder="Todos Sintomas"
+      />
+    </div>
+    <div class="filter-multi">
+      <label class="filter-label">Gravidade</label>
+      <app-multi-select
+        [options]="gravidadeOptionsForFilter"
+        [(ngModel)]="filterGravidadesSelected"
+        (selectionChange)="onFilterChange()"
+        placeholder="Todas Gravidades"
+      />
+    </div>
+    <select [(ngModel)]="filterComponentesMatriz" (change)="onFilterChange()" class="filter-select">
+      <option value="todos">Todos componentes</option>
+      <option value="com_matriz">Com configuração de matriz</option>
+      <option value="sem_matriz">Sem configuração de matriz</option>
+    </select>
+    <button (click)="exportToExcel()" class="btn btn-export-excel" title="Exportar para Excel">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
+        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+      </svg>
+    </button>
+    <button (click)="exportToPDF()" class="btn btn-export-pdf" title="Exportar mapa das áreas para PDF">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+        <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.396-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 a5.753 5.753 0 0 1 1.334.05c.364.066.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.712 5.712 0 0 1-.911-.95 a11.651 11.651 0 0 0-1.997.406 a11.307 11.307 0 0 1-1.02 1.51c-.292.35-.609.656-.927.787 a.793.793 0 0 1-.58.029zm1.379-1.901c-.166.076-.32.156-.459.238-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361.01.022.02.036.026.044a.266.266 0 0 0 .035-.012c.137-.056.355-.235.635-.572a8.18 8.18 0 0 0 .45-.606zm1.64-1.33a12.71 12.71 0 0 1 1.01-.193 11.744 11.744 0 0 1-.51-.858 20.801 20.801 0 0 1-.5 1.05zm2.446.45c.15.163.296.3.435.41.24.19.407.253.498.256a.107.107 0 0 0 .07-.015.307.307 0 0 0 .094-.125.436.436 0 0 0 .059-.2.095.095 0 0 0-.026-.063c-.052-.062-.2-.152-.518-.209a3.876 3.876 0 0 0-.612-.053zM8.078 7.8a6.7 6.7 0 0 0 .2-.828c.031-.188.043-.343.038-.465a.613.613 0 0 0-.032-.198.517.517 0 0 0-.145.04c-.087.035-.158.106-.196.283-.04.192-.03.469.046.822.024.111.054.227.09.346z"/>
+      </svg>
+      <span class="btn-export-pdf-label">Mapa das áreas</span>
+    </button>
+    <button (click)="clearFilters()" class="btn btn-secondary">Limpar</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Carregando...</p>
+  </div>
+
+  <div *ngIf="error" class="error-container">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error" class="areas-accordion">
+    <!-- Lista de áreas (arrastável) -->
+    <p class="accordion-hint" *ngIf="items.length > 0">
+      Arraste pelo ícone <span class="icon-grip">⋮⋮</span> para alterar a ordem das áreas.
+      <span *ngIf="savingOrder" class="saving-order">Salvando ordem...</span>
+    </p>
+    <div
+      class="accordion-list"
+      cdkDropList
+      (cdkDropListDropped)="onAreaDrop($event)">
+      <div
+        *ngFor="let area of items; let i = index"
+        class="accordion-card"
+        cdkDrag
+        [class.accordion-expanded]="isExpanded(area)">
+        <!-- Header em colunas: handle | ordem | descrição | modelos | status | ações -->
+        <div class="accordion-header" (click)="toggleComponentes(area)">
+          <span class="accordion-col accordion-col-handle" cdkDragHandle title="Arrastar para reordenar">⋮⋮</span>
+          <span class="accordion-col accordion-col-ordem">{{ getAreaOrdem(area, i) }}</span>
+          <span class="accordion-col accordion-col-nome">
+            <strong class="accordion-title">{{ area.nome }}</strong>
+          </span>
+          <span class="accordion-col accordion-col-modelos">
+            <span class="accordion-label">Modelos</span>
+            <span class="accordion-value" *ngIf="getModelosList(area).length === 0">—</span>
+            <span class="accordion-value" *ngIf="getModelosList(area).length > 0">
+              <span *ngFor="let nome of getModelosList(area)" class="modelo-tag">{{ nome }}</span>
+            </span>
+          </span>
+          <span class="accordion-col accordion-col-status">
+            <span class="accordion-label">Status</span>
+            <span class="accordion-value">{{ getStatusLabel(area) }}</span>
+          </span>
+          <span *ngIf="isExpanded(area)" class="accordion-col accordion-col-actions" (click)="$event.stopPropagation()">
+            <button *ngIf="canCreateComponente" type="button" class="btn btn-novo-componente" (click)="openNovoComponenteModal(area, $event)" title="Novo componente na área">Novo Componente</button>
+            <button *ngIf="canVincularComponente" type="button" class="btn btn-vincular" (click)="openVincularModal(area, $event)" title="Vincular componente existente à área">Vincular</button>
+            <button *ngIf="canEdit" type="button" class="btn btn-primary" (click)="openEditarAreaModal(area, $event)" title="Editar área">Editar</button>
+            <button *ngIf="canDelete" type="button" class="btn btn-danger" (click)="onDelete(area); $event.stopPropagation()" title="Excluir área">Excluir</button>
+            <button *ngIf="canAudit" type="button" class="btn btn-audit" (click)="openAuditModal(area); $event.stopPropagation()" title="Histórico de auditoria da área">Auditoria</button>
+          </span>
+        </div>
+
+        <!-- Corpo: componentes da área (mesma lógica de linhas + ações compactas) -->
+        <div *ngIf="isExpanded(area)" class="accordion-body">
+          <div class="componentes-panel">
+            <h4>Componentes da área: {{ expandedAreaNome }}</h4>
+            <p class="form-hint">Arraste pelo ícone <span class="icon-grip">⋮⋮</span> para alterar a ordem.</p>
+            <div *ngIf="loadingComponentes" class="loading-inline">Carregando...</div>
+            <div *ngIf="!loadingComponentes" class="componentes-list" cdkDropList (cdkDropListDropped)="onComponenteDrop($event)">
+              <!-- Cards de componente (clique expande/colapsa; em edição = azul + ações + matriz) -->
+              <div *ngFor="let comp of componentesDaAreaOrdenados; let i = index" class="componente-card" [class.componente-card-expanded]="isComponenteExpanded(comp)" cdkDrag>
+                <div class="componente-row" (click)="toggleComponente(comp)">
+                  <span class="componente-row-content">
+                    <span class="componente-cell componente-cell-handle" cdkDragHandle title="Arrastar para reordenar" (click)="$event.stopPropagation()">⋮⋮</span>
+                    <span class="componente-cell componente-cell-ordem-num">{{ getOrdemComponente(comp) }}</span>
+                    <span class="componente-cell componente-cell-nome">{{ comp.nome }}</span>
+                    <span class="componente-cell componente-cell-status">{{ comp.ativo ? 'Ativo' : 'Inativo' }}</span>
+                  </span>
+                  <span *ngIf="isComponenteExpanded(comp)" class="componente-row-actions" (click)="$event.stopPropagation()">
+                    <button type="button" class="btn btn-primary" (click)="openEditarComponenteModal(comp, $event)" title="Editar componente">Editar</button>
+                    <button *ngIf="canRemoveComponenteDaArea" type="button" class="btn btn-secondary" (click)="openRemoveFromAreaConfirmFromList(comp, $event)" title="Remover componente desta área (o componente não é excluído do sistema)">Remover</button>
+                    <button *ngIf="canAuditComponente" type="button" class="btn btn-audit" (click)="openComponenteAuditModal(comp, $event)" title="Histórico de auditoria do componente">Auditoria</button>
+                    <button type="button" class="btn btn-danger" (click)="openDeleteComponente(comp); $event.stopPropagation()" title="Excluir componente">Excluir</button>
+                  </span>
+                </div>
+                <!-- Corpo: matriz do componente (visível só quando em edição) -->
+                <div *ngIf="isComponenteExpanded(comp)" class="componente-body">
+                  <div class="componente-matriz-panel">
+                    <h5>Matriz de criticidade</h5>
+                    <div *ngIf="loadingMatriz" class="loading-inline">Carregando...</div>
+                    <div *ngIf="!loadingMatriz">
+                      <div class="matriz-actions" *ngIf="canCreateMatriz && !showNovoMatrizForm">
+                        <button type="button" class="btn btn-primary btn-sm" (click)="openNovoMatrizForm(); $event.stopPropagation()" title="Adicionar nova matriz de criticidade (sintoma + gravidade)">Nova matriz</button>
+                      </div>
+                      <div *ngIf="canCreateMatriz && showNovoMatrizForm" class="matriz-form-inline">
+                        <div class="form-row form-row-with-actions">
+                          <div class="form-group">
+                            <label class="form-label">Sintoma *</label>
+                            <select class="form-select" [(ngModel)]="novoMatrizIdsintoma" (click)="$event.stopPropagation()">
+                              <option value="">Selecione</option>
+                              <option *ngFor="let s of sintomasDisponiveisNovaMatriz" [value]="s.id">{{ s.descricao }}</option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label">Gravidade</label>
+                            <select
+                              class="form-select gravidade-select"
+                              [ngClass]="{
+                                'gravidade-verde': novoMatrizGravidade === 'VERDE',
+                                'gravidade-amarelo': novoMatrizGravidade === 'AMARELO',
+                                'gravidade-vermelho': novoMatrizGravidade === 'VERMELHO'
+                              }"
+                              [(ngModel)]="novoMatrizGravidade"
+                              (click)="$event.stopPropagation()">
+                              <option *ngFor="let g of gravidades" [value]="g" [attr.data-gravidade]="g.toLowerCase()">{{ g }}</option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label form-label-icon">
+                              <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                              Exige foto
+                            </label>
+                            <select class="form-select" [(ngModel)]="novoMatrizExigeFoto" (click)="$event.stopPropagation()">
+                              <option [value]="false">Não</option>
+                              <option [value]="true">Sim</option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label form-label-icon">
+                              <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                              Permite áudio
+                            </label>
+                            <select class="form-select" [(ngModel)]="novoMatrizPermiteAudio" (click)="$event.stopPropagation()">
+                              <option [value]="false">Não</option>
+                              <option [value]="true">Sim</option>
+                            </select>
+                          </div>
+                          <div class="form-row-actions">
+                            <button type="button" class="btn btn-primary btn-sm" (click)="addMatriz(); $event.stopPropagation()" [disabled]="savingNovoMatriz || !novoMatrizIdsintoma" title="Salvar nova matriz">Salvar</button>
+                            <button type="button" class="btn btn-secondary btn-sm" (click)="closeNovoMatrizForm(); $event.stopPropagation()" title="Cancelar e fechar o formulário">Cancelar</button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="matriz-table-wrap">
+                        <table class="matriz-table">
+                          <thead>
+                            <tr>
+                              <th>Sintoma</th>
+                              <th>Gravidade</th>
+                              <th class="th-icon" title="Exige foto">
+                                <span class="th-icon-wrap"><svg class="matriz-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg> Exige foto</span>
+                              </th>
+                              <th class="th-icon" title="Permite áudio">
+                                <span class="th-icon-wrap"><svg class="matriz-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg> Permite áudio</span>
+                              </th>
+                              <th *ngIf="canEditMatriz || canDeleteMatriz || canAuditMatriz">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let m of matrizList">
+                              <td>{{ getSintomaDescricao(m.idSintoma) }}</td>
+                              <td><span class="gravidade-badge gravidade-{{ m.gravidade.toLowerCase() }}" [attr.title]="m.gravidade"><span class="gravidade-dot"></span>{{ m.gravidade }}</span></td>
+                              <td class="cell-icon">
+                                @if (m.exigeFoto) {
+                                  <span class="cell-icon-wrap"><svg class="matriz-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg> Sim</span>
+                                } @else {
+                                  Não
+                                }
+                              </td>
+                              <td class="cell-icon">
+                                @if (m.permiteAudio) {
+                                  <span class="cell-icon-wrap"><svg class="matriz-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg> Sim</span>
+                                } @else {
+                                  Não
+                                }
+                              </td>
+                              <td *ngIf="canEditMatriz || canDeleteMatriz || canAuditMatriz" class="matriz-actions-cell">
+                                <button *ngIf="canEditMatriz" type="button" class="btn btn-primary btn-sm" (click)="openEditarMatrizModal(m, $event)" title="Editar matriz de criticidade">Editar</button>
+                                <button *ngIf="canAuditMatriz" type="button" class="btn btn-audit btn-sm" (click)="openMatrizAuditModal(m, $event)" title="Histórico de auditoria da matriz">Auditoria</button>
+                                <button *ngIf="canDeleteMatriz" type="button" class="btn btn-danger btn-sm" (click)="openDeleteMatrizModal(m, $event)" title="Excluir matriz de criticidade">Excluir</button>
+                              </td>
+                            </tr>
+                            <tr *ngIf="matrizList.length === 0">
+                              <td [attr.colspan]="canEditMatriz || canDeleteMatriz || canAuditMatriz ? 5 : 4" class="matriz-empty">Nenhuma matriz configurada. Use "Nova matriz" para adicionar.</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div *ngIf="componentesDaAreaOrdenados.length === 0" class="componentes-empty">Nenhum componente. Use o botão "Novo Componente" no card da área para adicionar.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="items.length === 0" class="accordion-empty">Nenhuma área. Use o bloco "Nova área" acima para adicionar.</div>
+  </div>
+</div>
+
+<!-- Modal Nova Área -->
+<div class="modal-overlay" *ngIf="showNovaAreaModal" (click)="closeNovaAreaModal()">
+  <div class="modal-container modal-container-form" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Nova Área</h3>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Descrição da área *</label>
+        <input
+          type="text"
+          class="form-input"
+          [(ngModel)]="novoAreaNome"
+          placeholder="Ex.: Motor, Direção"
+          maxlength="100"
+        />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Modelos atendidos</label>
+        <app-multi-select
+          [options]="modeloOptions"
+          [(ngModel)]="novoAreaModelosSelecionados"
+          (selectionChange)="novoAreaModelosSelecionados = $event"
+          [ngModelOptions]="{ standalone: true }"
+          placeholder="Selecione os modelos">
+        </app-multi-select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" [(ngModel)]="novoAreaAtivo">
+          <option [value]="true">Ativo</option>
+          <option [value]="false">Inativo</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeNovaAreaModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="addAreaFromModal()" [disabled]="savingArea">
+        <span *ngIf="savingArea" class="spinner"></span>
+        {{ savingArea ? 'Salvando...' : 'Adicionar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Área -->
+<div class="modal-overlay" *ngIf="showEditarAreaModal" (click)="closeEditarAreaModal()">
+  <div class="modal-container modal-container-form" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Editar Área</h3>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Descrição da área *</label>
+        <input
+          type="text"
+          class="form-input"
+          [(ngModel)]="editAreaModalNome"
+          placeholder="Ex.: Motor, Direção"
+          maxlength="100"
+        />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Modelos atendidos</label>
+        <app-multi-select
+          [options]="modeloOptions"
+          [(ngModel)]="editAreaModalModelosSelecionados"
+          (selectionChange)="editAreaModalModelosSelecionados = $event"
+          [ngModelOptions]="{ standalone: true }"
+          placeholder="Selecione os modelos">
+        </app-multi-select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" [(ngModel)]="editAreaModalAtivo">
+          <option [value]="true">Ativo</option>
+          <option [value]="false">Inativo</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeEditarAreaModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="saveAreaFromModal()" [disabled]="savingEditArea || !editAreaModalNome.trim()">
+        <span *ngIf="savingEditArea" class="spinner"></span>
+        {{ savingEditArea ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<app-confirmation-modal
+  [isVisible]="showDeleteModal"
+  [message]="deleteModalMessage"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()">
+</app-confirmation-modal>
+
+<!-- Modal Novo Componente -->
+<div class="modal-overlay" *ngIf="showNovoComponenteModal" (click)="closeNovoComponenteModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Novo Componente</h3>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nome do componente *</label>
+        <input
+          type="text"
+          class="form-input"
+          [(ngModel)]="novoComponenteModalNome"
+          placeholder="Ex.: Freio dianteiro, Amortecedor"
+          maxlength="100"
+        />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" [(ngModel)]="novoComponenteModalAtivo">
+          <option [value]="true">Ativo</option>
+          <option [value]="false">Inativo</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeNovoComponenteModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="addComponenteFromModal()" [disabled]="savingNovoComponente || !novoComponenteModalNome.trim()">
+        <span *ngIf="savingNovoComponente" class="spinner"></span>
+        {{ savingNovoComponente ? 'Salvando...' : 'Adicionar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Componente -->
+<div class="modal-overlay" *ngIf="showEditarComponenteModal" (click)="closeEditarComponenteModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Editar Componente</h3>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nome do componente *</label>
+        <input
+          type="text"
+          class="form-input"
+          [(ngModel)]="editComponenteModalNome"
+          placeholder="Ex.: Freio dianteiro, Amortecedor"
+          maxlength="100"
+        />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" [(ngModel)]="editComponenteModalAtivo">
+          <option [value]="true">Ativo</option>
+          <option [value]="false">Inativo</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeEditarComponenteModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="saveComponenteFromModal()" [disabled]="savingEditComponente || !editComponenteModalNome.trim()">
+        <span *ngIf="savingEditComponente" class="spinner"></span>
+        {{ savingEditComponente ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Vincular Componente -->
+<div class="modal-overlay" *ngIf="showVincularModal" (click)="closeVincularModal()">
+  <div class="modal-container modal-container-vincular" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Vincular componente à área{{ areaParaVincular ? ': ' + areaParaVincular.nome : '' }}</h3>
+    </div>
+    <div class="modal-body">
+      <div class="vincular-filters">
+        <div class="form-group">
+          <label class="form-label">Filtrar por nome do componente</label>
+          <input
+            type="text"
+            class="form-input"
+            [(ngModel)]="filterVincularNome"
+            placeholder="Digite o nome..."
+          />
+        </div>
+        <label class="vincular-checkbox">
+          <input type="checkbox" [(ngModel)]="onlySemArea" />
+          <span>Componentes sem áreas</span>
+        </label>
+      </div>
+      <div *ngIf="loadingVincular" class="loading-inline">Carregando...</div>
+      <div *ngIf="!loadingVincular" class="vincular-table-wrap">
+        <table class="vincular-table">
+          <thead>
+            <tr>
+              <th>Componente</th>
+              <th>Área vinculada</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let comp of componentesComAreaFiltrados">
+              <td>{{ comp.nome }}</td>
+              <td>{{ comp.nomeArea ?? '—' }}</td>
+              <td>
+                <!-- Sem área: opção Vincular -->
+                <ng-container *ngIf="!comp.idArea">
+                  <button
+                    type="button"
+                    class="btn btn-vincular btn-sm"
+                    [disabled]="isComponenteJaVinculado(comp) || savingVincular"
+                    (click)="vincularComponente(comp, $event)">
+                    {{ isComponenteJaVinculado(comp) ? 'Já vinculado' : 'Vincular' }}
+                  </button>
+                </ng-container>
+                <!-- Com área: opção Remover da área (com permissão) -->
+                <ng-container *ngIf="comp.idArea && canRemoveComponenteDaArea">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    [disabled]="savingVincular"
+                    (click)="openRemoveFromAreaConfirm(comp, $event)"
+                    title="Remover o componente desta área. O componente não é excluído do sistema.">
+                    Remover da área
+                  </button>
+                </ng-container>
+                <span *ngIf="comp.idArea && !canRemoveComponenteDaArea" class="vincular-sem-acao">—</span>
+              </td>
+            </tr>
+            <tr *ngIf="componentesComAreaFiltrados.length === 0">
+              <td colspan="3" class="vincular-empty">Nenhum componente encontrado.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeVincularModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Matriz -->
+<div class="modal-overlay" *ngIf="showEditarMatrizModal" (click)="closeEditarMatrizModal()">
+  <div class="modal-container modal-container-form" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Editar matriz</h3>
+      <button type="button" class="modal-close" (click)="closeEditarMatrizModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Sintoma *</label>
+        <select class="form-select" [(ngModel)]="editMatrizIdsintoma">
+          <option value="">Selecione</option>
+          <option *ngFor="let s of sintomasDisponiveisEditarMatriz" [value]="s.id">{{ s.descricao }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gravidade</label>
+        <select
+          class="form-select gravidade-select"
+          [ngClass]="{
+            'gravidade-verde': editMatrizGravidade === 'VERDE',
+            'gravidade-amarelo': editMatrizGravidade === 'AMARELO',
+            'gravidade-vermelho': editMatrizGravidade === 'VERMELHO'
+          }"
+          [(ngModel)]="editMatrizGravidade">
+          <option *ngFor="let g of gravidades" [value]="g" [attr.data-gravidade]="g.toLowerCase()">{{ g }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label form-label-icon">
+          <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+          Exige foto
+        </label>
+        <select class="form-select" [(ngModel)]="editMatrizExigeFoto">
+          <option [value]="false">Não</option>
+          <option [value]="true">Sim</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label form-label-icon">
+          <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          Permite áudio
+        </label>
+        <select class="form-select" [(ngModel)]="editMatrizPermiteAudio">
+          <option [value]="false">Não</option>
+          <option [value]="true">Sim</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeEditarMatrizModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="saveEditarMatriz()" [disabled]="savingEditarMatriz || !editMatrizIdsintoma">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<app-confirmation-modal
+  [isVisible]="showDeleteMatrizModal"
+  title="Excluir matriz"
+  [message]="deleteMatrizModalMessage"
+  confirmText="Excluir"
+  cancelText="Cancelar"
+  (confirmed)="confirmDeleteMatriz()"
+  (cancelled)="closeDeleteMatrizModal()">
+</app-confirmation-modal>
+
+<app-confirmation-modal
+  [isVisible]="showRemoveFromAreaConfirm"
+  title="Remover componente da área"
+  [message]="removeFromAreaConfirmMessage"
+  confirmText="Remover"
+  cancelText="Cancelar"
+  (confirmed)="confirmRemoveFromArea()"
+  (cancelled)="closeRemoveFromAreaConfirm()">
+</app-confirmation-modal>
+
+<app-confirmation-modal
+  [isVisible]="showDeleteComponenteModal"
+  title="Excluir componente"
+  [message]="deleteComponenteModalMessage"
+  confirmText="Excluir"
+  cancelText="Cancelar"
+  (confirmed)="confirmDeleteComponente()"
+  (cancelled)="closeDeleteComponenteModal()">
+</app-confirmation-modal>
+
+<app-historico-auditoria
+  *ngIf="selectedItemForAudit"
+  [entidade]="'areas_vistoriadas'"
+  [entidadeId]="selectedItemForAudit.id"
+  [entityDisplayName]="'Área Vistoriada'"
+  [fieldLabels]="{ nome: 'Descrição', ordem_visual: 'Ordem', ativo: 'Status' }"
+  [showModal]="showAuditModal"
+  (modalClosed)="closeAuditModal()">
+</app-historico-auditoria>
+
+<app-historico-auditoria
+  *ngIf="selectedComponenteForAudit"
+  [entidade]="'componentes'"
+  [entidadeId]="selectedComponenteForAudit.id"
+  [entityDisplayName]="'Componente'"
+  [fieldLabels]="{ nome: 'Nome', ativo: 'Status' }"
+  [showModal]="showComponenteAuditModal"
+  (modalClosed)="closeComponenteAuditModal()">
+</app-historico-auditoria>
+
+<app-historico-auditoria
+  *ngIf="selectedMatrizForAudit"
+  [entidade]="'matriz_criticidade'"
+  [entidadeId]="selectedMatrizForAudit.id"
+  [entityDisplayName]="'Matriz de Criticidade'"
+  [fieldLabels]="{
+    idcomponente: 'Componente',
+    idsintoma: 'Sintoma',
+    gravidade: 'Gravidade',
+    exige_foto: 'Exige Foto',
+    permite_audio: 'Permite Áudio'
+  }"
+  [showModal]="showMatrizAuditModal"
+  (modalClosed)="closeMatrizAuditModal()">
+</app-historico-auditoria>

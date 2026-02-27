@@ -1,0 +1,113 @@
+<div class="list-container">
+  <div class="list-header">
+    <h2>Matriz de Criticidade</h2>
+    <div class="header-actions">
+      <button *ngIf="canCreate" class="btn btn-primary" (click)="onNew()">
+        Nova Matriz
+      </button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <select [(ngModel)]="filterComponente" (change)="onFilterChange()" class="filter-select">
+      <option value="">Todos os componentes</option>
+      <option *ngFor="let componente of componentes" [value]="componente.id">
+        {{ componente.nome }}
+      </option>
+    </select>
+    <select [(ngModel)]="filterGravidade" (change)="onFilterChange()" class="filter-select">
+      <option value="">Todas as gravidades</option>
+      <option value="VERDE">VERDE</option>
+      <option value="AMARELO">AMARELO</option>
+      <option value="VERMELHO">VERMELHO</option>
+    </select>
+
+    <button (click)="exportToExcel()" class="btn btn-export-excel" title="Exportar para Excel">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
+        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+      </svg>
+    </button>
+    <button (click)="exportToPDF()" class="btn btn-export-pdf" title="Exportar para PDF">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+        <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.396-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 a5.753 5.753 0 0 1 1.334.05c.364.066.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.712 5.712 0 0 1-.911-.95 a11.651 11.651 0 0 0-1.997.406 a11.307 11.307 0 0 1-1.02 1.51c-.292.35-.609.656-.927.787 a.793.793 0 0 1-.58.029z"/>
+      </svg>
+    </button>
+    <button (click)="clearFilters()" class="btn btn-secondary">Limpar</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Carregando...</p>
+  </div>
+
+  <div *ngIf="error" class="error-container">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Componente</th>
+          <th>Sintoma</th>
+          <th>Gravidade</th>
+          <th>Exige Foto</th>
+          <th>Permite Áudio</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items">
+          <td>{{ getComponenteLabel(item.idComponente) }}</td>
+          <td>{{ getSintomaLabel(item.idSintoma) }}</td>
+          <td>{{ item.gravidade }}</td>
+          <td>{{ getBooleanLabel(item.exigeFoto) }}</td>
+          <td>{{ getBooleanLabel(item.permiteAudio) }}</td>
+          <td>
+            <div class="table-actions">
+              <button *ngIf="canEdit" class="btn btn-small btn-primary" (click)="onEdit(item)">
+                Editar
+              </button>
+              <button *ngIf="canDelete" class="btn btn-small btn-danger" (click)="onDelete(item)">
+                Excluir
+              </button>
+              <button *ngIf="canAudit" class="btn btn-small btn-audit" (click)="openAuditModal(item)" title="Auditoria">
+                Auditoria
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="items.length === 0">
+          <td colspan="6" class="table-empty-cell" style="text-align: center; padding: 2rem;">
+            Nenhuma matriz encontrada
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-confirmation-modal
+  [isVisible]="showDeleteModal"
+  [message]="deleteModalMessage"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()"
+></app-confirmation-modal>
+
+<app-historico-auditoria
+  *ngIf="selectedItemForAudit"
+  [entidade]="'matriz_criticidade'"
+  [entidadeId]="selectedItemForAudit.id"
+  [entityDisplayName]="'Matriz de Criticidade'"
+  [fieldLabels]="{
+    idcomponente: 'Componente',
+    idsintoma: 'Sintoma',
+    gravidade: 'Gravidade',
+    exige_foto: 'Exige Foto',
+    permite_audio: 'Permite Áudio'
+  }"
+  [showModal]="showAuditModal"
+  (modalClosed)="closeAuditModal()">
+</app-historico-auditoria>

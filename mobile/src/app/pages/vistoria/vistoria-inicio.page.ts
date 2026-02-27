@@ -13,8 +13,6 @@ import {
   IonLabel,
   IonList,
   IonSearchbar,
-  IonSelect,
-  IonSelectOption,
   IonSpinner,
   IonText,
   IonTitle,
@@ -26,12 +24,10 @@ import { Router } from '@angular/router';
 import { addIcons } from 'ionicons';
 import { refreshOutline } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
-import { TipoVistoriaService } from '../../services/tipo-vistoria.service';
 import { VeiculoService } from '../../services/veiculo.service';
 import { MotoristaService } from '../../services/motorista.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { VistoriaFlowService } from '../../services/vistoria-flow.service';
-import { TipoVistoria } from '../../models/tipo-vistoria.model';
 import { Veiculo } from '../../models/veiculo.model';
 import { Motorista } from '../../models/motorista.model';
 import { Vistoria } from '../../models/vistoria.model';
@@ -63,14 +59,11 @@ import { AuthService } from '../../services/auth.service';
     IonIcon,
     IonList,
     IonSearchbar,
-    IonSelect,
-    IonSelectOption,
     IonSpinner,
     IonText,
   ],
 })
 export class VistoriaInicioPage implements OnInit {
-  private tipoService = inject(TipoVistoriaService);
   private veiculoService = inject(VeiculoService);
   private motoristaService = inject(MotoristaService);
   private vistoriaService = inject(VistoriaService);
@@ -80,7 +73,6 @@ export class VistoriaInicioPage implements OnInit {
   private authService = inject(AuthService);
   private alertController = inject(AlertController);
 
-  tipos: TipoVistoria[] = [];
   veiculos: Veiculo[] = [];
   motoristas: Motorista[] = [];
   vistoriasEmAndamento: Vistoria[] = [];
@@ -89,7 +81,6 @@ export class VistoriaInicioPage implements OnInit {
   motoristaSearch = '';
   selectedVeiculo: Veiculo | null = null;
   selectedMotorista: Motorista | null = null;
-  selectedTipoId = '';
 
   odometro: number | null = null;
   odometroDisplay = '';
@@ -99,7 +90,6 @@ export class VistoriaInicioPage implements OnInit {
   datavistoriaDisplay = '';
   datavistoriaIso = '';
 
-  loadingTipos = false;
   loadingVeiculos = false;
   loadingMotoristas = false;
   isSaving = false;
@@ -113,15 +103,6 @@ export class VistoriaInicioPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.atualizarDataHora();
-
-    this.loadingTipos = true;
-    try {
-      this.tipos = await this.tipoService.getAtivos();
-    } catch (error) {
-      this.errorMessage = 'Erro ao carregar tipos de vistoria.';
-    } finally {
-      this.loadingTipos = false;
-    }
 
     this.loadingAndamento = true;
     try {
@@ -181,13 +162,23 @@ export class VistoriaInicioPage implements OnInit {
   async continuarVistoria(vistoria: Vistoria): Promise<void> {
     try {
       const atualizada = await this.vistoriaService.retomarVistoria(vistoria.id);
-      const tipoId = atualizada.idTipoVistoria || vistoria.idTipoVistoria;
-      this.flowService.iniciar(atualizada.id, tipoId, {
+      const modeloId =
+        atualizada.veiculo?.idModelo ??
+        atualizada.veiculo?.modeloVeiculo?.id ??
+        vistoria.veiculo?.idModelo ??
+        vistoria.veiculo?.modeloVeiculo?.id;
+      const modeloNome =
+        atualizada.veiculo?.modeloVeiculo?.nome ??
+        atualizada.veiculo?.modelo ??
+        vistoria.veiculo?.modeloVeiculo?.nome ??
+        vistoria.veiculo?.modelo;
+      this.flowService.iniciar(atualizada.id, {
         veiculoDescricao: atualizada.veiculo?.descricao ?? vistoria.veiculo?.descricao,
-        tipoVistoriaDescricao: atualizada.tipoVistoria?.descricao ?? vistoria.tipoVistoria?.descricao,
+        veiculoModeloId: modeloId ?? undefined,
+        veiculoModeloNome: modeloNome ?? undefined,
         datavistoria: atualizada.datavistoria ?? vistoria.datavistoria,
       });
-      this.router.navigate(['/vistoria/checklist']);
+      this.router.navigate(['/vistoria/areas']);
     } catch (error: any) {
       this.errorMessage = error?.message || 'Não foi possível retomar a vistoria.';
     }
@@ -283,7 +274,6 @@ export class VistoriaInicioPage implements OnInit {
     return Boolean(
       this.selectedVeiculo &&
         this.selectedMotorista &&
-        this.selectedTipoId &&
         this.odometro !== null &&
         this.odometro > 0 &&
         this.odometro <= 9999999 &&
@@ -297,9 +287,6 @@ export class VistoriaInicioPage implements OnInit {
     }
     if (!this.selectedMotorista) {
       return 'Selecione um motorista.';
-    }
-    if (!this.selectedTipoId) {
-      return 'Selecione o tipo de vistoria.';
     }
     if (this.odometro === null || this.odometro <= 0) {
       return 'Informe o odômetro.';
@@ -333,25 +320,23 @@ export class VistoriaInicioPage implements OnInit {
     this.isSaving = true;
     this.errorMessage = '';
     try {
-      const tipoSelecionado = this.tipos.find((tipo) => tipo.id === this.selectedTipoId);
       const vistoriaId = this.flowService.getVistoriaId();
       if (vistoriaId) {
         await this.vistoriaService.atualizarVistoria(vistoriaId, {
           idveiculo: this.selectedVeiculo.id,
           idmotorista: this.selectedMotorista.id,
-          idtipovistoria: this.selectedTipoId,
           odometro: Number(this.odometro),
           porcentagembateria:
             this.bateria === null ? null : Number(this.bateria),
           datavistoria: this.datavistoriaIso,
         });
         this.flowService.updateContext({
-          tipoVistoriaId: this.selectedTipoId,
           veiculoDescricao: this.selectedVeiculo.descricao,
-          tipoVistoriaDescricao: tipoSelecionado?.descricao,
+          veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
+          veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? this.selectedVeiculo.modelo ?? undefined,
           datavistoria: this.datavistoriaIso,
         });
-        this.router.navigate(['/vistoria/checklist']);
+        this.router.navigate(['/vistoria/areas']);
         return;
       }
 
@@ -359,17 +344,17 @@ export class VistoriaInicioPage implements OnInit {
         idusuario: user.id,
         idveiculo: this.selectedVeiculo.id,
         idmotorista: this.selectedMotorista.id,
-        idtipovistoria: this.selectedTipoId,
         odometro: Number(this.odometro),
         ...(this.bateria !== null ? { porcentagembateria: Number(this.bateria) } : {}),
         datavistoria: this.datavistoriaIso,
       });
-      this.flowService.iniciar(vistoria.id, this.selectedTipoId, {
+      this.flowService.iniciar(vistoria.id, {
         veiculoDescricao: this.selectedVeiculo.descricao,
-        tipoVistoriaDescricao: tipoSelecionado?.descricao,
+        veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
+        veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? this.selectedVeiculo.modelo ?? undefined,
         datavistoria: this.datavistoriaIso,
       });
-      this.router.navigate(['/vistoria/checklist']);
+      this.router.navigate(['/vistoria/areas']);
     } catch (error: any) {
       this.errorMessage = error?.message || 'Erro ao iniciar vistoria.';
     } finally {
@@ -485,15 +470,14 @@ export class VistoriaInicioPage implements OnInit {
         this.carregarUltimoOdometro(this.selectedVeiculo.id, vistoria.id);
       }
       if (vistoria?.motorista) {
-        this.selectedMotorista = {
-          id: vistoria.idMotorista,
-          nome: vistoria.motorista?.nome ?? '',
-          matricula: vistoria.motorista?.matricula ?? '',
-          status: 'ATIVO',
-        } as Motorista;
+      this.selectedMotorista = {
+        id: vistoria.idMotorista,
+        nome: vistoria.motorista?.nome ?? '',
+        matricula: vistoria.motorista?.matricula ?? '',
+        status: 'ATIVO',
+      } as Motorista;
         this.motoristaSearch = `${this.selectedMotorista.nome} - ${this.selectedMotorista.matricula}`;
       }
-      this.selectedTipoId = vistoria.idTipoVistoria;
       this.onOdometroInput(vistoria.odometro);
       if (this.isBateriaObrigatoria()) {
         this.bateria =
@@ -509,9 +493,7 @@ export class VistoriaInicioPage implements OnInit {
         this.datavistoriaIso = date.toISOString();
       }
       this.flowService.updateContext({
-        tipoVistoriaId: vistoria.idTipoVistoria,
         veiculoDescricao: vistoria.veiculo?.descricao,
-        tipoVistoriaDescricao: vistoria.tipoVistoria?.descricao,
         datavistoria: vistoria.datavistoria,
       });
     } catch {

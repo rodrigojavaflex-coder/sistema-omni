@@ -1,0 +1,37 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Áreas Vistoriadas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="finalizarVistoria()">Finalizar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="content" *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Carregando áreas...</p>
+  </div>
+
+  <ion-text color="danger" *ngIf="errorMessage">
+    <p class="error-message">{{ errorMessage }}</p>
+  </ion-text>
+
+  <ion-list *ngIf="!loading && areas.length > 0">
+    <ion-item button detail="true" *ngFor="let area of areas" (click)="abrirArea(area)">
+      <ion-label>
+        <h2>{{ area.nome }}</h2>
+        <p *ngIf="contagemPorArea[area.id]">
+          {{ contagemPorArea[area.id] }} irregularidade(s)
+        </p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <div class="content" *ngIf="!loading && areas.length === 0">
+    <p>Nenhuma área encontrada para o modelo.</p>
+  </div>
+</ion-content>

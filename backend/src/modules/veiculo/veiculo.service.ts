@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Veiculo } from './entities/veiculo.entity';
+import { ModeloVeiculo } from './entities/modelo-veiculo.entity';
 import { CreateVeiculoDto } from './dto/create-veiculo.dto';
 import { UpdateVeiculoDto } from './dto/update-veiculo.dto';
 import { FindVeiculoDto } from './dto/find-veiculo.dto';
@@ -22,6 +23,8 @@ export class VeiculoService {
   constructor(
     @InjectRepository(Veiculo)
     private readonly veiculoRepository: Repository<Veiculo>,
+    @InjectRepository(ModeloVeiculo)
+    private readonly modeloRepository: Repository<ModeloVeiculo>,
   ) {}
 
   async create(createVeiculoDto: CreateVeiculoDto): Promise<Veiculo> {
@@ -31,9 +34,14 @@ export class VeiculoService {
       createVeiculoDto.placa,
     );
 
-    const veiculo = this.veiculoRepository.create(
-      createVeiculoDto as unknown as Veiculo,
-    );
+    const modelo = await this.getModeloOrFail(createVeiculoDto.idmodelo);
+
+    const veiculo = this.veiculoRepository.create({
+      ...createVeiculoDto,
+      idModelo: modelo.id,
+      modeloVeiculo: modelo,
+      modeloLegado: modelo.nome,
+    } as unknown as Veiculo);
     return this.veiculoRepository.save(veiculo);
   }
 
@@ -80,6 +88,7 @@ export class VeiculoService {
       ano,
       marca,
       modelo,
+      idmodelo,
       combustivel,
       status,
       marcaDaCarroceria,
@@ -113,7 +122,10 @@ export class VeiculoService {
     }
 
     if (modelo) {
-      query.andWhere('v.modelo ILIKE :modelo', { modelo: `%${modelo}%` });
+      query.andWhere('v.modeloLegado ILIKE :modelo', { modelo: `%${modelo}%` });
+    }
+    if (idmodelo) {
+      query.andWhere('v.idModelo = :idModelo', { idModelo: idmodelo });
     }
 
     if (combustivel) {
@@ -176,11 +188,26 @@ export class VeiculoService {
 
     Object.assign(entity, updateVeiculoDto as any);
 
+    if (updateVeiculoDto.idmodelo) {
+      const modelo = await this.getModeloOrFail(updateVeiculoDto.idmodelo);
+      entity.idModelo = modelo.id;
+      entity.modeloVeiculo = modelo;
+      entity.modeloLegado = modelo.nome;
+    }
+
     return this.veiculoRepository.save(entity);
   }
 
   async remove(id: string): Promise<void> {
     const entity = await this.findOne(id);
     await this.veiculoRepository.remove(entity);
+  }
+
+  private async getModeloOrFail(id: string): Promise<ModeloVeiculo> {
+    const modelo = await this.modeloRepository.findOne({ where: { id } });
+    if (!modelo) {
+      throw new NotFoundException('Modelo de veículo não encontrado');
+    }
+    return modelo;
   }
 }

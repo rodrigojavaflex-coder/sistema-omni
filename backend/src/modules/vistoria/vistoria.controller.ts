@@ -7,34 +7,33 @@ import {
   ParseUUIDPipe,
   Post,
   Patch,
-  UploadedFiles,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Permission } from '../../common/enums/permission.enum';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
 import { Vistoria } from './entities/vistoria.entity';
-import { ChecklistVistoria } from './entities/checklist-vistoria.entity';
-import { ImagensVistoria } from './entities/imagens-vistoria.entity';
 import { VistoriaService } from './vistoria.service';
 import { CreateVistoriaDto } from './dto/create-vistoria.dto';
-import { CreateChecklistItemDto } from './dto/create-checklist-item.dto';
 import { FinalizeVistoriaDto } from './dto/finalize-vistoria.dto';
 import { UpdateVistoriaDto } from './dto/update-vistoria.dto';
-import { ChecklistItemResumoDto } from './dto/checklist-item-resumo.dto';
-import { ChecklistImagemResumoDto } from './dto/checklist-imagem-resumo.dto';
+import { CreateIrregularidadeDto } from './dto/create-irregularidade.dto';
+import { IrregularidadeResumoDto } from './dto/irregularidade-resumo.dto';
+import { IrregularidadeImagemResumoDto } from './dto/irregularidade-imagem-resumo.dto';
+import { IrregularidadeService } from './irregularidade.service';
 
 @ApiTags('vistorias')
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @Controller('vistoria')
 export class VistoriaController {
-  constructor(private readonly vistoriaService: VistoriaService) {}
+  constructor(
+    private readonly vistoriaService: VistoriaService,
+    private readonly irregularidadeService: IrregularidadeService,
+  ) {}
 
   @Post()
   @Permissions(Permission.VISTORIA_CREATE)
@@ -44,68 +43,46 @@ export class VistoriaController {
     return this.vistoriaService.create(dto);
   }
 
-  @Post(':id/checklist')
+  @Post(':id/irregularidades')
   @Permissions(Permission.VISTORIA_UPDATE)
-  @ApiOperation({ summary: 'Registrar item do checklist' })
+  @ApiOperation({ summary: 'Registrar irregularidade' })
   @ApiResponse({
     status: 201,
-    description: 'Item de checklist registrado',
-    type: ChecklistVistoria,
+    description: 'Irregularidade registrada',
   })
-  addChecklistItem(
+  addIrregularidade(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: CreateChecklistItemDto,
-  ): Promise<ChecklistVistoria> {
-    return this.vistoriaService.addChecklistItem(id, dto);
+    @Body() dto: CreateIrregularidadeDto,
+  ) {
+    return this.irregularidadeService.create(id, dto);
   }
 
-  @Get(':id/checklist')
+  @Get(':id/irregularidades')
   @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
-  @ApiOperation({ summary: 'Listar itens salvos do checklist' })
+  @ApiOperation({ summary: 'Listar irregularidades da vistoria' })
   @ApiResponse({
     status: 200,
-    description: 'Lista de itens do checklist',
-    type: [ChecklistItemResumoDto],
+    description: 'Lista de irregularidades',
+    type: [IrregularidadeResumoDto],
   })
-  listChecklist(
+  listIrregularidades(
     @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<ChecklistItemResumoDto[]> {
-    return this.vistoriaService.listChecklist(id);
+  ): Promise<IrregularidadeResumoDto[]> {
+    return this.irregularidadeService.listByVistoria(id);
   }
 
-  @Get(':id/checklist/imagens')
+  @Get(':id/irregularidades/imagens')
   @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
-  @ApiOperation({ summary: 'Listar imagens do checklist da vistoria' })
+  @ApiOperation({ summary: 'Listar imagens das irregularidades da vistoria' })
   @ApiResponse({
     status: 200,
-    description: 'Lista de imagens por item',
-    type: [ChecklistImagemResumoDto],
+    description: 'Lista de imagens por irregularidade',
+    type: [IrregularidadeImagemResumoDto],
   })
-  listChecklistImages(
+  listIrregularidadesImages(
     @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<ChecklistImagemResumoDto[]> {
-    return this.vistoriaService.listChecklistImages(id);
-  }
-
-  @Post(':id/checklist/:checklistId/imagens')
-  @Permissions(Permission.VISTORIA_UPDATE)
-  @UseInterceptors(
-    FilesInterceptor('files', 10, {
-      limits: { fileSize: 5 * 1024 * 1024 },
-    }),
-  )
-  @ApiOperation({ summary: 'Enviar imagens do checklist (multipart)' })
-  @ApiResponse({
-    status: 201,
-    description: 'Imagens cadastradas',
-    type: [ImagensVistoria],
-  })
-  uploadChecklistImages(
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Param('checklistId', new ParseUUIDPipe()) checklistId: string,
-    @UploadedFiles() files: Express.Multer.File[],
-  ): Promise<ImagensVistoria[]> {
-    return this.vistoriaService.uploadChecklistImages(id, checklistId, files);
+  ): Promise<IrregularidadeImagemResumoDto[]> {
+    return this.irregularidadeService.listImages(id);
   }
 
   @Post(':id/finalizar')

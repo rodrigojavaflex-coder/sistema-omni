@@ -12,7 +12,11 @@ export interface Veiculo {
   ano: number;
   chassi: string;
   marca: string;
-  modelo: string;
+  /** Nome do modelo (legado); preferir modeloVeiculo.nome quando disponível. */
+  modelo?: string | null;
+  modeloLegado?: string | null;
+  idModelo: string;
+  modeloVeiculo?: { id: string; nome: string };
   combustivel: Combustivel;
   status?: StatusVeiculo;
   marcaDaCarroceria?: string;
@@ -27,7 +31,7 @@ export interface CreateVeiculoDto {
   ano: number;
   chassi: string;
   marca: string;
-  modelo: string;
+  idmodelo: string;
   combustivel: Combustivel;
   status?: StatusVeiculo;
   marcaDaCarroceria?: string;
@@ -44,6 +48,7 @@ export interface FindVeiculoDto {
   ano?: number;
   marca?: string;
   modelo?: string;
+  idmodelo?: string;
   combustivel?: string;
   status?: StatusVeiculo;
   marcaDaCarroceria?: string;

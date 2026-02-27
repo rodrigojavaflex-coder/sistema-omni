@@ -19,6 +19,7 @@ export class VeiculoService {
       if (find.ano) params = params.set('ano', find.ano.toString());
       if (find.marca) params = params.set('marca', find.marca);
       if (find.modelo) params = params.set('modelo', find.modelo);
+      if (find.idmodelo) params = params.set('idmodelo', find.idmodelo);
       if (find.combustivel) params = params.set('combustivel', find.combustivel);
       if (find.status) params = params.set('status', find.status);
       if (find.marcaDaCarroceria) params = params.set('marcaDaCarroceria', find.marcaDaCarroceria);

@@ -1,10 +1,10 @@
 import {
   addIcons,
   logOutOutline
-} from "./chunk-MVYH7HIC.js";
+} from "./chunk-JMBQIX2W.js";
 import {
   AuthService
-} from "./chunk-6QPZWFDT.js";
+} from "./chunk-FAJD6DZI.js";
 import {
   AlertController,
   CUSTOM_ELEMENTS_SCHEMA,
@@ -49,18 +49,18 @@ import {
   ɵɵrestoreView,
   ɵɵtemplate,
   ɵɵtext
-} from "./chunk-FWNB6FX6.js";
-import "./chunk-3EJ4SNN5.js";
+} from "./chunk-SPXVY54Q.js";
+import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import {
   Capacitor
-} from "./chunk-RP3QMZ46.js";
-import "./chunk-JGROTZJO.js";
-import "./chunk-6JHPNCWP.js";
-import "./chunk-BH2QRXZH.js";
-import "./chunk-BT3FPS55.js";
-import "./chunk-ZG3Z5V5T.js";
-import "./chunk-VY52QLWN.js";
+} from "./chunk-5JG7MXFI.js";
+import "./chunk-Y5RNAJMB.js";
+import "./chunk-AIZDI3X7.js";
+import "./chunk-NZVQSZKT.js";
+import "./chunk-CBDAGKSH.js";
+import "./chunk-VI2LP43Q.js";
+import "./chunk-4A3IYY7S.js";
 import "./chunk-7GPIVXJN.js";
 import "./chunk-HZI4L77X.js";
 import "./chunk-M43RYFB3.js";
@@ -69,7 +69,7 @@ import "./chunk-YPIUQMS2.js";
 import "./chunk-QGYUETGI.js";
 import {
   __async
-} from "./chunk-ZRCPYJMT.js";
+} from "./chunk-3RNQ4BE2.js";
 
 // src/app/guards/auth.guard.ts
 var authGuard = (route, state) => __async(null, null, function* () {
@@ -117,28 +117,40 @@ var routes = [
   },
   {
     path: "login",
-    loadComponent: () => import("./chunk-Q3GRHGU5.js").then((m) => m.LoginPage)
+    loadComponent: () => import("./chunk-KI3THDXM.js").then((m) => m.LoginPage)
   },
   {
     path: "home",
-    loadComponent: () => import("./chunk-NB53PZGH.js").then((m) => m.HomePage),
+    loadComponent: () => import("./chunk-CAFFOQDP.js").then((m) => m.HomePage),
     canActivate: [authGuard]
   },
   {
     path: "vistoria/inicio",
-    loadComponent: () => import("./chunk-N4UUCDOV.js").then((m) => m.VistoriaInicioPage),
+    loadComponent: () => import("./chunk-Z2Q6U7WJ.js").then((m) => m.VistoriaInicioPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
-    path: "vistoria/checklist",
-    loadComponent: () => import("./chunk-S5QHQHOI.js").then((m) => m.VistoriaChecklistPage),
+    path: "vistoria/areas",
+    loadComponent: () => import("./chunk-ZLEYQ34N.js").then((m) => m.VistoriaAreasPage),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: ["vistoria_mobile:create"] }
+  },
+  {
+    path: "vistoria/areas/:areaId",
+    loadComponent: () => import("./chunk-57EH7OOC.js").then((m) => m.VistoriaComponentesPage),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: ["vistoria_mobile:create"] }
+  },
+  {
+    path: "vistoria/areas/:areaId/componentes/:componenteId",
+    loadComponent: () => import("./chunk-ZGDZT2UD.js").then((m) => m.VistoriaIrregularidadePage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/finalizar",
-    loadComponent: () => import("./chunk-K6XNDLQF.js").then((m) => m.VistoriaFinalizarPage),
+    loadComponent: () => import("./chunk-JDJX5TVH.js").then((m) => m.VistoriaFinalizarPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },

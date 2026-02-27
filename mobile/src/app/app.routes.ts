@@ -25,9 +25,23 @@ export const routes: Routes = [
     data: { permissions: ['vistoria_mobile:create'] },
   },
   {
-    path: 'vistoria/checklist',
+    path: 'vistoria/areas',
     loadComponent: () =>
-      import('./pages/vistoria/vistoria-checklist.page').then(m => m.VistoriaChecklistPage),
+      import('./pages/vistoria/vistoria-areas.page').then(m => m.VistoriaAreasPage),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: ['vistoria_mobile:create'] },
+  },
+  {
+    path: 'vistoria/areas/:areaId',
+    loadComponent: () =>
+      import('./pages/vistoria/vistoria-componentes.page').then(m => m.VistoriaComponentesPage),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: ['vistoria_mobile:create'] },
+  },
+  {
+    path: 'vistoria/areas/:areaId/componentes/:componenteId',
+    loadComponent: () =>
+      import('./pages/vistoria/vistoria-irregularidade.page').then(m => m.VistoriaIrregularidadePage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ['vistoria_mobile:create'] },
   },

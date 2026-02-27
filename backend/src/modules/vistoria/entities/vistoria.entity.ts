@@ -3,7 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Veiculo } from '../../veiculo/entities/veiculo.entity';
 import { Motorista } from '../../motorista/entities/motorista.entity';
-import { TipoVistoria } from './tipo-vistoria.entity';
 import { StatusVistoria } from '../../../common/enums/status-vistoria.enum';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
@@ -31,15 +30,6 @@ export class Vistoria extends BaseEntity {
   @ApiProperty({ description: 'ID do motorista', format: 'uuid' })
   @Column({ name: 'idmotorista', type: 'uuid' })
   idMotorista: string;
-
-  @ApiProperty({ description: 'Tipo de vistoria vinculado' })
-  @ManyToOne(() => TipoVistoria, { nullable: false, eager: true })
-  @JoinColumn({ name: 'idtipovistoria' })
-  tipoVistoria: TipoVistoria;
-
-  @ApiProperty({ description: 'ID do tipo de vistoria', format: 'uuid' })
-  @Column({ name: 'idtipovistoria', type: 'uuid' })
-  idTipoVistoria: string;
 
   @ApiProperty({ description: 'Usuário vinculado' })
   @ManyToOne(() => Usuario, { nullable: false, eager: false })

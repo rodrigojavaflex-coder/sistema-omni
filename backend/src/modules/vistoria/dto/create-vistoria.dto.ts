@@ -30,10 +30,6 @@ export class CreateVistoriaDto {
   @IsOptional()
   porcentagembateria?: number;
 
-  @ApiProperty({ description: 'ID do tipo de vistoria', format: 'uuid' })
-  @IsUUID()
-  idtipovistoria: string;
-
   @ApiProperty({ description: 'Data/hora da vistoria (ISO)' })
   @IsDateString()
   datavistoria: string;

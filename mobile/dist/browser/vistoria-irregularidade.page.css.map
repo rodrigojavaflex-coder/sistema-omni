@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/pages/vistoria/vistoria-irregularidade.page.scss"],
+  "sourcesContent": [".content {\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 12px;\r\n  padding: 16px;\r\n}\r\n\r\n.error-message {\r\n  padding: 12px 16px;\r\n}\r\n\r\nion-item.is-selected {\r\n  --background: #e7f2ff;\r\n}\r\n\r\nimg {\r\n  width: 64px;\r\n  height: 64px;\r\n  object-fit: cover;\r\n  border-radius: 8px;\r\n  margin-right: 12px;\r\n}\r\n\r\n.audio-actions {\r\n  display: flex;\r\n  gap: 8px;\r\n  flex-wrap: wrap;\r\n}\r\n"],
+  "mappings": ";AAAA,CAAA;AACE,WAAA;AACA,kBAAA;AACA,OAAA;AACA,WAAA;;AAGF,CAAA;AACE,WAAA,KAAA;;AAGF,QAAA,CAAA;AACE,gBAAA;;AAGF;AACE,SAAA;AACA,UAAA;AACA,cAAA;AACA,iBAAA;AACA,gBAAA;;AAGF,CAAA;AACE,WAAA;AACA,OAAA;AACA,aAAA;;",
+  "names": []
+}

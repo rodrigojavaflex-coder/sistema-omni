@@ -66,6 +66,21 @@ export const routes: Routes = [
     loadComponent: () => import('./components/veiculo-form/veiculo-form').then(m => m.VeiculoFormComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'modelos-veiculo',
+    loadComponent: () => import('./components/modelo-veiculo-list/modelo-veiculo-list').then(m => m.ModeloVeiculoListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'modelos-veiculo/new',
+    loadComponent: () => import('./components/modelo-veiculo-form/modelo-veiculo-form').then(m => m.ModeloVeiculoFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'modelos-veiculo/edit/:id',
+    loadComponent: () => import('./components/modelo-veiculo-form/modelo-veiculo-form').then(m => m.ModeloVeiculoFormComponent),
+    canActivate: [authGuard]
+  },
   // Rotas de motorista com lazy loading
   {
     path: 'motorista',
@@ -162,26 +177,55 @@ export const routes: Routes = [
     loadComponent: () => import('./components/trecho-form/trecho-form').then(m => m.TrechoFormComponent),
     canActivate: [authGuard]
   },
-  // Rotas de tipo de vistoria com lazy loading
+  // Rotas de catálogo de vistoria (grid único: áreas + componentes ao expandir)
   {
-    path: 'tipo-vistoria',
-    loadComponent: () => import('./components/tipo-vistoria-list/tipo-vistoria-list').then(m => m.TipoVistoriaListComponent),
+    path: 'areas-vistoriadas',
+    loadComponent: () => import('./components/area-vistoriada-list/area-vistoriada-list').then(m => m.AreaVistoriadaListComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'tipo-vistoria/new',
-    loadComponent: () => import('./components/tipo-vistoria-form/tipo-vistoria-form').then(m => m.TipoVistoriaFormComponent),
+    path: 'componentes',
+    loadComponent: () => import('./components/componente-list/componente-list').then(m => m.ComponenteListComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'tipo-vistoria/edit/:id',
-    loadComponent: () => import('./components/tipo-vistoria-form/tipo-vistoria-form').then(m => m.TipoVistoriaFormComponent),
+    path: 'componentes/new',
+    loadComponent: () => import('./components/componente-form/componente-form').then(m => m.ComponenteFormComponent),
     canActivate: [authGuard]
   },
-  // Rotas de item vistoriado com lazy loading
   {
-    path: 'item-vistoriado',
-    loadComponent: () => import('./components/item-vistoriado-list/item-vistoriado-list').then(m => m.ItemVistoriadoListComponent),
+    path: 'componentes/edit/:id',
+    loadComponent: () => import('./components/componente-form/componente-form').then(m => m.ComponenteFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'sintomas',
+    loadComponent: () => import('./components/sintoma-list/sintoma-list').then(m => m.SintomaListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'sintomas/new',
+    loadComponent: () => import('./components/sintoma-form/sintoma-form').then(m => m.SintomaFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'sintomas/edit/:id',
+    loadComponent: () => import('./components/sintoma-form/sintoma-form').then(m => m.SintomaFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'matriz-criticidade',
+    loadComponent: () => import('./components/matriz-criticidade-list/matriz-criticidade-list').then(m => m.MatrizCriticidadeListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'matriz-criticidade/new',
+    loadComponent: () => import('./components/matriz-criticidade-form/matriz-criticidade-form').then(m => m.MatrizCriticidadeFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'matriz-criticidade/edit/:id',
+    loadComponent: () => import('./components/matriz-criticidade-form/matriz-criticidade-form').then(m => m.MatrizCriticidadeFormComponent),
     canActivate: [authGuard]
   },
   {

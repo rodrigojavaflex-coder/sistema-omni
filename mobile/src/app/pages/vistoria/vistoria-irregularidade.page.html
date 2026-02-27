@@ -1,0 +1,94 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/vistoria/areas/' + areaId"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ componenteNome }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="content" *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Carregando sintomas...</p>
+  </div>
+
+  <ion-text color="danger" *ngIf="errorMessage">
+    <p class="error-message">{{ errorMessage }}</p>
+  </ion-text>
+
+  <ion-list *ngIf="!loading && matriz.length > 0">
+    <ion-item
+      button
+      detail="false"
+      *ngFor="let item of matriz"
+      (click)="selecionarSintoma(item)"
+      [class.is-selected]="selectedMatriz?.id === item.id"
+    >
+      <ion-label>
+        <h2>{{ item.sintoma?.descricao }}</h2>
+        <p>Gravidade: {{ item.gravidade }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <div class="content" *ngIf="!loading && matriz.length === 0">
+    <p>Nenhum sintoma configurado para este componente.</p>
+  </div>
+
+  <div class="content" *ngIf="selectedMatriz">
+    <ion-item>
+      <ion-label position="stacked">Observação</ion-label>
+      <ion-textarea
+        #observacaoInput
+        [value]="observacao"
+        placeholder="Observação opcional"
+        (ionInput)="observacao = $event.detail.value ?? ''"
+      ></ion-textarea>
+    </ion-item>
+
+    <ion-item lines="none">
+      <ion-label>Fotos ({{ fotos.length }})</ion-label>
+      <ion-button fill="outline" (click)="adicionarFoto()">
+        <ion-icon slot="start" name="camera-outline"></ion-icon>
+        Adicionar
+      </ion-button>
+    </ion-item>
+
+    <ion-list *ngIf="fotos.length > 0">
+      <ion-item *ngFor="let foto of fotos; let i = index">
+        <img [src]="foto.preview" alt="Foto" />
+        <ion-label>
+          <p>{{ foto.nomeArquivo }}</p>
+        </ion-label>
+        <ion-button slot="end" fill="clear" color="danger" (click)="removerFoto(i)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-button>
+      </ion-item>
+    </ion-list>
+
+    <ion-item lines="none" *ngIf="selectedMatriz.permiteAudio">
+      <ion-label>Áudio</ion-label>
+      <div class="audio-actions">
+        <ion-button fill="outline" (click)="iniciarAudio()" [disabled]="gravandoAudio || !podeGravarAudio">
+          Gravar
+        </ion-button>
+        <ion-button color="danger" fill="outline" (click)="pararAudio()" [disabled]="!gravandoAudio">
+          Parar
+        </ion-button>
+        <ion-button fill="clear" color="medium" (click)="limparAudio()" [disabled]="!audioBase64">
+          Limpar
+        </ion-button>
+      </div>
+    </ion-item>
+
+    <ion-text *ngIf="selectedMatriz.permiteAudio && !podeGravarAudio" color="danger">
+      <p class="error-message">Dispositivo não suporta gravação de áudio.</p>
+    </ion-text>
+
+    <ion-button expand="block" (click)="salvarIrregularidade()" [disabled]="saving">
+      <ion-spinner *ngIf="saving" name="crescent"></ion-spinner>
+      <span *ngIf="!saving">Salvar irregularidade</span>
+    </ion-button>
+  </div>
+</ion-content>

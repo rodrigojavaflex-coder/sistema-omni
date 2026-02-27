@@ -236,6 +236,11 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
     });
   }
 
+  /** Nome do modelo: prioriza modelo vinculado (tabela), depois legado. */
+  getModeloNome(item: Veiculo): string {
+    return item.modeloVeiculo?.nome ?? item.modeloLegado ?? item.modelo ?? '';
+  }
+
   protected getExportDataExcel(items: Veiculo[]): { headers: string[], data: any[][] } {
     const headers = ['N° do Veiculo', 'Placa', 'Ano', 'Chassi', 'Marca', 'Modelo', 'Combustível', 'Status', 'Marca Carroceria', 'Modelo Carroceria'];
     const data = items.map(item => [
@@ -244,7 +249,7 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
       item.ano,
       item.chassi,
       item.marca,
-      item.modelo,
+      this.getModeloNome(item),
       item.combustivel,
       item.status || '',
       item.marcaDaCarroceria || '',
@@ -261,7 +266,7 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
       item.ano,
       item.chassi,
       item.marca,
-      item.modelo,
+      this.getModeloNome(item),
       item.combustivel,
       item.status || '',
       item.marcaDaCarroceria || '',

@@ -1,0 +1,59 @@
+<div class="form-container">
+  <h2>Componentes da Área</h2>
+  <p class="form-subtitle" *ngIf="areaNome">Área: {{ areaNome }}</p>
+
+  <div class="form-actions form-actions-top">
+    <button type="button" class="btn btn-primary" (click)="salvar()" [disabled]="saving">
+      {{ saving ? 'Salvando...' : 'Salvar' }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancelar()">Cancelar</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Carregando...</p>
+  </div>
+
+  <div *ngIf="error" class="error-container">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Selecionar</th>
+          <th>Ordem</th>
+          <th>Componente</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let componente of componentes">
+          <td>
+            <input
+              type="checkbox"
+              [checked]="isSelected(componente.id)"
+              (change)="toggleComponente(componente.id)"
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              class="form-input grid-input"
+              [disabled]="!isSelected(componente.id)"
+              [value]="selecionados.get(componente.id)?.ordem || ''"
+              (input)="updateOrdem(componente.id, $event.target.value)"
+              min="0"
+            />
+          </td>
+          <td>{{ componente.nome }}</td>
+        </tr>
+        <tr *ngIf="componentes.length === 0">
+          <td colspan="3" class="table-empty-cell" style="text-align: center; padding: 2rem;">
+            Nenhum componente encontrado
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

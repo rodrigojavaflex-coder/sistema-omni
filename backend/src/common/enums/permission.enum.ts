@@ -26,6 +26,12 @@ export enum Permission {
   VEICULO_DELETE = 'veiculo:delete',
   VEICULO_AUDIT = 'veiculo:audit',
 
+  // Modelos de Veículo
+  MODELOVEICULO_CREATE = 'modelo_veiculo:create',
+  MODELOVEICULO_READ = 'modelo_veiculo:read',
+  MODELOVEICULO_UPDATE = 'modelo_veiculo:update',
+  MODELOVEICULO_DELETE = 'modelo_veiculo:delete',
+
   // Motoristas
   MOTORISTA_CREATE = 'motorista:create',
   MOTORISTA_READ = 'motorista:read',
@@ -91,16 +97,32 @@ export enum Permission {
   VISTORIA_UPDATE = 'vistoria_mobile:update',
   // Vistoria Web
   VISTORIA_WEB_READ = 'vistoria_web:read',
-  TIPOVISTORIA_CREATE = 'tipovistoria:create',
-  TIPOVISTORIA_READ = 'tipovistoria:read',
-  TIPOVISTORIA_UPDATE = 'tipovistoria:update',
-  TIPOVISTORIA_DELETE = 'tipovistoria:delete',
-  TIPOVISTORIA_AUDIT = 'tipovistoria:audit',
-  ITEMVISTORIADO_CREATE = 'itemvistoriado:create',
-  ITEMVISTORIADO_READ = 'itemvistoriado:read',
-  ITEMVISTORIADO_UPDATE = 'itemvistoriado:update',
-  ITEMVISTORIADO_DELETE = 'itemvistoriado:delete',
-  ITEMVISTORIADO_AUDIT = 'itemvistoriado:audit',
+
+  // Áreas Vistoriadas (catálogo)
+  AREAVISTORIADA_CREATE = 'areavistoriada:create',
+  AREAVISTORIADA_READ = 'areavistoriada:read',
+  AREAVISTORIADA_UPDATE = 'areavistoriada:update',
+  AREAVISTORIADA_DELETE = 'areavistoriada:delete',
+  AREAVISTORIADA_REMOVER_COMPONENTE = 'areavistoriada:remover_componente',
+  AREAVISTORIADA_VINCULAR_COMPONENTE = 'areavistoriada:vincular_componente',
+
+  // Componentes (catálogo)
+  COMPONENTE_CREATE = 'componente:create',
+  COMPONENTE_READ = 'componente:read',
+  COMPONENTE_UPDATE = 'componente:update',
+  COMPONENTE_DELETE = 'componente:delete',
+
+  // Sintomas (catálogo)
+  SINTOMA_CREATE = 'sintoma:create',
+  SINTOMA_READ = 'sintoma:read',
+  SINTOMA_UPDATE = 'sintoma:update',
+  SINTOMA_DELETE = 'sintoma:delete',
+
+  // Matriz de Criticidade (catálogo)
+  MATRIZCRITICIDADE_CREATE = 'matrizcriticidade:create',
+  MATRIZCRITICIDADE_READ = 'matrizcriticidade:read',
+  MATRIZCRITICIDADE_UPDATE = 'matrizcriticidade:update',
+  MATRIZCRITICIDADE_DELETE = 'matrizcriticidade:delete',
 }
 
 export const PERMISSION_GROUPS = {
@@ -135,6 +157,12 @@ export const PERMISSION_GROUPS = {
     { key: Permission.VEICULO_UPDATE, label: 'Editar veículos' },
     { key: Permission.VEICULO_DELETE, label: 'Excluir veículos' },
     { key: Permission.VEICULO_AUDIT, label: 'Auditar veículos' },
+  ],
+  'Modelos de Veículo': [
+    { key: Permission.MODELOVEICULO_CREATE, label: 'Criar modelos de veículo' },
+    { key: Permission.MODELOVEICULO_READ, label: 'Visualizar modelos de veículo' },
+    { key: Permission.MODELOVEICULO_UPDATE, label: 'Editar modelos de veículo' },
+    { key: Permission.MODELOVEICULO_DELETE, label: 'Excluir modelos de veículo' },
   ],
   Motoristas: [
     { key: Permission.MOTORISTA_CREATE, label: 'Criar motoristas' },
@@ -213,13 +241,6 @@ export const PERMISSION_GROUPS = {
       label: 'Auditar execuções de metas',
     },
   ],
-  'Tipo de Vistoria': [
-    { key: Permission.TIPOVISTORIA_CREATE, label: 'Criar tipos de vistoria' },
-    { key: Permission.TIPOVISTORIA_READ, label: 'Visualizar tipos de vistoria' },
-    { key: Permission.TIPOVISTORIA_UPDATE, label: 'Editar tipos de vistoria' },
-    { key: Permission.TIPOVISTORIA_DELETE, label: 'Excluir tipos de vistoria' },
-    { key: Permission.TIPOVISTORIA_AUDIT, label: 'Auditar tipos de vistoria' },
-  ],
   'Vistoria Mobile': [
     { key: Permission.VISTORIA_CREATE, label: 'Iniciar vistorias (mobile)' },
     { key: Permission.VISTORIA_READ, label: 'Visualizar vistorias (mobile)' },
@@ -228,12 +249,31 @@ export const PERMISSION_GROUPS = {
   'Vistoria Web': [
     { key: Permission.VISTORIA_WEB_READ, label: 'Visualizar vistorias (web)' },
   ],
-  'Itens Vistoriados': [
-    { key: Permission.ITEMVISTORIADO_CREATE, label: 'Criar itens vistoriados' },
-    { key: Permission.ITEMVISTORIADO_READ, label: 'Visualizar itens vistoriados' },
-    { key: Permission.ITEMVISTORIADO_UPDATE, label: 'Editar itens vistoriados' },
-    { key: Permission.ITEMVISTORIADO_DELETE, label: 'Excluir itens vistoriados' },
-    { key: Permission.ITEMVISTORIADO_AUDIT, label: 'Auditar itens vistoriados' },
+  'Áreas Vistoriadas': [
+    { key: Permission.AREAVISTORIADA_CREATE, label: 'Criar áreas vistoriadas' },
+    { key: Permission.AREAVISTORIADA_READ, label: 'Visualizar áreas vistoriadas' },
+    { key: Permission.AREAVISTORIADA_UPDATE, label: 'Editar áreas vistoriadas' },
+    { key: Permission.AREAVISTORIADA_DELETE, label: 'Excluir áreas vistoriadas' },
+    { key: Permission.AREAVISTORIADA_REMOVER_COMPONENTE, label: 'Remover componente da área' },
+    { key: Permission.AREAVISTORIADA_VINCULAR_COMPONENTE, label: 'Vincular componente à área' },
+  ],
+  Componentes: [
+    { key: Permission.COMPONENTE_CREATE, label: 'Criar componentes' },
+    { key: Permission.COMPONENTE_READ, label: 'Visualizar componentes' },
+    { key: Permission.COMPONENTE_UPDATE, label: 'Editar componentes' },
+    { key: Permission.COMPONENTE_DELETE, label: 'Excluir componentes' },
+  ],
+  Sintomas: [
+    { key: Permission.SINTOMA_CREATE, label: 'Criar sintomas' },
+    { key: Permission.SINTOMA_READ, label: 'Visualizar sintomas' },
+    { key: Permission.SINTOMA_UPDATE, label: 'Editar sintomas' },
+    { key: Permission.SINTOMA_DELETE, label: 'Excluir sintomas' },
+  ],
+  'Matriz de Criticidade': [
+    { key: Permission.MATRIZCRITICIDADE_CREATE, label: 'Criar matriz de criticidade' },
+    { key: Permission.MATRIZCRITICIDADE_READ, label: 'Visualizar matriz de criticidade' },
+    { key: Permission.MATRIZCRITICIDADE_UPDATE, label: 'Editar matriz de criticidade' },
+    { key: Permission.MATRIZCRITICIDADE_DELETE, label: 'Excluir matriz de criticidade' },
   ],
 };
 

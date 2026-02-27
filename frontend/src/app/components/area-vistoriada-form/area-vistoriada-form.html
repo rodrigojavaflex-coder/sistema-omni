@@ -1,0 +1,178 @@
+<div class="form-container">
+  <h2>{{ getFormTitle() }} Área Vistoriada</h2>
+
+  <div class="form-actions form-actions-top">
+    <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+      <span *ngIf="loading" class="spinner"></span>
+      {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-section">
+      <h3>Informações da Área</h3>
+
+      <div class="form-group">
+        <label class="form-label">Descrição da Área *</label>
+        <input type="text" formControlName="nome" class="form-input" />
+        <div class="form-error" *ngIf="isFieldInvalid('nome')">
+          {{ getFieldError('nome') }}
+        </div>
+      </div>
+
+      <div class="form-row form-row-3">
+        <div class="form-group">
+          <label class="form-label">Ordem</label>
+          <input type="number" formControlName="ordem_visual" class="form-input" min="0" />
+          <div class="form-error" *ngIf="isFieldInvalid('ordem_visual')">
+            {{ getFieldError('ordem_visual') }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Modelos atendidos</label>
+          <app-multi-select
+            [options]="modeloOptions"
+            [(ngModel)]="modelosSelecionados"
+            (selectionChange)="modelosSelecionados = $event"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Selecione os modelos">
+          </app-multi-select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select formControlName="ativo" class="form-select">
+            <option [value]="true">Ativo</option>
+            <option [value]="false">Inativo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Componentes da área</h3>
+      <p class="form-hint">Cadastre na primeira linha, edite na grid ou exclua. Selecione os que pertencem a esta área e defina a ordem.</p>
+      <div class="table-container componentes-table">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Selecionar</th>
+              <th>Ordem</th>
+              <th>Componente</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Linha para novo componente -->
+            <tr class="grid-row-new">
+              <td></td>
+              <td></td>
+              <td>
+                <input
+                  type="text"
+                  class="form-input"
+                  [(ngModel)]="novoComponenteNome"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="Nome do componente"
+                  maxlength="100"
+                />
+              </td>
+              <td>
+                <select class="form-select grid-select" [(ngModel)]="novoComponenteAtivo" [ngModelOptions]="{ standalone: true }">
+                  <option [value]="true">Ativo</option>
+                  <option [value]="false">Inativo</option>
+                </select>
+              </td>
+              <td>
+                <button type="button" class="btn btn-small btn-primary" (click)="addComponenteInGrid()" [disabled]="savingComponente">
+                  <span *ngIf="savingComponente" class="spinner"></span>
+                  {{ savingComponente ? 'Salvando...' : 'Adicionar' }}
+                </button>
+              </td>
+            </tr>
+            <!-- Linhas de componentes -->
+            <ng-container *ngFor="let componente of componentes">
+              <tr [class.grid-row-editing]="componenteEditId === componente.id">
+                <td>
+                  <input
+                    type="checkbox"
+                    [checked]="isComponenteSelected(componente.id)"
+                    (change)="toggleComponente(componente.id)"
+                    [disabled]="componenteEditId === componente.id"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="form-input grid-input"
+                    [disabled]="!isComponenteSelected(componente.id) || componenteEditId === componente.id"
+                    [value]="componentesSelecionados.get(componente.id)?.ordem ?? ''"
+                    (input)="updateOrdemComponente(componente.id, $any($event.target).value)"
+                    min="0"
+                  />
+                </td>
+                <td *ngIf="componenteEditId !== componente.id">{{ componente.nome }}</td>
+                <td *ngIf="componenteEditId === componente.id" [formGroup]="componenteForm">
+                  <input type="text" class="form-input" formControlName="nome" maxlength="100" />
+                  <div class="form-error form-error-inline" *ngIf="isComponenteFieldInvalid('nome')">
+                    {{ getComponenteFieldError('nome') }}
+                  </div>
+                </td>
+                <td *ngIf="componenteEditId !== componente.id">{{ componente.ativo ? 'Ativo' : 'Inativo' }}</td>
+                <td *ngIf="componenteEditId === componente.id" [formGroup]="componenteForm">
+                  <select class="form-select grid-select" formControlName="ativo">
+                    <option [value]="true">Ativo</option>
+                    <option [value]="false">Inativo</option>
+                  </select>
+                </td>
+                <td>
+                  <div class="table-actions" *ngIf="componenteEditId !== componente.id">
+                    <button type="button" class="btn btn-small btn-secondary" (click)="openEditarComponente(componente)">
+                      Editar
+                    </button>
+                    <button type="button" class="btn btn-small btn-danger" (click)="openDeleteComponente(componente)">
+                      Excluir
+                    </button>
+                  </div>
+                  <div class="table-actions" *ngIf="componenteEditId === componente.id">
+                    <button type="button" class="btn btn-small btn-primary" (click)="saveComponenteInGrid()" [disabled]="savingComponente || componenteForm.invalid">
+                      <span *ngIf="savingComponente" class="spinner"></span>
+                      {{ savingComponente ? 'Salvando...' : 'Salvar' }}
+                    </button>
+                    <button type="button" class="btn btn-small btn-secondary" (click)="cancelEditComponente()" [disabled]="savingComponente">
+                      Cancelar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+            <tr *ngIf="componentes.length === 0">
+              <td colspan="5" class="table-empty-cell" style="text-align: center; padding: 2rem;">
+                Nenhum componente. Use a linha acima para adicionar.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<app-confirmation-modal
+  [isVisible]="showDeleteComponenteModal"
+  title="Excluir componente"
+  [message]="deleteComponenteModalMessage"
+  confirmText="Excluir"
+  cancelText="Cancelar"
+  (confirmed)="confirmDeleteComponente()"
+  (cancelled)="closeDeleteComponenteModal()">
+</app-confirmation-modal>

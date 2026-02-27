@@ -2,7 +2,6 @@ export interface VistoriaResumo {
   id: string;
   idVeiculo: string;
   idMotorista: string;
-  idTipoVistoria: string;
   idUsuario?: string;
   odometro: number;
   porcentagembateria: number;

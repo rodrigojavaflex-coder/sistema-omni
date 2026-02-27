@@ -4,7 +4,6 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { TipoVistoriaService } from '../../services/tipo-vistoria.service';
 import { UserService } from '../../services/user.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { AuthService } from '../../services/auth.service';
@@ -13,7 +12,6 @@ import {
   ChecklistItemResumo,
   VistoriaResumo,
 } from '../../models/vistoria.model';
-import { TipoVistoria } from '../../models/tipo-vistoria.model';
 import { Usuario } from '../../models/usuario.model';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
 import { MotoristaAutocompleteComponent } from '../shared/motorista-autocomplete/motorista-autocomplete.component';
@@ -34,7 +32,6 @@ import { UsuarioAutocompleteComponent } from '../shared/usuario-autocomplete/usu
 })
 export class VistoriaListComponent implements OnInit {
   private vistoriaService = inject(VistoriaService);
-  private tipoVistoriaService = inject(TipoVistoriaService);
   private userService = inject(UserService);
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
@@ -44,13 +41,11 @@ export class VistoriaListComponent implements OnInit {
   drawerOpen = false;
   activeTab: 'checklist' | 'imagens' = 'checklist';
   loadingFilters = false;
-  tiposLoaded = false;
   usuariosLoaded = false;
 
   vistorias: VistoriaResumo[] = [];
   filtered: VistoriaResumo[] = [];
   paged: VistoriaResumo[] = [];
-  tipos: TipoVistoria[] = [];
   usuarios: Usuario[] = [];
   selectedVistoria: VistoriaResumo | null = null;
   checklistItens: ChecklistItemResumo[] = [];
@@ -74,7 +69,6 @@ export class VistoriaListComponent implements OnInit {
   filterForm = this.fb.group({
     veiculoId: [''],
     motoristaId: [''],
-    tipoId: [''],
     status: [''],
     usuarioId: [''],
     dataInicio: [''],
@@ -84,25 +78,9 @@ export class VistoriaListComponent implements OnInit {
   ngOnInit(): void {
     this.loadingFilters = true;
     this.loading = true;
-    this.loadTipos();
     this.loadUsuarios();
 
     this.filterForm.valueChanges.subscribe(() => this.applyFilters());
-  }
-
-  private loadTipos(): void {
-    this.tipoVistoriaService.getAll().subscribe({
-      next: (tipos) => {
-        this.tipos = tipos ?? [];
-        this.tiposLoaded = true;
-        this.checkFiltersLoaded();
-      },
-      error: () => {
-        this.tipos = [];
-        this.tiposLoaded = true;
-        this.checkFiltersLoaded();
-      },
-    });
   }
 
   private loadUsuarios(): void {
@@ -133,7 +111,7 @@ export class VistoriaListComponent implements OnInit {
 
   private checkFiltersLoaded(): void {
     if (!this.loadingFilters) return;
-    if (!this.tiposLoaded || !this.usuariosLoaded) return;
+    if (!this.usuariosLoaded) return;
     this.loadingFilters = false;
     this.loadVistorias();
   }
@@ -162,7 +140,6 @@ export class VistoriaListComponent implements OnInit {
     const {
       veiculoId,
       motoristaId,
-      tipoId,
       status,
       usuarioId,
       dataInicio,
@@ -172,14 +149,12 @@ export class VistoriaListComponent implements OnInit {
     const filtered = (this.vistorias ?? []).filter((vistoria) => {
       const matchesVeiculo = !veiculoId || vistoria.idVeiculo === veiculoId;
       const matchesMotorista = !motoristaId || vistoria.idMotorista === motoristaId;
-      const matchesTipo = !tipoId || vistoria.idTipoVistoria === tipoId;
       const matchesStatus = !status || vistoria.status === status;
       const matchesUsuario = !usuarioId || vistoria.idUsuario === usuarioId;
       const matchesData = this.matchesDateRange(vistoria.datavistoria, dataInicio, dataFim);
       return (
         matchesVeiculo &&
         matchesMotorista &&
-        matchesTipo &&
         matchesStatus &&
         matchesUsuario &&
         matchesData
@@ -210,7 +185,6 @@ export class VistoriaListComponent implements OnInit {
     this.filterForm.reset({
       veiculoId: '',
       motoristaId: '',
-      tipoId: '',
       status: '',
       usuarioId: '',
       dataInicio: '',
@@ -349,7 +323,6 @@ export class VistoriaListComponent implements OnInit {
     const placa = this.selectedVistoria.veiculo?.placa ?? '-';
     const motoristaNome = this.selectedVistoria.motorista?.nome ?? '-';
     const motoristaMatricula = this.selectedVistoria.motorista?.matricula ?? '-';
-    const tipoVistoria = this.selectedVistoria.tipoVistoria?.descricao ?? '-';
     const bateriaTexto =
       this.selectedVistoria.porcentagembateria === null ||
       this.selectedVistoria.porcentagembateria === undefined
@@ -416,7 +389,6 @@ export class VistoriaListComponent implements OnInit {
             <div><strong>Placa:</strong> ${placa}</div>
             <div><strong>Motorista:</strong> ${motoristaNome}</div>
             <div><strong>Matrícula:</strong> ${motoristaMatricula}</div>
-            <div><strong>Tipo:</strong> ${tipoVistoria}</div>
             <div><strong>Vistoriador:</strong> ${usuario}</div>
             <div><strong>Odômetro:</strong> ${this.formatNumero(this.selectedVistoria.odometro)}</div>
             <div><strong>Bateria:</strong> ${bateriaTexto}</div>

@@ -3,12 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Capacitor } from '@capacitor/core';
+import { Vistoria } from '../models/vistoria.model';
 import {
-  ChecklistItemPayload,
-  ChecklistImagemResumo,
-  ChecklistItemResumo,
-  Vistoria,
-} from '../models/vistoria.model';
+  IrregularidadeResumo,
+  IrregularidadeImagemResumo,
+} from '../models/irregularidade.model';
 
 @Injectable({ providedIn: 'root' })
 export class VistoriaService {
@@ -23,7 +22,6 @@ export class VistoriaService {
     idmotorista: string;
     odometro: number;
     porcentagembateria?: number;
-    idtipovistoria: string;
     datavistoria: string;
   }): Promise<Vistoria> {
     return firstValueFrom(
@@ -36,7 +34,6 @@ export class VistoriaService {
     payload: {
       idveiculo?: string;
       idmotorista?: string;
-      idtipovistoria?: string;
       odometro?: number;
       porcentagembateria?: number | null;
       datavistoria?: string;
@@ -69,21 +66,38 @@ export class VistoriaService {
     );
   }
 
-  async salvarChecklistItem(
+  async criarIrregularidade(
     vistoriaId: string,
-    payload: ChecklistItemPayload,
+    payload: { idarea: string; idcomponente: string; idsintoma: string; observacao?: string },
   ): Promise<{ id: string }> {
     return firstValueFrom(
       this.http.post<{ id: string }>(
-        `${this.apiBaseUrl}/vistoria/${vistoriaId}/checklist`,
+        `${this.apiBaseUrl}/vistoria/${vistoriaId}/irregularidades`,
         payload,
       ),
     );
   }
 
-  async uploadChecklistImagens(
+  async listarIrregularidades(vistoriaId: string): Promise<IrregularidadeResumo[]> {
+    return firstValueFrom(
+      this.http.get<IrregularidadeResumo[]>(
+        `${this.apiBaseUrl}/vistoria/${vistoriaId}/irregularidades`,
+      ),
+    );
+  }
+
+  async listarIrregularidadesImagens(
     vistoriaId: string,
-    checklistId: string,
+  ): Promise<IrregularidadeImagemResumo[]> {
+    return firstValueFrom(
+      this.http.get<IrregularidadeImagemResumo[]>(
+        `${this.apiBaseUrl}/vistoria/${vistoriaId}/irregularidades/imagens`,
+      ),
+    );
+  }
+
+  async uploadIrregularidadeImagens(
+    irregularidadeId: string,
     files: { nomeArquivo: string; blob: Blob }[],
   ): Promise<void> {
     const formData = new FormData();
@@ -92,26 +106,27 @@ export class VistoriaService {
     });
     await firstValueFrom(
       this.http.post<void>(
-        `${this.apiBaseUrl}/vistoria/${vistoriaId}/checklist/${checklistId}/imagens`,
+        `${this.apiBaseUrl}/irregularidades/${irregularidadeId}/imagens`,
         formData,
       ),
     );
   }
 
-  async listarChecklist(vistoriaId: string): Promise<ChecklistItemResumo[]> {
-    return firstValueFrom(
-      this.http.get<ChecklistItemResumo[]>(
-        `${this.apiBaseUrl}/vistoria/${vistoriaId}/checklist`,
-      ),
-    );
-  }
-
-  async listarChecklistImagens(
-    vistoriaId: string,
-  ): Promise<ChecklistImagemResumo[]> {
-    return firstValueFrom(
-      this.http.get<ChecklistImagemResumo[]>(
-        `${this.apiBaseUrl}/vistoria/${vistoriaId}/checklist/imagens`,
+  async uploadIrregularidadeAudio(
+    irregularidadeId: string,
+    file: Blob,
+    nomeArquivo: string,
+    duracaoMs?: number,
+  ): Promise<void> {
+    const formData = new FormData();
+    formData.append('file', file, nomeArquivo);
+    if (duracaoMs !== undefined) {
+      formData.append('duracao_ms', `${duracaoMs}`);
+    }
+    await firstValueFrom(
+      this.http.post<void>(
+        `${this.apiBaseUrl}/irregularidades/${irregularidadeId}/audio`,
+        formData,
       ),
     );
   }

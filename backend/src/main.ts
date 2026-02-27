@@ -32,28 +32,10 @@ async function bootstrap() {
     }
   });
 
-  // Servir arquivos estáticos da pasta uploads
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads/',
-  });
   const configService = app.get(ConfigService);
-
-  // Configuração global de validação
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  // Filtro global de exceções genérico
-  app.useGlobalFilters(new AllExceptionsFilter());
-
   const environment =
     configService.get<string>('app.environment') || 'development';
   const isProduction = environment === 'production';
-  // Configuração de CORS
   const allowedOrigins = isProduction
     ? [
         'https://gestaodetransporte.com',
@@ -89,6 +71,23 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
   });
+
+  // Servir arquivos estáticos da pasta uploads (após CORS para /uploads receberem os headers)
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+
+  // Configuração global de validação
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // Filtro global de exceções genérico
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Prefixo global para todas as rotas
   app.setGlobalPrefix('api');

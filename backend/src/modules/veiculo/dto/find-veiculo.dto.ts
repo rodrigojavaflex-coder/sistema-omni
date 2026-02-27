@@ -8,6 +8,7 @@ import {
   Min,
   Max,
   IsEnum,
+  IsUUID,
 } from 'class-validator';
 import { StatusVeiculo } from '../../../common/enums/status-veiculo.enum';
 
@@ -39,6 +40,11 @@ export class FindVeiculoDto {
   @IsOptional()
   @IsString()
   modelo?: string;
+
+  @ApiProperty({ required: false, description: 'ID do modelo', format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  idmodelo?: string;
 
   @ApiProperty({ required: false, description: 'Combustível' })
   @IsOptional()

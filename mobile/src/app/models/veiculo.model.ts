@@ -4,4 +4,7 @@ export interface Veiculo {
   placa: string;
   status: string;
   combustivel?: string;
+  modelo?: string | null;
+  idModelo?: string;
+  modeloVeiculo?: { id: string; nome: string };
 }

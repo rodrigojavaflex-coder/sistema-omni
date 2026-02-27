@@ -116,6 +116,18 @@ export const MENU_CONFIGURATION: MenuConfig = {
               ],
               parentMenu: 'Cadastros'
             },
+            {
+              label: 'Modelos de Veículo',
+              route: '/modelos-veiculo',
+              icon: 'feather-layers',
+              requiredPermissions: [
+                Permission.MODELOVEICULO_CREATE,
+                Permission.MODELOVEICULO_READ,
+                Permission.MODELOVEICULO_UPDATE,
+                Permission.MODELOVEICULO_DELETE
+              ],
+              parentMenu: 'Cadastros'
+            },
           ]
         },
         {
@@ -198,26 +210,50 @@ export const MENU_CONFIGURATION: MenuConfig = {
           parentMenu: 'Cadastros',
           submenuItems: [
             {
-              label: 'Tipo de Vistoria',
-              route: '/tipo-vistoria',
-              icon: 'feather-check',
+              label: 'Áreas Vistoriadas',
+              route: '/areas-vistoriadas',
+              icon: 'feather-grid',
               requiredPermissions: [
-                Permission.TIPOVISTORIA_CREATE,
-                Permission.TIPOVISTORIA_READ,
-                Permission.TIPOVISTORIA_UPDATE,
-                Permission.TIPOVISTORIA_DELETE
+                Permission.AREAVISTORIADA_CREATE,
+                Permission.AREAVISTORIADA_READ,
+                Permission.AREAVISTORIADA_UPDATE,
+                Permission.AREAVISTORIADA_DELETE
               ],
               parentMenu: 'Cadastros'
             },
             {
-              label: 'Itens Vistoriados',
-              route: '/item-vistoriado',
-              icon: 'feather-check-square',
+              label: 'Componentes',
+              route: '/componentes',
+              icon: 'feather-box',
               requiredPermissions: [
-                Permission.ITEMVISTORIADO_CREATE,
-                Permission.ITEMVISTORIADO_READ,
-                Permission.ITEMVISTORIADO_UPDATE,
-                Permission.ITEMVISTORIADO_DELETE
+                Permission.COMPONENTE_CREATE,
+                Permission.COMPONENTE_READ,
+                Permission.COMPONENTE_UPDATE,
+                Permission.COMPONENTE_DELETE
+              ],
+              parentMenu: 'Cadastros'
+            },
+            {
+              label: 'Sintomas',
+              route: '/sintomas',
+              icon: 'feather-alert-triangle',
+              requiredPermissions: [
+                Permission.SINTOMA_CREATE,
+                Permission.SINTOMA_READ,
+                Permission.SINTOMA_UPDATE,
+                Permission.SINTOMA_DELETE
+              ],
+              parentMenu: 'Cadastros'
+            },
+            {
+              label: 'Matriz de Criticidade',
+              route: '/matriz-criticidade',
+              icon: 'feather-sliders',
+              requiredPermissions: [
+                Permission.MATRIZCRITICIDADE_CREATE,
+                Permission.MATRIZCRITICIDADE_READ,
+                Permission.MATRIZCRITICIDADE_UPDATE,
+                Permission.MATRIZCRITICIDADE_DELETE
               ],
               parentMenu: 'Cadastros'
             },

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/pages/vistoria/vistoria-componentes.page.scss"],
+  "sourcesContent": [".content {\r\n  display: flex;\r\n  flex-direction: column;\r\n  align-items: center;\r\n  padding: 24px;\r\n  gap: 12px;\r\n}\r\n\r\n.error-message {\r\n  padding: 12px 16px;\r\n}\r\n"],
+  "mappings": ";AAAA,CAAA;AACE,WAAA;AACA,kBAAA;AACA,eAAA;AACA,WAAA;AACA,OAAA;;AAGF,CAAA;AACE,WAAA,KAAA;;",
+  "names": []
+}

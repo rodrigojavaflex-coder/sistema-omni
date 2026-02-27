@@ -13,11 +13,6 @@ export class UpdateVistoriaDto {
   @IsOptional()
   idmotorista?: string;
 
-  @ApiPropertyOptional({ description: 'ID do tipo de vistoria', format: 'uuid' })
-  @IsUUID()
-  @IsOptional()
-  idtipovistoria?: string;
-
   @ApiPropertyOptional({ description: 'Odômetro informado', example: 12345.6 })
   @Type(() => Number)
   @IsNumber()
