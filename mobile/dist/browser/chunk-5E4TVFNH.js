@@ -6,7 +6,7 @@ import {
   inject,
   setClassMetadata,
   ɵɵdefineInjectable
-} from "./chunk-SPXVY54Q.js";
+} from "./chunk-YHBFL7VH.js";
 import {
   Capacitor
 } from "./chunk-5JG7MXFI.js";
@@ -47,4 +47,4 @@ var AreaVistoriadaService = class _AreaVistoriadaService {
 export {
   AreaVistoriadaService
 };
-//# sourceMappingURL=chunk-2LKB7HLG.js.map
+//# sourceMappingURL=chunk-5E4TVFNH.js.map

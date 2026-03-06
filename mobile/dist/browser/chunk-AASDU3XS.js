@@ -5,7 +5,7 @@ import {
 import {
   VistoriaFlowService,
   VistoriaService
-} from "./chunk-LOSUBM6T.js";
+} from "./chunk-DWLJWML7.js";
 import {
   addIcons,
   cameraOutline,
@@ -61,7 +61,7 @@ import {
   ɵɵtextInterpolate,
   ɵɵtextInterpolate1,
   ɵɵviewQuery
-} from "./chunk-SPXVY54Q.js";
+} from "./chunk-YHBFL7VH.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import {
@@ -382,6 +382,7 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
       this.componenteNome = state?.componenteNome ?? "Componente";
       this.loading = true;
       try {
+        yield this.vistoriaService.getById(vistoriaId);
         this.matriz = yield this.matrizService.listarPorComponente(this.componenteId);
         const canRecord = yield VoiceRecorder.canDeviceVoiceRecord();
         this.podeGravarAudio = canRecord.value === true;
@@ -717,4 +718,4 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
 export {
   VistoriaIrregularidadePage
 };
-//# sourceMappingURL=chunk-ZGDZT2UD.js.map
+//# sourceMappingURL=chunk-AASDU3XS.js.map

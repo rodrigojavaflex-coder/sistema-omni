@@ -6,7 +6,7 @@ import {
   inject,
   setClassMetadata,
   ɵɵdefineInjectable
-} from "./chunk-SPXVY54Q.js";
+} from "./chunk-YHBFL7VH.js";
 import {
   Capacitor
 } from "./chunk-5JG7MXFI.js";
@@ -114,43 +114,31 @@ var VistoriaService = class _VistoriaService {
 // src/app/services/vistoria-flow.service.ts
 var VistoriaFlowService = class _VistoriaFlowService {
   vistoriaId = null;
-  tipoVistoriaId = null;
   startedAt = null;
   veiculoDescricao = null;
   veiculoModeloId = null;
   veiculoModeloNome = null;
-  tipoVistoriaDescricao = null;
   dataVistoriaIso = null;
-  iniciar(vistoriaId, tipoVistoriaId, options) {
+  iniciar(vistoriaId, options) {
     this.vistoriaId = vistoriaId;
-    this.tipoVistoriaId = tipoVistoriaId;
     this.startedAt = Date.now();
     this.veiculoDescricao = options?.veiculoDescricao ?? this.veiculoDescricao;
     this.veiculoModeloId = options?.veiculoModeloId ?? this.veiculoModeloId;
     this.veiculoModeloNome = options?.veiculoModeloNome ?? this.veiculoModeloNome;
-    this.tipoVistoriaDescricao = options?.tipoVistoriaDescricao ?? this.tipoVistoriaDescricao;
     this.dataVistoriaIso = options?.datavistoria ?? this.dataVistoriaIso;
   }
   finalizar() {
     this.vistoriaId = null;
-    this.tipoVistoriaId = null;
     this.startedAt = null;
     this.veiculoDescricao = null;
     this.veiculoModeloId = null;
     this.veiculoModeloNome = null;
-    this.tipoVistoriaDescricao = null;
     this.dataVistoriaIso = null;
   }
   getVistoriaId() {
     return this.vistoriaId;
   }
-  getTipoVistoriaId() {
-    return this.tipoVistoriaId;
-  }
   updateContext(options) {
-    if (options.tipoVistoriaId) {
-      this.tipoVistoriaId = options.tipoVistoriaId;
-    }
     if (options.veiculoDescricao !== void 0) {
       this.veiculoDescricao = options.veiculoDescricao;
     }
@@ -159,9 +147,6 @@ var VistoriaFlowService = class _VistoriaFlowService {
     }
     if (options.veiculoModeloNome !== void 0) {
       this.veiculoModeloNome = options.veiculoModeloNome;
-    }
-    if (options.tipoVistoriaDescricao !== void 0) {
-      this.tipoVistoriaDescricao = options.tipoVistoriaDescricao;
     }
     if (options.datavistoria !== void 0) {
       this.dataVistoriaIso = options.datavistoria;
@@ -175,9 +160,6 @@ var VistoriaFlowService = class _VistoriaFlowService {
   }
   getVeiculoModeloNome() {
     return this.veiculoModeloNome;
-  }
-  getTipoVistoriaDescricao() {
-    return this.tipoVistoriaDescricao;
   }
   getDataVistoriaIso() {
     return this.dataVistoriaIso;
@@ -205,4 +187,4 @@ export {
   VistoriaService,
   VistoriaFlowService
 };
-//# sourceMappingURL=chunk-LOSUBM6T.js.map
+//# sourceMappingURL=chunk-DWLJWML7.js.map

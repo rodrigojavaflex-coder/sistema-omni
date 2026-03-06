@@ -8,7 +8,7 @@ import {
   inject,
   setClassMetadata,
   ɵɵdefineInjectable
-} from "./chunk-SPXVY54Q.js";
+} from "./chunk-YHBFL7VH.js";
 import {
   Capacitor,
   registerPlugin
@@ -463,4 +463,4 @@ var AuthService = class _AuthService {
 export {
   AuthService
 };
-//# sourceMappingURL=chunk-FAJD6DZI.js.map
+//# sourceMappingURL=chunk-6JWFPMDD.js.map

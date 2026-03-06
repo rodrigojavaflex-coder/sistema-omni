@@ -1,14 +1,14 @@
 import {
   VistoriaFlowService,
   VistoriaService
-} from "./chunk-LOSUBM6T.js";
+} from "./chunk-DWLJWML7.js";
 import {
   addIcons,
   refreshOutline
 } from "./chunk-JMBQIX2W.js";
 import {
   AuthService
-} from "./chunk-FAJD6DZI.js";
+} from "./chunk-6JWFPMDD.js";
 import {
   AlertController,
   Component,
@@ -29,8 +29,6 @@ import {
   IonList,
   IonMenuButton,
   IonSearchbar,
-  IonSelect,
-  IonSelectOption,
   IonSpinner,
   IonText,
   IonTitle,
@@ -67,7 +65,7 @@ import {
   ɵɵtwoWayBindingSet,
   ɵɵtwoWayListener,
   ɵɵtwoWayProperty
-} from "./chunk-SPXVY54Q.js";
+} from "./chunk-YHBFL7VH.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import {
@@ -90,28 +88,6 @@ import {
   __spreadProps,
   __spreadValues
 } from "./chunk-3RNQ4BE2.js";
-
-// src/app/services/tipo-vistoria.service.ts
-var TipoVistoriaService = class _TipoVistoriaService {
-  http = inject(HttpClient);
-  apiBaseUrl = Capacitor.getPlatform() !== "web" ? environment.apiUrlNative || environment.apiUrl : environment.apiUrl;
-  getAtivos() {
-    return __async(this, null, function* () {
-      const tipos = yield firstValueFrom(this.http.get(`${this.apiBaseUrl}/tiposvistoria`));
-      return (tipos ?? []).filter((tipo) => tipo.ativo);
-    });
-  }
-  static \u0275fac = function TipoVistoriaService_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _TipoVistoriaService)();
-  };
-  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _TipoVistoriaService, factory: _TipoVistoriaService.\u0275fac, providedIn: "root" });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(TipoVistoriaService, [{
-    type: Injectable,
-    args: [{ providedIn: "root" }]
-  }], null, null);
-})();
 
 // src/app/services/veiculo.service.ts
 var VeiculoService = class _VeiculoService {
@@ -204,7 +180,7 @@ var SystemService = class _SystemService {
 // src/app/pages/vistoria/vistoria-inicio.page.ts
 function VistoriaInicioPage_ion_buttons_2_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "ion-buttons", 22);
+    \u0275\u0275elementStart(0, "ion-buttons", 19);
     \u0275\u0275element(1, "ion-menu-button");
     \u0275\u0275elementEnd();
   }
@@ -212,7 +188,7 @@ function VistoriaInicioPage_ion_buttons_2_Template(rf, ctx) {
 function VistoriaInicioPage_ion_card_13_ion_item_4_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-item");
-    \u0275\u0275element(1, "ion-spinner", 23);
+    \u0275\u0275element(1, "ion-spinner", 20);
     \u0275\u0275elementStart(2, "ion-label");
     \u0275\u0275text(3, "Carregando vistorias...");
     \u0275\u0275elementEnd()();
@@ -243,18 +219,15 @@ function VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_Template(rf, ctx) 
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(7, "p");
     \u0275\u0275text(8);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "p");
-    \u0275\u0275text(10);
-    \u0275\u0275pipe(11, "date");
+    \u0275\u0275pipe(9, "date");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(12, "ion-button", 25);
-    \u0275\u0275listener("click", function VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_Template_ion_button_click_12_listener() {
+    \u0275\u0275elementStart(10, "ion-button", 22);
+    \u0275\u0275listener("click", function VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_Template_ion_button_click_10_listener() {
       const vistoria_r2 = \u0275\u0275restoreView(_r1).$implicit;
       const ctx_r2 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r2.continuarVistoria(vistoria_r2));
     });
-    \u0275\u0275text(13, " Continuar ");
+    \u0275\u0275text(11, " Continuar ");
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -266,15 +239,13 @@ function VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_Template(rf, ctx) 
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", vistoria_r2.motorista == null ? null : vistoria_r2.motorista.matricula);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1(" Tipo: ", (vistoria_r2.tipoVistoria == null ? null : vistoria_r2.tipoVistoria.descricao) || "---", " ");
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1(" Data: ", \u0275\u0275pipeBind2(11, 5, vistoria_r2.datavistoria, "short"), " ");
+    \u0275\u0275textInterpolate1(" Data: ", \u0275\u0275pipeBind2(9, 4, vistoria_r2.datavistoria, "short"), " ");
   }
 }
 function VistoriaInicioPage_ion_card_13_ion_list_5_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-list");
-    \u0275\u0275template(1, VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_Template, 14, 8, "ion-item", 24);
+    \u0275\u0275template(1, VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_Template, 12, 7, "ion-item", 21);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -302,7 +273,7 @@ function VistoriaInicioPage_ion_card_13_Template(rf, ctx) {
 function VistoriaInicioPage_ion_list_19_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-list")(1, "ion-item");
-    \u0275\u0275element(2, "ion-spinner", 23);
+    \u0275\u0275element(2, "ion-spinner", 20);
     \u0275\u0275elementStart(3, "ion-label");
     \u0275\u0275text(4, "Buscando ve\xEDculos...");
     \u0275\u0275elementEnd()()();
@@ -311,7 +282,7 @@ function VistoriaInicioPage_ion_list_19_Template(rf, ctx) {
 function VistoriaInicioPage_ion_list_20_ion_item_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "ion-item", 27);
+    \u0275\u0275elementStart(0, "ion-item", 24);
     \u0275\u0275listener("click", function VistoriaInicioPage_ion_list_20_ion_item_1_Template_ion_item_click_0_listener() {
       const veiculo_r5 = \u0275\u0275restoreView(_r4).$implicit;
       const ctx_r2 = \u0275\u0275nextContext(2);
@@ -337,7 +308,7 @@ function VistoriaInicioPage_ion_list_20_ion_item_1_Template(rf, ctx) {
 function VistoriaInicioPage_ion_list_20_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-list");
-    \u0275\u0275template(1, VistoriaInicioPage_ion_list_20_ion_item_1_Template, 6, 4, "ion-item", 26);
+    \u0275\u0275template(1, VistoriaInicioPage_ion_list_20_ion_item_1_Template, 6, 4, "ion-item", 23);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -367,7 +338,7 @@ function VistoriaInicioPage_ion_item_21_Template(rf, ctx) {
 function VistoriaInicioPage_ion_list_27_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-list")(1, "ion-item");
-    \u0275\u0275element(2, "ion-spinner", 23);
+    \u0275\u0275element(2, "ion-spinner", 20);
     \u0275\u0275elementStart(3, "ion-label");
     \u0275\u0275text(4, "Buscando motoristas...");
     \u0275\u0275elementEnd()()();
@@ -376,7 +347,7 @@ function VistoriaInicioPage_ion_list_27_Template(rf, ctx) {
 function VistoriaInicioPage_ion_list_28_ion_item_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r6 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "ion-item", 27);
+    \u0275\u0275elementStart(0, "ion-item", 24);
     \u0275\u0275listener("click", function VistoriaInicioPage_ion_list_28_ion_item_1_Template_ion_item_click_0_listener() {
       const motorista_r7 = \u0275\u0275restoreView(_r6).$implicit;
       const ctx_r2 = \u0275\u0275nextContext(2);
@@ -402,7 +373,7 @@ function VistoriaInicioPage_ion_list_28_ion_item_1_Template(rf, ctx) {
 function VistoriaInicioPage_ion_list_28_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-list");
-    \u0275\u0275template(1, VistoriaInicioPage_ion_list_28_ion_item_1_Template, 6, 4, "ion-item", 26);
+    \u0275\u0275template(1, VistoriaInicioPage_ion_list_28_ion_item_1_Template, 6, 4, "ion-item", 23);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -411,31 +382,9 @@ function VistoriaInicioPage_ion_list_28_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", ctx_r2.motoristas);
   }
 }
-function VistoriaInicioPage_ion_select_option_34_Template(rf, ctx) {
+function VistoriaInicioPage_ion_text_38_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "ion-select-option", 28);
-    \u0275\u0275text(1);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const tipo_r8 = ctx.$implicit;
-    \u0275\u0275property("value", tipo_r8.id);
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", tipo_r8.descricao, " ");
-  }
-}
-function VistoriaInicioPage_ion_item_35_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "ion-item");
-    \u0275\u0275element(1, "ion-spinner", 23);
-    \u0275\u0275elementStart(2, "ion-label");
-    \u0275\u0275text(3, "Carregando tipos...");
-    \u0275\u0275elementEnd()();
-  }
-}
-function VistoriaInicioPage_ion_text_45_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "ion-text", 29)(1, "p", 30);
+    \u0275\u0275elementStart(0, "ion-text", 25)(1, "p", 26);
     \u0275\u0275text(2);
     \u0275\u0275elementEnd()();
   }
@@ -445,9 +394,9 @@ function VistoriaInicioPage_ion_text_45_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r2.startValidationMessage);
   }
 }
-function VistoriaInicioPage_ion_text_46_Template(rf, ctx) {
+function VistoriaInicioPage_ion_text_39_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "ion-text", 29)(1, "p", 30);
+    \u0275\u0275elementStart(0, "ion-text", 25)(1, "p", 26);
     \u0275\u0275text(2);
     \u0275\u0275elementEnd()();
   }
@@ -457,12 +406,12 @@ function VistoriaInicioPage_ion_text_46_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r2.errorMessage);
   }
 }
-function VistoriaInicioPage_ion_spinner_49_Template(rf, ctx) {
+function VistoriaInicioPage_ion_spinner_42_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "ion-spinner", 23);
+    \u0275\u0275element(0, "ion-spinner", 20);
   }
 }
-function VistoriaInicioPage_span_50_Template(rf, ctx) {
+function VistoriaInicioPage_span_43_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, "Iniciar Vistoria");
@@ -470,7 +419,6 @@ function VistoriaInicioPage_span_50_Template(rf, ctx) {
   }
 }
 var VistoriaInicioPage = class _VistoriaInicioPage {
-  tipoService = inject(TipoVistoriaService);
   veiculoService = inject(VeiculoService);
   motoristaService = inject(MotoristaService);
   vistoriaService = inject(VistoriaService);
@@ -479,7 +427,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   systemService = inject(SystemService);
   authService = inject(AuthService);
   alertController = inject(AlertController);
-  tipos = [];
   veiculos = [];
   motoristas = [];
   vistoriasEmAndamento = [];
@@ -487,7 +434,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   motoristaSearch = "";
   selectedVeiculo = null;
   selectedMotorista = null;
-  selectedTipoId = "";
   odometro = null;
   odometroDisplay = "";
   bateria = null;
@@ -495,7 +441,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   ultimoOdometroData = null;
   datavistoriaDisplay = "";
   datavistoriaIso = "";
-  loadingTipos = false;
   loadingVeiculos = false;
   loadingMotoristas = false;
   isSaving = false;
@@ -508,14 +453,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   ngOnInit() {
     return __async(this, null, function* () {
       yield this.atualizarDataHora();
-      this.loadingTipos = true;
-      try {
-        this.tipos = yield this.tipoService.getAtivos();
-      } catch (error) {
-        this.errorMessage = "Erro ao carregar tipos de vistoria.";
-      } finally {
-        this.loadingTipos = false;
-      }
       this.loadingAndamento = true;
       try {
         const user = this.authService.getCurrentUser();
@@ -570,14 +507,12 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
     return __async(this, null, function* () {
       try {
         const atualizada = yield this.vistoriaService.retomarVistoria(vistoria.id);
-        const tipoId = atualizada.idTipoVistoria || vistoria.idTipoVistoria;
         const modeloId = atualizada.veiculo?.idModelo ?? atualizada.veiculo?.modeloVeiculo?.id ?? vistoria.veiculo?.idModelo ?? vistoria.veiculo?.modeloVeiculo?.id;
         const modeloNome = atualizada.veiculo?.modeloVeiculo?.nome ?? atualizada.veiculo?.modelo ?? vistoria.veiculo?.modeloVeiculo?.nome ?? vistoria.veiculo?.modelo;
-        this.flowService.iniciar(atualizada.id, tipoId, {
+        this.flowService.iniciar(atualizada.id, {
           veiculoDescricao: atualizada.veiculo?.descricao ?? vistoria.veiculo?.descricao,
           veiculoModeloId: modeloId ?? void 0,
           veiculoModeloNome: modeloNome ?? void 0,
-          tipoVistoriaDescricao: atualizada.tipoVistoria?.descricao ?? vistoria.tipoVistoria?.descricao,
           datavistoria: atualizada.datavistoria ?? vistoria.datavistoria
         });
         this.router.navigate(["/vistoria/areas"]);
@@ -665,7 +600,7 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   get canStart() {
     const bateriaObrigatoria = this.isBateriaObrigatoria();
     const bateriaValida = this.bateria === null ? !bateriaObrigatoria : this.bateria >= 0 && this.bateria <= 100;
-    return Boolean(this.selectedVeiculo && this.selectedMotorista && this.selectedTipoId && this.odometro !== null && this.odometro > 0 && this.odometro <= 9999999 && bateriaValida);
+    return Boolean(this.selectedVeiculo && this.selectedMotorista && this.odometro !== null && this.odometro > 0 && this.odometro <= 9999999 && bateriaValida);
   }
   get startValidationMessage() {
     if (!this.selectedVeiculo) {
@@ -673,9 +608,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
     }
     if (!this.selectedMotorista) {
       return "Selecione um motorista.";
-    }
-    if (!this.selectedTipoId) {
-      return "Selecione o tipo de vistoria.";
     }
     if (this.odometro === null || this.odometro <= 0) {
       return "Informe o od\xF4metro.";
@@ -706,23 +638,19 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       this.isSaving = true;
       this.errorMessage = "";
       try {
-        const tipoSelecionado = this.tipos.find((tipo) => tipo.id === this.selectedTipoId);
         const vistoriaId = this.flowService.getVistoriaId();
         if (vistoriaId) {
           yield this.vistoriaService.atualizarVistoria(vistoriaId, {
             idveiculo: this.selectedVeiculo.id,
             idmotorista: this.selectedMotorista.id,
-            idtipovistoria: this.selectedTipoId,
             odometro: Number(this.odometro),
             porcentagembateria: this.bateria === null ? null : Number(this.bateria),
             datavistoria: this.datavistoriaIso
           });
           this.flowService.updateContext({
-            tipoVistoriaId: this.selectedTipoId,
             veiculoDescricao: this.selectedVeiculo.descricao,
             veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
             veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? this.selectedVeiculo.modelo ?? void 0,
-            tipoVistoriaDescricao: tipoSelecionado?.descricao,
             datavistoria: this.datavistoriaIso
           });
           this.router.navigate(["/vistoria/areas"]);
@@ -732,16 +660,14 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
           idusuario: user.id,
           idveiculo: this.selectedVeiculo.id,
           idmotorista: this.selectedMotorista.id,
-          idtipovistoria: this.selectedTipoId,
           odometro: Number(this.odometro)
         }, this.bateria !== null ? { porcentagembateria: Number(this.bateria) } : {}), {
           datavistoria: this.datavistoriaIso
         }));
-        this.flowService.iniciar(vistoria.id, this.selectedTipoId, {
+        this.flowService.iniciar(vistoria.id, {
           veiculoDescricao: this.selectedVeiculo.descricao,
           veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
           veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? this.selectedVeiculo.modelo ?? void 0,
-          tipoVistoriaDescricao: tipoSelecionado?.descricao,
           datavistoria: this.datavistoriaIso
         });
         this.router.navigate(["/vistoria/areas"]);
@@ -863,7 +789,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
           };
           this.motoristaSearch = `${this.selectedMotorista.nome} - ${this.selectedMotorista.matricula}`;
         }
-        this.selectedTipoId = vistoria.idTipoVistoria;
         this.onOdometroInput(vistoria.odometro);
         if (this.isBateriaObrigatoria()) {
           this.bateria = vistoria.porcentagembateria === null || vistoria.porcentagembateria === void 0 ? null : Number(vistoria.porcentagembateria);
@@ -876,9 +801,7 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
           this.datavistoriaIso = date.toISOString();
         }
         this.flowService.updateContext({
-          tipoVistoriaId: vistoria.idTipoVistoria,
           veiculoDescricao: vistoria.veiculo?.descricao,
-          tipoVistoriaDescricao: vistoria.tipoVistoria?.descricao,
           datavistoria: vistoria.datavistoria
         });
       } catch {
@@ -888,7 +811,7 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   static \u0275fac = function VistoriaInicioPage_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _VistoriaInicioPage)();
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VistoriaInicioPage, selectors: [["app-vistoria-inicio"]], decls: 51, vars: 25, consts: [[3, "translucent"], ["slot", "start", 4, "ngIf"], [3, "fullscreen"], [1, "card"], [1, "datetime-item"], ["position", "stacked"], ["readonly", "true", 3, "value"], ["fill", "clear", "size", "small", "slot", "end", "aria-label", "Atualizar data/hora", 3, "click"], ["name", "refresh-outline"], ["class", "card", 4, "ngIf"], ["placeholder", "Buscar por descri\xE7\xE3o ou placa", 3, "ionInput", "ionClear", "debounce", "value"], [4, "ngIf"], ["placeholder", "Buscar por nome, matr\xEDcula ou CPF", 3, "ionInput", "ionClear", "debounce", "value"], [1, "select-item"], ["interface", "popover", "placeholder", "Selecione", 3, "ngModelChange", "ngModel"], [3, "value", 4, "ngFor", "ngForOf"], ["type", "text", "inputmode", "numeric", "placeholder", "Ex: 12345", 1, "campo-destaque", 3, "ionInput", "value"], ["type", "number", "placeholder", "0 a 100", "min", "0", "max", "100", 1, "campo-destaque", 3, "ngModelChange", "ngModel", "disabled"], ["color", "danger", 4, "ngIf"], [1, "actions"], ["expand", "block", 3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], ["slot", "start"], ["name", "crescent"], [4, "ngFor", "ngForOf"], ["fill", "outline", 3, "click"], ["button", "", "class", "selection-item", 3, "is-selected", "click", 4, "ngFor", "ngForOf"], ["button", "", 1, "selection-item", 3, "click"], [3, "value"], ["color", "danger"], [1, "error-message"]], template: function VistoriaInicioPage_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VistoriaInicioPage, selectors: [["app-vistoria-inicio"]], decls: 44, vars: 22, consts: [[3, "translucent"], ["slot", "start", 4, "ngIf"], [3, "fullscreen"], [1, "card"], [1, "datetime-item"], ["position", "stacked"], ["readonly", "true", 3, "value"], ["fill", "clear", "size", "small", "slot", "end", "aria-label", "Atualizar data/hora", 3, "click"], ["name", "refresh-outline"], ["class", "card", 4, "ngIf"], ["placeholder", "Buscar por descri\xE7\xE3o ou placa", 3, "ionInput", "ionClear", "debounce", "value"], [4, "ngIf"], ["placeholder", "Buscar por nome, matr\xEDcula ou CPF", 3, "ionInput", "ionClear", "debounce", "value"], ["type", "text", "inputmode", "numeric", "placeholder", "Ex: 12345", 1, "campo-destaque", 3, "ionInput", "value"], ["type", "number", "placeholder", "0 a 100", "min", "0", "max", "100", 1, "campo-destaque", 3, "ngModelChange", "ngModel", "disabled"], ["color", "danger", 4, "ngIf"], [1, "actions"], ["expand", "block", 3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], ["slot", "start"], ["name", "crescent"], [4, "ngFor", "ngForOf"], ["fill", "outline", 3, "click"], ["button", "", "class", "selection-item", 3, "is-selected", "click", 4, "ngFor", "ngForOf"], ["button", "", 1, "selection-item", 3, "click"], ["color", "danger"], [1, "error-message"]], template: function VistoriaInicioPage_Template(rf, ctx) {
     if (rf & 1) {
       \u0275\u0275elementStart(0, "ion-header", 0)(1, "ion-toolbar");
       \u0275\u0275template(2, VistoriaInicioPage_ion_buttons_2_Template, 2, 0, "ion-buttons", 1);
@@ -930,41 +853,29 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       \u0275\u0275elementEnd()();
       \u0275\u0275template(27, VistoriaInicioPage_ion_list_27_Template, 5, 0, "ion-list", 11)(28, VistoriaInicioPage_ion_list_28_Template, 2, 1, "ion-list", 11);
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(29, "ion-card", 3)(30, "ion-item", 13)(31, "ion-label", 5);
-      \u0275\u0275text(32, "Tipo de Vistoria");
+      \u0275\u0275elementStart(29, "ion-card", 3)(30, "ion-item")(31, "ion-label", 5);
+      \u0275\u0275text(32, "Od\xF4metro");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(33, "ion-select", 14);
-      \u0275\u0275twoWayListener("ngModelChange", function VistoriaInicioPage_Template_ion_select_ngModelChange_33_listener($event) {
-        \u0275\u0275twoWayBindingSet(ctx.selectedTipoId, $event) || (ctx.selectedTipoId = $event);
-        return $event;
-      });
-      \u0275\u0275template(34, VistoriaInicioPage_ion_select_option_34_Template, 2, 2, "ion-select-option", 15);
-      \u0275\u0275elementEnd()();
-      \u0275\u0275template(35, VistoriaInicioPage_ion_item_35_Template, 4, 0, "ion-item", 11);
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(36, "ion-card", 3)(37, "ion-item")(38, "ion-label", 5);
-      \u0275\u0275text(39, "Od\xF4metro");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(40, "ion-input", 16);
-      \u0275\u0275listener("ionInput", function VistoriaInicioPage_Template_ion_input_ionInput_40_listener($event) {
+      \u0275\u0275elementStart(33, "ion-input", 13);
+      \u0275\u0275listener("ionInput", function VistoriaInicioPage_Template_ion_input_ionInput_33_listener($event) {
         return ctx.onOdometroInput($event.detail.value);
       });
       \u0275\u0275elementEnd()();
-      \u0275\u0275elementStart(41, "ion-item")(42, "ion-label", 5);
-      \u0275\u0275text(43, "% Bateria");
+      \u0275\u0275elementStart(34, "ion-item")(35, "ion-label", 5);
+      \u0275\u0275text(36, "% Bateria");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(44, "ion-input", 17);
-      \u0275\u0275twoWayListener("ngModelChange", function VistoriaInicioPage_Template_ion_input_ngModelChange_44_listener($event) {
+      \u0275\u0275elementStart(37, "ion-input", 14);
+      \u0275\u0275twoWayListener("ngModelChange", function VistoriaInicioPage_Template_ion_input_ngModelChange_37_listener($event) {
         \u0275\u0275twoWayBindingSet(ctx.bateria, $event) || (ctx.bateria = $event);
         return $event;
       });
       \u0275\u0275elementEnd()()();
-      \u0275\u0275template(45, VistoriaInicioPage_ion_text_45_Template, 3, 1, "ion-text", 18)(46, VistoriaInicioPage_ion_text_46_Template, 3, 1, "ion-text", 18);
-      \u0275\u0275elementStart(47, "div", 19)(48, "ion-button", 20);
-      \u0275\u0275listener("click", function VistoriaInicioPage_Template_ion_button_click_48_listener() {
+      \u0275\u0275template(38, VistoriaInicioPage_ion_text_38_Template, 3, 1, "ion-text", 15)(39, VistoriaInicioPage_ion_text_39_Template, 3, 1, "ion-text", 15);
+      \u0275\u0275elementStart(40, "div", 16)(41, "ion-button", 17);
+      \u0275\u0275listener("click", function VistoriaInicioPage_Template_ion_button_click_41_listener() {
         return ctx.iniciarVistoria();
       });
-      \u0275\u0275template(49, VistoriaInicioPage_ion_spinner_49_Template, 1, 0, "ion-spinner", 21)(50, VistoriaInicioPage_span_50_Template, 2, 0, "span", 11);
+      \u0275\u0275template(42, VistoriaInicioPage_ion_spinner_42_Template, 1, 0, "ion-spinner", 18)(43, VistoriaInicioPage_span_43_Template, 2, 0, "span", 11);
       \u0275\u0275elementEnd()()();
     }
     if (rf & 2) {
@@ -991,12 +902,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       \u0275\u0275property("ngIf", ctx.loadingMotoristas);
       \u0275\u0275advance();
       \u0275\u0275property("ngIf", !ctx.loadingMotoristas && ctx.motoristas.length > 0);
-      \u0275\u0275advance(5);
-      \u0275\u0275twoWayProperty("ngModel", ctx.selectedTipoId);
-      \u0275\u0275advance();
-      \u0275\u0275property("ngForOf", ctx.tipos);
-      \u0275\u0275advance();
-      \u0275\u0275property("ngIf", ctx.loadingTipos);
       \u0275\u0275advance(5);
       \u0275\u0275property("value", ctx.odometroDisplay);
       \u0275\u0275advance(4);
@@ -1033,8 +938,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
     IonIcon,
     IonList,
     IonSearchbar,
-    IonSelect,
-    IonSelectOption,
     IonSpinner,
     IonText,
     DatePipe,
@@ -1064,8 +967,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       IonIcon,
       IonList,
       IonSearchbar,
-      IonSelect,
-      IonSelectOption,
       IonSpinner,
       IonText
     ], template: `<ion-header [translucent]="true">\r
@@ -1111,9 +1012,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
             <span *ngIf="vistoria.motorista?.matricula">\r
               \u2022 Matricula: {{ formatarMatricula(vistoria.motorista?.matricula || '') }}\r
             </span>\r
-          </p>\r
-          <p>\r
-            Tipo: {{ vistoria.tipoVistoria?.descricao || '---' }}\r
           </p>\r
           <p>\r
             Data: {{ vistoria.datavistoria | date:'short' }}\r
@@ -1199,28 +1097,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   </ion-card>\r
 \r
   <ion-card class="card">\r
-    <ion-item class="select-item">\r
-      <ion-label position="stacked">Tipo de Vistoria</ion-label>\r
-      <ion-select\r
-        interface="popover"\r
-        placeholder="Selecione"\r
-        [(ngModel)]="selectedTipoId"\r
-      >\r
-        <ion-select-option\r
-          *ngFor="let tipo of tipos"\r
-          [value]="tipo.id"\r
-        >\r
-          {{ tipo.descricao }}\r
-        </ion-select-option>\r
-      </ion-select>\r
-    </ion-item>\r
-    <ion-item *ngIf="loadingTipos">\r
-      <ion-spinner name="crescent"></ion-spinner>\r
-      <ion-label>Carregando tipos...</ion-label>\r
-    </ion-item>\r
-  </ion-card>\r
-\r
-  <ion-card class="card">\r
     <ion-item>\r
       <ion-label position="stacked">Od\xF4metro</ion-label>\r
       <ion-input\r
@@ -1265,9 +1141,9 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   }], () => [], null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VistoriaInicioPage, { className: "VistoriaInicioPage", filePath: "src/app/pages/vistoria/vistoria-inicio.page.ts", lineNumber: 72 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VistoriaInicioPage, { className: "VistoriaInicioPage", filePath: "src/app/pages/vistoria/vistoria-inicio.page.ts", lineNumber: 66 });
 })();
 export {
   VistoriaInicioPage
 };
-//# sourceMappingURL=chunk-Z2Q6U7WJ.js.map
+//# sourceMappingURL=chunk-OFJG2Q3T.js.map

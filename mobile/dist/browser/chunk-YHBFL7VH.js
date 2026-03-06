@@ -77177,7 +77177,6 @@ export {
   IonLabel,
   IonList,
   IonMenuButton,
-  IonSelectOption,
   IonSpinner,
   IonText,
   IonTitle,
@@ -77188,7 +77187,6 @@ export {
   IonIcon,
   IonInput,
   IonSearchbar,
-  IonSelect,
   IonTextarea,
   IonToggle,
   environment
@@ -77366,4 +77364,4 @@ export {
    * (C) Ionic http://ionicframework.com - MIT License
    *)
 */
-//# sourceMappingURL=chunk-SPXVY54Q.js.map
+//# sourceMappingURL=chunk-YHBFL7VH.js.map

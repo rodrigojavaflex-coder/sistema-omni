@@ -4,7 +4,7 @@ import {
 } from "./chunk-JMBQIX2W.js";
 import {
   AuthService
-} from "./chunk-FAJD6DZI.js";
+} from "./chunk-6JWFPMDD.js";
 import {
   AlertController,
   CUSTOM_ELEMENTS_SCHEMA,
@@ -49,7 +49,7 @@ import {
   ɵɵrestoreView,
   ɵɵtemplate,
   ɵɵtext
-} from "./chunk-SPXVY54Q.js";
+} from "./chunk-YHBFL7VH.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import {
@@ -117,40 +117,40 @@ var routes = [
   },
   {
     path: "login",
-    loadComponent: () => import("./chunk-KI3THDXM.js").then((m) => m.LoginPage)
+    loadComponent: () => import("./chunk-LWPIFB42.js").then((m) => m.LoginPage)
   },
   {
     path: "home",
-    loadComponent: () => import("./chunk-CAFFOQDP.js").then((m) => m.HomePage),
+    loadComponent: () => import("./chunk-DQZSWFFB.js").then((m) => m.HomePage),
     canActivate: [authGuard]
   },
   {
     path: "vistoria/inicio",
-    loadComponent: () => import("./chunk-Z2Q6U7WJ.js").then((m) => m.VistoriaInicioPage),
+    loadComponent: () => import("./chunk-OFJG2Q3T.js").then((m) => m.VistoriaInicioPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas",
-    loadComponent: () => import("./chunk-ZLEYQ34N.js").then((m) => m.VistoriaAreasPage),
+    loadComponent: () => import("./chunk-MNRTKMLC.js").then((m) => m.VistoriaAreasPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId",
-    loadComponent: () => import("./chunk-57EH7OOC.js").then((m) => m.VistoriaComponentesPage),
+    loadComponent: () => import("./chunk-5PQCF4B3.js").then((m) => m.VistoriaComponentesPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId/componentes/:componenteId",
-    loadComponent: () => import("./chunk-ZGDZT2UD.js").then((m) => m.VistoriaIrregularidadePage),
+    loadComponent: () => import("./chunk-AASDU3XS.js").then((m) => m.VistoriaIrregularidadePage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/finalizar",
-    loadComponent: () => import("./chunk-JDJX5TVH.js").then((m) => m.VistoriaFinalizarPage),
+    loadComponent: () => import("./chunk-L4KKYPEA.js").then((m) => m.VistoriaFinalizarPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
