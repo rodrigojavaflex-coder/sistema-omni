@@ -5,7 +5,7 @@ import { Vistoria } from './vistoria.entity';
 import { AreaVistoriada } from './area-vistoriada.entity';
 import { Componente } from './componente.entity';
 import { Sintoma } from './sintoma.entity';
-import { IrregularidadeImagem } from './irregularidade-imagem.entity';
+import { IrregularidadeMidia } from './irregularidade-midia.entity';
 
 @Entity('irregularidades')
 @Index('IDX_IRREGULARIDADE_VISTORIA', ['idVistoria'])
@@ -58,29 +58,9 @@ export class Irregularidade extends BaseEntity {
   @Column({ name: 'resolvido', type: 'boolean', default: false })
   resolvido: boolean;
 
-  @ApiProperty({ description: 'Nome do áudio', required: false })
-  @Column({ name: 'audio_nome_arquivo', type: 'varchar', length: 255, nullable: true })
-  audioNomeArquivo?: string | null;
-
-  @ApiProperty({ description: 'Mime type do áudio', required: false })
-  @Column({ name: 'audio_mime_type', type: 'varchar', length: 100, nullable: true })
-  audioMimeType?: string | null;
-
-  @ApiProperty({ description: 'Tamanho do áudio em bytes', required: false })
-  @Column({ name: 'audio_tamanho', type: 'bigint', nullable: true })
-  audioTamanho?: number | null;
-
-  @ApiProperty({ description: 'Duração do áudio em ms', required: false })
-  @Column({ name: 'audio_duracao_ms', type: 'integer', nullable: true })
-  audioDuracaoMs?: number | null;
-
-  @ApiProperty({ description: 'Conteúdo do áudio', required: false })
-  @Column({ name: 'audio_dados_bytea', type: 'bytea', nullable: true })
-  audioDadosBytea?: Buffer | null;
-
-  @ApiProperty({ description: 'Imagens vinculadas', type: () => [IrregularidadeImagem] })
-  @OneToMany(() => IrregularidadeImagem, (imagem) => imagem.irregularidade, {
+  @ApiProperty({ description: 'Mídias vinculadas (imagens e áudios)', type: () => [IrregularidadeMidia] })
+  @OneToMany(() => IrregularidadeMidia, (midia) => midia.irregularidade, {
     cascade: true,
   })
-  imagens?: IrregularidadeImagem[];
+  midias?: IrregularidadeMidia[];
 }

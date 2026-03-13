@@ -18,7 +18,7 @@ import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Permission } from '../../common/enums/permission.enum';
 import { Irregularidade } from './entities/irregularidade.entity';
-import { IrregularidadeImagem } from './entities/irregularidade-imagem.entity';
+import { IrregularidadeMidia } from './entities/irregularidade-midia.entity';
 import { IrregularidadeService } from './irregularidade.service';
 import { UpdateIrregularidadeDto } from './dto/update-irregularidade.dto';
 
@@ -42,7 +42,7 @@ export class IrregularidadesController {
 
   @Post(':id/imagens')
   @ApiOperation({ summary: 'Enviar imagens da irregularidade' })
-  @ApiResponse({ status: 201, type: [IrregularidadeImagem] })
+  @ApiResponse({ status: 201, type: [IrregularidadeMidia] })
   @Permissions(Permission.VISTORIA_UPDATE)
   @UseInterceptors(
     FilesInterceptor('files', 10, {
@@ -52,13 +52,13 @@ export class IrregularidadesController {
   uploadImages(
     @Param('id', new ParseUUIDPipe()) id: string,
     @UploadedFiles() files: Express.Multer.File[],
-  ): Promise<IrregularidadeImagem[]> {
+  ): Promise<IrregularidadeMidia[]> {
     return this.irregularidadeService.uploadImages(id, files);
   }
 
   @Post(':id/audio')
-  @ApiOperation({ summary: 'Enviar áudio da irregularidade' })
-  @ApiResponse({ status: 201, type: Irregularidade })
+  @ApiOperation({ summary: 'Enviar áudio da irregularidade (pode enviar múltiplos)' })
+  @ApiResponse({ status: 201, type: IrregularidadeMidia })
   @Permissions(Permission.VISTORIA_UPDATE)
   @UseInterceptors(
     FileInterceptor('file', {
@@ -69,16 +69,27 @@ export class IrregularidadesController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @UploadedFile() file: Express.Multer.File,
     @Body('duracao_ms') duracaoMs?: string,
-  ): Promise<Irregularidade> {
+  ): Promise<IrregularidadeMidia> {
     const parsed = duracaoMs ? Number(duracaoMs) : undefined;
     return this.irregularidadeService.uploadAudio(id, file, parsed);
   }
 
   @Delete(':id/audio')
-  @ApiOperation({ summary: 'Remover áudio da irregularidade' })
-  @ApiResponse({ status: 200, type: Irregularidade })
+  @ApiOperation({ summary: 'Remover todos os áudios da irregularidade' })
+  @ApiResponse({ status: 200 })
   @Permissions(Permission.VISTORIA_UPDATE)
-  removeAudio(@Param('id', new ParseUUIDPipe()) id: string): Promise<Irregularidade> {
+  removeAudio(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
     return this.irregularidadeService.removeAudio(id);
+  }
+
+  @Delete(':id/midias/:midiaId')
+  @ApiOperation({ summary: 'Remover mídia por id' })
+  @ApiResponse({ status: 204 })
+  @Permissions(Permission.VISTORIA_UPDATE)
+  removeMidia(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('midiaId', new ParseUUIDPipe()) midiaId: string,
+  ): Promise<void> {
+    return this.irregularidadeService.removeMidia(midiaId);
   }
 }

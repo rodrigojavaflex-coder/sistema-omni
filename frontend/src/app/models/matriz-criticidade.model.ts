@@ -7,6 +7,7 @@ export interface MatrizCriticidade {
   gravidade: GravidadeCriticidade;
   exigeFoto: boolean;
   permiteAudio: boolean;
+  permiteNovaIrregularidadeSeJaExiste?: boolean;
   componente?: { id: string; nome: string };
   sintoma?: { id: string; descricao: string };
   criadoEm?: string;
@@ -19,6 +20,7 @@ export interface CreateMatrizCriticidadeDto {
   gravidade: GravidadeCriticidade;
   exige_foto?: boolean;
   permite_audio?: boolean;
+  permite_nova_irregularidade_se_ja_existe?: boolean;
 }
 
 export interface UpdateMatrizCriticidadeDto extends Partial<CreateMatrizCriticidadeDto> {}

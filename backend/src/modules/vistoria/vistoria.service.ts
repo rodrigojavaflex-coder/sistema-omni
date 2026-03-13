@@ -4,11 +4,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, In, Repository } from 'typeorm';
 import { Vistoria } from './entities/vistoria.entity';
 import { Veiculo } from '../veiculo/entities/veiculo.entity';
 import { Motorista } from '../motorista/entities/motorista.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
+import { AreaVistoriada } from './entities/area-vistoriada.entity';
+import { AreaComponente } from './entities/area-componente.entity';
+import { MatrizCriticidade } from './entities/matriz-criticidade.entity';
+import { Irregularidade } from './entities/irregularidade.entity';
 import { CreateVistoriaDto } from './dto/create-vistoria.dto';
 import { FinalizeVistoriaDto } from './dto/finalize-vistoria.dto';
 import { UpdateVistoriaDto } from './dto/update-vistoria.dto';
@@ -28,6 +32,14 @@ export class VistoriaService {
     private readonly motoristaRepository: Repository<Motorista>,
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
+    @InjectRepository(AreaVistoriada)
+    private readonly areaRepository: Repository<AreaVistoriada>,
+    @InjectRepository(AreaComponente)
+    private readonly areaComponenteRepository: Repository<AreaComponente>,
+    @InjectRepository(MatrizCriticidade)
+    private readonly matrizRepository: Repository<MatrizCriticidade>,
+    @InjectRepository(Irregularidade)
+    private readonly irregularidadeRepository: Repository<Irregularidade>,
   ) {}
 
   async create(dto: CreateVistoriaDto): Promise<Vistoria> {
@@ -66,6 +78,21 @@ export class VistoriaService {
       throw new BadRequestException('Motorista inativo');
     }
 
+    const dataVistoria = new Date(dto.datavistoria);
+    const ano = dataVistoria.getFullYear();
+    const anoInicio = ano * 1000;
+    const anoFim = (ano + 1) * 1000;
+
+    const maxResult = await this.vistoriaRepository
+      .createQueryBuilder('v')
+      .select('MAX(v.numeroVistoria)', 'maxNum')
+      .where('v.numeroVistoria >= :anoInicio', { anoInicio })
+      .andWhere('v.numeroVistoria < :anoFim', { anoFim })
+      .getRawOne<{ maxNum: number | null }>();
+
+    const proximoNumero =
+      maxResult?.maxNum != null ? maxResult.maxNum + 1 : anoInicio + 1;
+
     const vistoria = this.vistoriaRepository.create({
       idUsuario: dto.idusuario,
       idVeiculo: dto.idveiculo,
@@ -73,7 +100,8 @@ export class VistoriaService {
       odometro: dto.odometro,
       porcentagembateria:
         dto.porcentagembateria === undefined ? null : dto.porcentagembateria,
-      datavistoria: new Date(dto.datavistoria),
+      numeroVistoria: proximoNumero,
+      datavistoria: dataVistoria,
       tempo: 0,
       status: StatusVistoria.EM_ANDAMENTO,
     });
@@ -234,6 +262,143 @@ export class VistoriaService {
       throw new NotFoundException('Vistoria não encontrada');
     }
     return vistoria;
+  }
+
+  async getBootstrap(vistoriaId: string): Promise<Record<string, unknown>> {
+    const vistoria = await this.findOne(vistoriaId);
+
+    const modeloId = vistoria.veiculo?.idModelo ?? null;
+    const areas = await this.listAreasAtivasPorModelo(modeloId);
+    const areaIds = areas.map((a) => a.id);
+
+    const areaComponentes = areaIds.length > 0
+      ? await this.areaComponenteRepository.find({
+          where: { idArea: In(areaIds) },
+          relations: ['componente'],
+          order: { ordemVisual: 'ASC' },
+        })
+      : [];
+
+    const componenteIds = [...new Set(areaComponentes.map((ac) => ac.idComponente))];
+    const matriz = componenteIds.length > 0
+      ? await this.matrizRepository.find({
+          where: { idComponente: In(componenteIds) },
+          relations: ['sintoma'],
+          order: { criadoEm: 'DESC' },
+        })
+      : [];
+
+    const irregularidadesVistoria = await this.irregularidadeRepository.find({
+      where: { idVistoria: vistoriaId },
+      relations: ['area', 'componente', 'sintoma'],
+      order: { atualizadoEm: 'DESC' },
+    });
+
+    const pendentesVeiculo = await this.irregularidadeRepository
+      .createQueryBuilder('i')
+      .innerJoinAndSelect('i.vistoria', 'v')
+      .leftJoinAndSelect('i.area', 'area')
+      .leftJoinAndSelect('i.componente', 'componente')
+      .leftJoinAndSelect('i.sintoma', 'sintoma')
+      .where('v.idVeiculo = :idVeiculo', { idVeiculo: vistoria.idVeiculo })
+      .andWhere('i.resolvido = :resolvido', { resolvido: false })
+      .orderBy('i.atualizadoEm', 'DESC')
+      .getMany();
+
+    const matrizByComponente = new Map<string, MatrizCriticidade[]>();
+    matriz.forEach((m) => {
+      const list = matrizByComponente.get(m.idComponente) ?? [];
+      list.push(m);
+      matrizByComponente.set(m.idComponente, list);
+    });
+
+    const componentesByArea = new Map<string, AreaComponente[]>();
+    areaComponentes.forEach((ac) => {
+      const list = componentesByArea.get(ac.idArea) ?? [];
+      list.push(ac);
+      componentesByArea.set(ac.idArea, list);
+    });
+
+    return {
+      generatedAt: new Date().toISOString(),
+      vistoria: {
+        id: vistoria.id,
+        numeroVistoria: vistoria.numeroVistoria,
+        datavistoria: vistoria.datavistoria?.toISOString(),
+        odometro: Number(vistoria.odometro),
+        porcentagembateria:
+          vistoria.porcentagembateria === null || vistoria.porcentagembateria === undefined
+            ? null
+            : Number(vistoria.porcentagembateria),
+        status: vistoria.status,
+        idVeiculo: vistoria.idVeiculo,
+        idMotorista: vistoria.idMotorista,
+        idUsuario: vistoria.idUsuario,
+        veiculo: vistoria.veiculo,
+        motorista: vistoria.motorista,
+      },
+      areas: areas.map((area) => ({
+        id: area.id,
+        nome: area.nome,
+        ordemVisual: area.ordemVisual,
+        ativo: area.ativo,
+        componentes: (componentesByArea.get(area.id) ?? []).map((ac) => ({
+          id: ac.id,
+          idArea: ac.idArea,
+          idComponente: ac.idComponente,
+          ordemVisual: ac.ordemVisual,
+          componente: ac.componente,
+          matriz: matrizByComponente.get(ac.idComponente) ?? [],
+        })),
+      })),
+      irregularidadesVistoria: irregularidadesVistoria.map((item) =>
+        this.mapIrregularidadeResumo(item),
+      ),
+      pendentesVeiculo: pendentesVeiculo.map((item) =>
+        this.mapIrregularidadeResumo(item),
+      ),
+    };
+  }
+
+  private mapIrregularidadeResumo(item: Irregularidade): Record<string, unknown> {
+    return {
+      id: item.id,
+      idarea: item.idArea,
+      nomeArea: item.area?.nome,
+      idcomponente: item.idComponente,
+      nomeComponente: item.componente?.nome,
+      idsintoma: item.idSintoma,
+      descricaoSintoma: item.sintoma?.descricao,
+      observacao: item.observacao ?? undefined,
+      resolvido: item.resolvido,
+      atualizadoEm: item.atualizadoEm.toISOString(),
+    };
+  }
+
+  private async listAreasAtivasPorModelo(idmodelo?: string | null): Promise<AreaVistoriada[]> {
+    const modeloFiltro = idmodelo?.trim();
+    if (!modeloFiltro) {
+      return this.areaRepository.find({
+        where: { ativo: true },
+        order: { ordemVisual: 'ASC' },
+      });
+    }
+
+    return this.areaRepository
+      .createQueryBuilder('area')
+      .where('area.ativo = :ativo', { ativo: true })
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where(
+            'EXISTS (SELECT 1 FROM areas_modelos am WHERE am.idarea = area.id AND am.idmodelo = :idModelo)',
+          ).orWhere(
+            'NOT EXISTS (SELECT 1 FROM areas_modelos am2 WHERE am2.idarea = area.id)',
+          );
+        }),
+      )
+      .setParameter('idModelo', modeloFiltro)
+      .orderBy('area.ordemVisual', 'ASC')
+      .getMany();
   }
 
 }

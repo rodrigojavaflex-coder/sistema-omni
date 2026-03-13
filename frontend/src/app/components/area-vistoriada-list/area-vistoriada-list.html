@@ -143,10 +143,10 @@
                     <span class="componente-cell componente-cell-status">{{ comp.ativo ? 'Ativo' : 'Inativo' }}</span>
                   </span>
                   <span *ngIf="isComponenteExpanded(comp)" class="componente-row-actions" (click)="$event.stopPropagation()">
+                    <button *ngIf="canCreateMatriz && !showNovaMatrizModal" type="button" class="btn btn-novo-componente" (click)="openNovaMatrizModal(); $event.stopPropagation()" title="Adicionar nova matriz de criticidade (sintoma + gravidade)">Nova matriz</button>
                     <button type="button" class="btn btn-primary" (click)="openEditarComponenteModal(comp, $event)" title="Editar componente">Editar</button>
                     <button *ngIf="canRemoveComponenteDaArea" type="button" class="btn btn-secondary" (click)="openRemoveFromAreaConfirmFromList(comp, $event)" title="Remover componente desta área (o componente não é excluído do sistema)">Remover</button>
                     <button *ngIf="canAuditComponente" type="button" class="btn btn-audit" (click)="openComponenteAuditModal(comp, $event)" title="Histórico de auditoria do componente">Auditoria</button>
-                    <button type="button" class="btn btn-danger" (click)="openDeleteComponente(comp); $event.stopPropagation()" title="Excluir componente">Excluir</button>
                   </span>
                 </div>
                 <!-- Corpo: matriz do componente (visível só quando em edição) -->
@@ -155,58 +155,6 @@
                     <h5>Matriz de criticidade</h5>
                     <div *ngIf="loadingMatriz" class="loading-inline">Carregando...</div>
                     <div *ngIf="!loadingMatriz">
-                      <div class="matriz-actions" *ngIf="canCreateMatriz && !showNovoMatrizForm">
-                        <button type="button" class="btn btn-primary btn-sm" (click)="openNovoMatrizForm(); $event.stopPropagation()" title="Adicionar nova matriz de criticidade (sintoma + gravidade)">Nova matriz</button>
-                      </div>
-                      <div *ngIf="canCreateMatriz && showNovoMatrizForm" class="matriz-form-inline">
-                        <div class="form-row form-row-with-actions">
-                          <div class="form-group">
-                            <label class="form-label">Sintoma *</label>
-                            <select class="form-select" [(ngModel)]="novoMatrizIdsintoma" (click)="$event.stopPropagation()">
-                              <option value="">Selecione</option>
-                              <option *ngFor="let s of sintomasDisponiveisNovaMatriz" [value]="s.id">{{ s.descricao }}</option>
-                            </select>
-                          </div>
-                          <div class="form-group">
-                            <label class="form-label">Gravidade</label>
-                            <select
-                              class="form-select gravidade-select"
-                              [ngClass]="{
-                                'gravidade-verde': novoMatrizGravidade === 'VERDE',
-                                'gravidade-amarelo': novoMatrizGravidade === 'AMARELO',
-                                'gravidade-vermelho': novoMatrizGravidade === 'VERMELHO'
-                              }"
-                              [(ngModel)]="novoMatrizGravidade"
-                              (click)="$event.stopPropagation()">
-                              <option *ngFor="let g of gravidades" [value]="g" [attr.data-gravidade]="g.toLowerCase()">{{ g }}</option>
-                            </select>
-                          </div>
-                          <div class="form-group">
-                            <label class="form-label form-label-icon">
-                              <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                              Exige foto
-                            </label>
-                            <select class="form-select" [(ngModel)]="novoMatrizExigeFoto" (click)="$event.stopPropagation()">
-                              <option [value]="false">Não</option>
-                              <option [value]="true">Sim</option>
-                            </select>
-                          </div>
-                          <div class="form-group">
-                            <label class="form-label form-label-icon">
-                              <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                              Permite áudio
-                            </label>
-                            <select class="form-select" [(ngModel)]="novoMatrizPermiteAudio" (click)="$event.stopPropagation()">
-                              <option [value]="false">Não</option>
-                              <option [value]="true">Sim</option>
-                            </select>
-                          </div>
-                          <div class="form-row-actions">
-                            <button type="button" class="btn btn-primary btn-sm" (click)="addMatriz(); $event.stopPropagation()" [disabled]="savingNovoMatriz || !novoMatrizIdsintoma" title="Salvar nova matriz">Salvar</button>
-                            <button type="button" class="btn btn-secondary btn-sm" (click)="closeNovoMatrizForm(); $event.stopPropagation()" title="Cancelar e fechar o formulário">Cancelar</button>
-                          </div>
-                        </div>
-                      </div>
                       <div class="matriz-table-wrap">
                         <table class="matriz-table">
                           <thead>
@@ -219,6 +167,7 @@
                               <th class="th-icon" title="Permite áudio">
                                 <span class="th-icon-wrap"><svg class="matriz-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg> Permite áudio</span>
                               </th>
+                              <th title="Permite Irregularidade Recorrente">Permite Irregularidade Recorrente</th>
                               <th *ngIf="canEditMatriz || canDeleteMatriz || canAuditMatriz">Ações</th>
                             </tr>
                           </thead>
@@ -230,16 +179,29 @@
                                 @if (m.exigeFoto) {
                                   <span class="cell-icon-wrap"><svg class="matriz-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg> Sim</span>
                                 } @else {
-                                  Não
+                                  <span class="cell-icon-wrap cell-icon-no" title="Exige foto: Não">
+                                    <svg class="matriz-icon matriz-icon-no" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                                      <path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                                      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+                                    </svg>
+                                    Não
+                                  </span>
                                 }
                               </td>
                               <td class="cell-icon">
                                 @if (m.permiteAudio) {
                                   <span class="cell-icon-wrap"><svg class="matriz-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg> Sim</span>
                                 } @else {
-                                  Não
+                                  <span class="cell-icon-wrap cell-icon-no" title="Permite áudio: Não">
+                                    <svg class="matriz-icon matriz-icon-no" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                                      <path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                                      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+                                    </svg>
+                                    Não
+                                  </span>
                                 }
                               </td>
+                              <td class="cell-icon" title="Permite Irregularidade Recorrente">{{ m.permiteNovaIrregularidadeSeJaExiste ? 'Sim' : 'Não' }}</td>
                               <td *ngIf="canEditMatriz || canDeleteMatriz || canAuditMatriz" class="matriz-actions-cell">
                                 <button *ngIf="canEditMatriz" type="button" class="btn btn-primary btn-sm" (click)="openEditarMatrizModal(m, $event)" title="Editar matriz de criticidade">Editar</button>
                                 <button *ngIf="canAuditMatriz" type="button" class="btn btn-audit btn-sm" (click)="openMatrizAuditModal(m, $event)" title="Histórico de auditoria da matriz">Auditoria</button>
@@ -247,7 +209,7 @@
                               </td>
                             </tr>
                             <tr *ngIf="matrizList.length === 0">
-                              <td [attr.colspan]="canEditMatriz || canDeleteMatriz || canAuditMatriz ? 5 : 4" class="matriz-empty">Nenhuma matriz configurada. Use "Nova matriz" para adicionar.</td>
+                              <td [attr.colspan]="canEditMatriz || canDeleteMatriz || canAuditMatriz ? 6 : 5" class="matriz-empty">Nenhuma matriz configurada. Use "Nova matriz" para adicionar.</td>
                             </tr>
                           </tbody>
                         </table>
@@ -312,8 +274,8 @@
   </div>
 </div>
 
-<!-- Modal Editar Área -->
-<div class="modal-overlay" *ngIf="showEditarAreaModal" (click)="closeEditarAreaModal()">
+<!-- Modal Editar Área (fecha apenas por Salvar/Cancelar) -->
+<div class="modal-overlay" *ngIf="showEditarAreaModal">
   <div class="modal-container modal-container-form" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Editar Área</h3>
@@ -399,8 +361,8 @@
   </div>
 </div>
 
-<!-- Modal Editar Componente -->
-<div class="modal-overlay" *ngIf="showEditarComponenteModal" (click)="closeEditarComponenteModal()">
+<!-- Modal Editar Componente (fecha apenas por Salvar/Cancelar) -->
+<div class="modal-overlay" *ngIf="showEditarComponenteModal">
   <div class="modal-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Editar Componente</h3>
@@ -508,11 +470,80 @@
   </div>
 </div>
 
-<!-- Modal Editar Matriz -->
-<div class="modal-overlay" *ngIf="showEditarMatrizModal" (click)="closeEditarMatrizModal()">
+<!-- Modal Nova Matriz -->
+<div class="modal-overlay" *ngIf="showNovaMatrizModal" (click)="closeNovaMatrizModal()">
   <div class="modal-container modal-container-form" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Editar matriz</h3>
+      <h3>Nova matriz — {{ expandedAreaNome || '—' }} / {{ componenteParaMatriz?.nome || '—' }}</h3>
+      <button type="button" class="modal-close" (click)="closeNovaMatrizModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Sintoma *</label>
+        <select class="form-select" [(ngModel)]="novoMatrizIdsintoma">
+          <option value="">Selecione</option>
+          <option *ngFor="let s of sintomasDisponiveisNovaMatriz" [value]="s.id">{{ s.descricao }}</option>
+        </select>
+      </div>
+      <div class="form-row form-row-three">
+        <div class="form-group">
+          <label class="form-label">Gravidade</label>
+          <select
+            class="form-select gravidade-select"
+            [ngClass]="{
+              'gravidade-verde': novoMatrizGravidade === 'VERDE',
+              'gravidade-amarelo': novoMatrizGravidade === 'AMARELO',
+              'gravidade-vermelho': novoMatrizGravidade === 'VERMELHO'
+            }"
+            [(ngModel)]="novoMatrizGravidade">
+            <option *ngFor="let g of gravidades" [value]="g" [attr.data-gravidade]="g.toLowerCase()">{{ g }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label form-label-icon">
+            <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            Exige foto
+          </label>
+          <select class="form-select" [(ngModel)]="novoMatrizExigeFoto">
+            <option [ngValue]="false">Não</option>
+            <option [ngValue]="true">Sim</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label form-label-icon">
+            <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            Permite áudio
+          </label>
+          <select class="form-select" [(ngModel)]="novoMatrizPermiteAudio">
+            <option [ngValue]="false">Não</option>
+            <option [ngValue]="true">Sim</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Permite Irregularidade Recorrente</label>
+        <select class="form-select" [(ngModel)]="novoMatrizPermiteNovaIrregularidadeSeJaExiste">
+          <option [ngValue]="false">Não</option>
+          <option [ngValue]="true">Sim</option>
+        </select>
+        <small class="form-hint">Se "Sim", permite registrar nova irregularidade para este componente/sintoma mesmo com irregularidade não resolvida no veículo.</small>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeNovaMatrizModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="addMatriz()" [disabled]="savingNovoMatriz || !novoMatrizIdsintoma">
+        <span *ngIf="savingNovoMatriz" class="spinner"></span>
+        {{ savingNovoMatriz ? 'Salvando...' : 'Adicionar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Matriz (fecha apenas por Salvar/Cancelar) -->
+<div class="modal-overlay" *ngIf="showEditarMatrizModal">
+  <div class="modal-container modal-container-form" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Editar matriz — {{ expandedAreaNome || '—' }} / {{ componenteParaMatriz?.nome || '—' }}</h3>
       <button type="button" class="modal-close" (click)="closeEditarMatrizModal()">×</button>
     </div>
     <div class="modal-body">
@@ -523,38 +554,48 @@
           <option *ngFor="let s of sintomasDisponiveisEditarMatriz" [value]="s.id">{{ s.descricao }}</option>
         </select>
       </div>
-      <div class="form-group">
-        <label class="form-label">Gravidade</label>
-        <select
-          class="form-select gravidade-select"
-          [ngClass]="{
-            'gravidade-verde': editMatrizGravidade === 'VERDE',
-            'gravidade-amarelo': editMatrizGravidade === 'AMARELO',
-            'gravidade-vermelho': editMatrizGravidade === 'VERMELHO'
-          }"
-          [(ngModel)]="editMatrizGravidade">
-          <option *ngFor="let g of gravidades" [value]="g" [attr.data-gravidade]="g.toLowerCase()">{{ g }}</option>
-        </select>
+      <div class="form-row form-row-three">
+        <div class="form-group">
+          <label class="form-label">Gravidade</label>
+          <select
+            class="form-select gravidade-select"
+            [ngClass]="{
+              'gravidade-verde': editMatrizGravidade === 'VERDE',
+              'gravidade-amarelo': editMatrizGravidade === 'AMARELO',
+              'gravidade-vermelho': editMatrizGravidade === 'VERMELHO'
+            }"
+            [(ngModel)]="editMatrizGravidade">
+            <option *ngFor="let g of gravidades" [value]="g" [attr.data-gravidade]="g.toLowerCase()">{{ g }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label form-label-icon">
+            <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            Exige foto
+          </label>
+          <select class="form-select" [(ngModel)]="editMatrizExigeFoto">
+            <option [ngValue]="false">Não</option>
+            <option [ngValue]="true">Sim</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label form-label-icon">
+            <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            Permite áudio
+          </label>
+          <select class="form-select" [(ngModel)]="editMatrizPermiteAudio">
+            <option [ngValue]="false">Não</option>
+            <option [ngValue]="true">Sim</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
-        <label class="form-label form-label-icon">
-          <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-          Exige foto
-        </label>
-        <select class="form-select" [(ngModel)]="editMatrizExigeFoto">
-          <option [value]="false">Não</option>
-          <option [value]="true">Sim</option>
+        <label class="form-label">Permite Irregularidade Recorrente</label>
+        <select class="form-select" [(ngModel)]="editMatrizPermiteNovaIrregularidadeSeJaExiste">
+          <option [ngValue]="false">Não</option>
+          <option [ngValue]="true">Sim</option>
         </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label form-label-icon">
-          <svg class="label-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-          Permite áudio
-        </label>
-        <select class="form-select" [(ngModel)]="editMatrizPermiteAudio">
-          <option [value]="false">Não</option>
-          <option [value]="true">Sim</option>
-        </select>
+        <small class="form-hint">Se "Sim", permite registrar nova irregularidade para este componente/sintoma mesmo com irregularidade não resolvida no veículo.</small>
       </div>
     </div>
     <div class="modal-footer">
@@ -582,16 +623,6 @@
   cancelText="Cancelar"
   (confirmed)="confirmRemoveFromArea()"
   (cancelled)="closeRemoveFromAreaConfirm()">
-</app-confirmation-modal>
-
-<app-confirmation-modal
-  [isVisible]="showDeleteComponenteModal"
-  title="Excluir componente"
-  [message]="deleteComponenteModalMessage"
-  confirmText="Excluir"
-  cancelText="Cancelar"
-  (confirmed)="confirmDeleteComponente()"
-  (cancelled)="closeDeleteComponenteModal()">
 </app-confirmation-modal>
 
 <app-historico-auditoria
@@ -624,7 +655,8 @@
     idsintoma: 'Sintoma',
     gravidade: 'Gravidade',
     exige_foto: 'Exige Foto',
-    permite_audio: 'Permite Áudio'
+    permite_audio: 'Permite Áudio',
+    permite_nova_irregularidade_se_ja_existe: 'Permite Irregularidade Recorrente'
   }"
   [showModal]="showMatrizAuditModal"
   (modalClosed)="closeMatrizAuditModal()">

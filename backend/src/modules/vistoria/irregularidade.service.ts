@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Irregularidade } from './entities/irregularidade.entity';
-import { IrregularidadeImagem } from './entities/irregularidade-imagem.entity';
+import { IrregularidadeMidia } from './entities/irregularidade-midia.entity';
 import { Vistoria } from './entities/vistoria.entity';
 import { AreaVistoriada } from './entities/area-vistoriada.entity';
 import { Componente } from './entities/componente.entity';
@@ -17,6 +17,7 @@ import { CreateIrregularidadeDto } from './dto/create-irregularidade.dto';
 import { UpdateIrregularidadeDto } from './dto/update-irregularidade.dto';
 import { IrregularidadeResumoDto } from './dto/irregularidade-resumo.dto';
 import { IrregularidadeImagemResumoDto } from './dto/irregularidade-imagem-resumo.dto';
+import { IrregularidadeAudioResumoDto } from './dto/irregularidade-audio-resumo.dto';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
 
 @Injectable()
@@ -24,8 +25,8 @@ export class IrregularidadeService {
   constructor(
     @InjectRepository(Irregularidade)
     private readonly irregularidadeRepository: Repository<Irregularidade>,
-    @InjectRepository(IrregularidadeImagem)
-    private readonly imagemRepository: Repository<IrregularidadeImagem>,
+    @InjectRepository(IrregularidadeMidia)
+    private readonly midiaRepository: Repository<IrregularidadeMidia>,
     @InjectRepository(Vistoria)
     private readonly vistoriaRepository: Repository<Vistoria>,
     @InjectRepository(AreaVistoriada)
@@ -51,7 +52,20 @@ export class IrregularidadeService {
     await this.ensureComponente(dto.idcomponente);
     await this.ensureSintoma(dto.idsintoma);
     await this.ensureComponenteNaArea(dto.idarea, dto.idcomponente);
-    await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
+    const matriz = await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
+
+    if (!matriz.permiteNovaIrregularidadeSeJaExiste) {
+      const jaExistePendente = await this.existeIrregularidadePendenteParaVeiculo(
+        vistoria.idVeiculo,
+        dto.idcomponente,
+        dto.idsintoma,
+      );
+      if (jaExistePendente) {
+        throw new BadRequestException(
+          'Já existe irregularidade não resolvida para este componente/sintoma neste veículo. Resolva-a antes de registrar outra ou altere a configuração na matriz de criticidade.',
+        );
+      }
+    }
 
     const irregularidade = this.irregularidadeRepository.create({
       idVistoria: vistoria.id,
@@ -63,6 +77,31 @@ export class IrregularidadeService {
     });
 
     return this.irregularidadeRepository.save(irregularidade);
+  }
+
+  async listPendentesByVeiculo(idVeiculo: string): Promise<IrregularidadeResumoDto[]> {
+    const itens = await this.irregularidadeRepository
+      .createQueryBuilder('i')
+      .innerJoinAndSelect('i.vistoria', 'v')
+      .leftJoinAndSelect('i.area', 'area')
+      .leftJoinAndSelect('i.componente', 'componente')
+      .leftJoinAndSelect('i.sintoma', 'sintoma')
+      .where('v.idVeiculo = :idVeiculo', { idVeiculo })
+      .andWhere('i.resolvido = :resolvido', { resolvido: false })
+      .orderBy('i.atualizadoEm', 'DESC')
+      .getMany();
+    return itens.map((item) => ({
+      id: item.id,
+      idarea: item.idArea,
+      nomeArea: item.area?.nome,
+      idcomponente: item.idComponente,
+      nomeComponente: item.componente?.nome,
+      idsintoma: item.idSintoma,
+      descricaoSintoma: item.sintoma?.descricao,
+      observacao: item.observacao ?? undefined,
+      resolvido: item.resolvido,
+      atualizadoEm: item.atualizadoEm.toISOString(),
+    }));
   }
 
   async listByVistoria(vistoriaId: string): Promise<IrregularidadeResumoDto[]> {
@@ -102,23 +141,46 @@ export class IrregularidadeService {
     await this.getVistoriaOrFail(vistoriaId);
     const irregularidades = await this.irregularidadeRepository.find({
       where: { idVistoria: vistoriaId },
-      relations: ['imagens'],
+      relations: ['midias'],
     });
 
-    return irregularidades.map((item) => ({
-      idirregularidade: item.id,
-      imagens: (item.imagens ?? []).map((imagem) => ({
-        nomeArquivo: imagem.nomeArquivo,
-        tamanho: Number(imagem.tamanho),
-        dadosBase64: imagem.dadosBytea.toString('base64'),
-      })),
-    }));
+    return irregularidades.map((item) => {
+      const imagens = (item.midias ?? []).filter((m) => m.tipo === 'imagem');
+      return {
+        idirregularidade: item.id,
+        imagens: imagens.map((m) => ({
+          nomeArquivo: m.nomeArquivo,
+          tamanho: Number(m.tamanho),
+          dadosBase64: m.dadosBytea.toString('base64'),
+        })),
+      };
+    });
+  }
+
+  async listAudios(vistoriaId: string): Promise<IrregularidadeAudioResumoDto[]> {
+    await this.getVistoriaOrFail(vistoriaId);
+    const irregularidades = await this.irregularidadeRepository.find({
+      where: { idVistoria: vistoriaId },
+      relations: ['midias'],
+    });
+
+    return irregularidades.map((item) => {
+      const audios = (item.midias ?? []).filter((m) => m.tipo === 'audio');
+      return {
+        idirregularidade: item.id,
+        audios: audios.map((m) => ({
+          id: m.id,
+          nomeArquivo: m.nomeArquivo,
+          duracaoMs: m.duracaoMs ?? undefined,
+        })),
+      };
+    });
   }
 
   async uploadImages(
     irregularidadeId: string,
     files: Express.Multer.File[],
-  ): Promise<IrregularidadeImagem[]> {
+  ): Promise<IrregularidadeMidia[]> {
     const irregularidade = await this.getIrregularidadeOrFail(irregularidadeId);
     await this.ensureVistoriaAberta(irregularidade.idVistoria);
 
@@ -132,23 +194,25 @@ export class IrregularidadeService {
 
     return this.irregularidadeRepository.manager.transaction(async (manager) => {
       await manager
-        .getRepository(IrregularidadeImagem)
-        .delete({ idIrregularidade: irregularidadeId });
+        .getRepository(IrregularidadeMidia)
+        .delete({ idIrregularidade: irregularidadeId, tipo: 'imagem' });
 
-      const imagens = (files ?? []).map((file) =>
-        manager.getRepository(IrregularidadeImagem).create({
+      const midias = (files ?? []).map((file) =>
+        manager.getRepository(IrregularidadeMidia).create({
           idIrregularidade: irregularidadeId,
+          tipo: 'imagem' as const,
           nomeArquivo: file.originalname,
+          mimeType: file.mimetype,
           tamanho: file.size,
           dadosBytea: file.buffer,
         }),
       );
 
-      if (imagens.length === 0) {
+      if (midias.length === 0) {
         return [];
       }
 
-      return manager.getRepository(IrregularidadeImagem).save(imagens);
+      return manager.getRepository(IrregularidadeMidia).save(midias);
     });
   }
 
@@ -156,7 +220,7 @@ export class IrregularidadeService {
     irregularidadeId: string,
     file: Express.Multer.File,
     duracaoMs?: number,
-  ): Promise<Irregularidade> {
+  ): Promise<IrregularidadeMidia> {
     if (!file) {
       throw new BadRequestException('Arquivo de áudio não enviado');
     }
@@ -172,27 +236,31 @@ export class IrregularidadeService {
       throw new BadRequestException('Áudio não permitido para esta irregularidade');
     }
 
-    const updated = this.irregularidadeRepository.merge(irregularidade, {
-      audioNomeArquivo: file.originalname,
-      audioMimeType: file.mimetype,
-      audioTamanho: file.size,
-      audioDuracaoMs: duracaoMs,
-      audioDadosBytea: file.buffer,
+    const midia = this.midiaRepository.create({
+      idIrregularidade: irregularidadeId,
+      tipo: 'audio',
+      nomeArquivo: file.originalname,
+      mimeType: file.mimetype,
+      tamanho: file.size,
+      dadosBytea: file.buffer,
+      duracaoMs: duracaoMs ?? null,
     });
-    return this.irregularidadeRepository.save(updated);
+    return this.midiaRepository.save(midia);
   }
 
-  async removeAudio(irregularidadeId: string): Promise<Irregularidade> {
+  async removeAudio(irregularidadeId: string): Promise<void> {
     const irregularidade = await this.getIrregularidadeOrFail(irregularidadeId);
     await this.ensureVistoriaAberta(irregularidade.idVistoria);
-    const updated = this.irregularidadeRepository.merge(irregularidade, {
-      audioNomeArquivo: null,
-      audioMimeType: null,
-      audioTamanho: null,
-      audioDuracaoMs: null,
-      audioDadosBytea: null,
-    });
-    return this.irregularidadeRepository.save(updated);
+    await this.midiaRepository.delete({ idIrregularidade: irregularidadeId, tipo: 'audio' });
+  }
+
+  async removeMidia(midiaId: string): Promise<void> {
+    const midia = await this.midiaRepository.findOne({ where: { id: midiaId } });
+    if (!midia) {
+      throw new NotFoundException('Mídia não encontrada');
+    }
+    await this.ensureVistoriaAberta(midia.idIrregularidade);
+    await this.midiaRepository.remove(midia);
   }
 
   private async ensureArea(id: string): Promise<void> {
@@ -265,5 +333,29 @@ export class IrregularidadeService {
       throw new NotFoundException('Irregularidade não encontrada');
     }
     return irregularidade;
+  }
+
+  /**
+   * Verifica se existe irregularidade não resolvida para o veículo + componente + sintoma.
+   * @param excluirIrregularidadeId Se informado, desconsidera esta irregularidade (ex.: a própria no update).
+   */
+  private async existeIrregularidadePendenteParaVeiculo(
+    idVeiculo: string,
+    idComponente: string,
+    idSintoma: string,
+    excluirIrregularidadeId?: string,
+  ): Promise<boolean> {
+    const qb = this.irregularidadeRepository
+      .createQueryBuilder('i')
+      .innerJoin('i.vistoria', 'v')
+      .where('v.idVeiculo = :idVeiculo', { idVeiculo })
+      .andWhere('i.idComponente = :idComponente', { idComponente })
+      .andWhere('i.idSintoma = :idSintoma', { idSintoma })
+      .andWhere('i.resolvido = :resolvido', { resolvido: false });
+    if (excluirIrregularidadeId) {
+      qb.andWhere('i.id != :excluirId', { excluirId: excluirIrregularidadeId });
+    }
+    const count = await qb.getCount();
+    return count > 0;
   }
 }

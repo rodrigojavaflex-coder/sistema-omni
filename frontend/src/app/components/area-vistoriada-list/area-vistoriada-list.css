@@ -295,6 +295,20 @@
   margin-bottom: 0;
 }
 
+.modal-container-form .form-row.form-row-three {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.modal-container-form .form-row.form-row-three .form-group {
+  flex: 1;
+  min-width: 100px;
+  margin-bottom: 0;
+}
+
 /* Modal Vincular Componente */
 .modal-container-vincular {
   max-width: 640px;
@@ -506,6 +520,14 @@
   flex-shrink: 0;
   vertical-align: middle;
   color: var(--primary-color);
+}
+
+/* Ícone e texto "Não" em vermelho quando Exige foto / Permite áudio = Não */
+.matriz-table .cell-icon .cell-icon-no {
+  color: #dc2626;
+}
+.matriz-table .cell-icon .cell-icon-no .matriz-icon-no {
+  color: inherit;
 }
 
 /* Badge de gravidade: círculo + texto na cor */

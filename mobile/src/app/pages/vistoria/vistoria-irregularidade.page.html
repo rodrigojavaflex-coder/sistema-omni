@@ -1,13 +1,73 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button [defaultHref]="'/vistoria/areas/' + areaId"></ion-back-button>
+      <ion-menu-button></ion-menu-button>
     </ion-buttons>
-    <ion-title>{{ componenteNome }}</ion-title>
+    <ion-title>Sintomas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        class="resumo-btn"
+        fill="solid"
+        color="medium"
+        (click)="abrirResumoPendenciasVeiculo()"
+        aria-label="Pendencias de outras vistorias"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="8" y="2" width="8" height="4" rx="1"></rect>
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+          <path d="M9 12h6"></path>
+          <path d="M9 16h6"></path>
+        </svg>
+      </ion-button>
+      <ion-button class="resumo-btn" fill="solid" color="medium" (click)="abrirResumoVistoria()" aria-label="Resumo da vistoria">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m3 17 2 2 4-4"></path>
+          <path d="m3 7 2 2 4-4"></path>
+          <path d="M13 6h8"></path>
+          <path d="M13 12h8"></path>
+          <path d="M13 18h8"></path>
+        </svg>
+      </ion-button>
+      <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  <div class="selected-context" *ngIf="!loading">
+    <p class="context-inline">
+      <strong>Vistoria:</strong> {{ vistoriaNumero }} ·
+      <strong>Veículo:</strong> {{ veiculoNumero }} ·
+      <strong>Área:</strong> {{ areaNome }} ·
+      <strong>Componente:</strong> {{ componenteNome }}
+      <ng-container *ngIf="selectedMatriz?.sintoma?.descricao">
+        · <strong>Sintoma:</strong> {{ selectedMatriz?.sintoma?.descricao }}
+      </ng-container>
+    </p>
+  </div>
+
   <div class="content" *ngIf="loading">
     <ion-spinner name="crescent"></ion-spinner>
     <p>Carregando sintomas...</p>
@@ -17,32 +77,53 @@
     <p class="error-message">{{ errorMessage }}</p>
   </ion-text>
 
-  <ion-list *ngIf="!loading && matriz.length > 0">
-    <ion-item
-      button
-      detail="false"
-      *ngFor="let item of matriz"
-      (click)="selecionarSintoma(item)"
-      [class.is-selected]="selectedMatriz?.id === item.id"
-    >
-      <ion-label>
-        <h2>{{ item.sintoma?.descricao }}</h2>
-        <p>Gravidade: {{ item.gravidade }}</p>
-      </ion-label>
-    </ion-item>
-  </ion-list>
+  <div *ngIf="!loading && matriz.length > 0 && selectedMatriz === null" class="content sheet-context">
+    <div class="cards-container">
+      <ion-card
+        *ngFor="let item of matriz"
+        [class.level-card]="true"
+        [class.level-card--selected]="isSintomaSelected(item)"
+        [class.level-card--bloqueado]="isBloqueadoPorPendente(item)"
+        [attr.tabindex]="isBloqueadoPorPendente(item) ? -1 : 0"
+        (click)="!isBloqueadoPorPendente(item) && selecionarSintoma(item)"
+      >
+        <ion-card-header>
+          <ion-card-title>{{ item.sintoma?.descricao }}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content *ngIf="isBloqueadoPorPendente(item) || isIrregularidadeJaRegistrada(item) || temPendenteAnterior(item)">
+          <p *ngIf="isIrregularidadeJaRegistrada(item)">
+            <ion-text color="primary">Irregularidade registrada nesta vistoria</ion-text>
+          </p>
+          <p *ngIf="temPendenteAnterior(item)">
+            <ion-text color="warning">
+              Existe irregularidade pendente em vistoria anterior
+            </ion-text>
+          </p>
+          <p *ngIf="isBloqueadoPorPendente(item)">
+            <ion-text color="danger">
+              Registro bloqueado: ja existe irregularidade pendente para este sintoma
+            </ion-text>
+          </p>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
 
-  <div class="content" *ngIf="!loading && matriz.length === 0">
+  <div class="content" *ngIf="!loading && matriz.length === 0 && selectedMatriz === null">
     <p>Nenhum sintoma configurado para este componente.</p>
   </div>
 
   <div class="content" *ngIf="selectedMatriz">
+    <ion-text color="primary" *ngIf="irregularidadeEmEdicaoId">
+      <p class="error-message">Irregularidade já registrada nesta vistoria. Você pode editar a observação e adicionar novas mídias.</p>
+    </ion-text>
+
     <ion-item>
-      <ion-label position="stacked">Observação</ion-label>
+      <ion-label position="stacked">Descreva o Problema</ion-label>
       <ion-textarea
         #observacaoInput
         [value]="observacao"
-        placeholder="Observação opcional"
+        placeholder="Descreva o problema"
         (ionInput)="observacao = $event.detail.value ?? ''"
       ></ion-textarea>
     </ion-item>
@@ -68,7 +149,11 @@
     </ion-list>
 
     <ion-item lines="none" *ngIf="selectedMatriz.permiteAudio">
-      <ion-label>Áudio</ion-label>
+      <ion-label>
+        Áudios novos ({{ audios.length }})
+        <p *ngIf="audiosExistentesCount > 0">Já salvos: {{ audiosExistentesCount }}</p>
+        <p *ngIf="gravandoAudio">Gravando: {{ tempoGravacaoSegundos }}s</p>
+      </ion-label>
       <div class="audio-actions">
         <ion-button fill="outline" (click)="iniciarAudio()" [disabled]="gravandoAudio || !podeGravarAudio">
           Gravar
@@ -76,19 +161,34 @@
         <ion-button color="danger" fill="outline" (click)="pararAudio()" [disabled]="!gravandoAudio">
           Parar
         </ion-button>
-        <ion-button fill="clear" color="medium" (click)="limparAudio()" [disabled]="!audioBase64">
-          Limpar
-        </ion-button>
       </div>
     </ion-item>
+
+    <ion-list *ngIf="selectedMatriz.permiteAudio && audios.length > 0">
+      <ion-item *ngFor="let a of audios; let i = index">
+        <ion-label>
+          <p>{{ a.nomeArquivo }}</p>
+          <audio class="audio-player" [src]="a.previewUrl" controls preload="metadata"></audio>
+        </ion-label>
+        <ion-button slot="end" fill="clear" color="danger" (click)="removerAudio(i)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-button>
+      </ion-item>
+    </ion-list>
 
     <ion-text *ngIf="selectedMatriz.permiteAudio && !podeGravarAudio" color="danger">
       <p class="error-message">Dispositivo não suporta gravação de áudio.</p>
     </ion-text>
 
-    <ion-button expand="block" (click)="salvarIrregularidade()" [disabled]="saving">
+  </div>
+
+</ion-content>
+
+<ion-footer *ngIf="!loading">
+  <ion-toolbar>
+    <ion-button expand="block" (click)="salvarIrregularidade()" [disabled]="saving || !selectedMatriz">
       <ion-spinner *ngIf="saving" name="crescent"></ion-spinner>
       <span *ngIf="!saving">Salvar irregularidade</span>
     </ion-button>
-  </div>
-</ion-content>
+  </ion-toolbar>
+</ion-footer>

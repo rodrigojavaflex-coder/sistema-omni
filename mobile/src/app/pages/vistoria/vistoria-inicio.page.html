@@ -86,7 +86,7 @@
     </ion-list>
     <ion-item *ngIf="selectedVeiculo">
       <ion-label>
-        <p>Odômetro atual: {{ ultimoOdometro === null ? 'Sem histórico' : (ultimoOdometro | number:'1.0-0') }}</p>
+        <p>Último Odômetro: {{ ultimoOdometro === null ? 'Sem histórico' : (ultimoOdometro | number:'1.0-0') }}</p>
         <p>Combustível: {{ selectedVeiculo.combustivel || '-' }}</p>
       </ion-label>
     </ion-item>
@@ -127,7 +127,12 @@
 
   <ion-card class="card">
     <ion-item>
-      <ion-label position="stacked">Odômetro</ion-label>
+      <ion-label position="stacked" class="odometro-label">
+        Odômetro
+        <span class="ultimo-odometro-destaque" *ngIf="ultimoOdometro !== null">
+          Último odômetro: {{ ultimoOdometro | number:'1.0-0' }}
+        </span>
+      </ion-label>
       <ion-input
         type="text"
         inputmode="numeric"
@@ -159,10 +164,13 @@
     <p class="error-message">{{ errorMessage }}</p>
   </ion-text>
 
-  <div class="actions">
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
     <ion-button expand="block" [disabled]="!canStart || isSaving" (click)="iniciarVistoria()">
       <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>
       <span *ngIf="!isSaving">Iniciar Vistoria</span>
     </ion-button>
-  </div>
-</ion-content>
+  </ion-toolbar>
+</ion-footer>

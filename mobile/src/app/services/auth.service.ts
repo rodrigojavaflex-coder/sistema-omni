@@ -8,6 +8,7 @@ import { NativeBiometric } from 'capacitor-native-biometric';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Usuario, AuthResponse } from '../models/usuario.model';
+import { ErrorMessageService } from './error-message.service';
 
 @Injectable({
   providedIn: 'root'
@@ -15,6 +16,7 @@ import { Usuario, AuthResponse } from '../models/usuario.model';
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private errorMessageService = inject(ErrorMessageService);
   private apiBaseUrl = this.resolveApiBaseUrl();
   private apiUrl = `${this.apiBaseUrl}/auth`;
 
@@ -70,11 +72,26 @@ export class AuthService {
         this.router.navigate(['/home']);
       }
     } catch (error: any) {
-      const status = error?.status ? ` (HTTP ${error.status})` : '';
-      const serverMessage = error?.error?.message || error?.message;
-      const details = serverMessage ? `: ${serverMessage}` : '';
-      throw new Error(`Erro ao fazer login${status}${details}`);
+      throw new Error(this.mapLoginError(error));
     }
+  }
+
+  private mapLoginError(error: any): string {
+    const status = Number(error?.status ?? 0);
+    if (status === 0) {
+      return 'Nao foi possivel conectar ao servidor. Tente novamente.';
+    }
+    if (status === 401) {
+      return 'E-mail ou senha invalidos.';
+    }
+    if (status >= 500) {
+      return 'Servico temporariamente indisponivel. Tente novamente em instantes.';
+    }
+
+    return this.errorMessageService.fromApi(
+      error,
+      'Erro ao fazer login. Tente novamente.',
+    );
   }
 
   /**

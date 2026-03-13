@@ -140,8 +140,6 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
   savingVincular = false;
   showRemoveFromAreaConfirm = false;
   componenteToRemoveFromArea: ComponenteComArea | null = null;
-  showDeleteComponenteModal = false;
-  componenteToDelete: Componente | null = null;
   savingComponentesArea = false;
 
   // Modal Novo Componente (por área)
@@ -157,11 +155,12 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
   loadingMatriz = false;
   sintomas: Sintoma[] = [];
   gravidades: GravidadeCriticidade[] = ['VERDE', 'AMARELO', 'VERMELHO'];
-  showNovoMatrizForm = false;
+  showNovaMatrizModal = false;
   novoMatrizIdsintoma = '';
   novoMatrizGravidade: GravidadeCriticidade = 'VERDE';
   novoMatrizExigeFoto = true;
   novoMatrizPermiteAudio = true;
+  novoMatrizPermiteNovaIrregularidadeSeJaExiste = false;
   savingNovoMatriz = false;
   showEditarMatrizModal = false;
   matrizToEdit: MatrizCriticidade | null = null;
@@ -169,6 +168,7 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
   editMatrizGravidade: GravidadeCriticidade = 'VERDE';
   editMatrizExigeFoto = false;
   editMatrizPermiteAudio = false;
+  editMatrizPermiteNovaIrregularidadeSeJaExiste = false;
   savingEditarMatriz = false;
   showDeleteMatrizModal = false;
   matrizToDelete: MatrizCriticidade | null = null;
@@ -448,12 +448,12 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
       this.expandedComponenteId = null;
       this.componenteParaMatriz = null;
       this.matrizList = [];
-      this.closeNovoMatrizForm();
+      this.closeNovaMatrizModal();
       return;
     }
     this.expandedComponenteId = comp.id;
     this.componenteParaMatriz = comp;
-    this.showNovoMatrizForm = false;
+    this.showNovaMatrizModal = false;
     await this.loadSintomas();
     await this.loadMatrizForComponente();
   }
@@ -797,42 +797,12 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
     }
   }
 
-  openDeleteComponente(componente: Componente): void {
-    this.componenteToDelete = componente;
-    this.showDeleteComponenteModal = true;
-  }
-
-  closeDeleteComponenteModal(): void {
-    this.showDeleteComponenteModal = false;
-    this.componenteToDelete = null;
-  }
-
-  async confirmDeleteComponente(): Promise<void> {
-    if (!this.componenteToDelete) return;
-    const id = this.componenteToDelete.id;
-    try {
-      await firstValueFrom(this.componenteService.delete(id));
-      this.componentesSelecionados.delete(id);
-      this.notificationService.success('Componente excluído.');
-      if (this.expandedAreaId) this.loadComponentesForArea(this.expandedAreaId);
-    } catch (err: any) {
-      this.notificationService.error(err?.error?.message ?? 'Erro ao excluir componente');
-    } finally {
-      this.closeDeleteComponenteModal();
-    }
-  }
-
-  get deleteComponenteModalMessage(): string {
-    if (!this.componenteToDelete) return '';
-    return `Excluir o componente "${this.componenteToDelete.nome}"?`;
-  }
-
   // ——— Modal Matriz de Criticidade (por componente) ———
   async openMatrizModal(comp: Componente, event?: Event): Promise<void> {
     event?.stopPropagation();
     if (!this.canReadMatriz && !this.canCreateMatriz && !this.canEditMatriz) return;
     this.componenteParaMatriz = comp;
-    this.showNovoMatrizForm = false;
+    this.showNovaMatrizModal = false;
     this.showMatrizModal = true;
     await this.loadSintomas();
     await this.loadMatrizForComponente();
@@ -842,7 +812,7 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
     this.showMatrizModal = false;
     this.componenteParaMatriz = null;
     this.matrizList = [];
-    this.closeNovoMatrizForm();
+    this.closeNovaMatrizModal();
     this.closeEditarMatrizModal();
     this.closeDeleteMatrizModal();
   }
@@ -891,16 +861,18 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
     );
   }
 
-  openNovoMatrizForm(): void {
+  openNovaMatrizModal(): void {
     this.novoMatrizIdsintoma = '';
     this.novoMatrizGravidade = 'VERDE';
     this.novoMatrizExigeFoto = true;
     this.novoMatrizPermiteAudio = true;
-    this.showNovoMatrizForm = true;
+    this.novoMatrizPermiteNovaIrregularidadeSeJaExiste = false;
+    this.showNovaMatrizModal = true;
+    this.loadSintomas();
   }
 
-  closeNovoMatrizForm(): void {
-    this.showNovoMatrizForm = false;
+  closeNovaMatrizModal(): void {
+    this.showNovaMatrizModal = false;
   }
 
   async addMatriz(): Promise<void> {
@@ -916,10 +888,11 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
         gravidade: this.novoMatrizGravidade,
         exige_foto: !!this.novoMatrizExigeFoto,
         permite_audio: !!this.novoMatrizPermiteAudio,
+        permite_nova_irregularidade_se_ja_existe: !!this.novoMatrizPermiteNovaIrregularidadeSeJaExiste,
       };
       await firstValueFrom(this.matrizService.create(dto));
       this.notificationService.success('Matriz adicionada.');
-      this.closeNovoMatrizForm();
+      this.closeNovaMatrizModal();
       await this.loadMatrizForComponente();
     } catch (err: any) {
       this.notificationService.error(err?.error?.message ?? 'Erro ao adicionar matriz');
@@ -935,6 +908,7 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
     this.editMatrizGravidade = matriz.gravidade;
     this.editMatrizExigeFoto = matriz.exigeFoto;
     this.editMatrizPermiteAudio = matriz.permiteAudio;
+    this.editMatrizPermiteNovaIrregularidadeSeJaExiste = matriz.permiteNovaIrregularidadeSeJaExiste ?? false;
     this.showEditarMatrizModal = true;
   }
 
@@ -955,6 +929,7 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
         gravidade: this.editMatrizGravidade,
         exige_foto: !!this.editMatrizExigeFoto,
         permite_audio: !!this.editMatrizPermiteAudio,
+        permite_nova_irregularidade_se_ja_existe: !!this.editMatrizPermiteNovaIrregularidadeSeJaExiste,
       };
       await firstValueFrom(this.matrizService.update(this.matrizToEdit.id, dto));
       this.notificationService.success('Matriz atualizada.');
@@ -1103,7 +1078,8 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
           const sintoma = m.sintoma?.descricao ?? '—';
           const exigeFoto = m.exigeFoto ? 'Sim' : 'Não';
           const permiteAudio = m.permiteAudio ? 'Sim' : 'Não';
-          lines.push(`        ${sintoma}  Gravidade: ${m.gravidade}  Exige foto: ${exigeFoto}  Permite áudio: ${permiteAudio}`);
+          const permiteNovaSePendente = m.permiteNovaIrregularidadeSeJaExiste ? 'Sim' : 'Não';
+          lines.push(`        ${sintoma}  Gravidade: ${m.gravidade}  Exige foto: ${exigeFoto}  Permite áudio: ${permiteAudio}  Permite Irregularidade Recorrente: ${permiteNovaSePendente}`);
         });
       });
       lines.push('');

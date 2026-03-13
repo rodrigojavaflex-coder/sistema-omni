@@ -224,7 +224,7 @@ export const MENU_CONFIGURATION: MenuConfig = {
             {
               label: 'Componentes',
               route: '/componentes',
-              icon: 'feather-box',
+              icon: 'feather-layers',
               requiredPermissions: [
                 Permission.COMPONENTE_CREATE,
                 Permission.COMPONENTE_READ,
@@ -236,7 +236,7 @@ export const MENU_CONFIGURATION: MenuConfig = {
             {
               label: 'Sintomas',
               route: '/sintomas',
-              icon: 'feather-alert-triangle',
+              icon: 'feather-activity',
               requiredPermissions: [
                 Permission.SINTOMA_CREATE,
                 Permission.SINTOMA_READ,
@@ -246,9 +246,9 @@ export const MENU_CONFIGURATION: MenuConfig = {
               parentMenu: 'Cadastros'
             },
             {
-              label: 'Matriz de Criticidade',
+              label: 'Matriz',
               route: '/matriz-criticidade',
-              icon: 'feather-sliders',
+              icon: 'feather-grid',
               requiredPermissions: [
                 Permission.MATRIZCRITICIDADE_CREATE,
                 Permission.MATRIZCRITICIDADE_READ,

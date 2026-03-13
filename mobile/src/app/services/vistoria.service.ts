@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import { Capacitor } from '@capacitor/core';
 import { Vistoria } from '../models/vistoria.model';
 import {
+  IrregularidadeAudioResumo,
   IrregularidadeResumo,
   IrregularidadeImagemResumo,
 } from '../models/irregularidade.model';
@@ -50,6 +51,14 @@ export class VistoriaService {
     );
   }
 
+  async listarIrregularidadesPendentes(idVeiculo: string): Promise<IrregularidadeResumo[]> {
+    return firstValueFrom(
+      this.http.get<IrregularidadeResumo[]>(
+        `${this.apiBaseUrl}/vistoria/veiculo/${idVeiculo}/irregularidades-pendentes`,
+      ),
+    );
+  }
+
   async getUltimoOdometro(
     idveiculo: string,
     ignorarVistoriaId?: string,
@@ -78,6 +87,18 @@ export class VistoriaService {
     );
   }
 
+  async atualizarIrregularidade(
+    irregularidadeId: string,
+    payload: { observacao?: string; resolvido?: boolean },
+  ): Promise<{ id: string }> {
+    return firstValueFrom(
+      this.http.patch<{ id: string }>(
+        `${this.apiBaseUrl}/irregularidades/${irregularidadeId}`,
+        payload,
+      ),
+    );
+  }
+
   async listarIrregularidades(vistoriaId: string): Promise<IrregularidadeResumo[]> {
     return firstValueFrom(
       this.http.get<IrregularidadeResumo[]>(
@@ -92,6 +113,16 @@ export class VistoriaService {
     return firstValueFrom(
       this.http.get<IrregularidadeImagemResumo[]>(
         `${this.apiBaseUrl}/vistoria/${vistoriaId}/irregularidades/imagens`,
+      ),
+    );
+  }
+
+  async listarIrregularidadesAudios(
+    vistoriaId: string,
+  ): Promise<IrregularidadeAudioResumo[]> {
+    return firstValueFrom(
+      this.http.get<IrregularidadeAudioResumo[]>(
+        `${this.apiBaseUrl}/vistoria/${vistoriaId}/irregularidades/audios`,
       ),
     );
   }

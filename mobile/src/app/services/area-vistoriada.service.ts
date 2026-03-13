@@ -21,6 +21,16 @@ export class AreaVistoriadaService {
     return areas ?? [];
   }
 
+  /** Lista todas as áreas ativas (sem filtro de modelo). Usado como fallback quando listarPorModelo retorna vazio. */
+  async listarAtivas(): Promise<AreaVistoriada[]> {
+    const areas = await firstValueFrom(
+      this.http.get<AreaVistoriada[]>(`${this.apiBaseUrl}/areas`, {
+        params: { ativo: 'true' },
+      }),
+    );
+    return areas ?? [];
+  }
+
   async listarComponentes(areaId: string): Promise<AreaComponente[]> {
     const componentes = await firstValueFrom(
       this.http.get<AreaComponente[]>(`${this.apiBaseUrl}/areas/${areaId}/componentes`),

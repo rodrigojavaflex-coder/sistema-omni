@@ -11,7 +11,9 @@ bootstrapApplication(AppComponent, {
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideIonicAngular({
-      mode: 'md' // ou 'ios' dependendo do seu caso
+      mode: 'md', // ou 'ios' dependendo do seu caso
+      // Permite renderizar HTML (ex.: <strong>, <br>) em mensagens de AlertController.
+      innerHTMLTemplatesEnabled: true,
     })
   ]
 }).catch(err => console.error(err));

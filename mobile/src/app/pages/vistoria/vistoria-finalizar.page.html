@@ -1,17 +1,37 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-buttons slot="start" *ngIf="isNative">
+    <ion-buttons slot="start">
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
     <ion-title>Finalizar Vistoria</ion-title>
     <ion-buttons slot="end">
-      <ion-button color="danger" (click)="cancelarVistoria()">Cancelar</ion-button>
+      <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <div class="content">
+    <div class="resumo-vistoria" *ngIf="!loadingResumo">
+      <p><strong>Vistoria:</strong> {{ resumoVistoriaNumero }}</p>
+      <p><strong>Vistoriador:</strong> {{ resumoVistoriador }}</p>
+      <p><strong>Veículo vistoriado:</strong> {{ resumoVeiculo }}</p>
+      <p><strong>Motorista:</strong> {{ resumoMotorista }}</p>
+      <p><strong>Odômetro:</strong> {{ resumoOdometro }}</p>
+      <p><strong>% Bateria:</strong> {{ resumoBateria }}</p>
+      <p><strong>Irregularidades identificadas:</strong> {{ resumoIrregularidades }}</p>
+      <div *ngIf="resumoIrregularidadesDetalhes.length > 0" class="irregularidades-lista">
+        <p><strong>Detalhes:</strong></p>
+        @for (detalhe of resumoIrregularidadesDetalhes; track detalhe) {
+          <p>{{ detalhe }}</p>
+        }
+      </div>
+    </div>
+
+    <div class="resumo-vistoria" *ngIf="loadingResumo">
+      <p>Carregando resumo da vistoria...</p>
+    </div>
+
     <ion-item>
       <ion-label position="stacked">Tempo total (minutos)</ion-label>
       <ion-text>{{ tempoMinutos }}</ion-text>
@@ -29,9 +49,14 @@
       <p class="error-message">{{ errorMessage }}</p>
     </ion-text>
 
-    <ion-button expand="block" [disabled]="isSaving" (click)="finalizar()">
-      <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>
-      <span *ngIf="!isSaving">Finalizar vistoria</span>
-    </ion-button>
   </div>
 </ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-button expand="block" [disabled]="isSaving" (click)="finalizar()">
+      <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>
+      <span *ngIf="!isSaving">Finalizar Vistoria</span>
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>

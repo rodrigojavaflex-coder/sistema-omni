@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Brackets } from 'typeorm';
 import { AreaVistoriada } from './entities/area-vistoriada.entity';
 import { AreaModelo } from './entities/area-modelo.entity';
 import { AreaComponente } from './entities/area-componente.entity';
@@ -59,15 +59,24 @@ export class AreaVistoriadaService {
       });
     }
 
-    let query = this.areaRepository
+    // Retorna áreas que têm este modelo vinculado OU áreas sem nenhum modelo (área "para todos os modelos")
+    const query = this.areaRepository
       .createQueryBuilder('area')
       .leftJoinAndSelect('area.modelos', 'modelos')
-      .innerJoin('areas_modelos', 'am', 'am.idarea = area.id')
-      .where('am.idmodelo = :idModelo', { idModelo: modeloFiltro })
+      .where(
+        new Brackets((qb) => {
+          qb.where(
+            'EXISTS (SELECT 1 FROM areas_modelos am WHERE am.idarea = area.id AND am.idmodelo = :idModelo)',
+          ).orWhere(
+            'NOT EXISTS (SELECT 1 FROM areas_modelos am2 WHERE am2.idarea = area.id)',
+          );
+        }),
+      )
+      .setParameter('idModelo', modeloFiltro)
       .orderBy('area.ordemVisual', 'ASC');
 
     if (ativo !== undefined) {
-      query = query.andWhere('area.ativo = :ativo', { ativo });
+      query.andWhere('area.ativo = :ativo', { ativo });
     }
 
     return query.getMany();
@@ -119,20 +128,14 @@ export class AreaVistoriadaService {
 
   async remove(id: string): Promise<void> {
     const area = await this.findOne(id);
-    const [countComponentes, countModelos] = await Promise.all([
-      this.areaComponenteRepository.count({ where: { idArea: id } }),
-      this.areaModeloRepository.count({ where: { idArea: id } }),
-    ]);
+    const countComponentes = await this.areaComponenteRepository.count({ where: { idArea: id } });
     if (countComponentes > 0) {
       throw new BadRequestException(
         'Não é possível excluir a área pois existem componentes vinculados. Remova os componentes da área antes de excluir.',
       );
     }
-    if (countModelos > 0) {
-      throw new BadRequestException(
-        'Não é possível excluir a área pois existem modelos vinculados. Remova os modelos da área antes de excluir.',
-      );
-    }
+    // Excluir em cascata os modelos da área (área-modelo)
+    await this.areaModeloRepository.delete({ idArea: id });
     await this.areaRepository.remove(area);
   }
 

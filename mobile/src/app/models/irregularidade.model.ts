@@ -21,3 +21,14 @@ export interface IrregularidadeImagemResumo {
   idirregularidade: string;
   imagens: IrregularidadeImagemResumoItem[];
 }
+
+export interface IrregularidadeAudioResumoItem {
+  id: string;
+  nomeArquivo: string;
+  duracaoMs?: number | null;
+}
+
+export interface IrregularidadeAudioResumo {
+  idirregularidade: string;
+  audios: IrregularidadeAudioResumoItem[];
+}

@@ -6,6 +6,7 @@ import {
   IonButton,
   IonCard,
   IonContent,
+  IonFooter,
   IonHeader,
   IonIcon,
   IonInput,
@@ -28,11 +29,13 @@ import { VeiculoService } from '../../services/veiculo.service';
 import { MotoristaService } from '../../services/motorista.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { VistoriaFlowService } from '../../services/vistoria-flow.service';
+import { VistoriaBootstrapService } from '../../services/vistoria-bootstrap.service';
 import { Veiculo } from '../../models/veiculo.model';
 import { Motorista } from '../../models/motorista.model';
 import { Vistoria } from '../../models/vistoria.model';
 import { SystemService } from '../../services/system.service';
 import { AuthService } from '../../services/auth.service';
+import { ErrorMessageService } from '../../services/error-message.service';
 
 @Component({
   selector: 'app-vistoria-inicio',
@@ -46,6 +49,7 @@ import { AuthService } from '../../services/auth.service';
     DecimalPipe,
     FormsModule,
     IonContent,
+    IonFooter,
     IonHeader,
     IonTitle,
     IonToolbar,
@@ -68,10 +72,12 @@ export class VistoriaInicioPage implements OnInit {
   private motoristaService = inject(MotoristaService);
   private vistoriaService = inject(VistoriaService);
   private flowService = inject(VistoriaFlowService);
+  private bootstrapService = inject(VistoriaBootstrapService);
   private router = inject(Router);
   private systemService = inject(SystemService);
   private authService = inject(AuthService);
   private alertController = inject(AlertController);
+  private errorMessageService = inject(ErrorMessageService);
 
   veiculos: Veiculo[] = [];
   motoristas: Motorista[] = [];
@@ -173,14 +179,20 @@ export class VistoriaInicioPage implements OnInit {
         vistoria.veiculo?.modeloVeiculo?.nome ??
         vistoria.veiculo?.modelo;
       this.flowService.iniciar(atualizada.id, {
+        numeroVistoria: atualizada.numeroVistoria ?? vistoria.numeroVistoria,
+        veiculoId: atualizada.idVeiculo ?? vistoria.idVeiculo,
         veiculoDescricao: atualizada.veiculo?.descricao ?? vistoria.veiculo?.descricao,
         veiculoModeloId: modeloId ?? undefined,
         veiculoModeloNome: modeloNome ?? undefined,
         datavistoria: atualizada.datavistoria ?? vistoria.datavistoria,
       });
+      void this.bootstrapService.warmup(atualizada.id);
       this.router.navigate(['/vistoria/areas']);
     } catch (error: any) {
-      this.errorMessage = error?.message || 'Não foi possível retomar a vistoria.';
+      this.errorMessage = this.errorMessageService.fromApi(
+        error,
+        'Nao foi possivel retomar a vistoria. Tente novamente.',
+      );
     }
   }
 
@@ -322,22 +334,34 @@ export class VistoriaInicioPage implements OnInit {
     try {
       const vistoriaId = this.flowService.getVistoriaId();
       if (vistoriaId) {
-        await this.vistoriaService.atualizarVistoria(vistoriaId, {
-          idveiculo: this.selectedVeiculo.id,
-          idmotorista: this.selectedMotorista.id,
-          odometro: Number(this.odometro),
-          porcentagembateria:
-            this.bateria === null ? null : Number(this.bateria),
-          datavistoria: this.datavistoriaIso,
-        });
-        this.flowService.updateContext({
-          veiculoDescricao: this.selectedVeiculo.descricao,
-          veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
-          veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? this.selectedVeiculo.modelo ?? undefined,
-          datavistoria: this.datavistoriaIso,
-        });
-        this.router.navigate(['/vistoria/areas']);
-        return;
+        try {
+          const atualizada = await this.vistoriaService.atualizarVistoria(vistoriaId, {
+            idveiculo: this.selectedVeiculo.id,
+            idmotorista: this.selectedMotorista.id,
+            odometro: Number(this.odometro),
+            porcentagembateria:
+              this.bateria === null ? null : Number(this.bateria),
+            datavistoria: this.datavistoriaIso,
+          });
+          this.flowService.updateContext({
+            numeroVistoria: atualizada.numeroVistoria,
+            veiculoId: this.selectedVeiculo.id,
+            veiculoDescricao: this.selectedVeiculo.descricao,
+            veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
+            veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? this.selectedVeiculo.modelo ?? undefined,
+            datavistoria: this.datavistoriaIso,
+          });
+          void this.bootstrapService.warmup(atualizada.id);
+          this.router.navigate(['/vistoria/areas']);
+          return;
+        } catch (errorAtualizacao: any) {
+          // Quando a vistoria em memória não existe mais no backend, limpa o contexto e inicia uma nova.
+          if (this.isVistoriaNaoEncontradaError(errorAtualizacao)) {
+            this.flowService.finalizar();
+          } else {
+            throw errorAtualizacao;
+          }
+        }
       }
 
       const vistoria = await this.vistoriaService.iniciarVistoria({
@@ -349,14 +373,20 @@ export class VistoriaInicioPage implements OnInit {
         datavistoria: this.datavistoriaIso,
       });
       this.flowService.iniciar(vistoria.id, {
+        numeroVistoria: vistoria.numeroVistoria,
+        veiculoId: this.selectedVeiculo.id,
         veiculoDescricao: this.selectedVeiculo.descricao,
         veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
         veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? this.selectedVeiculo.modelo ?? undefined,
         datavistoria: this.datavistoriaIso,
       });
+      void this.bootstrapService.warmup(vistoria.id);
       this.router.navigate(['/vistoria/areas']);
     } catch (error: any) {
-      this.errorMessage = error?.message || 'Erro ao iniciar vistoria.';
+      this.errorMessage = this.errorMessageService.fromApi(
+        error,
+        'Erro ao iniciar vistoria. Tente novamente.',
+      );
     } finally {
       this.isSaving = false;
     }
@@ -496,8 +526,17 @@ export class VistoriaInicioPage implements OnInit {
         veiculoDescricao: vistoria.veiculo?.descricao,
         datavistoria: vistoria.datavistoria,
       });
-    } catch {
+    } catch (error: any) {
+      if (this.isVistoriaNaoEncontradaError(error)) {
+        this.flowService.finalizar();
+      }
       // mantém dados atuais se falhar
     }
+  }
+
+  private isVistoriaNaoEncontradaError(error: any): boolean {
+    const status = error?.status;
+    const message = error?.error?.message ?? error?.message ?? '';
+    return status === 404 || /vistoria não encontrada/i.test(String(message));
   }
 }

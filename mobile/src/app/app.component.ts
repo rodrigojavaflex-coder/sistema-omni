@@ -5,6 +5,7 @@ import {
   AlertController,
   IonApp,
   IonButton,
+  IonButtons,
   IonContent,
   IonHeader,
   IonIcon,
@@ -14,6 +15,7 @@ import {
   IonTitle,
   IonToggle,
   IonToolbar,
+  MenuController,
   ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -34,6 +36,7 @@ import { Usuario } from './models/usuario.model';
     IonHeader,
     IonToolbar,
     IonTitle,
+    IonButtons,
     IonContent,
     IonList,
     IonItem,
@@ -46,6 +49,11 @@ export class AppComponent {
   private authService = inject(AuthService);
   private alertController = inject(AlertController);
   private toastController = inject(ToastController);
+  private menuController = inject(MenuController);
+
+  fecharMenu(): void {
+    this.menuController.close();
+  }
 
   user: Usuario | null = null;
   isAuthenticated = false;

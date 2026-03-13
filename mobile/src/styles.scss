@@ -1,3 +1,33 @@
+ion-button.resumo-btn {
+  --background: #6b7280;
+  --color: #ffffff;
+  --border-radius: 8px;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  min-width: 40px;
+  min-height: 0;
+  height: 34px;
+}
+
+.alert-resumo-vistoria .alert-message {
+  white-space: pre-line;
+}
+
+.alert-resumo-vistoria .alert-button.alert-ok-voltar {
+  background: var(--ion-color-primary, #3880ff);
+  color: #ffffff;
+  border-radius: 8px;
+  min-height: 34px;
+  padding: 0 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.alert-resumo-vistoria .alert-button-group {
+  justify-content: flex-end;
+}
 /* Ionic CSS */
 @import '@ionic/angular/css/core.css';
 @import '@ionic/angular/css/normalize.css';

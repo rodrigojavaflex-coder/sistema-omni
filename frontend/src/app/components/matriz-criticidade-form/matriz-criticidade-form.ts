@@ -59,6 +59,7 @@ export class MatrizCriticidadeFormComponent
       gravidade: ['VERDE', [Validators.required]],
       exige_foto: [false],
       permite_audio: [false],
+      permite_nova_irregularidade_se_ja_existe: [false],
     });
   }
 
@@ -70,6 +71,7 @@ export class MatrizCriticidadeFormComponent
       gravidade: formValue.gravidade,
       exige_foto: !!formValue.exige_foto,
       permite_audio: !!formValue.permite_audio,
+      permite_nova_irregularidade_se_ja_existe: !!formValue.permite_nova_irregularidade_se_ja_existe,
     };
   }
 
@@ -89,6 +91,7 @@ export class MatrizCriticidadeFormComponent
       gravidade: matriz.gravidade,
       exige_foto: matriz.exigeFoto,
       permite_audio: matriz.permiteAudio,
+      permite_nova_irregularidade_se_ja_existe: matriz.permiteNovaIrregularidadeSeJaExiste ?? false,
     });
   }
 

@@ -1,5 +1,6 @@
 export interface Vistoria {
   id: string;
+  numeroVistoria?: number;
   idUsuario?: string;
   idVeiculo: string;
   idMotorista: string;

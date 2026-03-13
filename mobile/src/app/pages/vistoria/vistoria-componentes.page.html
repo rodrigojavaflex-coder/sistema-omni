@@ -1,13 +1,69 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/vistoria/areas"></ion-back-button>
+      <ion-menu-button></ion-menu-button>
     </ion-buttons>
-    <ion-title>{{ areaNome }}</ion-title>
+    <ion-title>Componentes</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        class="resumo-btn"
+        fill="solid"
+        color="medium"
+        (click)="abrirResumoPendenciasVeiculo()"
+        aria-label="Pendencias de outras vistorias"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="8" y="2" width="8" height="4" rx="1"></rect>
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+          <path d="M9 12h6"></path>
+          <path d="M9 16h6"></path>
+        </svg>
+      </ion-button>
+      <ion-button class="resumo-btn" fill="solid" color="medium" (click)="abrirResumoVistoria()" aria-label="Resumo da vistoria">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m3 17 2 2 4-4"></path>
+          <path d="m3 7 2 2 4-4"></path>
+          <path d="M13 6h8"></path>
+          <path d="M13 12h8"></path>
+          <path d="M13 18h8"></path>
+        </svg>
+      </ion-button>
+      <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  <div class="selected-context" *ngIf="!loading">
+    <p class="context-inline">
+      <strong>Vistoria:</strong> {{ vistoriaNumero }} ·
+      <strong>Veículo:</strong> {{ veiculoNumero }} ·
+      <strong>Área:</strong> {{ areaNome }}
+    </p>
+  </div>
+
   <div class="content" *ngIf="loading">
     <ion-spinner name="crescent"></ion-spinner>
     <p>Carregando componentes...</p>
@@ -17,18 +73,47 @@
     <p class="error-message">{{ errorMessage }}</p>
   </ion-text>
 
-  <ion-list *ngIf="!loading && componentes.length > 0">
-    <ion-item button detail="true" *ngFor="let item of componentes" (click)="abrirComponente(item)">
-      <ion-label>
-        <h2>{{ item.componente?.nome }}</h2>
-        <p *ngIf="irregularidadesPorComponente.has(item.idComponente)">
-          Irregularidade registrada
-        </p>
-      </ion-label>
-    </ion-item>
-  </ion-list>
+  <div class="content sheet-context" *ngIf="!loading && componentes.length > 0">
+    <p>Selecione um componente abaixo para registrar irregularidade.</p>
+  </div>
 
   <div class="content" *ngIf="!loading && componentes.length === 0">
     <p>Nenhum componente encontrado nesta área.</p>
   </div>
+
+  <ion-modal
+    [isOpen]="!loading && componentes.length > 0"
+    [initialBreakpoint]="0.5"
+    [breakpoints]="[0.25, 0.5, 1]"
+    backdropBreakpoint="0.25"
+  >
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ areaNome }}</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <ion-list>
+        <ion-item button detail="true" *ngFor="let item of componentes" (click)="abrirComponente(item)">
+          <ion-label>
+            <h2>{{ item.componente?.nome }}</h2>
+            <p *ngIf="irregularidadesPorComponente[item.idComponente] > 0">
+              <ion-text color="primary">
+                Irregularidades nesta vistoria: {{ irregularidadesPorComponente[item.idComponente] }}
+              </ion-text>
+            </p>
+            <p *ngIf="pendentesPorComponente.has(item.idComponente)" class="ion-text-wrap">
+              <ion-text color="warning">Existe irregularidade pendente em vistoria anterior</ion-text>
+            </p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-content>
+  </ion-modal>
 </ion-content>
+
+<ion-footer *ngIf="!loading">
+  <ion-toolbar>
+    <ion-button expand="block" (click)="irParaFinalizar()">Concluir Vistoria</ion-button>
+  </ion-toolbar>
+</ion-footer>

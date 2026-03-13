@@ -46,4 +46,8 @@ export class MatrizCriticidade extends BaseEntity {
   @ApiProperty({ description: 'Permite áudio', default: false })
   @Column({ name: 'permite_audio', type: 'boolean', default: false })
   permiteAudio: boolean;
+
+  @ApiProperty({ description: 'Permite nova irregularidade quando já existir uma pendente', default: false })
+  @Column({ name: 'permite_nova_irregularidade_se_ja_existe', type: 'boolean', default: false })
+  permiteNovaIrregularidadeSeJaExiste: boolean;
 }

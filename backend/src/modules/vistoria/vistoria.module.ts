@@ -14,7 +14,7 @@ import { AreaComponente } from './entities/area-componente.entity';
 import { Sintoma } from './entities/sintoma.entity';
 import { MatrizCriticidade } from './entities/matriz-criticidade.entity';
 import { Irregularidade } from './entities/irregularidade.entity';
-import { IrregularidadeImagem } from './entities/irregularidade-imagem.entity';
+import { IrregularidadeMidia } from './entities/irregularidade-midia.entity';
 import { ModeloVeiculo } from '../veiculo/entities/modelo-veiculo.entity';
 import { AreaVistoriadaService } from './area-vistoriada.service';
 import { AreaComponenteService } from './area-componente.service';
@@ -39,7 +39,7 @@ import { IrregularidadesController } from './irregularidades.controller';
       Sintoma,
       MatrizCriticidade,
       Irregularidade,
-      IrregularidadeImagem,
+      IrregularidadeMidia,
       ModeloVeiculo,
       Veiculo,
       Motorista,

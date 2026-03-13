@@ -1,9 +1,33 @@
-.card {
-  margin: 16px;
+ion-content {
+  --padding-bottom: 108px;
 }
 
-.actions {
-  padding: 0 16px 24px;
+ion-footer {
+  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);
+}
+
+ion-footer ion-toolbar {
+  --min-height: 72px;
+  --background: #ffffff;
+  --border-width: 1px 0 0;
+  --border-color: #e2e8f0;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 8px;
+  --padding-bottom: calc(8px + env(safe-area-inset-bottom));
+}
+
+ion-footer ion-button {
+  margin: 0;
+  min-height: 46px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: none;
+  --border-radius: 12px;
+}
+
+.card {
+  margin: 16px;
 }
 
 .datetime-item ion-button {
@@ -56,4 +80,21 @@ ion-select::part(text) {
 .campo-destaque::part(native) {
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+.odometro-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ultimo-odometro-destaque {
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 0.92rem;
+  background: #e8f1ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 2px 8px;
 }

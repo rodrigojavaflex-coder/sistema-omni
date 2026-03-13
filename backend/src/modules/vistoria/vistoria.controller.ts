@@ -23,6 +23,7 @@ import { UpdateVistoriaDto } from './dto/update-vistoria.dto';
 import { CreateIrregularidadeDto } from './dto/create-irregularidade.dto';
 import { IrregularidadeResumoDto } from './dto/irregularidade-resumo.dto';
 import { IrregularidadeImagemResumoDto } from './dto/irregularidade-imagem-resumo.dto';
+import { IrregularidadeAudioResumoDto } from './dto/irregularidade-audio-resumo.dto';
 import { IrregularidadeService } from './irregularidade.service';
 
 @ApiTags('vistorias')
@@ -85,6 +86,16 @@ export class VistoriaController {
     return this.irregularidadeService.listImages(id);
   }
 
+  @Get(':id/irregularidades/audios')
+  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
+  @ApiOperation({ summary: 'Listar áudios das irregularidades da vistoria' })
+  @ApiResponse({ status: 200, description: 'Lista de áudios por irregularidade' })
+  listIrregularidadesAudios(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<IrregularidadeAudioResumoDto[]> {
+    return this.irregularidadeService.listAudios(id);
+  }
+
   @Post(':id/finalizar')
   @Permissions(Permission.VISTORIA_UPDATE)
   @ApiOperation({ summary: 'Finalizar vistoria' })
@@ -118,12 +129,30 @@ export class VistoriaController {
     return this.vistoriaService.getUltimoOdometro(id, ignorarVistoriaId);
   }
 
+  @Get('veiculo/:id/irregularidades-pendentes')
+  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
+  @ApiOperation({ summary: 'Listar irregularidades não resolvidas do veículo' })
+  @ApiResponse({ status: 200, description: 'Lista de irregularidades pendentes', type: [IrregularidadeResumoDto] })
+  listIrregularidadesPendentes(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<IrregularidadeResumoDto[]> {
+    return this.irregularidadeService.listPendentesByVeiculo(id);
+  }
+
   @Get(':id')
   @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
   @ApiOperation({ summary: 'Buscar vistoria por id' })
   @ApiResponse({ status: 200, description: 'Vistoria encontrada', type: Vistoria })
   findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Vistoria> {
     return this.vistoriaService.findOne(id);
+  }
+
+  @Get(':id/bootstrap')
+  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
+  @ApiOperation({ summary: 'Carregar bootstrap da vistoria para navegação mobile' })
+  @ApiResponse({ status: 200, description: 'Bootstrap da vistoria carregado' })
+  findBootstrap(@Param('id', new ParseUUIDPipe()) id: string): Promise<Record<string, unknown>> {
+    return this.vistoriaService.getBootstrap(id);
   }
 
   @Get()

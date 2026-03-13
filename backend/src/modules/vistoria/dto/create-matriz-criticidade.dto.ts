@@ -29,4 +29,9 @@ export class CreateMatrizCriticidadeDto {
   @IsOptional()
   @IsBoolean()
   permite_audio?: boolean;
+
+  @ApiProperty({ description: 'Permite nova irregularidade quando já existir uma pendente', required: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  permite_nova_irregularidade_se_ja_existe?: boolean;
 }

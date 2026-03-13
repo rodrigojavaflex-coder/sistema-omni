@@ -12,6 +12,7 @@ import {
 import { addIcons } from 'ionicons';
 import { fingerPrintOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
+import { ErrorMessageService } from '../../services/error-message.service';
 
 @Component({
   selector: 'app-login',
@@ -33,6 +34,7 @@ export class LoginPage implements OnInit {
   private router = inject(Router);
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
+  private errorMessageService = inject(ErrorMessageService);
 
   loginForm: FormGroup;
   isLoading = false;
@@ -78,7 +80,10 @@ export class LoginPage implements OnInit {
       await this.maybeEnableBiometrics(email, password);
       this.router.navigate(['/home']);
     } catch (error: any) {
-      this.errorMessage = error.message || 'Erro ao fazer login';
+      this.errorMessage = this.errorMessageService.fromApi(
+        error,
+        'Erro ao fazer login. Tente novamente.',
+      );
       const toast = await this.toastController.create({
         message: this.errorMessage,
         duration: 3000,
@@ -105,7 +110,10 @@ export class LoginPage implements OnInit {
       await this.authService.loginWithBiometrics();
       this.router.navigate(['/home']);
     } catch (error: any) {
-      this.errorMessage = error.message || 'Erro ao autenticar com biometria';
+      this.errorMessage = this.errorMessageService.fromApi(
+        error,
+        'Erro ao autenticar com biometria. Tente novamente.',
+      );
       const toast = await this.toastController.create({
         message: this.errorMessage,
         duration: 3000,
