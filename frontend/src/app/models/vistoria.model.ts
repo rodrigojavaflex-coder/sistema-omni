@@ -11,7 +11,6 @@ export interface VistoriaResumo {
   status?: string;
   veiculo?: { descricao?: string; placa?: string };
   motorista?: { nome?: string; matricula?: string };
-  tipoVistoria?: { descricao?: string };
 }
 
 export interface ChecklistItemResumo {

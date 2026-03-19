@@ -1,0 +1,23 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Sobre</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="content">
+    <ion-card>
+      <ion-card-content>
+        <p><strong>Aplicativo:</strong> {{ appName }}</p>
+        <p><strong>Versão:</strong> {{ appVersion }}</p>
+        <p><strong>Build:</strong> {{ buildVersion }}</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

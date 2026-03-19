@@ -43,7 +43,7 @@ Reestruturar o fluxo de vistoria para registrar apenas itens **não conformes** 
 - `id`, `descricao`, `ativo`
 
 6) `matriz_criticidade`
-- `id`, `componente_id`, `sintoma_id`, `gravidade`, `exige_foto`, `permite_audio`, `permite_nova_irregularidade_se_ja_existe` (ver [PLANO_MELHORIAS_VISTORIA_IRREGULARIDADES.md](./PLANO_MELHORIAS_VISTORIA_IRREGULARIDADES.md))
+- `id`, `componente_id`, `sintoma_id`, `gravidade`, `exige_foto`, `permite_audio`
 
 7) `irregularidades`
 - `id`, `vistoria_id`, `area_id`, `componente_id`, `sintoma_id`, `observacao`, `resolvido`, `audio`
@@ -138,11 +138,11 @@ Reestruturar o fluxo de vistoria para registrar apenas itens **não conformes** 
 
 ---
 
-## Extensão: Irregularidades pendentes e configuração na matriz
+## Extensão: Irregularidades pendentes (informativo)
 
-- **Objetivo:** Mostrar irregularidades já existentes (pendentes) do veículo ao usuário e permitir configurar na matriz se é possível registrar nova irregularidade quando já existir uma não resolvida.
+- **Objetivo:** Mostrar irregularidades já existentes (pendentes) do veículo ao usuário; **não** bloquear novo registro pela matriz.
 - **Plano detalhado:** [PLANO_MELHORIAS_VISTORIA_IRREGULARIDADES.md](./PLANO_MELHORIAS_VISTORIA_IRREGULARIDADES.md).
-- Inclui: novo campo na matriz (`permite_nova_irregularidade_se_ja_existe`), API de irregularidades pendentes por veículo, validação no create de irregularidade, e ajustes no mobile para exibir pendentes e respeitar a configuração da matriz.
+- Inclui: API de irregularidades pendentes por veículo e avisos no mobile; campo `permite_nova_irregularidade_se_ja_existe` **removido**.
 
 ---
 

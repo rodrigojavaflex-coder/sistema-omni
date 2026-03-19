@@ -27,7 +27,6 @@ export class MatrizCriticidadeService {
       gravidade: dto.gravidade,
       exigeFoto: dto.exige_foto ?? false,
       permiteAudio: dto.permite_audio ?? false,
-      permiteNovaIrregularidadeSeJaExiste: dto.permite_nova_irregularidade_se_ja_existe ?? false,
     });
     return this.matrizRepository.save(matriz);
   }
@@ -78,7 +77,6 @@ export class MatrizCriticidadeService {
       gravidade: dto.gravidade ?? matriz.gravidade,
       exigeFoto: dto.exige_foto ?? matriz.exigeFoto,
       permiteAudio: dto.permite_audio ?? matriz.permiteAudio,
-      permiteNovaIrregularidadeSeJaExiste: dto.permite_nova_irregularidade_se_ja_existe ?? matriz.permiteNovaIrregularidadeSeJaExiste,
     });
     return this.matrizRepository.save(updated);
   }

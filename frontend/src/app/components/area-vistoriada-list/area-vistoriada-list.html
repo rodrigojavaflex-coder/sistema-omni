@@ -167,7 +167,6 @@
                               <th class="th-icon" title="Permite áudio">
                                 <span class="th-icon-wrap"><svg class="matriz-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg> Permite áudio</span>
                               </th>
-                              <th title="Permite Irregularidade Recorrente">Permite Irregularidade Recorrente</th>
                               <th *ngIf="canEditMatriz || canDeleteMatriz || canAuditMatriz">Ações</th>
                             </tr>
                           </thead>
@@ -201,7 +200,6 @@
                                   </span>
                                 }
                               </td>
-                              <td class="cell-icon" title="Permite Irregularidade Recorrente">{{ m.permiteNovaIrregularidadeSeJaExiste ? 'Sim' : 'Não' }}</td>
                               <td *ngIf="canEditMatriz || canDeleteMatriz || canAuditMatriz" class="matriz-actions-cell">
                                 <button *ngIf="canEditMatriz" type="button" class="btn btn-primary btn-sm" (click)="openEditarMatrizModal(m, $event)" title="Editar matriz de criticidade">Editar</button>
                                 <button *ngIf="canAuditMatriz" type="button" class="btn btn-audit btn-sm" (click)="openMatrizAuditModal(m, $event)" title="Histórico de auditoria da matriz">Auditoria</button>
@@ -209,7 +207,7 @@
                               </td>
                             </tr>
                             <tr *ngIf="matrizList.length === 0">
-                              <td [attr.colspan]="canEditMatriz || canDeleteMatriz || canAuditMatriz ? 6 : 5" class="matriz-empty">Nenhuma matriz configurada. Use "Nova matriz" para adicionar.</td>
+                              <td [attr.colspan]="canEditMatriz || canDeleteMatriz || canAuditMatriz ? 5 : 4" class="matriz-empty">Nenhuma matriz configurada. Use "Nova matriz" para adicionar.</td>
                             </tr>
                           </tbody>
                         </table>
@@ -520,14 +518,6 @@
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Permite Irregularidade Recorrente</label>
-        <select class="form-select" [(ngModel)]="novoMatrizPermiteNovaIrregularidadeSeJaExiste">
-          <option [ngValue]="false">Não</option>
-          <option [ngValue]="true">Sim</option>
-        </select>
-        <small class="form-hint">Se "Sim", permite registrar nova irregularidade para este componente/sintoma mesmo com irregularidade não resolvida no veículo.</small>
-      </div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" (click)="closeNovaMatrizModal()">Cancelar</button>
@@ -589,14 +579,6 @@
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Permite Irregularidade Recorrente</label>
-        <select class="form-select" [(ngModel)]="editMatrizPermiteNovaIrregularidadeSeJaExiste">
-          <option [ngValue]="false">Não</option>
-          <option [ngValue]="true">Sim</option>
-        </select>
-        <small class="form-hint">Se "Sim", permite registrar nova irregularidade para este componente/sintoma mesmo com irregularidade não resolvida no veículo.</small>
-      </div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-secondary" (click)="closeEditarMatrizModal()">Cancelar</button>
@@ -655,8 +637,7 @@
     idsintoma: 'Sintoma',
     gravidade: 'Gravidade',
     exige_foto: 'Exige Foto',
-    permite_audio: 'Permite Áudio',
-    permite_nova_irregularidade_se_ja_existe: 'Permite Irregularidade Recorrente'
+    permite_audio: 'Permite Áudio'
   }"
   [showModal]="showMatrizAuditModal"
   (modalClosed)="closeMatrizAuditModal()">

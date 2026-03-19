@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
+import { DecimalPipe, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   AlertController,
@@ -45,7 +45,6 @@ import { ErrorMessageService } from '../../services/error-message.service';
   imports: [
     NgIf,
     NgFor,
-    DatePipe,
     DecimalPipe,
     FormsModule,
     IonContent,
@@ -192,6 +191,56 @@ export class VistoriaInicioPage implements OnInit {
       this.errorMessage = this.errorMessageService.fromApi(
         error,
         'Nao foi possivel retomar a vistoria. Tente novamente.',
+      );
+    }
+  }
+
+  formatarDataHora24(dateValue?: string | Date | null): string {
+    if (!dateValue) {
+      return '-';
+    }
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const dd = pad(date.getDate());
+    const mm = pad(date.getMonth() + 1);
+    const yyyy = date.getFullYear();
+    const hh = pad(date.getHours());
+    const mi = pad(date.getMinutes());
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+  }
+
+  async cancelarVistoriaEmAndamento(vistoria: Vistoria): Promise<void> {
+    const alert = await this.alertController.create({
+      header: 'Cancelar vistoria',
+      message: 'Deseja realmente cancelar esta vistoria em andamento?',
+      buttons: [
+        { text: 'Voltar', role: 'cancel' },
+        { text: 'Cancelar vistoria', role: 'confirm' },
+      ],
+    });
+
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role !== 'confirm') {
+      return;
+    }
+
+    try {
+      await this.vistoriaService.cancelarVistoria(vistoria.id);
+      const flowVistoriaId = this.flowService.getVistoriaId();
+      if (flowVistoriaId === vistoria.id) {
+        this.flowService.finalizar();
+      }
+      this.bootstrapService.invalidate(vistoria.id);
+      await this.atualizarListaEmAndamento();
+      await this.carregarVistoriaEmEdicao();
+    } catch (error: any) {
+      this.errorMessage = this.errorMessageService.fromApi(
+        error,
+        'Nao foi possivel cancelar a vistoria. Tente novamente.',
       );
     }
   }

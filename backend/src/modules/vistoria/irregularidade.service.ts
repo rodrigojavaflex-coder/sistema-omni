@@ -18,6 +18,10 @@ import { UpdateIrregularidadeDto } from './dto/update-irregularidade.dto';
 import { IrregularidadeResumoDto } from './dto/irregularidade-resumo.dto';
 import { IrregularidadeImagemResumoDto } from './dto/irregularidade-imagem-resumo.dto';
 import { IrregularidadeAudioResumoDto } from './dto/irregularidade-audio-resumo.dto';
+import {
+  IrregularidadeHistoricoVeiculoDto,
+  IrregularidadeHistoricoVeiculoItemDto,
+} from './dto/irregularidade-historico-veiculo.dto';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
 
 @Injectable()
@@ -52,20 +56,7 @@ export class IrregularidadeService {
     await this.ensureComponente(dto.idcomponente);
     await this.ensureSintoma(dto.idsintoma);
     await this.ensureComponenteNaArea(dto.idarea, dto.idcomponente);
-    const matriz = await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
-
-    if (!matriz.permiteNovaIrregularidadeSeJaExiste) {
-      const jaExistePendente = await this.existeIrregularidadePendenteParaVeiculo(
-        vistoria.idVeiculo,
-        dto.idcomponente,
-        dto.idsintoma,
-      );
-      if (jaExistePendente) {
-        throw new BadRequestException(
-          'Já existe irregularidade não resolvida para este componente/sintoma neste veículo. Resolva-a antes de registrar outra ou altere a configuração na matriz de criticidade.',
-        );
-      }
-    }
+    await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
 
     const irregularidade = this.irregularidadeRepository.create({
       idVistoria: vistoria.id,
@@ -124,6 +115,66 @@ export class IrregularidadeService {
       resolvido: item.resolvido,
       atualizadoEm: item.atualizadoEm.toISOString(),
     }));
+  }
+
+  async listNaoResolvidasByVeiculo(
+    idVeiculo: string,
+    areaId?: string,
+    componenteId?: string,
+  ): Promise<IrregularidadeHistoricoVeiculoDto> {
+    const qb = this.irregularidadeRepository
+      .createQueryBuilder('i')
+      .innerJoinAndSelect('i.vistoria', 'v')
+      .leftJoinAndSelect('i.area', 'area')
+      .leftJoinAndSelect('i.componente', 'componente')
+      .leftJoinAndSelect('i.sintoma', 'sintoma')
+      .leftJoinAndSelect('i.midias', 'midias')
+      .where('v.idVeiculo = :idVeiculo', { idVeiculo })
+      .andWhere('i.resolvido = :resolvido', { resolvido: false });
+
+    if (areaId) {
+      qb.andWhere('i.idArea = :areaId', { areaId });
+    }
+    if (componenteId) {
+      qb.andWhere('i.idComponente = :componenteId', { componenteId });
+    }
+
+    const itens = await qb.orderBy('i.atualizadoEm', 'DESC').getMany();
+
+    const mapped: IrregularidadeHistoricoVeiculoItemDto[] = itens.map((item) => ({
+      id: item.id,
+      idvistoria: item.idVistoria,
+      numeroVistoria: item.vistoria?.numeroVistoria,
+      datavistoria: item.vistoria?.datavistoria?.toISOString?.() ?? '',
+      statusVistoria: item.vistoria?.status,
+      idarea: item.idArea,
+      nomeArea: item.area?.nome,
+      idcomponente: item.idComponente,
+      nomeComponente: item.componente?.nome,
+      idsintoma: item.idSintoma,
+      descricaoSintoma: item.sintoma?.descricao,
+      observacao: item.observacao ?? undefined,
+      resolvido: item.resolvido,
+      atualizadoEm: item.atualizadoEm.toISOString(),
+      midias: (item.midias ?? [])
+        .sort((a, b) => Number(a.criadoEm) - Number(b.criadoEm))
+        .map((m) => ({
+          id: m.id,
+          tipo: m.tipo,
+          nomeArquivo: m.nomeArquivo,
+          mimeType: m.mimeType,
+          tamanho: Number(m.tamanho),
+          dadosBase64: m.dadosBytea.toString('base64'),
+          duracaoMs: m.duracaoMs ?? undefined,
+        })),
+    }));
+
+    return {
+      idveiculo: idVeiculo,
+      veiculo: itens[0]?.vistoria?.veiculo?.descricao ?? '',
+      total: mapped.length,
+      itens: mapped,
+    };
   }
 
   async update(id: string, dto: UpdateIrregularidadeDto): Promise<Irregularidade> {
@@ -335,27 +386,4 @@ export class IrregularidadeService {
     return irregularidade;
   }
 
-  /**
-   * Verifica se existe irregularidade não resolvida para o veículo + componente + sintoma.
-   * @param excluirIrregularidadeId Se informado, desconsidera esta irregularidade (ex.: a própria no update).
-   */
-  private async existeIrregularidadePendenteParaVeiculo(
-    idVeiculo: string,
-    idComponente: string,
-    idSintoma: string,
-    excluirIrregularidadeId?: string,
-  ): Promise<boolean> {
-    const qb = this.irregularidadeRepository
-      .createQueryBuilder('i')
-      .innerJoin('i.vistoria', 'v')
-      .where('v.idVeiculo = :idVeiculo', { idVeiculo })
-      .andWhere('i.idComponente = :idComponente', { idComponente })
-      .andWhere('i.idSintoma = :idSintoma', { idSintoma })
-      .andWhere('i.resolvido = :resolvido', { resolvido: false });
-    if (excluirIrregularidadeId) {
-      qb.andWhere('i.id != :excluirId', { excluirId: excluirIrregularidadeId });
-    }
-    const count = await qb.getCount();
-    return count > 0;
-  }
 }

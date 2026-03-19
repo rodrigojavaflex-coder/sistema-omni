@@ -6,6 +6,7 @@
     <ion-title>{{ selectedArea === null ? 'Áreas' : 'Componentes' }}</ion-title>
     <ion-buttons slot="end">
       <ion-button
+        *ngIf="canViewHistoricoVeiculo"
         class="resumo-btn"
         fill="solid"
         color="medium"

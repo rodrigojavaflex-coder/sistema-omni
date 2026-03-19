@@ -160,7 +160,6 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
   novoMatrizGravidade: GravidadeCriticidade = 'VERDE';
   novoMatrizExigeFoto = true;
   novoMatrizPermiteAudio = true;
-  novoMatrizPermiteNovaIrregularidadeSeJaExiste = false;
   savingNovoMatriz = false;
   showEditarMatrizModal = false;
   matrizToEdit: MatrizCriticidade | null = null;
@@ -168,7 +167,6 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
   editMatrizGravidade: GravidadeCriticidade = 'VERDE';
   editMatrizExigeFoto = false;
   editMatrizPermiteAudio = false;
-  editMatrizPermiteNovaIrregularidadeSeJaExiste = false;
   savingEditarMatriz = false;
   showDeleteMatrizModal = false;
   matrizToDelete: MatrizCriticidade | null = null;
@@ -866,7 +864,6 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
     this.novoMatrizGravidade = 'VERDE';
     this.novoMatrizExigeFoto = true;
     this.novoMatrizPermiteAudio = true;
-    this.novoMatrizPermiteNovaIrregularidadeSeJaExiste = false;
     this.showNovaMatrizModal = true;
     this.loadSintomas();
   }
@@ -888,7 +885,6 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
         gravidade: this.novoMatrizGravidade,
         exige_foto: !!this.novoMatrizExigeFoto,
         permite_audio: !!this.novoMatrizPermiteAudio,
-        permite_nova_irregularidade_se_ja_existe: !!this.novoMatrizPermiteNovaIrregularidadeSeJaExiste,
       };
       await firstValueFrom(this.matrizService.create(dto));
       this.notificationService.success('Matriz adicionada.');
@@ -908,7 +904,6 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
     this.editMatrizGravidade = matriz.gravidade;
     this.editMatrizExigeFoto = matriz.exigeFoto;
     this.editMatrizPermiteAudio = matriz.permiteAudio;
-    this.editMatrizPermiteNovaIrregularidadeSeJaExiste = matriz.permiteNovaIrregularidadeSeJaExiste ?? false;
     this.showEditarMatrizModal = true;
   }
 
@@ -929,7 +924,6 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
         gravidade: this.editMatrizGravidade,
         exige_foto: !!this.editMatrizExigeFoto,
         permite_audio: !!this.editMatrizPermiteAudio,
-        permite_nova_irregularidade_se_ja_existe: !!this.editMatrizPermiteNovaIrregularidadeSeJaExiste,
       };
       await firstValueFrom(this.matrizService.update(this.matrizToEdit.id, dto));
       this.notificationService.success('Matriz atualizada.');
@@ -1078,8 +1072,7 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
           const sintoma = m.sintoma?.descricao ?? '—';
           const exigeFoto = m.exigeFoto ? 'Sim' : 'Não';
           const permiteAudio = m.permiteAudio ? 'Sim' : 'Não';
-          const permiteNovaSePendente = m.permiteNovaIrregularidadeSeJaExiste ? 'Sim' : 'Não';
-          lines.push(`        ${sintoma}  Gravidade: ${m.gravidade}  Exige foto: ${exigeFoto}  Permite áudio: ${permiteAudio}  Permite Irregularidade Recorrente: ${permiteNovaSePendente}`);
+          lines.push(`        ${sintoma}  Gravidade: ${m.gravidade}  Exige foto: ${exigeFoto}  Permite áudio: ${permiteAudio}`);
         });
       });
       lines.push('');

@@ -9,6 +9,5 @@ export interface MatrizCriticidade {
   gravidade: GravidadeCriticidade;
   exigeFoto: boolean;
   permiteAudio: boolean;
-  permiteNovaIrregularidadeSeJaExiste?: boolean;
   sintoma?: Sintoma;
 }

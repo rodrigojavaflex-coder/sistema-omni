@@ -38,6 +38,18 @@ ion-item ion-button {
   margin-left: 8px;
 }
 
+.andamento-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  min-width: 118px;
+}
+
+.andamento-actions ion-button {
+  margin: 0;
+}
+
 .selection-item,
 .select-item {
   --background: #ffffff;

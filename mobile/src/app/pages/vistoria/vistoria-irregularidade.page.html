@@ -6,6 +6,7 @@
     <ion-title>Sintomas</ion-title>
     <ion-buttons slot="end">
       <ion-button
+        *ngIf="canViewHistoricoVeiculo"
         class="resumo-btn"
         fill="solid"
         color="medium"
@@ -83,25 +84,19 @@
         *ngFor="let item of matriz"
         [class.level-card]="true"
         [class.level-card--selected]="isSintomaSelected(item)"
-        [class.level-card--bloqueado]="isBloqueadoPorPendente(item)"
-        [attr.tabindex]="isBloqueadoPorPendente(item) ? -1 : 0"
-        (click)="!isBloqueadoPorPendente(item) && selecionarSintoma(item)"
+        [attr.tabindex]="0"
+        (click)="selecionarSintoma(item)"
       >
         <ion-card-header>
           <ion-card-title>{{ item.sintoma?.descricao }}</ion-card-title>
         </ion-card-header>
-        <ion-card-content *ngIf="isBloqueadoPorPendente(item) || isIrregularidadeJaRegistrada(item) || temPendenteAnterior(item)">
+        <ion-card-content *ngIf="isIrregularidadeJaRegistrada(item) || temPendenteAnterior(item)">
           <p *ngIf="isIrregularidadeJaRegistrada(item)">
             <ion-text color="primary">Irregularidade registrada nesta vistoria</ion-text>
           </p>
           <p *ngIf="temPendenteAnterior(item)">
             <ion-text color="warning">
               Existe irregularidade pendente em vistoria anterior
-            </ion-text>
-          </p>
-          <p *ngIf="isBloqueadoPorPendente(item)">
-            <ion-text color="danger">
-              Registro bloqueado: ja existe irregularidade pendente para este sintoma
             </ion-text>
           </p>
         </ion-card-content>

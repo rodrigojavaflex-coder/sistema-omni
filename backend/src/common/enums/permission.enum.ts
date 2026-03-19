@@ -97,6 +97,7 @@ export enum Permission {
   VISTORIA_UPDATE = 'vistoria_mobile:update',
   // Vistoria Web
   VISTORIA_WEB_READ = 'vistoria_web:read',
+  VISTORIA_WEB_HISTORICO_VEICULO_READ = 'vistoria_web_historico_veiculo:read',
 
   // Áreas Vistoriadas (catálogo)
   AREAVISTORIADA_CREATE = 'areavistoriada:create',
@@ -248,6 +249,10 @@ export const PERMISSION_GROUPS = {
   ],
   'Vistoria Web': [
     { key: Permission.VISTORIA_WEB_READ, label: 'Visualizar vistorias (web)' },
+    {
+      key: Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ,
+      label: 'Histórico do Veículo WEB',
+    },
   ],
   'Áreas Vistoriadas': [
     { key: Permission.AREAVISTORIADA_CREATE, label: 'Criar áreas vistoriadas' },

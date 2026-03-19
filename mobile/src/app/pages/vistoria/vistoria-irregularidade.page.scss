@@ -51,12 +51,6 @@ ion-footer ion-button {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.level-card--bloqueado {
-  cursor: default;
-  opacity: 0.85;
-  --background: var(--ion-color-light);
-}
-
 .level-card--selected {
   --background: #e7f2ff;
   border: 1px solid var(--ion-color-primary);

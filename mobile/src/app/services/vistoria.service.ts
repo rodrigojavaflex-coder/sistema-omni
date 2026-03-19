@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { Vistoria } from '../models/vistoria.model';
 import {
   IrregularidadeAudioResumo,
+  IrregularidadeHistoricoVeiculo,
   IrregularidadeResumo,
   IrregularidadeImagemResumo,
 } from '../models/irregularidade.model';
@@ -55,6 +56,26 @@ export class VistoriaService {
     return firstValueFrom(
       this.http.get<IrregularidadeResumo[]>(
         `${this.apiBaseUrl}/vistoria/veiculo/${idVeiculo}/irregularidades-pendentes`,
+      ),
+    );
+  }
+
+  async listarHistoricoIrregularidadesNaoResolvidas(
+    idVeiculo: string,
+    filtros?: { areaId?: string; componenteId?: string },
+  ): Promise<IrregularidadeHistoricoVeiculo> {
+    const params: Record<string, string> = {};
+    if (filtros?.areaId) {
+      params['areaId'] = filtros.areaId;
+    }
+    if (filtros?.componenteId) {
+      params['componenteId'] = filtros.componenteId;
+    }
+
+    return firstValueFrom(
+      this.http.get<IrregularidadeHistoricoVeiculo>(
+        `${this.apiBaseUrl}/vistoria/veiculo/${idVeiculo}/historico-irregularidades-nao-resolvidas`,
+        { params },
       ),
     );
   }

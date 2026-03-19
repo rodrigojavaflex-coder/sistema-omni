@@ -95,6 +95,7 @@ export enum Permission {
   VISTORIA_UPDATE = 'vistoria_mobile:update',
   // Vistoria Web
   VISTORIA_WEB_READ = 'vistoria_web:read',
+  VISTORIA_WEB_HISTORICO_VEICULO_READ = 'vistoria_web_historico_veiculo:read',
   AREAVISTORIADA_CREATE = 'areavistoriada:create',
   AREAVISTORIADA_READ = 'areavistoriada:read',
   AREAVISTORIADA_UPDATE = 'areavistoriada:update',

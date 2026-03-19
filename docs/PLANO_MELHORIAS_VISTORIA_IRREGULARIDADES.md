@@ -9,13 +9,13 @@
 
 | # | Alteração | Status |
 |---|-----------|--------|
-| 1 | [Irregularidades pendentes e configuração na matriz](#alteração-1--irregularidades-pendentes-e-configuração-na-matriz) | Planejado |
+| 1 | [Irregularidades pendentes (informativo)](#alteração-1--irregularidades-pendentes-e-configuração-na-matriz) | **Implementado (sem flag na matriz)** |
 | 2 | [Usabilidade: Bottom Sheets para áreas e componentes](#alteração-2--usabilidade-bottom-sheets-para-áreas-e-componentes) | Planejado |
 | 3 | [Mídias unificadas (irregularidades_midias) e múltiplos áudios](#alteração-3--mídias-unificadas-irregularidades_midias-e-múltiplos-áudios) | Planejado |
 
 ---
 
-## Alteração 1 — Irregularidades pendentes e configuração na matriz
+## Alteração 1 — Irregularidades pendentes (informativo)
 
 ### Contexto
 
@@ -23,39 +23,34 @@ Hoje cada vistoria possui sua própria lista de irregularidades. Em uma nova vis
 - **Não** são mostradas irregularidades de vistorias anteriores.
 - O usuário **pode** registrar novamente o mesmo componente/sintoma sem saber que já existe uma irregularidade não tratada.
 
-Regra desejada:
-1. **Mostrar** ao usuário se já existe irregularidade (não resolvida) para aquele veículo + componente + sintoma.
-2. **Configurar na matriz** (por componente + sintoma) se, mesmo existindo irregularidade pendente, **pode** ou **não** registrar uma nova.
+Regra adotada (atual):
+1. **Mostrar** ao usuário se já existe irregularidade (não resolvida) para aquele veículo + componente + sintoma (avisos nas telas).
+2. **Não bloquear** o registro de nova irregularidade por essa pendência (sem flag na matriz; backend não retorna 400 por duplicidade pendente).
 
 ### Regras de negócio
 
 - **Irregularidade pendente:** mesmo veículo, mesmo componente e mesmo sintoma, `resolvido = false`, em qualquer vistoria.
-- **Campo na matriz:** `permite_nova_irregularidade_se_ja_existe` (boolean).
-  - **`true`:** permite registrar nova irregularidade mesmo existindo uma pendente.
-  - **`false`:** bloqueia novo registro enquanto existir irregularidade não resolvida (ou exige que a existente seja marcada como resolvida).
-- Exibição das pendentes nas telas de áreas, componentes e seleção de sintoma (mobile); validação no backend ao criar irregularidade.
+- **Removido:** campo `permite_nova_irregularidade_se_ja_existe` da tabela `matriz_criticidade` e de toda a UI/API.
 
 ### Backend: Matriz de Criticidade
 
-- **Modelagem:** coluna `permite_nova_irregularidade_se_ja_existe` (boolean, default `false`) em `matriz_criticidade`.
-- **Código:** entidade, DTOs (create/update), migration. Frontend web: checkbox na tela da Matriz de Criticidade.
+- Matriz contém apenas gravidade, exige foto e permite áudio (sem controle de recorrência).
 
 ### Backend: Irregularidades pendentes do veículo
 
 - **API:** `GET /veiculo/:idVeiculo/irregularidades-pendentes` — lista de irregularidades com `resolvido = false` daquele veículo (resumo: id, area, componente, sintoma, observacao, resolvido, atualizadoEm, idVistoria, dataVistoria).
 - **Permissão:** compatível com leitura de vistoria/irregularidades.
 
-### Backend: Validação ao criar irregularidade
+### Backend: Criação de irregularidade
 
-- No `IrregularidadeService.create`: obter matriz para (componente, sintoma); se `permite_nova_irregularidade_se_ja_existe === false`, verificar se existe irregularidade não resolvida para o mesmo veículo + componente + sintoma; se existir, retornar 400 com mensagem clara.
-- Considerar qualquer vistoria do veículo (incluindo a atual). Garantir índices para performance.
+- Não há bloqueio por existir pendente no mesmo veículo/componente/sintoma.
 
 ### Mobile
 
 - Serviço para `GET /veiculo/:idVeiculo/irregularidades-pendentes`; carregar ao iniciar/retomar vistoria.
 - **Áreas:** exibir contagem/listagem de pendentes além das irregularidades da vistoria atual.
 - **Componentes:** indicar "Já existe irregularidade pendente" por componente.
-- **Seleção de sintoma:** por item da matriz, exibir se existe pendente; se existir e matriz não permitir nova irregularidade, desabilitar registro e mostrar mensagem; caso contrário, permitir.
+- **Seleção de sintoma:** exibir aviso se existe pendente em vistoria anterior; o usuário pode registrar normalmente.
 
 ### Testes
 

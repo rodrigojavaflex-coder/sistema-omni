@@ -24,6 +24,7 @@ import { CreateIrregularidadeDto } from './dto/create-irregularidade.dto';
 import { IrregularidadeResumoDto } from './dto/irregularidade-resumo.dto';
 import { IrregularidadeImagemResumoDto } from './dto/irregularidade-imagem-resumo.dto';
 import { IrregularidadeAudioResumoDto } from './dto/irregularidade-audio-resumo.dto';
+import { IrregularidadeHistoricoVeiculoDto } from './dto/irregularidade-historico-veiculo.dto';
 import { IrregularidadeService } from './irregularidade.service';
 
 @ApiTags('vistorias')
@@ -137,6 +138,28 @@ export class VistoriaController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<IrregularidadeResumoDto[]> {
     return this.irregularidadeService.listPendentesByVeiculo(id);
+  }
+
+  @Get('veiculo/:id/historico-irregularidades-nao-resolvidas')
+  @Permissions(Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ)
+  @ApiOperation({
+    summary: 'Histórico de irregularidades não resolvidas do veículo (com mídias)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Relatório de irregularidades não resolvidas por veículo',
+    type: IrregularidadeHistoricoVeiculoDto,
+  })
+  listHistoricoIrregularidadesNaoResolvidas(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Query('areaId') areaId?: string,
+    @Query('componenteId') componenteId?: string,
+  ): Promise<IrregularidadeHistoricoVeiculoDto> {
+    return this.irregularidadeService.listNaoResolvidasByVeiculo(
+      id,
+      areaId,
+      componenteId,
+    );
   }
 
   @Get(':id')

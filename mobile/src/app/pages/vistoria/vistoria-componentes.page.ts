@@ -83,6 +83,10 @@ export class VistoriaComponentesPage implements OnInit {
     return this.flowService.getVeiculoDescricao() || '-';
   }
 
+  get canViewHistoricoVeiculo(): boolean {
+    return this.authService.hasPermission('vistoria_web_historico_veiculo:read');
+  }
+
   voltar(): void {
     this.router.navigate(['/vistoria/areas']);
   }
@@ -232,46 +236,12 @@ export class VistoriaComponentesPage implements OnInit {
   }
 
   async abrirResumoPendenciasVeiculo(): Promise<void> {
-    const vistoriaId = this.flowService.getVistoriaId();
-    const veiculoId = this.flowService.getVeiculoId();
-    if (!vistoriaId || !veiculoId) {
+    if (!this.canViewHistoricoVeiculo) {
       return;
     }
-
-    try {
-      const [irregularidadesAtual, pendentes] = await Promise.all([
-        this.vistoriaService.listarIrregularidades(vistoriaId),
-        this.vistoriaService.listarIrregularidadesPendentes(veiculoId),
-      ]);
-      const idsDaVistoriaAtual = new Set(irregularidadesAtual.map((item) => item.id));
-      const pendenciasAnteriores = pendentes.filter((item) => !idsDaVistoriaAtual.has(item.id));
-      const detalhes = pendenciasAnteriores.length > 0
-        ? pendenciasAnteriores
-            .map((item) => {
-              const area = item.nomeArea ?? item.idarea ?? 'Area';
-              const componente = item.nomeComponente ?? item.idcomponente ?? 'Componente';
-              const sintoma = item.descricaoSintoma ?? item.idsintoma ?? 'Sintoma';
-              return `- ${this.escapeHtml(area)} - ${this.escapeHtml(componente)} - ${this.escapeHtml(sintoma)}`;
-            })
-            .join('<br>')
-        : '- Nenhuma irregularidade pendente de outras vistorias';
-
-      const alert = await this.alertController.create({
-        header: 'Pendencias do veiculo',
-        cssClass: 'alert-resumo-vistoria',
-        message:
-          `<strong>Veiculo:</strong> ${this.escapeHtml(this.veiculoNumero)}<br>` +
-          `<strong>Irregularidades pendentes (outras vistorias):</strong> ${pendenciasAnteriores.length}<br><br>` +
-          `<strong>Resumo:</strong><br>${detalhes}`,
-        buttons: [{ text: 'OK', cssClass: 'alert-ok-voltar' }],
-      });
-      await alert.present();
-    } catch (error: any) {
-      this.errorMessage = this.errorMessageService.fromApi(
-        error,
-        'Nao foi possivel carregar as pendencias do veiculo.',
-      );
-    }
+    this.router.navigate(['/vistoria/historico-veiculo'], {
+      state: { fromMenu: false },
+    });
   }
 
   private async recarregarIndicadores(vistoriaId: string): Promise<void> {

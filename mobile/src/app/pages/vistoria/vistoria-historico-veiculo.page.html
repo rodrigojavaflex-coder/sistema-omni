@@ -1,0 +1,154 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Histórico do Veículo</ion-title>
+    <ion-buttons slot="end" *ngIf="!openedFromMenu">
+      <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="content" *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Carregando histórico...</p>
+  </div>
+
+  <div class="content" *ngIf="errorMessage">
+    <ion-text color="danger"><p class="error-message">{{ errorMessage }}</p></ion-text>
+  </div>
+
+  <div class="content" *ngIf="!loading && !errorMessage">
+    <ion-item *ngIf="openedFromMenu">
+      <ion-label position="stacked">Selecionar veículo</ion-label>
+      <ion-searchbar
+        [value]="veiculoSearch"
+        placeholder="Digite placa ou descrição"
+        (ionInput)="onBuscarVeiculos($event)"
+        (ionClear)="limparVeiculoSelecionado()"
+      ></ion-searchbar>
+    </ion-item>
+
+    <div class="search-loading" *ngIf="openedFromMenu && loadingVeiculos">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Buscando veículos...</span>
+    </div>
+
+    <ion-card *ngIf="openedFromMenu && veiculos.length > 0" class="search-results">
+      <ion-card-content>
+        <ion-item
+          *ngFor="let veiculo of veiculos"
+          lines="none"
+          button
+          (click)="selecionarVeiculo(veiculo)"
+        >
+          <ion-label>
+            <strong>{{ veiculo.descricao }}</strong>
+            <p>{{ veiculo.placa }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="selectedVeiculoId">
+      <ion-card-content>
+        <p class="veiculo-destaque"><strong>Veículo {{ veiculoDescricao }}</strong></p>
+        <p><strong>Total de não resolvidas:</strong> {{ total }}</p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-item>
+      <ion-label>Área</ion-label>
+      <ion-select [(ngModel)]="areaFiltro" (ionChange)="onAreaChange()" interface="popover" placeholder="Todas">
+        <ion-select-option value="">Todas</ion-select-option>
+        <ion-select-option *ngFor="let area of areaOptions" [value]="area.id">
+          {{ area.nome }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Componente</ion-label>
+      <ion-select [(ngModel)]="componenteFiltro" interface="popover" placeholder="Todos">
+        <ion-select-option value="">Todos</ion-select-option>
+        <ion-select-option *ngFor="let componente of componenteOptions" [value]="componente.id">
+          {{ componente.nome }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <div class="cards-container" *ngIf="selectedVeiculoId && itensFiltrados.length > 0; else emptyState">
+      <ion-card *ngFor="let item of itensFiltrados" class="level-card">
+        <ion-card-header>
+          <ion-card-title>
+            {{ item.nomeArea || 'Área' }} - {{ item.nomeComponente || 'Componente' }} - {{ item.descricaoSintoma || 'Sintoma' }}
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p><strong>Vistoria:</strong> {{ item.numeroVistoria }} ({{ formatarData(item.datavistoria) }})</p>
+          <p><strong>Observação:</strong> {{ item.observacao || '-' }}</p>
+
+          <div class="midias-section">
+            <p><strong>Imagens</strong></p>
+            <div class="imagem-grid" *ngIf="getImagens(item).length > 0; else semImagensTpl">
+              <img
+                *ngFor="let midia of getImagens(item)"
+                [src]="getMidiaSrc(midia.dadosBase64, midia.mimeType)"
+                [alt]="midia.nomeArquivo"
+                (pointerup)="abrirImagem(midia.nomeArquivo, midia.dadosBase64, midia.mimeType)"
+                (click)="abrirImagem(midia.nomeArquivo, midia.dadosBase64, midia.mimeType)"
+              />
+            </div>
+            <ng-template #semImagensTpl>
+              <p class="sem-midia">Sem imagens</p>
+            </ng-template>
+
+            <p><strong>Áudios</strong></p>
+            <div class="audio-list" *ngIf="getAudios(item).length > 0; else semAudiosTpl">
+              <div *ngFor="let midia of getAudios(item)" class="audio-item">
+                <p class="audio-name">
+                  {{ midia.nomeArquivo }}
+                  <span *ngIf="formatarDuracao(midia.duracaoMs)">({{ formatarDuracao(midia.duracaoMs) }})</span>
+                </p>
+                <audio [src]="getMidiaSrc(midia.dadosBase64, midia.mimeType)" controls preload="metadata"></audio>
+              </div>
+            </div>
+            <ng-template #semAudiosTpl>
+              <p class="sem-midia">Sem audio</p>
+            </ng-template>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <ng-template #emptyState>
+      <p class="empty-text" *ngIf="selectedVeiculoId; else selectVehicleHint">
+        Nenhuma irregularidade não resolvida para os filtros selecionados.
+      </p>
+      <ng-template #selectVehicleHint>
+        <p class="empty-text">Selecione um veículo para visualizar o histórico.</p>
+      </ng-template>
+    </ng-template>
+  </div>
+</ion-content>
+
+<div class="image-overlay" *ngIf="imagemSelecionada" (click)="fecharImagem()">
+  <div class="image-overlay-header" (click)="$event.stopPropagation()">
+    <span class="image-overlay-title">{{ imagemSelecionada.nomeArquivo || 'Imagem' }}</span>
+    <ion-button fill="solid" size="small" (click)="fecharImagem()">Fechar</ion-button>
+  </div>
+  <div class="image-overlay-body" (click)="$event.stopPropagation()">
+    <img
+      [src]="imagemSelecionada.src"
+      [alt]="imagemSelecionada.nomeArquivo"
+      class="image-modal-preview"
+      [style.transform]="imageTransform"
+      (touchstart)="onImageTouchStart($event)"
+      (touchmove)="onImageTouchMove($event)"
+      (touchend)="onImageTouchEnd($event)"
+      (touchcancel)="onImageTouchEnd($event)"
+    />
+  </div>
+</div>

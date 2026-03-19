@@ -1117,6 +1117,10 @@ ion-button.resumo-btn {
 .alert-resumo-vistoria .alert-button-group {
   justify-content: flex-end;
 }
+ion-modal.image-preview-modal {
+  --background: #000000;
+  --backdrop-opacity: 0.85;
+}
 * {
   box-sizing: border-box;
 }

@@ -132,7 +132,6 @@
           <div><strong>Veículo:</strong> {{ selectedVistoria.veiculo?.descricao || '-' }}</div>
           <div><strong>Placa:</strong> {{ selectedVistoria.veiculo?.placa || '-' }}</div>
           <div><strong>Motorista:</strong> {{ selectedVistoria.motorista?.nome || '-' }}</div>
-          <div><strong>Tipo:</strong> {{ selectedVistoria.tipoVistoria?.descricao || '-' }}</div>
           <div><strong>Data:</strong> {{ selectedVistoria.datavistoria | date: 'dd/MM/yyyy HH:mm' }}</div>
           <div><strong>Status:</strong> {{ getStatusLabel(selectedVistoria.status) }}</div>
           <div><strong>Vistoriador:</strong> {{ getUsuarioNome(selectedVistoria.idUsuario) }}</div>

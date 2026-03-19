@@ -1,6 +1,7 @@
 import { Component, inject, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Capacitor } from '@capacitor/core';
+import { Router } from '@angular/router';
 import {
   AlertController,
   IonApp,
@@ -13,15 +14,20 @@ import {
   IonList,
   IonRouterOutlet,
   IonTitle,
-  IonToggle,
   IonToolbar,
-  MenuController,
-  ToastController
+  MenuController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { logOutOutline } from 'ionicons/icons';
+import {
+  clipboardOutline,
+  informationCircleOutline,
+  logOutOutline,
+  playCircleOutline,
+  settingsOutline,
+} from 'ionicons/icons';
 import { AuthService } from './services/auth.service';
 import { Usuario } from './models/usuario.model';
+import { VistoriaFlowService } from './services/vistoria-flow.service';
 
 @Component({
   selector: 'app-root',
@@ -40,15 +46,15 @@ import { Usuario } from './models/usuario.model';
     IonContent,
     IonList,
     IonItem,
-    IonToggle,
     IonButton,
     IonIcon
   ]
 })
 export class AppComponent {
   private authService = inject(AuthService);
+  private flowService = inject(VistoriaFlowService);
+  private router = inject(Router);
   private alertController = inject(AlertController);
-  private toastController = inject(ToastController);
   private menuController = inject(MenuController);
 
   fecharMenu(): void {
@@ -58,12 +64,27 @@ export class AppComponent {
   user: Usuario | null = null;
   isAuthenticated = false;
   isNative = Capacitor.getPlatform() !== 'web';
-  biometricAvailable = false;
-  biometricEnabled = false;
-  biometricSaving = false;
+
+  get canViewHistoricoVeiculo(): boolean {
+    return this.authService.hasPermission('vistoria_web_historico_veiculo:read');
+  }
+
+  get canStartVistoria(): boolean {
+    return this.authService.hasPermission('vistoria_mobile:create');
+  }
+
+  get hasVistoriaEmAndamento(): boolean {
+    return Boolean(this.flowService.getVistoriaId());
+  }
 
   constructor() {
-    addIcons({ logOutOutline });
+    addIcons({
+      logOutOutline,
+      settingsOutline,
+      clipboardOutline,
+      informationCircleOutline,
+      playCircleOutline,
+    });
 
     this.authService.currentUser$.subscribe(user => {
       this.user = user;
@@ -71,13 +92,18 @@ export class AppComponent {
 
     this.authService.isAuthenticated$.subscribe(isAuthenticated => {
       this.isAuthenticated = isAuthenticated;
-      if (isAuthenticated) {
-        this.refreshBiometricState();
-      } else {
-        this.biometricAvailable = false;
-        this.biometricEnabled = false;
-      }
     });
+  }
+
+  async goTo(route: string, state?: Record<string, unknown>): Promise<void> {
+    if (
+      this.hasVistoriaEmAndamento &&
+      (route === '/vistoria/historico-veiculo' || route === '/configuracoes' || route === '/sobre')
+    ) {
+      return;
+    }
+    await this.menuController.close();
+    await this.router.navigate([route], state ? { state } : undefined);
   }
 
   async logout(): Promise<void> {
@@ -103,80 +129,5 @@ export class AppComponent {
     }
 
     await this.authService.logout();
-  }
-
-  async onBiometricToggle(event: CustomEvent): Promise<void> {
-    if (this.biometricSaving) {
-      return;
-    }
-
-    const shouldEnable = Boolean(event.detail?.checked);
-    if (!shouldEnable) {
-      this.biometricSaving = true;
-      await this.authService.disableBiometricLogin();
-      this.biometricEnabled = false;
-      this.biometricSaving = false;
-      return;
-    }
-
-    if (!this.user?.email) {
-      this.biometricEnabled = false;
-      await this.presentToast('Não foi possível identificar o usuário atual.');
-      return;
-    }
-
-    const alert = await this.alertController.create({
-      header: 'Ativar login por digital',
-      message: 'Confirme sua senha para habilitar o login por biometria.',
-      inputs: [
-        {
-          name: 'password',
-          type: 'password',
-          placeholder: 'Senha'
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Ativar',
-          role: 'confirm'
-        }
-      ]
-    });
-
-    await alert.present();
-    const { role, data } = await alert.onDidDismiss();
-    const password = data?.values?.password?.trim();
-    if (role !== 'confirm' || !password) {
-      this.biometricEnabled = false;
-      return;
-    }
-
-    this.biometricSaving = true;
-    const enabled = await this.authService.enableBiometricLogin(this.user.email, password);
-    this.biometricEnabled = enabled;
-    this.biometricSaving = false;
-
-    if (!enabled) {
-      await this.presentToast('Não foi possível ativar o login por biometria.');
-    }
-  }
-
-  private async refreshBiometricState(): Promise<void> {
-    this.biometricAvailable = await this.authService.isBiometricAvailable();
-    this.biometricEnabled = await this.authService.isBiometricEnabled();
-  }
-
-  private async presentToast(message: string): Promise<void> {
-    const toast = await this.toastController.create({
-      message,
-      duration: 2500,
-      color: 'danger',
-      position: 'top'
-    });
-    await toast.present();
   }
 }
