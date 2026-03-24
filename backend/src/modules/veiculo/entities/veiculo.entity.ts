@@ -36,10 +36,6 @@ export class Veiculo extends BaseEntity {
   @Column({ length: 50 })
   marca: string;
 
-  @ApiProperty({ description: 'Modelo do veículo (legado)', example: 'Delivery' })
-  @Column({ name: 'modelo', type: 'varchar', length: 50, nullable: true })
-  modeloLegado: string | null;
-
   @ApiProperty({ description: 'Modelo vinculado' })
   @ManyToOne(() => ModeloVeiculo, { nullable: true, eager: true })
   @JoinColumn({ name: 'idmodelo' })

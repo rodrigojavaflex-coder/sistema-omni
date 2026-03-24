@@ -227,8 +227,8 @@
   </div>
 </div>
 
-<!-- Modal Nova Área -->
-<div class="modal-overlay" *ngIf="showNovaAreaModal" (click)="closeNovaAreaModal()">
+<!-- Modal Nova Área (fecha apenas por Salvar/Cancelar, como Editar Área) -->
+<div class="modal-overlay" *ngIf="showNovaAreaModal">
   <div class="modal-container modal-container-form" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Nova Área</h3>
@@ -324,8 +324,8 @@
   (cancelled)="onDeleteCancelled()">
 </app-confirmation-modal>
 
-<!-- Modal Novo Componente -->
-<div class="modal-overlay" *ngIf="showNovoComponenteModal" (click)="closeNovoComponenteModal()">
+<!-- Modal Novo Componente (fecha apenas por Salvar/Cancelar, como Editar Componente) -->
+<div class="modal-overlay" *ngIf="showNovoComponenteModal">
   <div class="modal-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Novo Componente</h3>
@@ -468,8 +468,8 @@
   </div>
 </div>
 
-<!-- Modal Nova Matriz -->
-<div class="modal-overlay" *ngIf="showNovaMatrizModal" (click)="closeNovaMatrizModal()">
+<!-- Modal Nova Matriz (fecha apenas por Salvar/Cancelar/×, como Editar Matriz) -->
+<div class="modal-overlay" *ngIf="showNovaMatrizModal">
   <div class="modal-container modal-container-form" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Nova matriz — {{ expandedAreaNome || '—' }} / {{ componenteParaMatriz?.nome || '—' }}</h3>

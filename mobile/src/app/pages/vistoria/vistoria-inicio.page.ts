@@ -174,9 +174,7 @@ export class VistoriaInicioPage implements OnInit {
         vistoria.veiculo?.modeloVeiculo?.id;
       const modeloNome =
         atualizada.veiculo?.modeloVeiculo?.nome ??
-        atualizada.veiculo?.modelo ??
-        vistoria.veiculo?.modeloVeiculo?.nome ??
-        vistoria.veiculo?.modelo;
+        vistoria.veiculo?.modeloVeiculo?.nome;
       this.flowService.iniciar(atualizada.id, {
         numeroVistoria: atualizada.numeroVistoria ?? vistoria.numeroVistoria,
         veiculoId: atualizada.idVeiculo ?? vistoria.idVeiculo,
@@ -397,7 +395,7 @@ export class VistoriaInicioPage implements OnInit {
             veiculoId: this.selectedVeiculo.id,
             veiculoDescricao: this.selectedVeiculo.descricao,
             veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
-            veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? this.selectedVeiculo.modelo ?? undefined,
+            veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? undefined,
             datavistoria: this.datavistoriaIso,
           });
           void this.bootstrapService.warmup(atualizada.id);
@@ -426,7 +424,7 @@ export class VistoriaInicioPage implements OnInit {
         veiculoId: this.selectedVeiculo.id,
         veiculoDescricao: this.selectedVeiculo.descricao,
         veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
-        veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? this.selectedVeiculo.modelo ?? undefined,
+        veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? undefined,
         datavistoria: this.datavistoriaIso,
       });
       void this.bootstrapService.warmup(vistoria.id);

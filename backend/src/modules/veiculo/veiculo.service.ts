@@ -40,7 +40,6 @@ export class VeiculoService {
       ...createVeiculoDto,
       idModelo: modelo.id,
       modeloVeiculo: modelo,
-      modeloLegado: modelo.nome,
     } as unknown as Veiculo);
     return this.veiculoRepository.save(veiculo);
   }
@@ -122,7 +121,9 @@ export class VeiculoService {
     }
 
     if (modelo) {
-      query.andWhere('v.modeloLegado ILIKE :modelo', { modelo: `%${modelo}%` });
+      query.andWhere('modeloVeiculo.nome ILIKE :modeloNome', {
+        modeloNome: `%${modelo}%`,
+      });
     }
     if (idmodelo) {
       query.andWhere('v.idModelo = :idModelo', { idModelo: idmodelo });
@@ -192,7 +193,6 @@ export class VeiculoService {
       const modelo = await this.getModeloOrFail(updateVeiculoDto.idmodelo);
       entity.idModelo = modelo.id;
       entity.modeloVeiculo = modelo;
-      entity.modeloLegado = modelo.nome;
     }
 
     return this.veiculoRepository.save(entity);

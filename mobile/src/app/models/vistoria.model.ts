@@ -15,7 +15,6 @@ export interface Vistoria {
     placa?: string;
     combustivel?: string;
     idModelo?: string;
-    modelo?: string | null;
     modeloVeiculo?: { id: string; nome: string };
   };
   motorista?: { nome?: string; matricula?: string };

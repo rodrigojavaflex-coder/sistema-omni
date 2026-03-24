@@ -236,9 +236,8 @@ export class VeiculoListComponent extends BaseListComponent<Veiculo> implements 
     });
   }
 
-  /** Nome do modelo: prioriza modelo vinculado (tabela), depois legado. */
   getModeloNome(item: Veiculo): string {
-    return item.modeloVeiculo?.nome ?? item.modeloLegado ?? item.modelo ?? '';
+    return item.modeloVeiculo?.nome ?? '';
   }
 
   protected getExportDataExcel(items: Veiculo[]): { headers: string[], data: any[][] } {

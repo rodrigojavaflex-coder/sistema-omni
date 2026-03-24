@@ -12,9 +12,6 @@ export interface Veiculo {
   ano: number;
   chassi: string;
   marca: string;
-  /** Nome do modelo (legado); preferir modeloVeiculo.nome quando disponível. */
-  modelo?: string | null;
-  modeloLegado?: string | null;
   idModelo: string;
   modeloVeiculo?: { id: string; nome: string };
   combustivel: Combustivel;

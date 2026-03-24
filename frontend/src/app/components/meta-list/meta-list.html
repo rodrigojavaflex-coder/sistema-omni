@@ -28,6 +28,15 @@
         <input type="text" formControlName="search" placeholder="Título ou departamento" />
       </label>
       <label class="filter-field">
+        <span>Exercício</span>
+        <select formControlName="anoExercicio" class="form-select">
+          <option value="">Todos os anos</option>
+          <option *ngFor="let ano of availableYears" [value]="ano">
+            {{ ano }}
+          </option>
+        </select>
+      </label>
+      <label class="filter-field">
         <span>Departamento</span>
         <select formControlName="departamentoId">
           <option value="">Todos</option>

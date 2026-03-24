@@ -44,19 +44,36 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   indicadorOptions = Object.entries(INDICADOR_META_LABELS) as [IndicadorMeta, string][];
   departamentos: { id: string; nomeDepartamento: string }[] = [];
   showFilters = false;
+  availableYears: string[] = [];
   filterForm = this.fb.group({
     search: [''],
+    anoExercicio: [''],
     departamentoId: [''],
     polaridade: [''],
     indicador: [''],
   });
   private allItems: Meta[] = [];
+  private defaultExercicioAppliedOnce = false;
 
   protected override loadItems(): void {
     this.loading = true;
     this.metaService.getAll().subscribe({
       next: (items) => {
         this.allItems = items;
+        this.updateAvailableYears(items);
+        if (!this.defaultExercicioAppliedOnce) {
+          const anoAtual = String(new Date().getFullYear());
+          if (
+            !this.filterForm.get('anoExercicio')?.value &&
+            this.availableYears.includes(anoAtual)
+          ) {
+            this.filterForm.patchValue(
+              { anoExercicio: anoAtual },
+              { emitEvent: false },
+            );
+          }
+          this.defaultExercicioAppliedOnce = true;
+        }
         this.applyFilters();
         this.loading = false;
       },
@@ -182,6 +199,7 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   clearFilters(): void {
     this.filterForm.reset({
       search: '',
+      anoExercicio: '',
       departamentoId: '',
       polaridade: '',
       indicador: '',
@@ -193,17 +211,46 @@ export class MetaListComponent extends BaseListComponent<Meta> {
   }
 
   private getFilteredItems(source: Meta[]): Meta[] {
-    const { search, departamentoId, polaridade, indicador } = this.filterForm.value;
+    const { search, anoExercicio, departamentoId, polaridade, indicador } =
+      this.filterForm.value;
     const term = this.normalizeText(search);
     return source.filter((meta) => {
       const titulo = this.normalizeText(meta.tituloDaMeta);
       const departamentoNome = this.normalizeText(meta.departamento?.nomeDepartamento);
       const matchesSearch = !term || titulo.includes(term) || departamentoNome.includes(term);
+      const year = this.extractYear(meta.prazoFinal);
+      const matchesExercicio =
+        !anoExercicio || year === anoExercicio;
       const matchesDepartamento = !departamentoId || meta.departamentoId === departamentoId;
       const matchesPolaridade = !polaridade || meta.polaridade === polaridade;
       const matchesIndicador = !indicador || meta.indicador === indicador;
-      return matchesSearch && matchesDepartamento && matchesPolaridade && matchesIndicador;
+      return (
+        matchesSearch &&
+        matchesExercicio &&
+        matchesDepartamento &&
+        matchesPolaridade &&
+        matchesIndicador
+      );
     });
+  }
+
+  private updateAvailableYears(items: Meta[]): void {
+    const years = new Set<string>();
+    items.forEach((meta) => {
+      const y = this.extractYear(meta.prazoFinal);
+      if (y) {
+        years.add(y);
+      }
+    });
+    this.availableYears = Array.from(years).sort();
+  }
+
+  private extractYear(date?: string | null): string | null {
+    if (!date) return null;
+    const normalized = date.split('T')[0];
+    const parsed = new Date(`${normalized}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return String(parsed.getFullYear());
   }
 
   private loadDepartamentos(): void {
