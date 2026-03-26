@@ -103,27 +103,29 @@
   margin-bottom: 16px;
 }
 
-.checklist-list {
+.irregularidades-list {
   display: grid;
   gap: 10px;
 }
 
-.checklist-item {
+.irregularidade-card {
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 10px 12px;
   background: #fff;
 }
 
-.checklist-title {
+.irregularidade-title {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 8px;
   font-weight: 600;
   margin-bottom: 6px;
+  flex-wrap: wrap;
 }
 
-.checklist-status {
+.ir-badge {
   font-size: 0.75rem;
   font-weight: 600;
   padding: 4px 8px;
@@ -131,22 +133,69 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
-.checklist-status.conforme {
+.ir-badge.resolvida {
   background: #dcfce7;
   color: #166534;
 }
 
-.checklist-status.nao-conforme {
-  background: #fee2e2;
-  color: #991b1b;
+.ir-badge.pendente {
+  background: #fef3c7;
+  color: #92400e;
 }
 
-.checklist-obs {
+.irregularidade-obs {
   margin-top: 6px;
   color: #6b7280;
   font-size: 0.85rem;
+}
+
+.irregularidade-audios {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.irregularidade-audios .audio-players {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.audio-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.audio-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.audio-filename {
+  color: #374151;
+  word-break: break-all;
+}
+
+.irregularidade-audios .audio-dur {
+  color: #6b7280;
+}
+
+.audio-player {
+  width: 100%;
+  max-width: 420px;
+  height: 36px;
 }
 
 .image-grid {

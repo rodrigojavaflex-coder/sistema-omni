@@ -222,6 +222,8 @@ export class IrregularidadeService {
         audios: audios.map((m) => ({
           id: m.id,
           nomeArquivo: m.nomeArquivo,
+          mimeType: m.mimeType,
+          dadosBase64: m.dadosBytea.toString('base64'),
           duracaoMs: m.duracaoMs ?? undefined,
         })),
       };

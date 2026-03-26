@@ -3,8 +3,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
-  ChecklistImagemResumo,
-  ChecklistItemResumo,
+  IrregularidadeAudioResumo,
+  IrregularidadeImagemResumo,
+  IrregularidadeResumo,
   VistoriaResumo,
 } from '../models/vistoria.model';
 
@@ -31,13 +32,21 @@ export class VistoriaService {
     return this.http.get<VistoriaResumo>(`${this.apiUrl}/${id}`);
   }
 
-  listarChecklist(id: string): Observable<ChecklistItemResumo[]> {
-    return this.http.get<ChecklistItemResumo[]>(`${this.apiUrl}/${id}/checklist`);
+  listarIrregularidades(id: string): Observable<IrregularidadeResumo[]> {
+    return this.http.get<IrregularidadeResumo[]>(
+      `${this.apiUrl}/${id}/irregularidades`,
+    );
   }
 
-  listarChecklistImagens(id: string): Observable<ChecklistImagemResumo[]> {
-    return this.http.get<ChecklistImagemResumo[]>(
-      `${this.apiUrl}/${id}/checklist/imagens`,
+  listarIrregularidadesImagens(id: string): Observable<IrregularidadeImagemResumo[]> {
+    return this.http.get<IrregularidadeImagemResumo[]>(
+      `${this.apiUrl}/${id}/irregularidades/imagens`,
+    );
+  }
+
+  listarIrregularidadesAudios(id: string): Observable<IrregularidadeAudioResumo[]> {
+    return this.http.get<IrregularidadeAudioResumo[]>(
+      `${this.apiUrl}/${id}/irregularidades/audios`,
     );
   }
 }

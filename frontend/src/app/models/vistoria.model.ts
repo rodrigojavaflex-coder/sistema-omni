@@ -13,22 +13,42 @@ export interface VistoriaResumo {
   motorista?: { nome?: string; matricula?: string };
 }
 
-export interface ChecklistItemResumo {
-  iditemvistoriado: string;
-  descricaoItem?: string;
-  sequencia?: number;
-  conforme: boolean;
+/** Resumo de irregularidade (GET /vistoria/:id/irregularidades) */
+export interface IrregularidadeResumo {
+  id: string;
+  idarea: string;
+  nomeArea?: string;
+  idcomponente: string;
+  nomeComponente?: string;
+  idsintoma: string;
+  descricaoSintoma?: string;
   observacao?: string;
+  resolvido: boolean;
   atualizadoEm: string;
 }
 
-export interface ChecklistImagemResumoItem {
+export interface IrregularidadeImagemItem {
   nomeArquivo: string;
   tamanho: number;
   dadosBase64: string;
 }
 
-export interface ChecklistImagemResumo {
-  iditemvistoriado: string;
-  imagens: ChecklistImagemResumoItem[];
+/** Imagens agrupadas por irregularidade (GET /vistoria/:id/irregularidades/imagens) */
+export interface IrregularidadeImagemResumo {
+  idirregularidade: string;
+  imagens: IrregularidadeImagemItem[];
+}
+
+export interface IrregularidadeAudioItem {
+  id: string;
+  nomeArquivo: string;
+  mimeType: string;
+  dadosBase64: string;
+  duracaoMs?: number | null;
+}
+
+/** Áudios por irregularidade com base64 para reprodução (GET /vistoria/:id/irregularidades/audios) */
+export interface IrregularidadeAudioResumo {
+  idirregularidade: string;
+  audios: IrregularidadeAudioItem[];
 }

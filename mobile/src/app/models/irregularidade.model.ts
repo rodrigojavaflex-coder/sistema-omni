@@ -25,6 +25,8 @@ export interface IrregularidadeImagemResumo {
 export interface IrregularidadeAudioResumoItem {
   id: string;
   nomeArquivo: string;
+  mimeType: string;
+  dadosBase64: string;
   duracaoMs?: number | null;
 }
 

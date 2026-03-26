@@ -1,15 +1,18 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { UserService } from '../../services/user.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { AuthService } from '../../services/auth.service';
 import {
-  ChecklistImagemResumo,
-  ChecklistItemResumo,
+  IrregularidadeAudioItem,
+  IrregularidadeAudioResumo,
+  IrregularidadeImagemItem,
+  IrregularidadeImagemResumo,
+  IrregularidadeResumo,
   VistoriaResumo,
 } from '../../models/vistoria.model';
 import { Usuario } from '../../models/usuario.model';
@@ -39,7 +42,6 @@ export class VistoriaListComponent implements OnInit {
   loading = false;
   error = '';
   drawerOpen = false;
-  activeTab: 'checklist' | 'imagens' = 'checklist';
   loadingFilters = false;
   usuariosLoaded = false;
 
@@ -48,10 +50,9 @@ export class VistoriaListComponent implements OnInit {
   paged: VistoriaResumo[] = [];
   usuarios: Usuario[] = [];
   selectedVistoria: VistoriaResumo | null = null;
-  checklistItens: ChecklistItemResumo[] = [];
-  imagensChecklist: ChecklistImagemResumo[] = [];
-  imagensPorItem: Record<string, ChecklistImagemResumo['imagens']> = {};
-  itemInfoMap: Record<string, { descricao?: string; sequencia?: number }> = {};
+  irregularidades: IrregularidadeResumo[] = [];
+  imagensPorIrregularidade: Record<string, IrregularidadeImagemItem[]> = {};
+  audiosPorIrregularidade: Record<string, IrregularidadeAudioItem[]> = {};
   showImageModal = false;
   selectedImage: { nomeArquivo: string; dadosBase64: string } | null = null;
 
@@ -195,13 +196,10 @@ export class VistoriaListComponent implements OnInit {
   openDrawer(vistoria: VistoriaResumo): void {
     this.selectedVistoria = vistoria;
     this.drawerOpen = true;
-    this.activeTab = 'checklist';
-    this.checklistItens = [];
-    this.imagensChecklist = [];
-    this.imagensPorItem = {};
-    this.itemInfoMap = {};
-    this.loadChecklist(vistoria.id);
-    this.loadImagens(vistoria.id);
+    this.irregularidades = [];
+    this.imagensPorIrregularidade = {};
+    this.audiosPorIrregularidade = {};
+    this.carregarDetalheIrregularidades(vistoria.id);
   }
 
   closeDrawer(): void {
@@ -211,46 +209,54 @@ export class VistoriaListComponent implements OnInit {
     this.selectedImage = null;
   }
 
-  setActiveTab(tab: 'checklist' | 'imagens'): void {
-    this.activeTab = tab;
-  }
-
-  private loadChecklist(vistoriaId: string): void {
-    this.vistoriaService.listarChecklist(vistoriaId).subscribe({
-      next: (items) => {
-        const ordenados = [...(items ?? [])].sort((a, b) => {
-          const seqA = a.sequencia ?? 0;
-          const seqB = b.sequencia ?? 0;
-          return seqA - seqB;
-        });
-        this.checklistItens = ordenados;
-        this.itemInfoMap = ordenados.reduce((acc, item) => {
-          acc[item.iditemvistoriado] = {
-            descricao: item.descricaoItem,
-            sequencia: item.sequencia,
-          };
-          return acc;
-        }, {} as Record<string, { descricao?: string; sequencia?: number }>);
-      },
-      error: () => {
-        this.checklistItens = [];
+  private carregarDetalheIrregularidades(vistoriaId: string): void {
+    forkJoin({
+      irregularidades: this.vistoriaService.listarIrregularidades(vistoriaId).pipe(
+        catchError(() => of([] as IrregularidadeResumo[])),
+      ),
+      imagens: this.vistoriaService.listarIrregularidadesImagens(vistoriaId).pipe(
+        catchError(() => of([] as IrregularidadeImagemResumo[])),
+      ),
+      audios: this.vistoriaService.listarIrregularidadesAudios(vistoriaId).pipe(
+        catchError(() => of([] as IrregularidadeAudioResumo[])),
+      ),
+    }).subscribe({
+      next: ({ irregularidades, imagens, audios }) => {
+        this.irregularidades = this.sortIrregularidades(irregularidades ?? []);
+        this.imagensPorIrregularidade = (imagens ?? []).reduce(
+          (acc, g) => {
+            acc[g.idirregularidade] = g.imagens ?? [];
+            return acc;
+          },
+          {} as Record<string, IrregularidadeImagemItem[]>,
+        );
+        this.audiosPorIrregularidade = (audios ?? []).reduce(
+          (acc, g) => {
+            acc[g.idirregularidade] = g.audios ?? [];
+            return acc;
+          },
+          {} as Record<string, IrregularidadeAudioItem[]>,
+        );
       },
     });
   }
 
-  private loadImagens(vistoriaId: string): void {
-    this.vistoriaService.listarChecklistImagens(vistoriaId).subscribe({
-      next: (items) => {
-        this.imagensChecklist = items ?? [];
-        this.imagensPorItem = (items ?? []).reduce((acc, item) => {
-          acc[item.iditemvistoriado] = item.imagens ?? [];
-          return acc;
-        }, {} as Record<string, ChecklistImagemResumo['imagens']>);
-      },
-      error: () => {
-        this.imagensChecklist = [];
-        this.imagensPorItem = {};
-      },
+  private sortIrregularidades(items: IrregularidadeResumo[]): IrregularidadeResumo[] {
+    return [...items].sort((a, b) => {
+      const c1 = this.normalizeText(a.nomeArea).localeCompare(
+        this.normalizeText(b.nomeArea),
+        'pt-BR',
+      );
+      if (c1 !== 0) return c1;
+      const c2 = this.normalizeText(a.nomeComponente).localeCompare(
+        this.normalizeText(b.nomeComponente),
+        'pt-BR',
+      );
+      if (c2 !== 0) return c2;
+      return this.normalizeText(a.descricaoSintoma).localeCompare(
+        this.normalizeText(b.descricaoSintoma),
+        'pt-BR',
+      );
     });
   }
 
@@ -288,13 +294,36 @@ export class VistoriaListComponent implements OnInit {
     return `${value} min`;
   }
 
-  getItemTitulo(item: ChecklistItemResumo): string {
-    const sequencia = item.sequencia ? `${item.sequencia}. ` : '';
-    return `${sequencia}${item.descricaoItem ?? item.iditemvistoriado}`;
+  getIrregularidadeLinhaPrincipal(ir: IrregularidadeResumo): string {
+    const area = ir.nomeArea?.trim() || 'Área';
+    const comp = ir.nomeComponente?.trim() || 'Componente';
+    const sint = ir.descricaoSintoma?.trim() || 'Sintoma';
+    return `${area} · ${comp} · ${sint}`;
+  }
+
+  formatDuracaoAudio(ms?: number | null): string {
+    if (ms == null || Number.isNaN(ms)) return '';
+    const s = Math.round(ms / 1000);
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m > 0 ? `${m}m ${r}s` : `${r}s`;
+  }
+
+  private escapeHtml(s: string): string {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   getImagemPreview(base64: string): string {
     return `data:image/jpeg;base64,${base64}`;
+  }
+
+  getAudioSrc(a: IrregularidadeAudioItem): string {
+    const mime = a.mimeType?.trim() || 'audio/mpeg';
+    return `data:${mime};base64,${a.dadosBase64}`;
   }
 
   openImage(nomeArquivo: string, dadosBase64: string): void {
@@ -329,21 +358,38 @@ export class VistoriaListComponent implements OnInit {
         ? '-'
         : `${this.selectedVistoria.porcentagembateria}%`;
 
-    const checklistHtml = this.checklistItens.map((item) => {
-      const imagens = (this.imagensPorItem[item.iditemvistoriado] ?? [])
+    const irregularidadesHtml = this.irregularidades.map((ir) => {
+      const imagens = (this.imagensPorIrregularidade[ir.id] ?? [])
         .map((img) =>
-          `<img src="${this.getImagemPreview(img.dadosBase64)}" alt="${img.nomeArquivo}" />`,
+          `<img src="${this.getImagemPreview(img.dadosBase64)}" alt="${this.escapeHtml(img.nomeArquivo)}" />`,
         )
         .join('');
+      const audios = this.audiosPorIrregularidade[ir.id] ?? [];
+      const audiosHtml =
+        audios.length > 0
+          ? `<ul class="item-audios">${audios
+              .map(
+                (a) =>
+                  `<li>${this.escapeHtml(a.nomeArquivo)}${
+                    a.duracaoMs != null ? ` (${this.formatDuracaoAudio(a.duracaoMs)})` : ''
+                  }</li>`,
+              )
+              .join('')}</ul>`
+          : '';
+      const titulo = this.escapeHtml(this.getIrregularidadeLinhaPrincipal(ir));
+      const obs = ir.observacao
+        ? `<div class="item-obs">${this.escapeHtml(ir.observacao)}</div>`
+        : '';
+      const statusLabel = ir.resolvido ? 'Resolvida' : 'Pendente';
+      const statusClass = ir.resolvido ? 'ok' : 'nok';
       return `
         <div class="item">
           <div class="item-title">
-            <span>${this.getItemTitulo(item)}</span>
-            <span class="item-status ${item.conforme ? 'ok' : 'nok'}">
-              ${item.conforme ? 'Conforme' : 'Não conforme'}
-            </span>
+            <span>${titulo}</span>
+            <span class="item-status ${statusClass}">${statusLabel}</span>
           </div>
-          ${item.observacao ? `<div class="item-obs">${item.observacao}</div>` : ''}
+          ${obs}
+          ${audiosHtml ? `<div class="item-audios-wrap"><strong>Áudios:</strong>${audiosHtml}</div>` : ''}
           <div class="item-images">${imagens || '<span class="muted">Sem fotos</span>'}</div>
         </div>
       `;
@@ -366,6 +412,8 @@ export class VistoriaListComponent implements OnInit {
             .item-status.ok { background: #dcfce7; color: #166534; }
             .item-status.nok { background: #fee2e2; color: #991b1b; }
             .item-obs { color: #6b7280; margin-bottom: 8px; }
+            .item-audios-wrap { margin-bottom: 8px; font-size: 13px; color: #374151; }
+            .item-audios { margin: 4px 0 0 18px; padding: 0; }
             .item-images { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
             .item-images img { width: 100%; height: auto; border-radius: 6px; border: 1px solid #e5e7eb; }
             .muted { color: #9ca3af; }
@@ -395,7 +443,7 @@ export class VistoriaListComponent implements OnInit {
             <div><strong>Tempo:</strong> ${this.formatTempo(this.selectedVistoria.tempo)}</div>
             <div><strong>Observação:</strong> ${this.selectedVistoria.observacao ?? '-'}</div>
           </div>
-          ${checklistHtml}
+          ${irregularidadesHtml}
           <div class="footer">
             <span>Impresso por: ${usuarioImpressao}</span>
             <span>Impresso em: ${printDate}</span>
@@ -409,22 +457,22 @@ export class VistoriaListComponent implements OnInit {
 
   async downloadImages(): Promise<void> {
     if (!this.selectedVistoria) return;
-    const grupos = this.imagensChecklist ?? [];
     const zip = new JSZip();
 
     const veiculo = this.sanitizeFilename(this.selectedVistoria.veiculo?.descricao ?? 'veiculo');
     const dataHora = this.formatDateTimeFilename(this.selectedVistoria.datavistoria);
     const zipName = `${veiculo}_${dataHora}_vistoria.zip`;
 
-    grupos.forEach((grupo) => {
-      const itemInfo = this.itemInfoMap[grupo.iditemvistoriado];
-      const itemSequencia = itemInfo?.sequencia ?? 0;
-      const itemNome = this.sanitizeFilename(itemInfo?.descricao ?? 'item');
-      grupo.imagens.forEach((img, index) => {
+    this.irregularidades.forEach((ir, irIndex) => {
+      const imagens = this.imagensPorIrregularidade[ir.id] ?? [];
+      const irLabel = this.sanitizeFilename(
+        `${ir.nomeArea ?? 'area'}_${ir.nomeComponente ?? 'comp'}_${ir.descricaoSintoma ?? 'sintoma'}`,
+      );
+      const prefix = `${veiculo}_${dataHora}_IR${irIndex + 1}_${irLabel}`;
+      imagens.forEach((img, index) => {
         const ext = this.getFileExtension(img.nomeArquivo) || 'jpg';
         const imageIndex = index + 1;
-        const itemSuffix = itemSequencia ? `${itemSequencia}_IMG_${imageIndex}` : `${imageIndex}`;
-        const fileName = `${veiculo}_${dataHora}_${itemNome}_ITEM_${itemSuffix}.${ext}`;
+        const fileName = `${prefix}_IMG_${imageIndex}.${ext}`;
         zip.file(fileName, img.dadosBase64, { base64: true });
       });
     });

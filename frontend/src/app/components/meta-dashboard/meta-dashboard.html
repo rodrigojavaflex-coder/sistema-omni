@@ -67,7 +67,7 @@
         [class.active]="selectedMeta?.id === card.id"
         (click)="openMetaModal(card)"
       >
-        <div class="card-accent" [style.background]="getCardColor(card)"></div>
+        <div class="card-accent" [style.background]="'#2980b9'"></div>
         <div class="card-content">
           <div class="card-title-row">
             <h3>{{ card.tituloDaMeta }}</h3>
@@ -92,7 +92,7 @@
               <div
                 class="progress-fill"
                 [style.width.%]="card.progressoPercentual"
-                [style.background]="getCardColor(card)"
+                [style.background]="'#2980b9'"
               ></div>
             </div>
             <span class="progress-value">{{ card.progressoPercentual }}%</span>

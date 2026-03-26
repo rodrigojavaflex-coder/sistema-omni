@@ -94,7 +94,9 @@ export class VeiculoService {
       modeloDaCarroceria,
     } = findVeiculoDto as any;
 
-    const query = this.veiculoRepository.createQueryBuilder('v');
+    const query = this.veiculoRepository
+      .createQueryBuilder('v')
+      .leftJoinAndSelect('v.modeloVeiculo', 'modeloVeiculo');
 
     if (descricao && placa) {
       query.andWhere(

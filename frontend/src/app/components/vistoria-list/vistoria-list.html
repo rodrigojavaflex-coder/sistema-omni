@@ -143,32 +143,57 @@
           <div><strong>Tempo:</strong> {{ formatTempo(selectedVistoria.tempo) }}</div>
           <div><strong>Observação:</strong> {{ selectedVistoria.observacao || '-' }}</div>
         </div>
-        <div class="checklist-list">
-          @for (item of checklistItens; track item.iditemvistoriado) {
-            <div class="checklist-item">
-              <div class="checklist-title">
-                <span>{{ getItemTitulo(item) }}</span>
+        <div class="irregularidades-list">
+          @for (ir of irregularidades; track ir.id) {
+            <div class="irregularidade-card">
+              <div class="irregularidade-title">
+                <span>{{ getIrregularidadeLinhaPrincipal(ir) }}</span>
                 <span
-                  class="checklist-status"
-                  [class.conforme]="item.conforme"
-                  [class.nao-conforme]="!item.conforme"
+                  class="ir-badge"
+                  [class.resolvida]="ir.resolvido"
+                  [class.pendente]="!ir.resolvido"
                 >
-                  {{ item.conforme ? 'Conforme' : 'Não conforme' }}
+                  {{ ir.resolvido ? 'Resolvida' : 'Pendente' }}
                 </span>
               </div>
-              @if (item.observacao) {
-                <div class="checklist-obs">{{ item.observacao }}</div>
+              @if (ir.observacao) {
+                <div class="irregularidade-obs">{{ ir.observacao }}</div>
+              }
+              @if (audiosPorIrregularidade[ir.id]?.length) {
+                <div class="irregularidade-audios">
+                  <strong>Áudios</strong>
+                  <div class="audio-players">
+                    @for (a of audiosPorIrregularidade[ir.id]; track a.id) {
+                      <div class="audio-row">
+                        <div class="audio-row-meta">
+                          <span class="audio-filename">{{ a.nomeArquivo }}</span>
+                          @if (a.duracaoMs != null) {
+                            <span class="audio-dur">({{ formatDuracaoAudio(a.duracaoMs) }})</span>
+                          }
+                        </div>
+                        <audio
+                          class="audio-player"
+                          controls
+                          preload="metadata"
+                          [src]="getAudioSrc(a)"
+                        >
+                          Seu navegador não suporta áudio embutido.
+                        </audio>
+                      </div>
+                    }
+                  </div>
+                </div>
               }
               <div class="item-images">
-                @if (imagensPorItem[item.iditemvistoriado]?.length) {
+                @if (imagensPorIrregularidade[ir.id]?.length) {
                   <div class="image-grid">
-                    @for (img of imagensPorItem[item.iditemvistoriado]; track img.nomeArquivo) {
+                    @for (img of imagensPorIrregularidade[ir.id]; track img.nomeArquivo) {
                       <div class="image-card">
-                      <img
-                        [src]="getImagemPreview(img.dadosBase64)"
-                        [alt]="img.nomeArquivo"
-                        (click)="openImage(img.nomeArquivo, img.dadosBase64)"
-                      >
+                        <img
+                          [src]="getImagemPreview(img.dadosBase64)"
+                          [alt]="img.nomeArquivo"
+                          (click)="openImage(img.nomeArquivo, img.dadosBase64)"
+                        >
                         <div class="image-meta">
                           <span>{{ img.nomeArquivo }}</span>
                           <small>{{ formatNumero(img.tamanho) }} bytes</small>
@@ -177,13 +202,13 @@
                     }
                   </div>
                 } @else {
-                  <div class="no-data">Sem fotos para este item.</div>
+                  <div class="no-data">Sem fotos para esta irregularidade.</div>
                 }
               </div>
             </div>
           }
-          @if (checklistItens.length === 0) {
-            <div class="no-data">Nenhum item registrado.</div>
+          @if (irregularidades.length === 0) {
+            <div class="no-data">Nenhuma irregularidade registrada nesta vistoria.</div>
           }
         </div>
       </div>
