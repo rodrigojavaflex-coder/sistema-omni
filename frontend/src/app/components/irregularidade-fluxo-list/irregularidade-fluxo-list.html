@@ -1,0 +1,449 @@
+<div class="list-container">
+  <div class="list-header">
+    <h2>{{ titulo }}</h2>
+  </div>
+  <p class="subtitle" *ngIf="descricao">{{ descricao }}</p>
+
+  <div class="filters-panel">
+    <div class="filters-row">
+      <app-veiculo-autocomplete
+        class="filter-veiculo"
+        (veiculoSelected)="onVeiculoSelected($event)"
+      ></app-veiculo-autocomplete>
+      <select
+        class="form-select"
+        [(ngModel)]="filtroGravidade"
+        (ngModelChange)="onComboFilterChange()"
+      >
+        <option value="">Gravidade (todas)</option>
+        <option *ngFor="let g of gravidadeOptions" [value]="g">
+          {{ getGravidadeLabel(g) }}
+        </option>
+      </select>
+      <select
+        class="form-select"
+        *ngIf="modo === 'tratamento'"
+        [(ngModel)]="filtroStatus"
+        (ngModelChange)="onComboFilterChange()"
+      >
+        <option [ngValue]="''">Todos</option>
+        <option *ngFor="let status of statusOptions" [ngValue]="status">
+          {{ getStatusLabel(status) }}
+        </option>
+      </select>
+      <input type="date" class="form-control" [(ngModel)]="filtroDataInicio" />
+      <input type="date" class="form-control" [(ngModel)]="filtroDataFim" />
+      <button class="btn btn-primary" (click)="loadItems()">Filtrar</button>
+      <button class="btn btn-secondary" (click)="clearFilters()">Limpar</button>
+    </div>
+  </div>
+
+  <div class="actions-panel">
+    <div class="buttons-row">
+      <button
+        class="btn btn-primary"
+        *ngIf="canShowTratamentoActions && canManutencaoStart"
+        [disabled]="!hasSelectedItems"
+        (click)="openBulkActionModal('iniciar-manutencao')"
+      >
+        <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+        Enviar para manutenção
+      </button>
+      <button
+        class="btn btn-secondary"
+        *ngIf="canShowTratamentoActions && canTratamentoUpdate"
+        [disabled]="!hasSelectedItems"
+        (click)="openBulkActionModal('reclassificar')"
+      >
+        <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+        </svg>
+        Reclassificar
+      </button>
+      <button
+        class="btn btn-danger"
+        *ngIf="canShowTratamentoActions && canTratamentoUpdate"
+        [disabled]="!hasSelectedItems"
+        (click)="openBulkActionModal('cancelar')"
+      >
+        Cancelar
+      </button>
+      <span class="buttons-row-summary" *ngIf="modo === 'tratamento'">
+        {{ items.length }} irregularidade(s) | {{ getSelectedIds().length }} irregularidade(s) selecionada(s)
+      </span>
+    </div>
+  </div>
+
+  <div *ngIf="!error && info" class="info-container">
+    <p>{{ info }}</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Carregando irregularidades...</p>
+  </div>
+
+  <div *ngIf="error" class="error-container">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error" class="cards-container">
+    <div class="irregularidade-card-list irregularidade-card-list--flat">
+      <div
+        class="irregularidade-list-header"
+        [class.irregularidade-list-header--tratamento]="modo === 'tratamento'"
+      >
+        <span class="col-select form-check">
+          <input
+            type="checkbox"
+            class="row-select-checkbox"
+            [checked]="isAllSelected()"
+            (change)="toggleSelectAll($any($event.target).checked)"
+            aria-label="Selecionar todas irregularidades"
+          />
+        </span>
+        <span>Veículo</span>
+        <span *ngIf="modo === 'tratamento'">CODIGO</span>
+        <span>Irregularidade</span>
+        <span>Gravidade</span>
+        <span>Registrado</span>
+        <span>Tempo</span>
+        <span>Status</span>
+        <span></span>
+      </div>
+      <div
+        class="irregularidade-card irregularidade-card--flat"
+        *ngFor="let item of items"
+        (click)="onCardClick($event, item.id)"
+        [class.irregularidade-card--selected]="selectedIds.has(item.id)"
+        [class.irregularidade-card--expanded]="isCardExpanded(item.id)"
+      >
+        <div
+          class="irregularidade-row-grid"
+          [class.irregularidade-row-grid--tratamento]="modo === 'tratamento'"
+        >
+          <div class="col-select form-check">
+            <input
+              type="checkbox"
+              class="row-select-checkbox"
+              [checked]="selectedIds.has(item.id)"
+              (click)="$event.stopPropagation()"
+              (change)="toggleItemSelection(item.id, $any($event.target).checked)"
+              aria-label="Selecionar irregularidade"
+            />
+          </div>
+          <div class="col-veiculo">
+            <div class="row-title">{{ item.veiculoDescricao || 'Veículo não informado' }}</div>
+            <div class="row-subtitle">{{ item.veiculoPlaca || '-' }}</div>
+          </div>
+          <div class="col-codigo" *ngIf="modo === 'tratamento'">
+            {{ item.numeroIrregularidade || '-' }}
+          </div>
+          <div class="col-irregularidade">
+            <span class="irregularidade-main-line">
+              {{ item.nomeArea || '-' }} - {{ item.nomeComponente || '-' }} - {{ item.descricaoSintoma || '-' }}
+            </span>
+          </div>
+          <div class="col-gravidade">
+            <span [class]="getGravidadeClass(item.gravidade)">
+              {{ item.gravidade || '-' }}
+            </span>
+          </div>
+          <div class="col-data">{{ item.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</div>
+          <div class="col-tempo">
+            <div class="tempo-cell" [ngStyle]="getTempoStyle(item.criadoEm)">
+              <span>{{ getTempoDesdeRegistro(item.criadoEm) }}</span>
+              <small *ngIf="getTempoRotulo(item.criadoEm)">{{ getTempoRotulo(item.criadoEm) }}</small>
+            </div>
+          </div>
+          <div class="col-status">
+            <span [class]="getStatusClass(item.statusAtual)">
+              {{ item.statusAtual }}
+            </span>
+          </div>
+          <div class="col-toggle">
+            <div class="col-toggle-actions">
+              <button
+                type="button"
+                class="btn-inline-toggle"
+                (click)="$event.stopPropagation(); toggleCardExpanded(item.id)"
+              >
+                <svg class="btn-inline-toggle__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="8" y1="12" x2="16" y2="12"></line>
+                  <line *ngIf="!isCardExpanded(item.id)" x1="12" y1="8" x2="12" y2="16"></line>
+                </svg>
+                {{ isCardExpanded(item.id) ? 'Ver menos' : 'Ver mais' }}
+              </button>
+              <button
+                type="button"
+                class="btn-inline-toggle"
+                (click)="$event.stopPropagation(); openHistoricoModal(item)"
+              >
+                <svg
+                  class="btn-inline-toggle__icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="8" y1="6" x2="21" y2="6"></line>
+                  <line x1="8" y1="12" x2="21" y2="12"></line>
+                  <line x1="8" y1="18" x2="21" y2="18"></line>
+                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                Histórico
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="isCardExpanded(item.id)">
+          <div class="irregularidade-details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Motorista</span>
+              <span class="detail-value">{{ item.motoristaNome || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Vistoriador</span>
+              <span class="detail-value">{{ item.vistoriadorNome || '-' }}</span>
+            </div>
+          </div>
+
+          <div class="irregularidade-card-observacao">
+            <span class="detail-label">Descrição do problema</span>
+            <p class="descricao-problema-texto">{{ item.observacao || '-' }}</p>
+          </div>
+
+          <div class="media-section">
+            <div class="media-block">
+              <strong>Fotos: {{ item.quantidadeFotos ?? item.fotos?.length ?? 0 }}</strong>
+              <div class="thumb-list" *ngIf="item.fotos?.length; else semFotos">
+                <button
+                  type="button"
+                  class="thumb-button"
+                  *ngFor="let foto of item.fotos"
+                  (click)="$event.stopPropagation(); openImagePreview(foto)"
+                  title="Clique para ampliar"
+                >
+                  <img [src]="getImageSrc(foto)" [alt]="foto.nomeArquivo" />
+                </button>
+              </div>
+              <ng-template #semFotos>
+                <div class="media-empty">Sem fotos</div>
+              </ng-template>
+            </div>
+
+            <div class="media-block">
+              <strong>Áudios: {{ item.quantidadeAudios ?? item.audios?.length ?? 0 }}</strong>
+              <div class="audio-list" *ngIf="item.audios?.length; else semAudios">
+                <div class="audio-item" *ngFor="let audio of item.audios">
+                  <audio controls [src]="getAudioSrc(audio)"></audio>
+                </div>
+              </div>
+              <ng-template #semAudios>
+                <div class="media-empty">Sem áudios</div>
+              </ng-template>
+            </div>
+          </div>
+
+          <div class="table-actions" *ngIf="modo !== 'tratamento'">
+            <div class="table-actions" *ngIf="modo === 'manutencao'">
+              <button
+                class="btn btn-small btn-primary"
+                *ngIf="canManutencaoFinish"
+                (click)="$event.stopPropagation(); openConcluirManutencaoModal(item)"
+              >
+                Concluir
+              </button>
+              <button
+                class="btn btn-small btn-warning"
+                *ngIf="canManutencaoNaoProcede"
+                (click)="$event.stopPropagation(); openNaoProcedeModal(item)"
+              >
+                Não procede
+              </button>
+            </div>
+            <div class="table-actions" *ngIf="modo === 'validacao-final'">
+              <button
+                class="btn btn-small btn-success"
+                *ngIf="canValidacaoFinalUpdate"
+                (click)="$event.stopPropagation(); openValidarFinalModal(item)"
+              >
+                Validar final
+              </button>
+              <button
+                class="btn btn-small btn-danger"
+                *ngIf="canValidacaoFinalUpdate"
+                (click)="$event.stopPropagation(); openReprovarFinalModal(item)"
+              >
+                Reprovar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-empty-cell" *ngIf="items.length === 0">
+      Nenhuma irregularidade encontrada para esta fila.
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showHistoricoModal" class="modal-overlay" (click)="closeHistoricoModal()">
+  <div class="modal-container modal-container-md" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        Histórico da irregularidade
+        <span *ngIf="historicoSelecionado?.numeroIrregularidade">#{{ historicoSelecionado?.numeroIrregularidade }}</span>
+      </h3>
+      <button class="btn-close" (click)="closeHistoricoModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="historicoLoading">Carregando histórico...</div>
+      <div class="form-error" *ngIf="!historicoLoading && historicoError">{{ historicoError }}</div>
+      <div class="historico-list" *ngIf="!historicoLoading && !historicoError">
+        <div class="historico-empty" *ngIf="historicoEventos.length === 0">
+          Nenhum evento de histórico encontrado.
+        </div>
+        <div class="historico-item" *ngFor="let evento of historicoEventos">
+          <div class="historico-item-header">
+            <div class="historico-status-title">
+              <span *ngIf="evento.statusOrigem" [class]="getStatusClass(evento.statusOrigem)">
+                {{ getStatusLabel(evento.statusOrigem) }}
+              </span>
+              <svg
+                *ngIf="evento.statusOrigem"
+                class="historico-arrow-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+              <span [class]="getStatusClass(evento.statusDestino)">
+                {{ getStatusLabel(evento.statusDestino) }}
+              </span>
+            </div>
+            <span>{{ evento.dataEvento | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="historico-item-row">
+            <span>Ação: {{ evento.acao }}</span>
+          </div>
+          <div class="historico-item-row">
+            <span>Usuário: {{ evento.usuarioNome || '-' }}</span>
+          </div>
+          <div class="historico-item-row">
+            <span>Tempo na etapa: {{ formatTempoEtapa(evento.tempoEtapaMs) }}</span>
+          </div>
+          <div class="historico-item-row" *ngIf="evento.observacao">
+            <span>Observação: {{ evento.observacao }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeHistoricoModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showActionModal && selectedItemForAction && modalAcao" class="modal-overlay" (click)="closeActionModal()">
+  <div class="modal-container modal-container-sm" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ getModalTitle() }}</h3>
+      <button class="btn-close" (click)="closeActionModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-scope">{{ getModalScopeLabel() }}</p>
+      <div class="form-group" *ngIf="modalAcao === 'iniciar-manutencao'">
+        <label>Empresa de manutenção *</label>
+        <select class="form-select" [(ngModel)]="modalIdEmpresaManutencao">
+          <option value="">Selecione...</option>
+          <option *ngFor="let empresa of empresas" [value]="empresa.id">
+            {{ empresa.descricao }}
+          </option>
+        </select>
+      </div>
+      <div class="form-group" *ngIf="modalAcao === 'reclassificar'">
+        <label>ID Área *</label>
+        <input type="text" class="form-control" [(ngModel)]="modalIdArea" maxlength="36" />
+      </div>
+      <div class="form-group" *ngIf="modalAcao === 'reclassificar'">
+        <label>ID Componente *</label>
+        <input type="text" class="form-control" [(ngModel)]="modalIdComponente" maxlength="36" />
+      </div>
+      <div class="form-group" *ngIf="modalAcao === 'reclassificar'">
+        <label>ID Sintoma *</label>
+        <input type="text" class="form-control" [(ngModel)]="modalIdSintoma" maxlength="36" />
+      </div>
+      <div class="form-group" *ngIf="modalAcao === 'cancelar'">
+        <label>Motivo *</label>
+        <textarea
+          class="form-control"
+          [(ngModel)]="modalMotivoCancelamento"
+          rows="3"
+          maxlength="500"
+        ></textarea>
+      </div>
+      <div class="form-group" *ngIf="modalAcao === 'nao-procede'">
+        <label>Motivo técnico (não procede) *</label>
+        <textarea
+          class="form-control"
+          [(ngModel)]="modalMotivoNaoProcede"
+          rows="3"
+          maxlength="500"
+        ></textarea>
+      </div>
+      <div class="form-group" *ngIf="modalAcao !== 'cancelar' && modalAcao !== 'iniciar-manutencao'">
+        <label>Observação {{ modalAcao === 'reprovar-final' ? '*' : '(opcional)' }}</label>
+        <textarea
+          class="form-control"
+          [(ngModel)]="modalObservacao"
+          rows="3"
+          maxlength="1000"
+        ></textarea>
+      </div>
+      <div class="form-error" *ngIf="modalError">{{ modalError }}</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeActionModal()" [disabled]="isSavingAction">
+        Fechar
+      </button>
+      <button
+        class="btn btn-primary"
+        (click)="submitActionModal()"
+        [disabled]="!canSubmitActionModal()"
+      >
+        {{ getModalPrimaryButtonLabel() }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="imagemAmpliadaSrc" class="modal-overlay" (click)="closeImagePreview()">
+  <div class="image-preview-modal" (click)="$event.stopPropagation()">
+    <div class="image-preview-header">
+      <h4>{{ imagemAmpliadaTitulo || 'Visualização da foto' }}</h4>
+      <button class="btn-close" (click)="closeImagePreview()">×</button>
+    </div>
+    <div class="image-preview-body">
+      <img [src]="imagemAmpliadaSrc" alt="Foto ampliada" />
+    </div>
+  </div>
+</div>
+

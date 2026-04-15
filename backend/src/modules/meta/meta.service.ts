@@ -57,6 +57,9 @@ type MetaUpdateFields = {
   polaridade?: PolaridadeMeta;
   prazoFinal?: string;
   valorMeta?: number;
+  valorMetaMensal?: number;
+  taxaDeCrescimento?: number;
+  valorMetaInicial?: number;
   unidade?: UnidadeMeta;
   indicador?: IndicadorMeta;
   inicioDaMeta?: string;
@@ -269,6 +272,9 @@ export class MetaService {
       polaridade: dtoPolaridade,
       prazoFinal,
       valorMeta,
+      valorMetaMensal,
+      taxaDeCrescimento,
+      valorMetaInicial,
       unidade,
       indicador,
       inicioDaMeta,
@@ -288,6 +294,15 @@ export class MetaService {
     }
     if (valorMeta !== undefined && valorMeta !== null) {
       meta.valorMeta = valorMeta;
+    }
+    if (valorMetaMensal !== undefined && valorMetaMensal !== null) {
+      meta.valorMetaMensal = valorMetaMensal;
+    }
+    if (taxaDeCrescimento !== undefined && taxaDeCrescimento !== null) {
+      meta.taxaDeCrescimento = taxaDeCrescimento;
+    }
+    if (valorMetaInicial !== undefined && valorMetaInicial !== null) {
+      meta.valorMetaInicial = valorMetaInicial;
     }
     if (unidade !== undefined && unidade !== null) {
       meta.unidade = unidade;

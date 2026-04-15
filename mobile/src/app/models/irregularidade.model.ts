@@ -1,11 +1,15 @@
 export interface IrregularidadeResumo {
   id: string;
+  idvistoria?: string;
+  statusVistoria?: string;
+  numeroIrregularidade?: number;
   idarea: string;
   nomeArea?: string;
   idcomponente: string;
   nomeComponente?: string;
   idsintoma: string;
   descricaoSintoma?: string;
+  vistoriadorNome?: string;
   observacao?: string;
   resolvido: boolean;
   atualizadoEm: string;
@@ -41,7 +45,8 @@ export interface IrregularidadeHistoricoVeiculoMidia {
   nomeArquivo: string;
   mimeType: string;
   tamanho: number;
-  dadosBase64: string;
+  dadosBase64?: string;
+  src?: string;
   duracaoMs?: number | null;
 }
 

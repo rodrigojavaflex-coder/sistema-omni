@@ -2,7 +2,6 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIf } from '@angular/common';
 import {
-  AlertController,
   IonButton,
   IonButtons,
   IonContent,
@@ -52,8 +51,6 @@ export class VistoriaFinalizarPage implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private errorMessageService = inject(ErrorMessageService);
-  private alertController = inject(AlertController);
-
   observacao = '';
   tempoMinutos = 0;
   isSaving = false;
@@ -66,6 +63,8 @@ export class VistoriaFinalizarPage implements OnInit {
   resumoBateria = '-';
   resumoIrregularidades = 0;
   resumoIrregularidadesDetalhes: string[] = [];
+  sucessoVisivel = false;
+  private sucessoResolver: (() => void) | null = null;
 
   get vistoriaNrDisplay(): string {
     const nr = this.flowService.getNumeroVistoriaDisplay();
@@ -79,6 +78,13 @@ export class VistoriaFinalizarPage implements OnInit {
 
   get resumoVistoriaNumero(): string {
     return this.flowService.getNumeroVistoriaDisplay() || '-';
+  }
+
+  get tempoTotalFormatado(): string {
+    const totalMinutos = Math.max(0, Number(this.tempoMinutos) || 0);
+    const horas = Math.floor(totalMinutos / 60);
+    const minutos = totalMinutos % 60;
+    return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
   }
 
   async ngOnInit(): Promise<void> {
@@ -151,37 +157,17 @@ export class VistoriaFinalizarPage implements OnInit {
   }
 
   private async mostrarResumoConclusao(): Promise<void> {
-    const numeroVistoria = this.flowService.getNumeroVistoriaDisplay() || '-';
-    const detalhes = this.resumoIrregularidadesDetalhes.length > 0
-      ? this.resumoIrregularidadesDetalhes
-          .map((item) => `- ${this.escapeHtml(item)}`)
-          .join('<br>')
-      : '- Nenhuma irregularidade registrada';
-
-    const alert = await this.alertController.create({
-      header: `Vistoria ${numeroVistoria} concluida com sucesso`,
-      cssClass: 'alert-resumo-vistoria',
-      message:
-        `<strong>Vistoriador:</strong> ${this.escapeHtml(this.resumoVistoriador)}<br>` +
-        `<strong>Veiculo:</strong> ${this.escapeHtml(this.resumoVeiculo)}<br>` +
-        `<strong>Motorista:</strong> ${this.escapeHtml(this.resumoMotorista)}<br>` +
-        `<strong>Odometro:</strong> ${this.escapeHtml(this.resumoOdometro)}<br>` +
-        `<strong>% Bateria:</strong> ${this.escapeHtml(this.resumoBateria)}<br>` +
-        `<strong>Irregularidades:</strong> ${this.resumoIrregularidades}<br><br>` +
-        `<strong>Resumo:</strong><br>${detalhes}`,
-      buttons: [{ text: 'OK', cssClass: 'alert-ok-voltar' }],
+    this.sucessoVisivel = true;
+    await new Promise<void>((resolve) => {
+      this.sucessoResolver = resolve;
     });
-    await alert.present();
-    await alert.onDidDismiss();
   }
 
-  private escapeHtml(value: string): string {
-    return (value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+  confirmarConclusao(): void {
+    this.sucessoVisivel = false;
+    if (this.sucessoResolver) {
+      this.sucessoResolver();
+      this.sucessoResolver = null;
+    }
   }
-
 }

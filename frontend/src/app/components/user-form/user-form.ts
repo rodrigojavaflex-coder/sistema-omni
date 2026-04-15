@@ -9,6 +9,8 @@ import { BaseFormComponent } from '../base/base-form.component';
 import { DepartamentoService } from '../../services/departamento.service';
 import { Departamento } from '../../models/departamento.model';
 import { MultiSelectComponent } from '../shared/multi-select/multi-select.component';
+import { EmpresaTerceiraService } from '../../services/empresa-terceira.service';
+import { EmpresaTerceira } from '../../models/empresa-terceira.model';
 
 @Component({
   selector: 'app-user-form',
@@ -19,6 +21,7 @@ import { MultiSelectComponent } from '../shared/multi-select/multi-select.compon
 })
 export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | UpdateUsuarioDto> implements OnInit {
   availableProfiles: Perfil[] = [];
+  availableEmpresas: EmpresaTerceira[] = [];
   departamentos: Departamento[] = [];
   departamentosSelecionados: string[] = [];
 
@@ -27,6 +30,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
     private userService: UserService,
     private route: ActivatedRoute,
     private departamentoService: DepartamentoService,
+    private empresaService: EmpresaTerceiraService,
     router: Router
   ) {
     super(router);
@@ -40,6 +44,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
     }
     this.loadProfiles();
     this.loadDepartamentos();
+    this.loadEmpresas();
     super.ngOnInit();
     this.checkPasswordValidator();
   }
@@ -51,6 +56,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
       senha: ['', []],
       ativo: [true],
       perfilId: ['', Validators.required],
+      idEmpresa: [''],
     });
   }
 
@@ -92,6 +98,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
       email: formValue.email,
       ativo: formValue.ativo,
       perfilId: formValue.perfilId,
+      idEmpresa: formValue.idEmpresa || undefined,
       departamentoIds: this.getDepartamentoIdsSelecionados(),
     };
     if (formValue.senha) {
@@ -115,6 +122,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
       email: user?.email || '',
       ativo: user?.ativo ?? true,
       perfilId: user?.perfil?.id || '',
+      idEmpresa: user?.idEmpresa || '',
     });
     this.departamentosSelecionados =
       user?.departamentos?.map((d) => d.nomeDepartamento) || [];
@@ -131,6 +139,18 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
     } catch (error) {
       console.error('Erro ao carregar departamentos', error);
     }
+  }
+
+  private loadEmpresas(): void {
+    this.empresaService.getAll().subscribe({
+      next: (empresas) => {
+        this.availableEmpresas = empresas;
+      },
+      error: (error) => {
+        console.error('Erro ao carregar empresas terceiras', error);
+        this.availableEmpresas = [];
+      },
+    });
   }
 
   private getDepartamentoIdsSelecionados(): string[] {

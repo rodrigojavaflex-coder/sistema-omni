@@ -93,9 +93,6 @@ export class MetaDashboardComponent implements OnInit {
   canDeleteExecucao = false;
   canAudit = false;
   mesesAnoDisponiveis: Array<{ value: string; label: string; month: number; year: number }> = [];
-  private readonly colorSuccess = '#27ae60';
-  private readonly colorMedium = '#2980b9';
-  private readonly colorAlert = '#e74c3c';
   private readonly monthLabels = [
     'Jan',
     'Fev',
@@ -525,19 +522,6 @@ export class MetaDashboardComponent implements OnInit {
   closeAudit(): void {
     this.showAuditModal = false;
     this.execucaoParaAuditoria = null;
-  }
-
-  getCardColor(card: MetaDashboardCard): string {
-    const value = card.progressoPercentual;
-    if (card.polaridade === PolaridadeMeta.MENOR_MELHOR) {
-      if (value >= 80) return this.colorSuccess;
-      if (value >= 40) return this.colorMedium;
-      return this.colorAlert;
-    }
-
-    if (value >= 80) return this.colorSuccess;
-    if (value >= 40) return this.colorMedium;
-    return this.colorAlert;
   }
 
   private getErrorMessage(error: unknown, fallback: string): string {

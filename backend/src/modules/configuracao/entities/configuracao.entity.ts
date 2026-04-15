@@ -1,6 +1,22 @@
 import { Entity, Column } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
+export interface TempoFaixaConfig {
+  minHoras: number;
+  maxHoras: number | null;
+  label: string;
+  corHex: string;
+  mostrarCor: boolean;
+  mostrarRotulo: boolean;
+  ativo: boolean;
+}
+
+export interface TempoFluxoConfig {
+  tratamento: TempoFaixaConfig[];
+  manutencao: TempoFaixaConfig[];
+  validacaoFinal: TempoFaixaConfig[];
+}
+
 @Entity('configuracoes')
 export class Configuracao extends BaseEntity {
   /**
@@ -34,4 +50,7 @@ export class Configuracao extends BaseEntity {
 
   @Column({ default: true })
   auditarSenhaAlterada: boolean;
+
+  @Column({ type: 'jsonb', nullable: true })
+  tempoFluxoConfig?: TempoFluxoConfig;
 }

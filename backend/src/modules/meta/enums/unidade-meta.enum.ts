@@ -4,6 +4,7 @@ export enum UnidadeMeta {
   HORAS = 'HORAS',
   VALOR = 'VALOR',
   QUANTIDADE = 'QUANTIDADE',
+  POSICAO = 'POSICAO',
 }
 
 export const UNIDADE_META_LABEL: Record<UnidadeMeta, string> = {
@@ -12,4 +13,5 @@ export const UNIDADE_META_LABEL: Record<UnidadeMeta, string> = {
   [UnidadeMeta.HORAS]: 'Horas',
   [UnidadeMeta.VALOR]: 'Valor R$',
   [UnidadeMeta.QUANTIDADE]: 'Quantidade',
+  [UnidadeMeta.POSICAO]: 'Posição',
 };

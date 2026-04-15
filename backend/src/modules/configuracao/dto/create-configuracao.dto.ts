@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsObject } from 'class-validator';
 
 export class CreateConfiguracaoDto {
   @ApiPropertyOptional({
@@ -71,4 +71,27 @@ export class CreateConfiguracaoDto {
   @IsOptional()
   @IsBoolean()
   auditarSenhaAlterada?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Configuração de faixas de tempo por tela do fluxo (tratamento, manutencao, validacaoFinal)',
+    example: {
+      tratamento: [
+        {
+          minHoras: 0,
+          maxHoras: 24,
+          label: '',
+          corHex: '#64748b',
+          mostrarCor: false,
+          mostrarRotulo: false,
+          ativo: true,
+        },
+      ],
+      manutencao: [],
+      validacaoFinal: [],
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  tempoFluxoConfig?: any;
 }

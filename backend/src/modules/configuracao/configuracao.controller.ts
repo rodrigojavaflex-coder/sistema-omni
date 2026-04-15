@@ -16,13 +16,30 @@ import { UpdateConfiguracaoDto } from './dto/update-configuracao.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { Permission } from '../../common/enums/permission.enum';
 
 @ApiTags('configuracao')
 @Controller('configuracao')
 export class ConfiguracaoController {
   constructor(private readonly configuracaoService: ConfiguracaoService) {}
 
+  private parseTempoFluxoConfig(raw: unknown) {
+    if (!raw) {
+      return undefined;
+    }
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return undefined;
+      }
+    }
+    return raw;
+  }
+
   @Post()
+  @Permissions(Permission.CONFIGURACAO_ACCESS)
   @UseInterceptors(
     FileInterceptor('logoRelatorio', {
       storage: diskStorage({
@@ -61,18 +78,42 @@ export class ConfiguracaoController {
       auditarSenhaAlterada: req.body.auditarSenhaAlterada
         ? req.body.auditarSenhaAlterada === 'true'
         : true,
+      tempoFluxoConfig: this.parseTempoFluxoConfig(req.body.tempoFluxoConfig),
     };
 
     return this.configuracaoService.create(body, req?.user?.id);
   }
 
   @Get()
+  @Permissions(Permission.CONFIGURACAO_ACCESS)
   @ApiOperation({ summary: 'Buscar configuração' })
   async findOne() {
     return this.configuracaoService.findOne();
   }
 
+  @Get('tempo-fluxo')
+  @Permissions(Permission.CONFIGURACAO_TEMPO_FLUXO_ACCESS)
+  @ApiOperation({ summary: 'Buscar configuração de tempo do fluxo' })
+  async findTempoFluxo() {
+    return this.configuracaoService.findTempoFluxoConfig();
+  }
+
+  @Put('tempo-fluxo')
+  @Permissions(
+    Permission.CONFIGURACAO_TEMPO_FLUXO_CREATE,
+    Permission.CONFIGURACAO_TEMPO_FLUXO_UPDATE,
+    Permission.CONFIGURACAO_TEMPO_FLUXO_DELETE,
+  )
+  @ApiOperation({ summary: 'Atualizar configuração de tempo do fluxo' })
+  async updateTempoFluxo(@Body() body: { tempoFluxoConfig?: unknown }, @Req() req?: any) {
+    return this.configuracaoService.updateTempoFluxoConfig(
+      body?.tempoFluxoConfig,
+      req?.user?.id,
+    );
+  }
+
   @Put(':id')
+  @Permissions(Permission.CONFIGURACAO_ACCESS)
   @UseInterceptors(
     FileInterceptor('logoRelatorio', {
       storage: diskStorage({
@@ -119,6 +160,7 @@ export class ConfiguracaoController {
       auditarSenhaAlterada: req.body.auditarSenhaAlterada
         ? req.body.auditarSenhaAlterada === 'true'
         : undefined,
+      tempoFluxoConfig: this.parseTempoFluxoConfig(req.body.tempoFluxoConfig),
     };
 
     return this.configuracaoService.update(id, body, req?.user?.id);

@@ -29,6 +29,27 @@
   margin-top: 10px;
 }
 
+.midias-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.midias-resumo {
+  margin: 2px 0 0;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.midias-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 10px;
+  color: #6b7280;
+}
+
 .imagem-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));

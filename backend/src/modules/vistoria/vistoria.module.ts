@@ -15,6 +15,7 @@ import { Sintoma } from './entities/sintoma.entity';
 import { MatrizCriticidade } from './entities/matriz-criticidade.entity';
 import { Irregularidade } from './entities/irregularidade.entity';
 import { IrregularidadeMidia } from './entities/irregularidade-midia.entity';
+import { IrregularidadeHistorico } from './entities/irregularidade-historico.entity';
 import { ModeloVeiculo } from '../veiculo/entities/modelo-veiculo.entity';
 import { AreaVistoriadaService } from './area-vistoriada.service';
 import { AreaComponenteService } from './area-componente.service';
@@ -27,6 +28,7 @@ import { ComponentesController } from './componentes.controller';
 import { SintomasController } from './sintomas.controller';
 import { MatrizCriticidadeController } from './matriz-criticidade.controller';
 import { IrregularidadesController } from './irregularidades.controller';
+import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 
 @Module({
   imports: [
@@ -40,10 +42,12 @@ import { IrregularidadesController } from './irregularidades.controller';
       MatrizCriticidade,
       Irregularidade,
       IrregularidadeMidia,
+      IrregularidadeHistorico,
       ModeloVeiculo,
       Veiculo,
       Motorista,
       Usuario,
+      EmpresaTerceira,
     ]),
     AuthModule,
   ],

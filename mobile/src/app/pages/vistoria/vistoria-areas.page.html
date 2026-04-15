@@ -51,20 +51,24 @@
           <path d="M13 18h8"></path>
         </svg>
       </ion-button>
-      <ion-button fill="solid" (click)="voltarOuFechar()">Voltar</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <div class="selected-context" *ngIf="!loading">
-    <p class="context-inline">
-      <strong>Vistoria:</strong> {{ vistoriaNumero }} ·
-      <strong>Veículo:</strong> {{ veiculoNumero }}
-      <ng-container *ngIf="selectedArea !== null">
-        · <strong>Área:</strong> {{ selectedArea.nome }}
-      </ng-container>
-    </p>
+    <div class="context-card">
+      <strong>Vistoria:</strong>
+      <span>{{ vistoriaNumero }}</span>
+    </div>
+    <div class="context-card">
+      <strong>Veículo:</strong>
+      <span>{{ veiculoNumero }}</span>
+    </div>
+    <div class="context-card" *ngIf="selectedArea !== null">
+      <strong>Área:</strong>
+      <span>{{ selectedArea.nome }}</span>
+    </div>
   </div>
 
   <div class="content" *ngIf="loading">
@@ -79,6 +83,7 @@
 
   <!-- Lista de áreas em cards -->
   <div class="content sheet-context" *ngIf="!loading && areas.length > 0 && selectedArea === null">
+    <p class="cards-selection-title">Selecione uma Area:</p>
     <div class="cards-container">
       <ion-card *ngFor="let area of areas" button (click)="abrirArea(area)" class="level-card">
         <ion-card-header>
@@ -92,7 +97,7 @@
           </p>
           <p *ngIf="contagemPendentesPorArea[area.id]" class="ion-text-wrap">
             <ion-text color="warning">
-              Pendencias em vistorias anteriores: {{ contagemPendentesPorArea[area.id] }}
+              Pendência(s) Registrada(s): {{ contagemPendentesPorArea[area.id] }}
             </ion-text>
           </p>
         </ion-card-content>
@@ -118,19 +123,24 @@
     <div *ngIf="!loadingComponentes && !errorMessage && componentes.length === 0">
       <p>Nenhum componente nesta área.</p>
     </div>
+    <p *ngIf="!loadingComponentes && !errorMessage && componentes.length > 0" class="cards-selection-title">
+      Selecione um Componente:
+    </p>
     <div *ngIf="!loadingComponentes && !errorMessage && componentes.length > 0" class="cards-container">
       <ion-card *ngFor="let item of componentes" button (click)="abrirComponente(item)" class="level-card">
         <ion-card-header>
           <ion-card-title>{{ item.componente?.nome }}</ion-card-title>
         </ion-card-header>
-        <ion-card-content *ngIf="irregularidadesPorComponente[item.idComponente] > 0 || pendentesPorComponente.has(item.idComponente)">
+        <ion-card-content *ngIf="irregularidadesPorComponente[item.idComponente] > 0 || contagemPendentesPorComponente[item.idComponente] > 0">
           <p *ngIf="irregularidadesPorComponente[item.idComponente] > 0">
             <ion-text color="primary">
               Irregularidades nesta vistoria: {{ irregularidadesPorComponente[item.idComponente] }}
             </ion-text>
           </p>
-          <p *ngIf="pendentesPorComponente.has(item.idComponente)" class="ion-text-wrap">
-            <ion-text color="warning">Existe irregularidade pendente em vistoria anterior</ion-text>
+          <p *ngIf="contagemPendentesPorComponente[item.idComponente] > 0" class="ion-text-wrap">
+            <ion-text color="warning">
+              Pendência(s) Registrada(s): {{ contagemPendentesPorComponente[item.idComponente] }}
+            </ion-text>
           </p>
         </ion-card-content>
       </ion-card>
@@ -141,6 +151,14 @@
 
 <ion-footer *ngIf="!loading">
   <ion-toolbar>
-    <ion-button expand="block" (click)="finalizarVistoria()">Concluir Vistoria</ion-button>
+    <div class="footer-actions">
+      <ion-button class="btn-main" (click)="finalizarVistoria()">
+        Concluir Vistoria
+      </ion-button>
+      <ion-button class="btn-voltar" fill="outline" color="medium" (click)="voltarOuFechar()">
+        <ion-icon slot="start" src="/icons/corner-up-left.svg" aria-hidden="true"></ion-icon>
+        Voltar
+      </ion-button>
+    </div>
   </ion-toolbar>
 </ion-footer>

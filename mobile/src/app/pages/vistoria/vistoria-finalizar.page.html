@@ -4,9 +4,6 @@
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
     <ion-title>Finalizar Vistoria</ion-title>
-    <ion-buttons slot="end">
-      <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
-    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -33,8 +30,25 @@
     </div>
 
     <ion-item>
-      <ion-label position="stacked">Tempo total (minutos)</ion-label>
-      <ion-text>{{ tempoMinutos }}</ion-text>
+      <ion-label position="stacked" class="tempo-total-label">
+        <span>Tempo total (minutos):</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </ion-label>
+      <ion-text class="tempo-total-valor">{{ tempoTotalFormatado }}</ion-text>
     </ion-item>
 
     <ion-item>
@@ -54,9 +68,52 @@
 
 <ion-footer>
   <ion-toolbar>
-    <ion-button expand="block" [disabled]="isSaving" (click)="finalizar()">
-      <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>
-      <span *ngIf="!isSaving">Finalizar Vistoria</span>
-    </ion-button>
+    <div class="footer-actions">
+      <ion-button class="btn-main" [disabled]="isSaving" (click)="finalizar()">
+        <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>
+        <span *ngIf="!isSaving">Finalizar Vistoria</span>
+      </ion-button>
+      <ion-button class="btn-voltar" fill="outline" color="medium" (click)="voltar()">
+        <svg
+          slot="start"
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="9 14 4 9 9 4"></polyline>
+          <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+        </svg>
+        Voltar
+      </ion-button>
+    </div>
   </ion-toolbar>
 </ion-footer>
+
+<div class="sucesso-overlay" *ngIf="sucessoVisivel" aria-modal="true" role="dialog">
+  <div class="sucesso-card">
+    <h2>Vistoria {{ resumoVistoriaNumero }} concluída com sucesso</h2>
+    <p><strong>Vistoriador:</strong> {{ resumoVistoriador }}</p>
+    <p><strong>Veículo:</strong> {{ resumoVeiculo }}</p>
+    <p><strong>Motorista:</strong> {{ resumoMotorista }}</p>
+    <p><strong>Odômetro:</strong> {{ resumoOdometro }}</p>
+    <p><strong>% Bateria:</strong> {{ resumoBateria }}</p>
+    <p><strong>Irregularidades:</strong> {{ resumoIrregularidades }}</p>
+
+    <div class="irregularidades-lista-overlay">
+      <p><strong>Resumo:</strong></p>
+      <p *ngIf="resumoIrregularidadesDetalhes.length === 0">- Nenhuma irregularidade registrada</p>
+      @for (detalhe of resumoIrregularidadesDetalhes; track detalhe) {
+        <p>- {{ detalhe }}</p>
+      }
+    </div>
+
+    <ion-button expand="block" (click)="confirmarConclusao()">OK</ion-button>
+  </div>
+</div>

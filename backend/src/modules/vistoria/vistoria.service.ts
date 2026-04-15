@@ -20,6 +20,7 @@ import { StatusVeiculo } from '../../common/enums/status-veiculo.enum';
 import { StatusMotorista } from '../../common/enums/status-motorista.enum';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
 import { Combustivel } from '../../common/enums/combustivel.enum';
+import { StatusIrregularidade } from '../../common/enums/status-irregularidade.enum';
 
 @Injectable()
 export class VistoriaService {
@@ -301,7 +302,12 @@ export class VistoriaService {
       .leftJoinAndSelect('i.componente', 'componente')
       .leftJoinAndSelect('i.sintoma', 'sintoma')
       .where('v.idVeiculo = :idVeiculo', { idVeiculo: vistoria.idVeiculo })
-      .andWhere('i.resolvido = :resolvido', { resolvido: false })
+      .andWhere('v.status = :statusVistoriaFinalizada', {
+        statusVistoriaFinalizada: StatusVistoria.FINALIZADA,
+      })
+      .andWhere('i.statusAtual NOT IN (:...statusFinal)', {
+        statusFinal: [StatusIrregularidade.CANCELADA, StatusIrregularidade.VALIDADA],
+      })
       .orderBy('i.atualizadoEm', 'DESC')
       .getMany();
 
@@ -363,6 +369,7 @@ export class VistoriaService {
   private mapIrregularidadeResumo(item: Irregularidade): Record<string, unknown> {
     return {
       id: item.id,
+      numeroIrregularidade: item.numeroIrregularidade,
       idarea: item.idArea,
       nomeArea: item.area?.nome,
       idcomponente: item.idComponente,
@@ -371,6 +378,7 @@ export class VistoriaService {
       descricaoSintoma: item.sintoma?.descricao,
       observacao: item.observacao ?? undefined,
       resolvido: item.resolvido,
+      statusAtual: item.statusAtual,
       atualizadoEm: item.atualizadoEm.toISOString(),
     };
   }

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { StatusIrregularidade } from '../../../common/enums/status-irregularidade.enum';
 
 export class IrregularidadeHistoricoVeiculoMidiaDto {
   @ApiProperty({ description: 'ID da mídia', format: 'uuid' })
@@ -16,8 +17,11 @@ export class IrregularidadeHistoricoVeiculoMidiaDto {
   @ApiProperty({ description: 'Tamanho do arquivo em bytes' })
   tamanho: number;
 
-  @ApiProperty({ description: 'Conteúdo base64 da mídia' })
-  dadosBase64: string;
+  @ApiProperty({
+    description: 'Conteúdo base64 da mídia (carregado sob demanda)',
+    required: false,
+  })
+  dadosBase64?: string;
 
   @ApiProperty({ description: 'Duração do áudio em ms', required: false })
   duracaoMs?: number | null;
@@ -62,6 +66,12 @@ export class IrregularidadeHistoricoVeiculoItemDto {
 
   @ApiProperty({ description: 'Indica se irregularidade está resolvida' })
   resolvido: boolean;
+
+  @ApiProperty({
+    description: 'Status atual da irregularidade',
+    enum: StatusIrregularidade,
+  })
+  statusAtual: StatusIrregularidade;
 
   @ApiProperty({ description: 'Data de atualização em ISO string' })
   atualizadoEm: string;

@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { Departamento } from '../departamento/entities/departamento.entity';
 import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
 import { Usuario } from './entities/usuario.entity';
+import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { FindUsuariosDto } from './dto/find-usuarios.dto';
@@ -32,6 +33,8 @@ export class UsuariosService {
     private readonly departamentoRepository: Repository<Departamento>,
     @InjectRepository(DepartamentoUsuario)
     private readonly departamentoUsuarioRepository: Repository<DepartamentoUsuario>,
+    @InjectRepository(EmpresaTerceira)
+    private readonly empresaTerceiraRepository: Repository<EmpresaTerceira>,
   ) {}
 
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
@@ -64,6 +67,19 @@ export class UsuariosService {
         );
       }
       // Montar dados do usuário
+      let empresa: EmpresaTerceira | undefined;
+      if (createUsuarioDto.idEmpresa) {
+        empresa =
+          (await this.empresaTerceiraRepository.findOne({
+            where: { id: createUsuarioDto.idEmpresa },
+          })) ?? undefined;
+        if (!empresa) {
+          throw new NotFoundException(
+            `Empresa com ID ${createUsuarioDto.idEmpresa} não encontrada`,
+          );
+        }
+      }
+
       const userData = {
         nome: createUsuarioDto.nome,
         email: createUsuarioDto.email,
@@ -71,6 +87,7 @@ export class UsuariosService {
         ativo: createUsuarioDto.ativo ?? true,
         tema: createUsuarioDto.tema || 'Claro',
         perfil,
+        empresa,
       };
 
       this.logger.debug('Processed user data:', {
@@ -248,6 +265,22 @@ export class UsuariosService {
         );
       }
       user.perfil = perfil;
+    }
+    if (updateUsuarioDto.idEmpresa !== undefined) {
+      if (!updateUsuarioDto.idEmpresa) {
+        user.empresa = undefined;
+        user.idEmpresa = undefined;
+      } else {
+        const empresa = await this.empresaTerceiraRepository.findOne({
+          where: { id: updateUsuarioDto.idEmpresa },
+        });
+        if (!empresa) {
+          throw new NotFoundException(
+            `Empresa com ID ${updateUsuarioDto.idEmpresa} não encontrada`,
+          );
+        }
+        user.empresa = empresa;
+      }
     }
     if (updateUsuarioDto.tema !== undefined) user.tema = updateUsuarioDto.tema;
 

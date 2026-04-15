@@ -40,6 +40,7 @@ async function bootstrap() {
     ? [
         'https://gestaodetransporte.com',
         'https://www.gestaodetransporte.com',
+        'https://sistemas.metrobus.go.gov.br',
         'http://gestaodetransporte.com',
         'http://www.gestaodetransporte.com',
         'https://api.sistemasfarmamais.com',
@@ -68,7 +69,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
   });
 

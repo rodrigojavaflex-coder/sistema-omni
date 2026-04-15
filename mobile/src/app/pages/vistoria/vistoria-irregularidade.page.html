@@ -51,22 +51,32 @@
           <path d="M13 18h8"></path>
         </svg>
       </ion-button>
-      <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <div class="selected-context" *ngIf="!loading">
-    <p class="context-inline">
-      <strong>Vistoria:</strong> {{ vistoriaNumero }} ·
-      <strong>Veículo:</strong> {{ veiculoNumero }} ·
-      <strong>Área:</strong> {{ areaNome }} ·
-      <strong>Componente:</strong> {{ componenteNome }}
-      <ng-container *ngIf="selectedMatriz?.sintoma?.descricao">
-        · <strong>Sintoma:</strong> {{ selectedMatriz?.sintoma?.descricao }}
-      </ng-container>
-    </p>
+    <div class="context-card">
+      <strong>Vistoria:</strong>
+      <span>{{ vistoriaNumero }}</span>
+    </div>
+    <div class="context-card">
+      <strong>Veículo:</strong>
+      <span>{{ veiculoNumero }}</span>
+    </div>
+    <div class="context-card">
+      <strong>Área:</strong>
+      <span>{{ areaNome }}</span>
+    </div>
+    <div class="context-card">
+      <strong>Componente:</strong>
+      <span>{{ componenteNome }}</span>
+    </div>
+    <div class="context-card" *ngIf="selectedMatriz?.sintoma?.descricao">
+      <strong>Sintoma:</strong>
+      <span>{{ selectedMatriz?.sintoma?.descricao }}</span>
+    </div>
   </div>
 
   <div class="content" *ngIf="loading">
@@ -79,6 +89,7 @@
   </ion-text>
 
   <div *ngIf="!loading && matriz.length > 0 && selectedMatriz === null" class="content sheet-context">
+    <p class="cards-selection-title">Selecione um Sintoma:</p>
     <div class="cards-container">
       <ion-card
         *ngFor="let item of matriz"
@@ -94,11 +105,20 @@
           <p *ngIf="isIrregularidadeJaRegistrada(item)">
             <ion-text color="primary">Irregularidade registrada nesta vistoria</ion-text>
           </p>
-          <p *ngIf="temPendenteAnterior(item)">
+          <p *ngIf="temPendenteAnterior(item)" class="pendencia-anterior-info">
             <ion-text color="warning">
-              Existe irregularidade pendente em vistoria anterior
+              Pendência(s) Registrada(s): {{ quantidadePendenciasAnteriores(item) }}
             </ion-text>
           </p>
+          <ion-button
+            *ngIf="temPendenteAnterior(item)"
+            size="small"
+            fill="outline"
+            color="primary"
+            (click)="visualizarRegistroPendente(item, $event)"
+          >
+            Ver Pendência(s)
+          </ion-button>
         </ion-card-content>
       </ion-card>
     </div>
@@ -133,7 +153,7 @@
 
     <ion-list *ngIf="fotos.length > 0">
       <ion-item *ngFor="let foto of fotos; let i = index">
-        <img [src]="foto.preview" alt="Foto" />
+        <img [src]="'data:image/jpeg;base64,' + foto.dadosBase64" alt="Foto" />
         <ion-label>
           <p>{{ foto.nomeArquivo }}</p>
         </ion-label>
@@ -147,23 +167,22 @@
       <ion-label>
         Áudios novos ({{ audios.length }})
         <p *ngIf="audiosExistentesCount > 0">Já salvos: {{ audiosExistentesCount }}</p>
-        <p *ngIf="gravandoAudio">Gravando: {{ tempoGravacaoSegundos }}s</p>
       </ion-label>
-      <div class="audio-actions">
-        <ion-button fill="outline" (click)="iniciarAudio()" [disabled]="gravandoAudio || !podeGravarAudio">
-          Gravar
-        </ion-button>
-        <ion-button color="danger" fill="outline" (click)="pararAudio()" [disabled]="!gravandoAudio">
-          Parar
-        </ion-button>
-      </div>
+      <ion-button
+        slot="end"
+        fill="outline"
+        (click)="abrirGravacaoAudio()"
+        [disabled]="gravandoAudio || gravacaoPreparando || !podeGravarAudio"
+      >
+        Gravar áudio
+      </ion-button>
     </ion-item>
 
     <ion-list *ngIf="selectedMatriz.permiteAudio && audios.length > 0">
       <ion-item *ngFor="let a of audios; let i = index">
         <ion-label>
           <p>{{ a.nomeArquivo }}</p>
-          <audio class="audio-player" [src]="a.previewUrl" controls preload="metadata"></audio>
+          <audio class="audio-player" [src]="a.previewUrl" controls preload="none"></audio>
         </ion-label>
         <ion-button slot="end" fill="clear" color="danger" (click)="removerAudio(i)">
           <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
@@ -181,9 +200,116 @@
 
 <ion-footer *ngIf="!loading">
   <ion-toolbar>
-    <ion-button expand="block" (click)="salvarIrregularidade()" [disabled]="saving || !selectedMatriz">
-      <ion-spinner *ngIf="saving" name="crescent"></ion-spinner>
-      <span *ngIf="!saving">Salvar irregularidade</span>
-    </ion-button>
+    <div class="footer-actions">
+      <ion-button
+        class="btn-main"
+        (click)="salvarIrregularidade()"
+        [disabled]="saving || !selectedMatriz || gravandoAudio || gravacaoPreparando"
+      >
+        <ion-spinner *ngIf="saving" name="crescent"></ion-spinner>
+        <span *ngIf="!saving">Salvar irregularidade</span>
+      </ion-button>
+      <ion-button
+        class="btn-voltar"
+        fill="outline"
+        color="medium"
+        (click)="voltar()"
+        [disabled]="gravandoAudio || gravacaoPreparando"
+      >
+        <ion-icon slot="start" src="/icons/corner-up-left.svg" aria-hidden="true"></ion-icon>
+        Voltar
+      </ion-button>
+    </div>
   </ion-toolbar>
 </ion-footer>
+
+<div class="registro-overlay" *ngIf="exibirRegistroVisualizacao && registroVisualizacao">
+  <div class="registro-card">
+    <h2>Registro {{ registroVisualizacao.numero }}</h2>
+    <p><strong>Data do registro:</strong> {{ registroVisualizacao.dataRegistro }}</p>
+    <p><strong>Vistoriador:</strong> {{ registroVisualizacao.vistoriador }}</p>
+    <p><strong>Área:</strong> {{ registroVisualizacao.area }}</p>
+    <p><strong>Componente:</strong> {{ registroVisualizacao.componente }}</p>
+    <p><strong>Sintoma:</strong> {{ registroVisualizacao.sintoma }}</p>
+    <p><strong>Observação:</strong> {{ registroVisualizacao.observacao }}</p>
+
+    <div class="registro-midias-bloco">
+      <p><strong>Fotos ({{ registroVisualizacao.fotos.length }}):</strong></p>
+      <p *ngIf="registroVisualizacao.fotos.length === 0">- Nenhuma foto</p>
+      <div class="registro-fotos-grid" *ngIf="registroVisualizacao.fotos.length > 0">
+        <div class="registro-foto-item" *ngFor="let foto of registroVisualizacao.fotos">
+          <img
+            [src]="foto.src"
+            [alt]="foto.nomeArquivo"
+            class="registro-foto-preview"
+            (click)="abrirPreviewImagemRegistro(foto.src, foto.nomeArquivo)"
+          />
+          <p>{{ foto.nomeArquivo }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="registro-midias-bloco">
+      <p><strong>Áudios ({{ registroVisualizacao.audios.length }}):</strong></p>
+      <p *ngIf="registroVisualizacao.audios.length === 0">- Nenhum áudio</p>
+      <div *ngIf="registroVisualizacao.audios.length > 0">
+        <div class="registro-audio-item" *ngFor="let audio of registroVisualizacao.audios">
+          <p>{{ audio.nomeArquivo }}</p>
+          <audio [src]="audio.src" controls preload="none"></audio>
+        </div>
+      </div>
+    </div>
+
+    <ion-button expand="block" (click)="fecharVisualizacaoRegistro()">OK</ion-button>
+  </div>
+</div>
+
+<div class="preview-imagem-overlay" *ngIf="previewImagemRegistroSrc">
+  <div class="preview-imagem-topbar">
+    <p class="preview-imagem-nome">{{ previewImagemRegistroNome }}</p>
+    <ion-button size="small" (click)="fecharPreviewImagemRegistro()">Fechar</ion-button>
+  </div>
+  <div class="preview-imagem-body" (click)="fecharPreviewImagemRegistro()">
+    <img
+      [src]="previewImagemRegistroSrc"
+      alt="Preview da imagem"
+      class="preview-imagem-full"
+      (click)="$event.stopPropagation()"
+    />
+  </div>
+</div>
+
+<!-- Overlay nativo: ion-modal com [isOpen] falha em alguns builds WebView; fixed cobre toda a viewport -->
+<div
+  *ngIf="exibirModalGravacaoAudio"
+  class="gravacao-audio-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="gravacao-audio-titulo-el"
+>
+  <div class="gravacao-audio-panel">
+    <ng-container *ngIf="gravacaoPreparando">
+      <h1 id="gravacao-audio-titulo-el" class="gravacao-audio-titulo">Preparando gravação</h1>
+      <p class="gravacao-audio-sub">Aguarde enquanto o microfone é ativado.</p>
+      <ion-spinner class="gravacao-audio-spinner" name="crescent"></ion-spinner>
+    </ng-container>
+    <ng-container *ngIf="!gravacaoPreparando">
+      <h1 id="gravacao-audio-titulo-el" class="gravacao-audio-titulo">Gravando áudio</h1>
+      <p class="gravacao-audio-sub">Fale próximo ao microfone. Toque em finalizar para salvar na lista.</p>
+      <div class="gravacao-audio-pulse-wrap" aria-hidden="true">
+        <span class="gravacao-audio-pulse"></span>
+      </div>
+      <p class="gravacao-audio-timer" aria-live="polite">{{ tempoGravacaoFormatado }}</p>
+      <p class="gravacao-audio-legenda">Duração</p>
+      <div class="gravacao-audio-botoes">
+        <ion-button expand="block" color="danger" (click)="finalizarGravacaoModal()">
+          Parar e salvar áudio
+        </ion-button>
+        <ion-button expand="block" fill="outline" color="medium" (click)="descartarGravacaoModal()">
+          Descartar gravação
+        </ion-button>
+      </div>
+    </ng-container>
+  </div>
+</div>
+

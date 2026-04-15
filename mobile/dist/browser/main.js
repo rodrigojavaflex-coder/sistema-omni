@@ -1,6 +1,6 @@
 import {
   VistoriaFlowService
-} from "./chunk-XK4MYM6O.js";
+} from "./chunk-E32UKBIK.js";
 import {
   addIcons,
   clipboardOutline,
@@ -11,8 +11,8 @@ import {
 } from "./chunk-C5VNYMLZ.js";
 import {
   AuthService
-} from "./chunk-NMTSWNTL.js";
-import "./chunk-2MMOVOXA.js";
+} from "./chunk-2YZPEABG.js";
+import "./chunk-3HI66MTA.js";
 import {
   AlertController,
   CUSTOM_ELEMENTS_SCHEMA,
@@ -60,7 +60,7 @@ import {
   ɵɵtext,
   ɵɵtextInterpolate,
   ɵɵtextInterpolate1
-} from "./chunk-46CAF6GZ.js";
+} from "./chunk-37Y5E3Q6.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import {
@@ -128,58 +128,63 @@ var routes = [
   },
   {
     path: "login",
-    loadComponent: () => import("./chunk-LVZFRMQ7.js").then((m) => m.LoginPage)
+    loadComponent: () => import("./chunk-S6AXOJRB.js").then((m) => m.LoginPage)
   },
   {
     path: "home",
-    loadComponent: () => import("./chunk-7RTVSO3A.js").then((m) => m.HomePage),
+    loadComponent: () => import("./chunk-IVKYWZ6X.js").then((m) => m.HomePage),
     canActivate: [authGuard]
   },
   {
     path: "configuracoes",
-    loadComponent: () => import("./chunk-DCBLPWQL.js").then((m) => m.ConfiguracoesPage),
+    loadComponent: () => import("./chunk-5RVP6IQV.js").then((m) => m.ConfiguracoesPage),
     canActivate: [authGuard]
   },
   {
     path: "sobre",
-    loadComponent: () => import("./chunk-4O5EDV3V.js").then((m) => m.SobrePage),
+    loadComponent: () => import("./chunk-PLJWLVKG.js").then((m) => m.SobrePage),
     canActivate: [authGuard]
   },
   {
     path: "vistoria/inicio",
-    loadComponent: () => import("./chunk-QORAFOGM.js").then((m) => m.VistoriaInicioPage),
+    loadComponent: () => import("./chunk-FTXT64XA.js").then((m) => m.VistoriaInicioPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas",
-    loadComponent: () => import("./chunk-DBZSJ2WP.js").then((m) => m.VistoriaAreasPage),
+    loadComponent: () => import("./chunk-CZEBILXY.js").then((m) => m.VistoriaAreasPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId",
-    loadComponent: () => import("./chunk-MELY54BB.js").then((m) => m.VistoriaComponentesPage),
+    loadComponent: () => import("./chunk-NXD6SQM7.js").then((m) => m.VistoriaComponentesPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId/componentes/:componenteId",
-    loadComponent: () => import("./chunk-JGZ6I2SU.js").then((m) => m.VistoriaIrregularidadePage),
+    loadComponent: () => import("./chunk-QVVOEY56.js").then((m) => m.VistoriaIrregularidadePage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/finalizar",
-    loadComponent: () => import("./chunk-OB6BVWZP.js").then((m) => m.VistoriaFinalizarPage),
+    loadComponent: () => import("./chunk-4RPNNH6B.js").then((m) => m.VistoriaFinalizarPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
-    path: "vistoria/historico-veiculo",
-    loadComponent: () => import("./chunk-3VE2KAA4.js").then((m) => m.VistoriaHistoricoVeiculoPage),
+    path: "vistoria/pendencias-veiculo",
+    loadComponent: () => import("./chunk-3JHWZYWV.js").then((m) => m.VistoriaHistoricoVeiculoPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_web_historico_veiculo:read"] }
+  },
+  {
+    path: "vistoria/historico-veiculo",
+    redirectTo: "vistoria/pendencias-veiculo",
+    pathMatch: "full"
   },
   {
     path: "**",
@@ -265,11 +270,11 @@ function AppComponent_ion_menu_1_ion_item_12_Template(rf, ctx) {
     \u0275\u0275listener("click", function AppComponent_ion_menu_1_ion_item_12_Template_ion_item_click_0_listener() {
       \u0275\u0275restoreView(_r5);
       const ctx_r1 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r1.goTo("/vistoria/historico-veiculo", { fromMenu: true }));
+      return \u0275\u0275resetView(ctx_r1.goTo("/vistoria/pendencias-veiculo", { fromMenu: true }));
     });
     \u0275\u0275element(1, "ion-icon", 27);
     \u0275\u0275elementStart(2, "ion-label", 12);
-    \u0275\u0275text(3, "Hist\xF3rico do Ve\xEDculo");
+    \u0275\u0275text(3, "Pend\xEAncias do Ve\xEDculo");
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -378,7 +383,7 @@ var AppComponent = class _AppComponent {
   }
   goTo(route, state) {
     return __async(this, null, function* () {
-      if (this.hasVistoriaEmAndamento && (route === "/vistoria/historico-veiculo" || route === "/configuracoes" || route === "/sobre")) {
+      if (this.hasVistoriaEmAndamento && (route === "/vistoria/pendencias-veiculo" || route === "/configuracoes" || route === "/sobre")) {
         return;
       }
       yield this.menuController.close();
@@ -518,10 +523,10 @@ var AppComponent = class _AppComponent {
           detail="true"
           class="menu-item"
           [class.menu-item-disabled]="hasVistoriaEmAndamento"
-          (click)="goTo('/vistoria/historico-veiculo', { fromMenu: true })"
+          (click)="goTo('/vistoria/pendencias-veiculo', { fromMenu: true })"
         >
           <ion-icon name="clipboard-outline" slot="start" class="menu-item-icon"></ion-icon>
-          <ion-label class="menu-item-label">Hist\xF3rico do Ve\xEDculo</ion-label>
+          <ion-label class="menu-item-label">Pend\xEAncias do Ve\xEDculo</ion-label>
         </ion-item>
         <ion-item
           lines="none"

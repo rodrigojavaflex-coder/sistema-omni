@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Post,
   Patch,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -26,6 +27,7 @@ import { IrregularidadeImagemResumoDto } from './dto/irregularidade-imagem-resum
 import { IrregularidadeAudioResumoDto } from './dto/irregularidade-audio-resumo.dto';
 import { IrregularidadeHistoricoVeiculoDto } from './dto/irregularidade-historico-veiculo.dto';
 import { IrregularidadeService } from './irregularidade.service';
+import { Request } from 'express';
 
 @ApiTags('vistorias')
 @ApiBearerAuth()
@@ -55,8 +57,9 @@ export class VistoriaController {
   addIrregularidade(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: CreateIrregularidadeDto,
+    @Req() req: Request & { user?: { id?: string; idEmpresa?: string } },
   ) {
-    return this.irregularidadeService.create(id, dto);
+    return this.irregularidadeService.create(id, dto, req.user);
   }
 
   @Get(':id/irregularidades')
@@ -83,8 +86,10 @@ export class VistoriaController {
   })
   listIrregularidadesImages(
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Query('irregularidadeId', new ParseUUIDPipe({ optional: true }))
+    irregularidadeId?: string,
   ): Promise<IrregularidadeImagemResumoDto[]> {
-    return this.irregularidadeService.listImages(id);
+    return this.irregularidadeService.listImages(id, irregularidadeId);
   }
 
   @Get(':id/irregularidades/audios')
@@ -93,8 +98,10 @@ export class VistoriaController {
   @ApiResponse({ status: 200, description: 'Lista de áudios por irregularidade' })
   listIrregularidadesAudios(
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Query('irregularidadeId', new ParseUUIDPipe({ optional: true }))
+    irregularidadeId?: string,
   ): Promise<IrregularidadeAudioResumoDto[]> {
-    return this.irregularidadeService.listAudios(id);
+    return this.irregularidadeService.listAudios(id, irregularidadeId);
   }
 
   @Post(':id/finalizar')

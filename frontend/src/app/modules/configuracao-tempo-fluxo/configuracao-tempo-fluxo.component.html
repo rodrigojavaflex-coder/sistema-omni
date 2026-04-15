@@ -1,0 +1,122 @@
+<div class="configuracao-container">
+  <h2 class="form-title">Configuração de Tempo do Fluxo</h2>
+
+  <div class="audit-section">
+    <h3 class="section-title">Faixas por Tela</h3>
+    <p class="section-description">
+      Configure por tela do fluxo. Para o tempo normal ficar limpo, desative cor e rótulo.
+    </p>
+
+    <div class="fluxo-tabs">
+      @for (aba of getAbasFluxo(); track aba.id) {
+        <button
+          type="button"
+          class="tab-btn"
+          [class.tab-btn--active]="abaFluxoSelecionada === aba.id"
+          (click)="abaFluxoSelecionada = aba.id"
+        >
+          {{ aba.label }}
+        </button>
+      }
+    </div>
+
+    <div class="tempo-grid-header">
+      <span>Início (h)</span>
+      <span>Fim (h)</span>
+      <span>Rótulo</span>
+      <span>Cor</span>
+      <span>Mostrar cor</span>
+      <span>Mostrar rótulo</span>
+      <span>Ativa</span>
+      <span></span>
+    </div>
+
+    <div class="tempo-grid-row" *ngFor="let faixa of getFaixasAtuais(); let i = index">
+      <input
+        type="number"
+        class="form-input"
+        min="0"
+        [(ngModel)]="faixa.minHoras"
+        [ngModelOptions]="{ standalone: true }"
+      />
+      <input
+        type="number"
+        class="form-input"
+        min="0"
+        [(ngModel)]="faixa.maxHoras"
+        [ngModelOptions]="{ standalone: true }"
+      />
+      <input
+        type="text"
+        class="form-input"
+        placeholder="Ex.: Crítico"
+        [(ngModel)]="faixa.label"
+        [ngModelOptions]="{ standalone: true }"
+      />
+      <input
+        type="color"
+        class="form-input color-input"
+        [(ngModel)]="faixa.corHex"
+        [ngModelOptions]="{ standalone: true }"
+      />
+      <label class="checkbox-center">
+        <input type="checkbox" [(ngModel)]="faixa.mostrarCor" [ngModelOptions]="{ standalone: true }" />
+      </label>
+      <label class="checkbox-center">
+        <input type="checkbox" [(ngModel)]="faixa.mostrarRotulo" [ngModelOptions]="{ standalone: true }" />
+      </label>
+      <label class="checkbox-center">
+        <input type="checkbox" [(ngModel)]="faixa.ativo" [ngModelOptions]="{ standalone: true }" />
+      </label>
+      <button
+        type="button"
+        class="btn-remove"
+        (click)="removerFaixa(i)"
+        [disabled]="!canDeleteFaixa"
+      >
+        Remover
+      </button>
+    </div>
+
+    <div class="actions-inline">
+      <button
+        type="button"
+        class="btn-secondary-inline"
+        (click)="adicionarFaixa()"
+        [disabled]="!canCreateFaixa"
+      >
+        + Adicionar faixa
+      </button>
+      <button
+        type="button"
+        class="btn-secondary-inline"
+        (click)="restaurarPadrao()"
+        [disabled]="!canUpdateFaixa"
+      >
+        Restaurar padrão (3 faixas)
+      </button>
+    </div>
+
+    <div class="tempo-validation" *ngIf="getErrosTempoDaAbaAtual().length">
+      <strong>Verifique as faixas desta tela:</strong>
+      <ul>
+        <li *ngFor="let erro of getErrosTempoDaAbaAtual()">{{ erro }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <button type="button" class="btn-primary" (click)="salvar()" [disabled]="loading || !canSave">
+    {{ loading ? 'Salvando...' : 'Salvar Configuração de Tempo' }}
+  </button>
+
+  @if (success) {
+    <div class="alert alert-success">
+      {{ success }}
+    </div>
+  }
+  @if (error) {
+    <div class="alert alert-danger">
+      {{ error }}
+    </div>
+  }
+</div>

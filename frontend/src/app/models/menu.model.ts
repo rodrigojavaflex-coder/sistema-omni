@@ -35,10 +35,17 @@ export const MENU_CONFIGURATION: MenuConfig = {
           parentMenu: 'Administração'
         },
         {
-          label: 'Configuração',
+          label: 'Configuração do Sistema',
           route: '/configuracao',
           icon: 'feather-settings',
           requiredPermissions: [Permission.CONFIGURACAO_ACCESS],
+          parentMenu: 'Administração'
+        },
+        {
+          label: 'Configuração Tempo Fluxo',
+          route: '/configuracao/tempo-fluxo',
+          icon: 'feather-activity',
+          requiredPermissions: [Permission.CONFIGURACAO_TEMPO_FLUXO_ACCESS],
           parentMenu: 'Administração'
         }, {
           label: 'Usuários',
@@ -290,11 +297,41 @@ export const MENU_CONFIGURATION: MenuConfig = {
       order: 3,
       submenuItems: [
         {
-          label: 'Vistorias',
-          route: '/vistorias',
+          label: 'Fluxo Vistoria',
           icon: 'feather-check-square',
-          requiredPermissions: [Permission.VISTORIA_WEB_READ],
-          parentMenu: 'Gestão'
+          requiredPermissions: [],
+          isSubmenu: true,
+          parentMenu: 'Gestão',
+          submenuItems: [
+            {
+              label: 'Vistorias',
+              route: '/vistorias',
+              icon: 'feather-check-square',
+              requiredPermissions: [Permission.VISTORIA_WEB_READ],
+              parentMenu: 'Gestão'
+            },
+            {
+              label: 'Tratamento',
+              route: '/irregularidades/tratamento',
+              icon: 'feather-activity',
+              requiredPermissions: [Permission.IRREGULARIDADE_TRATAMENTO_READ],
+              parentMenu: 'Gestão'
+            },
+            {
+              label: 'Manutenção',
+              route: '/irregularidades/manutencao',
+              icon: 'feather-settings',
+              requiredPermissions: [Permission.IRREGULARIDADE_MANUTENCAO_READ],
+              parentMenu: 'Gestão'
+            },
+            {
+              label: 'Validação',
+              route: '/irregularidades/validacao-final',
+              icon: 'feather-check',
+              requiredPermissions: [Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ],
+              parentMenu: 'Gestão'
+            }
+          ]
         },
         {
           label: 'Painel de Metas',

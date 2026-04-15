@@ -98,7 +98,7 @@ export class AppComponent {
   async goTo(route: string, state?: Record<string, unknown>): Promise<void> {
     if (
       this.hasVistoriaEmAndamento &&
-      (route === '/vistoria/historico-veiculo' || route === '/configuracoes' || route === '/sobre')
+      (route === '/vistoria/pendencias-veiculo' || route === '/configuracoes' || route === '/sobre')
     ) {
       return;
     }

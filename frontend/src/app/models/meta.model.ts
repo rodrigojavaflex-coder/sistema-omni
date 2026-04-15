@@ -14,6 +14,7 @@ export enum UnidadeMeta {
   HORAS = 'HORAS',
   VALOR = 'VALOR',
   QUANTIDADE = 'QUANTIDADE',
+  POSICAO = 'POSICAO',
 }
 
 export const UNIDADE_META_LABELS: Record<UnidadeMeta, string> = {
@@ -22,18 +23,21 @@ export const UNIDADE_META_LABELS: Record<UnidadeMeta, string> = {
   [UnidadeMeta.HORAS]: 'Horas',
   [UnidadeMeta.VALOR]: 'Valor R$',
   [UnidadeMeta.QUANTIDADE]: 'Quantidade',
+  [UnidadeMeta.POSICAO]: 'Posição',
 };
 
 export enum IndicadorMeta {
   RESULTADO_ACUMULADO = 'RESULTADO_ACUMULADO',
   POR_MEDIA = 'POR_MEDIA',
   PROGRESSO = 'PROGRESSO',
+  INDICE_ACUMULADO = 'INDICE_ACUMULADO',
 }
 
 export const INDICADOR_META_LABELS: Record<IndicadorMeta, string> = {
   [IndicadorMeta.RESULTADO_ACUMULADO]: 'Resultado Acumulado',
   [IndicadorMeta.POR_MEDIA]: 'Por Média',
   [IndicadorMeta.PROGRESSO]: 'Progresso',
+  [IndicadorMeta.INDICE_ACUMULADO]: 'Indice acumulado',
 };
 
 export interface Meta {
@@ -48,6 +52,9 @@ export interface Meta {
   inicioDaMeta: string;
   prazoFinal?: string;
   valorMeta?: number;
+  valorMetaMensal?: number;
+  taxaDeCrescimento?: number;
+  valorMetaInicial?: number;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -62,6 +69,9 @@ export interface CreateMetaDto {
   inicioDaMeta: string;
   prazoFinal?: string;
   valorMeta?: number;
+  valorMetaMensal?: number;
+  taxaDeCrescimento?: number;
+  valorMetaInicial?: number;
 }
 
 export interface UpdateMetaDto extends Partial<CreateMetaDto> {}

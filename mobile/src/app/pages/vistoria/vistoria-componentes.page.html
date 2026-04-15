@@ -51,18 +51,24 @@
           <path d="M13 18h8"></path>
         </svg>
       </ion-button>
-      <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <div class="selected-context" *ngIf="!loading">
-    <p class="context-inline">
-      <strong>Vistoria:</strong> {{ vistoriaNumero }} ·
-      <strong>Veículo:</strong> {{ veiculoNumero }} ·
-      <strong>Área:</strong> {{ areaNome }}
-    </p>
+    <div class="context-card">
+      <strong>Vistoria:</strong>
+      <span>{{ vistoriaNumero }}</span>
+    </div>
+    <div class="context-card">
+      <strong>Veículo:</strong>
+      <span>{{ veiculoNumero }}</span>
+    </div>
+    <div class="context-card">
+      <strong>Área:</strong>
+      <span>{{ areaNome }}</span>
+    </div>
   </div>
 
   <div class="content" *ngIf="loading">
@@ -75,7 +81,7 @@
   </ion-text>
 
   <div class="content sheet-context" *ngIf="!loading && componentes.length > 0">
-    <p>Selecione um componente abaixo para registrar irregularidade.</p>
+    <p class="cards-selection-title">Selecione um Componente:</p>
   </div>
 
   <div class="content" *ngIf="!loading && componentes.length === 0">
@@ -103,8 +109,10 @@
                 Irregularidades nesta vistoria: {{ irregularidadesPorComponente[item.idComponente] }}
               </ion-text>
             </p>
-            <p *ngIf="pendentesPorComponente.has(item.idComponente)" class="ion-text-wrap">
-              <ion-text color="warning">Existe irregularidade pendente em vistoria anterior</ion-text>
+            <p *ngIf="contagemPendentesPorComponente[item.idComponente] > 0" class="ion-text-wrap">
+              <ion-text color="warning">
+                Pendência(s) Registrada(s): {{ contagemPendentesPorComponente[item.idComponente] }}
+              </ion-text>
             </p>
           </ion-label>
         </ion-item>
@@ -115,6 +123,14 @@
 
 <ion-footer *ngIf="!loading">
   <ion-toolbar>
-    <ion-button expand="block" (click)="irParaFinalizar()">Concluir Vistoria</ion-button>
+    <div class="footer-actions">
+      <ion-button class="btn-main" (click)="irParaFinalizar()">
+        Concluir Vistoria
+      </ion-button>
+      <ion-button class="btn-voltar" fill="outline" color="medium" (click)="voltar()">
+        <ion-icon slot="start" src="/icons/corner-up-left.svg" aria-hidden="true"></ion-icon>
+        Voltar
+      </ion-button>
+    </div>
   </ion-toolbar>
 </ion-footer>

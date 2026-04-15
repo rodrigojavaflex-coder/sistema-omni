@@ -78,14 +78,8 @@ export class AuthService {
 
   private mapLoginError(error: any): string {
     const status = Number(error?.status ?? 0);
-    if (status === 0) {
-      return 'Nao foi possivel conectar ao servidor. Tente novamente.';
-    }
     if (status === 401) {
-      return 'E-mail ou senha invalidos.';
-    }
-    if (status >= 500) {
-      return 'Servico temporariamente indisponivel. Tente novamente em instantes.';
+      return 'E-mail ou senha inválidos.';
     }
 
     return this.errorMessageService.fromApi(

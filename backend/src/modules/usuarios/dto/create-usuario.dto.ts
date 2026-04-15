@@ -9,6 +9,7 @@ import {
   MinLength,
   IsArray,
   IsIn,
+  IsUUID,
 } from 'class-validator';
 
 export class CreateUsuarioDto {
@@ -78,4 +79,13 @@ export class CreateUsuarioDto {
   @IsOptional()
   @IsArray({ message: 'departamentoIds deve ser uma lista de IDs' })
   departamentoIds?: string[];
+
+  @ApiProperty({
+    description: 'ID da empresa vinculada ao usuário',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'idEmpresa deve ser um UUID válido' })
+  idEmpresa?: string;
 }

@@ -8,6 +8,7 @@ import {
   IonContent,
   IonFooter,
   IonHeader,
+  IonIcon,
   IonItem,
   IonLabel,
   IonList,
@@ -37,6 +38,7 @@ import { AreaComponente } from '../../models/area-vistoriada.model';
     IonContent,
     IonFooter,
     IonHeader,
+    IonIcon,
     IonModal,
     IonTitle,
     IonToolbar,
@@ -65,7 +67,7 @@ export class VistoriaComponentesPage implements OnInit {
   areaNome = '';
   componentes: AreaComponente[] = [];
   irregularidadesPorComponente: Record<string, number> = {};
-  pendentesPorComponente = new Set<string>();
+  contagemPendentesPorComponente: Record<string, number> = {};
   loading = false;
   errorMessage = '';
   private initialized = false;
@@ -128,7 +130,7 @@ export class VistoriaComponentesPage implements OnInit {
     this.loading = true;
     this.errorMessage = '';
     this.irregularidadesPorComponente = {};
-    this.pendentesPorComponente = new Set<string>();
+    this.contagemPendentesPorComponente = {};
     try {
       const bootstrap = await this.bootstrapService.getOrFetch(vistoriaId);
       const areaBootstrap = bootstrap?.areas?.find((a) => a.id === this.areaId);
@@ -154,7 +156,10 @@ export class VistoriaComponentesPage implements OnInit {
         });
       pendentesAnteriores
         .filter((item) => item.idarea === this.areaId)
-        .forEach((item) => this.pendentesPorComponente.add(item.idcomponente));
+        .forEach((item) => {
+          this.contagemPendentesPorComponente[item.idcomponente] =
+            (this.contagemPendentesPorComponente[item.idcomponente] ?? 0) + 1;
+        });
     } catch {
       this.errorMessage = 'Erro ao carregar componentes.';
     } finally {
@@ -239,7 +244,7 @@ export class VistoriaComponentesPage implements OnInit {
     if (!this.canViewHistoricoVeiculo) {
       return;
     }
-    this.router.navigate(['/vistoria/historico-veiculo'], {
+    this.router.navigate(['/vistoria/pendencias-veiculo'], {
       state: { fromMenu: false },
     });
   }
@@ -261,11 +266,13 @@ export class VistoriaComponentesPage implements OnInit {
 
     const idsDaVistoriaAtual = new Set(irregularidades.map((item) => item.id));
     const pendentesAnteriores = pendentes.filter((item) => !idsDaVistoriaAtual.has(item.id));
-    this.pendentesPorComponente = new Set(
-      pendentesAnteriores
-        .filter((item) => item.idarea === this.areaId)
-        .map((item) => item.idcomponente),
-    );
+    this.contagemPendentesPorComponente = {};
+    pendentesAnteriores
+      .filter((item) => item.idarea === this.areaId)
+      .forEach((item) => {
+        this.contagemPendentesPorComponente[item.idcomponente] =
+          (this.contagemPendentesPorComponente[item.idcomponente] ?? 0) + 1;
+      });
   }
 
   private escapeHtml(value: string): string {

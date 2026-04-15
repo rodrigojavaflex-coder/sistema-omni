@@ -7,6 +7,7 @@ import { authGuard } from './guards/auth.guard';
 import { permissionGuard } from './guards/permission.guard';
 import { Permission } from './models/usuario.model';
 import { ConfiguracaoComponent } from './modules/configuracao/configuracao.component';
+import { ConfiguracaoTempoFluxoComponent } from './modules/configuracao-tempo-fluxo/configuracao-tempo-fluxo.component';
 import { HomeComponent } from './components/home/home';
 import { ChangePasswordComponent } from './components/change-password/change-password';
 import { PerfilListComponent } from './components/perfil-list/perfil-list';
@@ -17,7 +18,14 @@ export const routes: Routes = [
   {
     path: 'configuracao',
     component: ConfiguracaoComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.CONFIGURACAO_ACCESS] }
+  },
+  {
+    path: 'configuracao/tempo-fluxo',
+    component: ConfiguracaoTempoFluxoComponent,
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.CONFIGURACAO_TEMPO_FLUXO_ACCESS] }
   },
   // Rota de login (sem guard)
   {
@@ -233,6 +241,42 @@ export const routes: Routes = [
     loadComponent: () => import('./components/vistoria-list/vistoria-list').then(m => m.VistoriaListComponent),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: [Permission.VISTORIA_WEB_READ] }
+  },
+  {
+    path: 'irregularidades/tratamento',
+    loadComponent: () =>
+      import('./components/irregularidade-fluxo-list/irregularidade-fluxo-list').then(
+        (m) => m.IrregularidadeFluxoListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permissions: [Permission.IRREGULARIDADE_TRATAMENTO_READ],
+      modo: 'tratamento',
+    },
+  },
+  {
+    path: 'irregularidades/manutencao',
+    loadComponent: () =>
+      import('./components/irregularidade-fluxo-list/irregularidade-fluxo-list').then(
+        (m) => m.IrregularidadeFluxoListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permissions: [Permission.IRREGULARIDADE_MANUTENCAO_READ],
+      modo: 'manutencao',
+    },
+  },
+  {
+    path: 'irregularidades/validacao-final',
+    loadComponent: () =>
+      import('./components/irregularidade-fluxo-list/irregularidade-fluxo-list').then(
+        (m) => m.IrregularidadeFluxoListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permissions: [Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ],
+      modo: 'validacao-final',
+    },
   },
   // Rotas de perfil: paths específicos antes da rota geral para evitar conflitos de prefixo
   {

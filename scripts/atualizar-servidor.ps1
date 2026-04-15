@@ -267,78 +267,46 @@ $webConfigPath = "$frontendPath\web.config"
 if (Test-Path $webConfigPath) {
     $currentWebConfig = Get-Content $webConfigPath -Raw
     
-    # Verificar se possui as duas regras de proxy (dual proxy)
-    $hasOmniApiProxy = $currentWebConfig -match 'name="API Proxy with omni prefix"'
-    $hasDirectApiProxy = $currentWebConfig -match 'name="API Proxy direct"'
+    # Verificar se o web.config da aplicacao /omni esta no padrao SPA
+    $hasAngularRule = $currentWebConfig -match 'name="Angular Routes"'
+    $hasApiProxyRule = $currentWebConfig -match 'name="API Proxy"'
     
-    if (-not ($hasOmniApiProxy -and $hasDirectApiProxy)) {
-        Write-Host "  Web.config desatualizado! Aplicando dual proxy..." -ForegroundColor Yellow
+    if (-not ($hasAngularRule) -or $hasApiProxyRule) {
+        Write-Host "  Web.config desatualizado! Aplicando padrao SPA para /omni..." -ForegroundColor Yellow
         
         $webConfig = @"
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <system.webServer>
-        <!-- MIME Types para arquivos estaticos -->
-        <staticContent>
-            <remove fileExtension=".json"/>
-            <remove fileExtension=".woff"/>
-            <remove fileExtension=".woff2"/>
-            <mimeMap fileExtension=".json" mimeType="application/json"/>
-            <mimeMap fileExtension=".woff" mimeType="application/font-woff"/>
-            <mimeMap fileExtension=".woff2" mimeType="application/font-woff2"/>
-        </staticContent>
-
-        <!-- URL Rewrite Rules -->
-        <rewrite>
-            <rules>
-                <!-- PROXY REVERSO 1: /omni/api/* -> localhost:8080/api/* -->
-                <rule name="API Proxy with omni prefix" stopProcessing="true">
-                    <match url="^omni/api/(.*)" />
-                    <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
-                </rule>
-
-                <!-- PROXY REVERSO 2: /api/* -> localhost:8080/api/* (DIRETO - SEM /omni/) -->
-                <rule name="API Proxy direct" stopProcessing="true">
-                    <match url="^api/(.*)" />
-                    <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
-                </rule>
-
-                <!-- ANGULAR ROUTING: Redirecionar para index.html -->
-                <rule name="Angular Routes" stopProcessing="true">
-                    <match url=".*" />
-                    <conditions logicalGrouping="MatchAll">
-                        <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
-                        <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
-                        <!-- Nao aplicar a requisicoes da API (com ou sem /omni/) -->
-                        <add input="{REQUEST_URI}" pattern="^/(omni/)?api" negate="true" />
-                    </conditions>
-                    <action type="Rewrite" url="/omni/index.html" />
-                </rule>
-            </rules>
-        </rewrite>
-
-        <!-- Headers para seguranca -->
-        <httpProtocol>
-            <customHeaders>
-                <add name="X-Content-Type-Options" value="nosniff" />
-            </customHeaders>
-        </httpProtocol>
-
-        <defaultDocument>
-            <files>
-                <clear />
-                <add value="index.html" />
-            </files>
-        </defaultDocument>
-    </system.webServer>
+  <system.webServer>
+    <staticContent>
+      <remove fileExtension=".json"/>
+      <remove fileExtension=".woff"/>
+      <remove fileExtension=".woff2"/>
+      <mimeMap fileExtension=".json" mimeType="application/json"/>
+      <mimeMap fileExtension=".woff" mimeType="application/font-woff"/>
+      <mimeMap fileExtension=".woff2" mimeType="font/woff2"/>
+    </staticContent>
+    <rewrite>
+      <rules>
+        <rule name="Angular Routes" stopProcessing="true">
+          <match url=".*" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="/omni/index.html" />
+        </rule>
+      </rules>
+    </rewrite>
+  </system.webServer>
 </configuration>
 "@
         
         $webConfig | Out-File -FilePath $webConfigPath -Encoding UTF8 -Force
-        Write-Host "  OK: Web.config atualizado com dual proxy!" -ForegroundColor Green
-        Write-Host "  -> Suporta: /api/* e /omni/api/*" -ForegroundColor Gray
+        Write-Host "  OK: Web.config da aplicacao atualizado com padrao SPA!" -ForegroundColor Green
+        Write-Host "  -> Apenas static + Angular fallback em /omni" -ForegroundColor Gray
     } else {
-        Write-Host "  OK: Web.config ja esta atualizado (dual proxy configurado)" -ForegroundColor Green
+        Write-Host "  OK: Web.config da aplicacao ja esta no padrao SPA" -ForegroundColor Green
     }
 } else {
     Write-Host "  AVISO: web.config nao encontrado em $webConfigPath" -ForegroundColor Yellow
@@ -354,52 +322,88 @@ $rootWebConfigPath = "$rootIisPath\web.config"
 if (Test-Path $rootWebConfigPath) {
     $currentRootConfig = Get-Content $rootWebConfigPath -Raw
     
-    # Verificar se possui a regra global de proxy
-    $hasGlobalProxy = $currentRootConfig -match 'name="Global API Proxy"'
+    # Verificar se possui o padrao esperado no web.config global (raiz)
+    $hasCanonicalHostRule = $currentRootConfig -match 'name="Canonical host only"'
+    $hasApiProxyRule = $currentRootConfig -match 'name="API Proxy"'
+    $hasRootRedirectRule = $currentRootConfig -match 'name="Redirect root to /omni"'
     
-    if (-not $hasGlobalProxy) {
-        Write-Host "  Web.config global desatualizado! Criando regra de proxy..." -ForegroundColor Yellow
+    if (-not ($hasCanonicalHostRule -and $hasApiProxyRule -and $hasRootRedirectRule)) {
+        Write-Host "  Web.config global desatualizado! Aplicando padrao da raiz..." -ForegroundColor Yellow
         
         $rootWebConfig = @"
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <system.webServer>
-        <rewrite>
-            <rules>
-                <!-- PROXY GLOBAL: /api/* -> localhost:8080/api/* -->
-                <rule name="Global API Proxy" stopProcessing="true">
-                    <match url="^api/(.*)" />
-                    <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
-                </rule>
-            </rules>
-        </rewrite>
-    </system.webServer>
+  <system.webServer>
+    <rewrite>
+      <rules>
+
+        <!-- 1) Canonical host (sem forcar https aqui) -->
+        <rule name="Canonical host only" stopProcessing="true">
+          <match url="(.*)" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{HTTP_HOST}" pattern="^sistemas\.metrobus\.go\.gov\.br(:\d+)?$" negate="true" />
+          </conditions>
+          <action type="Redirect" url="https://sistemas.metrobus.go.gov.br/{R:1}" redirectType="Permanent" />
+        </rule>
+
+        <!-- 2) Redirect raiz -->
+        <rule name="Redirect root to /omni" stopProcessing="true">
+          <match url="^$" />
+          <action type="Redirect" url="/omni/" redirectType="Permanent" />
+        </rule>
+
+        <!-- 3) API proxy -->
+        <rule name="API Proxy" stopProcessing="true">
+          <match url="^api/(.*)" />
+          <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
+        </rule>
+
+      </rules>
+    </rewrite>
+  </system.webServer>
 </configuration>
 "@
         
         $rootWebConfig | Out-File -FilePath $rootWebConfigPath -Encoding UTF8 -Force
-        Write-Host "  OK: Web.config GLOBAL atualizado!" -ForegroundColor Green
-        Write-Host "  -> /api/* agora sera proxiado para backend" -ForegroundColor Gray
+        Write-Host "  OK: Web.config GLOBAL atualizado com padrao da raiz!" -ForegroundColor Green
+        Write-Host "  -> Host canonico + redirect / + proxy /api" -ForegroundColor Gray
     } else {
-        Write-Host "  OK: Web.config global ja configurado" -ForegroundColor Green
+        Write-Host "  OK: Web.config global ja configurado (padrao da raiz)" -ForegroundColor Green
     }
 } else {
-    Write-Host "  INFO: Criando web.config GLOBAL na raiz do IIS..." -ForegroundColor Yellow
+    Write-Host "  INFO: Criando web.config GLOBAL na raiz do IIS (padrao da raiz)..." -ForegroundColor Yellow
     
     $rootWebConfig = @"
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <system.webServer>
-        <rewrite>
-            <rules>
-                <!-- PROXY GLOBAL: /api/* -> localhost:8080/api/* -->
-                <rule name="Global API Proxy" stopProcessing="true">
-                    <match url="^api/(.*)" />
-                    <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
-                </rule>
-            </rules>
-        </rewrite>
-    </system.webServer>
+  <system.webServer>
+    <rewrite>
+      <rules>
+
+        <!-- 1) Canonical host (sem forcar https aqui) -->
+        <rule name="Canonical host only" stopProcessing="true">
+          <match url="(.*)" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{HTTP_HOST}" pattern="^sistemas\.metrobus\.go\.gov\.br(:\d+)?$" negate="true" />
+          </conditions>
+          <action type="Redirect" url="https://sistemas.metrobus.go.gov.br/{R:1}" redirectType="Permanent" />
+        </rule>
+
+        <!-- 2) Redirect raiz -->
+        <rule name="Redirect root to /omni" stopProcessing="true">
+          <match url="^$" />
+          <action type="Redirect" url="/omni/" redirectType="Permanent" />
+        </rule>
+
+        <!-- 3) API proxy -->
+        <rule name="API Proxy" stopProcessing="true">
+          <match url="^api/(.*)" />
+          <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
+        </rule>
+
+      </rules>
+    </rewrite>
+  </system.webServer>
 </configuration>
 "@
     

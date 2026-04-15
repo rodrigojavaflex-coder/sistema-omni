@@ -16,3 +16,4 @@ export * from './componente.model';
 export * from './sintoma.model';
 export * from './matriz-criticidade.model';
 export * from './modelo-veiculo.model';
+export * from './irregularidade-fluxo.model';

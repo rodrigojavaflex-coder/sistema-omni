@@ -3,7 +3,7 @@
     <ion-buttons slot="start">
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
-    <ion-title>Histórico do Veículo</ion-title>
+    <ion-title>Pendências do Veículo</ion-title>
     <ion-buttons slot="end" *ngIf="!openedFromMenu">
       <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
     </ion-buttons>
@@ -13,7 +13,7 @@
 <ion-content [fullscreen]="true">
   <div class="content" *ngIf="loading">
     <ion-spinner name="crescent"></ion-spinner>
-    <p>Carregando histórico...</p>
+    <p>Carregando pendências...</p>
   </div>
 
   <div class="content" *ngIf="errorMessage">
@@ -55,7 +55,7 @@
     <ion-card *ngIf="selectedVeiculoId">
       <ion-card-content>
         <p class="veiculo-destaque"><strong>Veículo {{ veiculoDescricao }}</strong></p>
-        <p><strong>Total de não resolvidas:</strong> {{ total }}</p>
+        <p><strong>Total de pendências:</strong> {{ total }}</p>
       </ion-card-content>
     </ion-card>
 
@@ -91,33 +91,60 @@
           <p><strong>Observação:</strong> {{ item.observacao || '-' }}</p>
 
           <div class="midias-section">
-            <p><strong>Imagens</strong></p>
-            <div class="imagem-grid" *ngIf="getImagens(item).length > 0; else semImagensTpl">
-              <img
-                *ngFor="let midia of getImagens(item)"
-                [src]="getMidiaSrc(midia.dadosBase64, midia.mimeType)"
-                [alt]="midia.nomeArquivo"
-                (pointerup)="abrirImagem(midia.nomeArquivo, midia.dadosBase64, midia.mimeType)"
-                (click)="abrirImagem(midia.nomeArquivo, midia.dadosBase64, midia.mimeType)"
-              />
-            </div>
-            <ng-template #semImagensTpl>
-              <p class="sem-midia">Sem imagens</p>
-            </ng-template>
-
-            <p><strong>Áudios</strong></p>
-            <div class="audio-list" *ngIf="getAudios(item).length > 0; else semAudiosTpl">
-              <div *ngFor="let midia of getAudios(item)" class="audio-item">
-                <p class="audio-name">
-                  {{ midia.nomeArquivo }}
-                  <span *ngIf="formatarDuracao(midia.duracaoMs)">({{ formatarDuracao(midia.duracaoMs) }})</span>
+            <div class="midias-header">
+              <div>
+                <p><strong>Mídias</strong> ({{ item.midias.length || 0 }})</p>
+                <p class="midias-resumo">
+                  {{ getQuantidadeImagens(item) }} imagem(ns) • {{ getQuantidadeAudios(item) }} áudio(s)
                 </p>
-                <audio [src]="getMidiaSrc(midia.dadosBase64, midia.mimeType)" controls preload="metadata"></audio>
               </div>
+              <ion-button
+                size="small"
+                fill="outline"
+                (click)="toggleMidias(item)"
+                [disabled]="isMidiaLoading(item.id)"
+              >
+                <ion-spinner *ngIf="isMidiaLoading(item.id)" name="crescent"></ion-spinner>
+                <span *ngIf="!isMidiaLoading(item.id)">
+                  {{ isMidiaExpanded(item.id) ? 'Ocultar mídias' : 'Carregar mídias' }}
+                </span>
+              </ion-button>
             </div>
-            <ng-template #semAudiosTpl>
-              <p class="sem-midia">Sem audio</p>
-            </ng-template>
+
+            <div class="midias-loading" *ngIf="isMidiaLoading(item.id)">
+              <ion-spinner name="crescent"></ion-spinner>
+              <span>Carregando mídias...</span>
+            </div>
+
+            <ng-container *ngIf="isMidiaExpanded(item.id) && isMidiaLoaded(item.id) && !isMidiaLoading(item.id)">
+              <p><strong>Imagens</strong></p>
+              <div class="imagem-grid" *ngIf="getImagens(item).length > 0; else semImagensTpl">
+                <img
+                  *ngFor="let midia of getImagens(item)"
+                  [src]="midia.src"
+                  [alt]="midia.nomeArquivo"
+                  (pointerup)="abrirImagem(midia)"
+                  (click)="abrirImagem(midia)"
+                />
+              </div>
+              <ng-template #semImagensTpl>
+                <p class="sem-midia">Sem imagens</p>
+              </ng-template>
+
+              <p><strong>Áudios</strong></p>
+              <div class="audio-list" *ngIf="getAudios(item).length > 0; else semAudiosTpl">
+                <div *ngFor="let midia of getAudios(item)" class="audio-item">
+                  <p class="audio-name">
+                    {{ midia.nomeArquivo }}
+                    <span *ngIf="formatarDuracao(midia.duracaoMs)">({{ formatarDuracao(midia.duracaoMs) }})</span>
+                  </p>
+                  <audio [src]="midia.src" controls preload="none"></audio>
+                </div>
+              </div>
+              <ng-template #semAudiosTpl>
+                <p class="sem-midia">Sem audio</p>
+              </ng-template>
+            </ng-container>
           </div>
         </ion-card-content>
       </ion-card>
@@ -128,7 +155,7 @@
         Nenhuma irregularidade não resolvida para os filtros selecionados.
       </p>
       <ng-template #selectVehicleHint>
-        <p class="empty-text">Selecione um veículo para visualizar o histórico.</p>
+        <p class="empty-text">Selecione um veículo para visualizar as pendências.</p>
       </ng-template>
     </ng-template>
   </div>

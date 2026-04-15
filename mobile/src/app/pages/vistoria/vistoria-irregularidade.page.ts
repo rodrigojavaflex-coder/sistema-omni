@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -51,15 +51,32 @@ interface FotoIrregularidade {
   nomeArquivo: string;
   tamanho: number;
   dadosBase64: string;
-  preview: string;
 }
 
 interface AudioIrregularidade {
+  id?: string;
   nomeArquivo: string;
   base64: string;
   mimeType: string;
-  previewUrl: string;
+  previewUrl?: string;
   durationMs?: number;
+}
+
+interface RegistroMidiasCarregadas {
+  fotos: FotoIrregularidade[];
+  audios: AudioIrregularidade[];
+}
+
+interface RegistroVisualizacao {
+  numero: string;
+  dataRegistro: string;
+  vistoriador: string;
+  area: string;
+  componente: string;
+  sintoma: string;
+  observacao: string;
+  fotos: Array<{ nomeArquivo: string; src: string }>;
+  audios: Array<{ nomeArquivo: string; src: string }>;
 }
 
 @Component({
@@ -92,7 +109,7 @@ interface AudioIrregularidade {
     IonSpinner,
   ],
 })
-export class VistoriaIrregularidadePage implements OnInit {
+export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private matrizService = inject(MatrizCriticidadeService);
@@ -102,6 +119,7 @@ export class VistoriaIrregularidadePage implements OnInit {
   private alertController = inject(AlertController);
   private errorMessageService = inject(ErrorMessageService);
   private authService = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
 
   @ViewChild('observacaoInput', { read: IonTextarea })
   observacaoInput?: IonTextarea;
@@ -115,17 +133,28 @@ export class VistoriaIrregularidadePage implements OnInit {
   pendentesParaComponente: IrregularidadeResumo[] = [];
   selectedMatriz: MatrizCriticidade | null = null;
   irregularidadeEmEdicaoId: string | null = null;
+  irregularidadeEmEdicaoNumero: number | null = null;
   observacao = '';
   fotos: FotoIrregularidade[] = [];
   audios: AudioIrregularidade[] = [];
   audiosExistentesCount = 0;
   private irregularidadesDaVistoria: IrregularidadeResumo[] = [];
+  private cacheMidiasRegistros = new Map<string, RegistroMidiasCarregadas>();
+  registroVisualizacao: RegistroVisualizacao | null = null;
+  exibirRegistroVisualizacao = false;
+  previewImagemRegistroSrc: string | null = null;
+  previewImagemRegistroNome: string | null = null;
+  private registroPreviewAudioUrls = new Set<string>();
   audioBase64?: string;
   audioMimeType?: string;
   audioDurationMs?: number;
   gravandoAudio = false;
+  /** Modal aberto antes do native concluir startRecording (evita tela “muda” sem feedback). */
+  gravacaoPreparando = false;
+  exibirModalGravacaoAudio = false;
   tempoGravacaoSegundos = 0;
   private audioTimerId: ReturnType<typeof setInterval> | null = null;
+  private audioObjectUrls = new Set<string>();
   podeGravarAudio = true;
   loading = false;
   saving = false;
@@ -166,6 +195,13 @@ export class VistoriaIrregularidadePage implements OnInit {
     return 'Selecione o Sintoma:';
   }
 
+  get tempoGravacaoFormatado(): string {
+    const s = this.tempoGravacaoSegundos;
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+  }
+
   constructor() {
     addIcons({
       arrowBack,
@@ -176,6 +212,9 @@ export class VistoriaIrregularidadePage implements OnInit {
 
   async voltar(): Promise<void> {
     if (this.selectedMatriz !== null) {
+      if (!(await this.validarSemGravacaoAtiva('voltar'))) {
+        return;
+      }
       if (this.temDadosNaoSalvos()) {
         const confirmarSaida = await this.confirmarPerdaAlteracoes();
         if (!confirmarSaida) {
@@ -184,11 +223,10 @@ export class VistoriaIrregularidadePage implements OnInit {
       }
       this.selectedMatriz = null;
       this.irregularidadeEmEdicaoId = null;
-      this.observacao = '';
-      this.fotos = [];
-      this.audios = [];
-      this.audiosExistentesCount = 0;
+      this.irregularidadeEmEdicaoNumero = null;
+      this.limparMidiasEmMemoria();
     } else {
+      this.limparMidiasEmMemoria();
       this.router.navigate(['/vistoria/areas']);
     }
   }
@@ -232,12 +270,24 @@ export class VistoriaIrregularidadePage implements OnInit {
         );
       }
       await this.recarregarStatusComponente(vistoriaId);
+      await this.precarregarMidiasRegistrosExistentes();
     } catch {
       this.errorMessage = 'Erro ao carregar sintomas.';
     } finally {
       this.loading = false;
       void this.verificarCapacidadeAudio();
     }
+  }
+
+  ngOnDestroy(): void {
+    // Garante liberação do microfone ao sair da tela.
+    if (this.gravandoAudio || this.gravacaoPreparando) {
+      void VoiceRecorder.stopRecording().catch(() => undefined);
+    }
+    this.exibirModalGravacaoAudio = false;
+    this.gravacaoPreparando = false;
+    this.gravandoAudio = false;
+    this.limparMidiasEmMemoria();
   }
 
   isSintomaSelected(item: MatrizCriticidade): boolean {
@@ -250,6 +300,10 @@ export class VistoriaIrregularidadePage implements OnInit {
 
   temPendenteAnterior(item: MatrizCriticidade): boolean {
     return this.pendentesParaComponente.some((p) => p.idsintoma === item.idSintoma);
+  }
+
+  quantidadePendenciasAnteriores(item: MatrizCriticidade): number {
+    return this.obterPendenciasAnterioresDoSintoma(item).length;
   }
 
   async selecionarSintoma(item: MatrizCriticidade): Promise<void> {
@@ -321,16 +375,214 @@ export class VistoriaIrregularidadePage implements OnInit {
     if (!this.canViewHistoricoVeiculo) {
       return;
     }
-    this.router.navigate(['/vistoria/historico-veiculo'], {
+    this.router.navigate(['/vistoria/pendencias-veiculo'], {
       state: { fromMenu: false },
     });
   }
+
+  async visualizarRegistroPendente(
+    item: MatrizCriticidade,
+    event?: Event,
+  ): Promise<void> {
+    event?.stopPropagation();
+    event?.preventDefault();
+    const existente = await this.selecionarRegistroPendente(item);
+    if (!existente) {
+      return;
+    }
+
+    const midias = await this.carregarMidiasDoRegistro(existente);
+    const numero = existente.numeroIrregularidade
+      ? `#${existente.numeroIrregularidade}`
+      : existente.id.slice(0, 8);
+    const observacao = existente.observacao?.trim()
+      ? existente.observacao.trim()
+      : 'Sem observação informada';
+
+    this.revogarPreviewsRegistroVisualizacao();
+    const fotos = midias.fotos.map((foto) => ({
+      nomeArquivo: foto.nomeArquivo,
+      src: `data:${this.getMimeTypeFromFilename(foto.nomeArquivo)};base64,${foto.dadosBase64}`,
+    }));
+    const audios = midias.audios.map((audio) => {
+      const src = this.criarPreviewAudioBlobUrl(audio.base64, audio.mimeType);
+      this.registroPreviewAudioUrls.add(src);
+      return {
+        nomeArquivo: audio.nomeArquivo,
+        src,
+      };
+    });
+
+    this.registroVisualizacao = {
+      numero,
+      dataRegistro: this.formatarDataHoraRegistro(existente.atualizadoEm),
+      vistoriador: existente.vistoriadorNome?.trim() || 'Não informado',
+      area: this.areaNome,
+      componente: this.componenteNome,
+      sintoma: item.sintoma?.descricao ?? existente.descricaoSintoma ?? '-',
+      observacao,
+      fotos,
+      audios,
+    };
+    this.exibirRegistroVisualizacao = true;
+  }
+
+  private obterPendenciasAnterioresDoSintoma(item: MatrizCriticidade): IrregularidadeResumo[] {
+    return this.pendentesParaComponente
+      .filter((ir) => ir.idsintoma === item.idSintoma)
+      .sort((a, b) => {
+        const dataA = new Date(a.atualizadoEm).getTime();
+        const dataB = new Date(b.atualizadoEm).getTime();
+        return dataB - dataA;
+      });
+  }
+
+  private async selecionarRegistroPendente(
+    item: MatrizCriticidade,
+  ): Promise<IrregularidadeResumo | null> {
+    const pendencias = this.obterPendenciasAnterioresDoSintoma(item);
+    if (pendencias.length === 0) {
+      return null;
+    }
+
+    if (pendencias.length === 1) {
+      return pendencias[0];
+    }
+
+    const alert = await this.alertController.create({
+      header: `Pendências anteriores (${pendencias.length})`,
+      message: 'Selecione qual irregularidade deseja visualizar.',
+      inputs: pendencias.map((registro, index) => ({
+        type: 'radio',
+        label: this.montarRotuloRegistroPendente(registro),
+        value: registro.id,
+        checked: index === 0,
+      })),
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Visualizar', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role, data } = await alert.onDidDismiss();
+    if (role !== 'confirm') {
+      return null;
+    }
+
+    const selectedValue =
+      typeof data?.values === 'string'
+        ? data.values
+        : (data?.values?.toString?.() ?? '');
+    return pendencias.find((registro) => registro.id === selectedValue) ?? pendencias[0];
+  }
+
+  private montarRotuloRegistroPendente(registro: IrregularidadeResumo): string {
+    const numero = registro.numeroIrregularidade
+      ? `#${registro.numeroIrregularidade}`
+      : registro.id.slice(0, 8);
+    const data = this.formatarDataHoraRegistro(registro.atualizadoEm);
+    const vistoriador = registro.vistoriadorNome?.trim() || 'Não informado';
+    return `${numero} • ${data} • ${vistoriador}`;
+  }
+
+  private formatarDataHoraRegistro(value?: string): string {
+    const date = this.parseDataRegistro(value);
+    if (!date) {
+      return '-';
+    }
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  private parseDataRegistro(value?: string): Date | null {
+    if (!value) {
+      return null;
+    }
+    const isoDate = new Date(value);
+    if (!Number.isNaN(isoDate.getTime())) {
+      return isoDate;
+    }
+    const match = value.match(
+      /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/,
+    );
+    if (!match) {
+      return null;
+    }
+    const [, year, month, day, hour, minute, second] = match;
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second ?? 0),
+    );
+  }
+
+  private async carregarMidiasDoRegistro(
+    irregularidade: IrregularidadeResumo,
+  ): Promise<RegistroMidiasCarregadas> {
+    const irregularidadeId = irregularidade.id;
+    const cached = this.cacheMidiasRegistros.get(irregularidadeId);
+    if (cached) {
+      return cached;
+    }
+
+    const vistoriaId = irregularidade.idvistoria ?? this.flowService.getVistoriaId();
+    if (!vistoriaId) {
+      return { fotos: [], audios: [] };
+    }
+
+    const [imagensResumo, audiosResumo] = await Promise.all([
+      this.vistoriaService.listarIrregularidadesImagens(vistoriaId, irregularidadeId),
+      this.vistoriaService.listarIrregularidadesAudios(vistoriaId, irregularidadeId),
+    ]);
+
+    const imagensItem = imagensResumo.find((i) => i.idirregularidade === irregularidadeId);
+    const audiosItem = audiosResumo.find((a) => a.idirregularidade === irregularidadeId);
+
+    const resultado: RegistroMidiasCarregadas = {
+      fotos: (imagensItem?.imagens ?? []).map((img) => ({
+        nomeArquivo: img.nomeArquivo,
+        tamanho: Number(img.tamanho) || 0,
+        dadosBase64: img.dadosBase64,
+      })),
+      audios: (audiosItem?.audios ?? []).map((audio) => ({
+        id: audio.id,
+        nomeArquivo: audio.nomeArquivo,
+        base64: audio.dadosBase64,
+        mimeType: audio.mimeType || 'audio/m4a',
+        previewUrl: undefined,
+        durationMs: audio.duracaoMs ?? undefined,
+      })),
+    };
+
+    this.cacheMidiasRegistros.set(irregularidadeId, resultado);
+    return resultado;
+  }
+
+  private async precarregarMidiasRegistrosExistentes(): Promise<void> {
+    const registros = [...this.irregularidadesDaVistoria, ...this.pendentesParaComponente];
+    if (registros.length === 0) {
+      return;
+    }
+    await Promise.all(
+      registros.map((irregularidade) =>
+        this.carregarMidiasDoRegistro(irregularidade).catch(() => ({
+          fotos: [],
+          audios: [],
+        })),
+      ),
+    );
+  }
+
 
   async adicionarFoto(): Promise<void> {
     const photo = await Camera.getPhoto({
       quality: 60,
       resultType: CameraResultType.Base64,
       source: CameraSource.Camera,
+      allowEditing: false,
       width: 1024,
       height: 1024,
       correctOrientation: true,
@@ -342,63 +594,120 @@ export class VistoriaIrregularidadePage implements OnInit {
 
     const base64 = photo.base64String;
     const imageIndex = this.fotos.length + 1;
-    const nomeArquivo = `${this.buildMidiaBaseName('img', imageIndex)}.jpg`;
+    const nomeArquivo = `img${imageIndex}.jpg`;
     const tamanho = this.estimateBase64Size(base64);
 
     this.fotos.push({
       nomeArquivo,
       tamanho,
       dadosBase64: base64,
-      preview: `data:image/jpeg;base64,${base64}`,
     });
   }
 
   removerFoto(index: number): void {
-    this.fotos.splice(index, 1);
+    void this.confirmarRemocaoMidia('foto', () => {
+      this.fotos.splice(index, 1);
+    });
   }
 
-  async iniciarAudio(): Promise<void> {
+  async abrirGravacaoAudio(): Promise<void> {
+    if (this.gravandoAudio || this.gravacaoPreparando) {
+      return;
+    }
+    this.errorMessage = '';
+    this.gravacaoPreparando = true;
+    this.exibirModalGravacaoAudio = true;
+    this.cdr.detectChanges();
+    await this.agendarReflowUI();
     try {
       const permission = await VoiceRecorder.hasAudioRecordingPermission();
       if (!permission.value) {
         const request = await VoiceRecorder.requestAudioRecordingPermission();
         if (!request.value) {
           this.errorMessage = 'Permissão de áudio negada.';
+          this.fecharFluxoGravacaoSemSalvar();
           return;
         }
       }
       await VoiceRecorder.startRecording();
+      this.gravacaoPreparando = false;
       this.gravandoAudio = true;
       this.iniciarContadorGravacao();
+      this.cdr.detectChanges();
     } catch {
       this.errorMessage = 'Não foi possível iniciar a gravação.';
+      this.fecharFluxoGravacaoSemSalvar();
     }
   }
 
-  async pararAudio(): Promise<void> {
+  async finalizarGravacaoModal(): Promise<void> {
+    if (this.gravacaoPreparando) {
+      return;
+    }
+    if (!this.gravandoAudio) {
+      this.exibirModalGravacaoAudio = false;
+      return;
+    }
     try {
       const result = await VoiceRecorder.stopRecording();
       if (result.value?.recordDataBase64) {
         const audioIndex = this.audios.length + 1;
-        const nomeArquivo = `${this.buildMidiaBaseName('audio', audioIndex)}.m4a`;
+        const nomeArquivo = `audio${audioIndex}.m4a`;
+        const mime = result.value.mimeType ?? 'audio/m4a';
         this.audios.push({
           nomeArquivo,
           base64: result.value.recordDataBase64,
-          mimeType: result.value.mimeType ?? 'audio/m4a',
-          previewUrl: `data:${result.value.mimeType ?? 'audio/m4a'};base64,${result.value.recordDataBase64}`,
+          mimeType: mime,
+          previewUrl: this.criarPreviewAudioBlobUrl(result.value.recordDataBase64, mime),
           durationMs: result.value.msDuration,
         });
+      } else {
+        this.errorMessage = 'Não foi possível obter o áudio gravado.';
       }
       this.audioBase64 = undefined;
       this.audioMimeType = undefined;
       this.audioDurationMs = undefined;
-      this.gravandoAudio = false;
-      this.pararContadorGravacao();
     } catch {
       this.errorMessage = 'Não foi possível finalizar a gravação.';
+    } finally {
       this.gravandoAudio = false;
+      this.gravacaoPreparando = false;
+      this.exibirModalGravacaoAudio = false;
       this.pararContadorGravacao();
+      this.cdr.detectChanges();
     }
+  }
+
+  async descartarGravacaoModal(): Promise<void> {
+    if (this.gravacaoPreparando) {
+      return;
+    }
+    const alert = await this.alertController.create({
+      header: 'Descartar gravação?',
+      message: 'O áudio em andamento não será salvo.',
+      buttons: [
+        { text: 'Continuar gravando', role: 'cancel' },
+        { text: 'Descartar', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role !== 'confirm') {
+      return;
+    }
+    try {
+      await VoiceRecorder.stopRecording();
+    } catch {
+      /* gravação já interrompida ou erro do driver */
+    }
+    this.audioBase64 = undefined;
+    this.audioMimeType = undefined;
+    this.audioDurationMs = undefined;
+    this.gravandoAudio = false;
+    this.gravacaoPreparando = false;
+    this.exibirModalGravacaoAudio = false;
+    this.pararContadorGravacao();
+    this.cdr.detectChanges();
   }
 
   limparAudio(): void {
@@ -408,7 +717,32 @@ export class VistoriaIrregularidadePage implements OnInit {
   }
 
   removerAudio(index: number): void {
-    this.audios.splice(index, 1);
+    void this.confirmarRemocaoMidia('audio', () => {
+      const previewUrl = this.audios[index]?.previewUrl;
+      this.revogarPreviewAudio(previewUrl);
+      this.audios.splice(index, 1);
+    });
+  }
+
+  private async confirmarRemocaoMidia(tipo: 'foto' | 'audio', onConfirm: () => void): Promise<void> {
+    const label = tipo === 'foto' ? 'foto' : 'áudio';
+    const alert = await this.alertController.create({
+      header: `Excluir ${label}?`,
+      message: `Deseja realmente excluir este ${label} da irregularidade?`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Excluir',
+          role: 'confirm',
+          cssClass: 'danger',
+        },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role === 'confirm') {
+      onConfirm();
+    }
   }
 
   private temDadosNaoSalvos(): boolean {
@@ -444,7 +778,12 @@ export class VistoriaIrregularidadePage implements OnInit {
     this.saving = true;
     this.errorMessage = '';
     try {
+      if (!(await this.validarSemGravacaoAtiva('salvar'))) {
+        return;
+      }
+
       let irregularidadeId = this.irregularidadeEmEdicaoId;
+      let numeroIrregularidade = this.irregularidadeEmEdicaoNumero;
       if (irregularidadeId) {
         await this.vistoriaService.atualizarIrregularidade(irregularidadeId, {
           observacao: this.observacao?.trim() ?? '',
@@ -457,24 +796,36 @@ export class VistoriaIrregularidadePage implements OnInit {
           observacao: this.observacao?.trim() || undefined,
         });
         irregularidadeId = irregularidade.id;
+        numeroIrregularidade = irregularidade.numeroIrregularidade ?? null;
+      }
+
+      if (!numeroIrregularidade) {
+        const irregularidades = await this.vistoriaService.listarIrregularidades(vistoriaId);
+        numeroIrregularidade =
+          irregularidades.find((item) => item.id === irregularidadeId)?.numeroIrregularidade ?? null;
+      }
+      if (!numeroIrregularidade) {
+        this.errorMessage = 'Nao foi possivel obter o numero da irregularidade para nomear as midias.';
+        return;
       }
 
       if (this.fotos.length > 0) {
-        const files = this.fotos.map((foto) => ({
-          nomeArquivo: foto.nomeArquivo,
+        const files = this.fotos.map((foto, index) => ({
+          nomeArquivo: `${numeroIrregularidade}_img${index + 1}.jpg`,
           blob: this.base64ToBlob(foto.dadosBase64),
         }));
         await this.vistoriaService.uploadIrregularidadeImagens(irregularidadeId, files);
       }
 
-      if (this.selectedMatriz.permiteAudio && this.audios.length > 0) {
+      if (this.selectedMatriz.permiteAudio) {
+        await this.vistoriaService.removerAudiosIrregularidade(irregularidadeId);
         for (let i = 0; i < this.audios.length; i++) {
           const a = this.audios[i];
           const blob = this.base64ToBlob(a.base64, a.mimeType);
           await this.vistoriaService.uploadIrregularidadeAudio(
             irregularidadeId,
             blob,
-            a.nomeArquivo,
+            `${numeroIrregularidade}_audio${i + 1}.m4a`,
             a.durationMs,
           );
         }
@@ -503,35 +854,45 @@ export class VistoriaIrregularidadePage implements OnInit {
     return Math.floor((base64.length * 3) / 4) - padding;
   }
 
-  private sanitizeFilename(value: string): string {
-    return value
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z0-9-_]+/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_+|_+$/g, '')
-      .toLowerCase();
+  private async validarSemGravacaoAtiva(acao: 'salvar' | 'voltar'): Promise<boolean> {
+    if (!this.gravandoAudio && !this.gravacaoPreparando) {
+      return true;
+    }
+    const alert = await this.alertController.create({
+      header: 'Gravacao em andamento',
+      message: this.gravacaoPreparando
+        ? 'Aguarde o microfone iniciar no modal de gravação.'
+        : acao === 'salvar'
+          ? 'Para salvar, finalize o áudio no modal (Parar e salvar).'
+          : 'Para voltar, finalize o áudio no modal (Parar e salvar ou Descartar).',
+      backdropDismiss: false,
+      buttons: [{ text: 'Entendi', role: 'confirm' }],
+    });
+    await alert.present();
+    await alert.onDidDismiss();
+    return false;
   }
 
-  private buildMidiaBaseName(tipo: 'img' | 'audio', index: number): string {
-    const nrVistoria = this.sanitizeFilename(
-      this.flowService.getNumeroVistoriaDisplay() || 'nrvistoria',
-    );
-    const nrVeiculo = this.sanitizeFilename(
-      this.flowService.getVeiculoDescricao() || 'nrveiculo',
-    );
-    const area = this.sanitizeFilename(this.areaNome || 'area');
-    const componente = this.sanitizeFilename(this.componenteNome || 'componente');
-    const sintoma = this.sanitizeFilename(
-      this.selectedMatriz?.sintoma?.descricao || 'sintoma',
-    );
-    return `${nrVistoria}_${nrVeiculo}_${area}_${componente}_${sintoma}_${tipo}${index}`;
+  private fecharFluxoGravacaoSemSalvar(): void {
+    this.gravacaoPreparando = false;
+    this.gravandoAudio = false;
+    this.exibirModalGravacaoAudio = false;
+    this.pararContadorGravacao();
+    this.cdr.detectChanges();
+  }
+
+  private agendarReflowUI(): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(), 0);
+    });
   }
 
   private async carregarIrregularidadeExistente(item: MatrizCriticidade): Promise<void> {
     this.irregularidadeEmEdicaoId = null;
+    this.irregularidadeEmEdicaoNumero = null;
     this.observacao = '';
     this.fotos = [];
+    this.revogarTodosPreviewsAudio();
     this.audios = [];
     this.audiosExistentesCount = 0;
 
@@ -541,17 +902,18 @@ export class VistoriaIrregularidadePage implements OnInit {
     if (!existente) return;
 
     this.irregularidadeEmEdicaoId = existente.id;
+    this.irregularidadeEmEdicaoNumero = existente.numeroIrregularidade ?? null;
     this.observacao = existente.observacao ?? '';
 
     const vistoriaId = this.flowService.getVistoriaId();
     if (!vistoriaId) return;
 
     const [imagensResumo, audiosResumo] = await Promise.all([
-      this.vistoriaService.listarIrregularidadesImagens(vistoriaId),
-      this.vistoriaService.listarIrregularidadesAudios(vistoriaId),
+      this.vistoriaService.listarIrregularidadesImagens(vistoriaId, existente.id),
+      this.vistoriaService.listarIrregularidadesAudios(vistoriaId, existente.id),
     ]);
     this.preencherImagensExistentes(imagensResumo, existente.id);
-    this.preencherAudiosExistentesCount(audiosResumo, existente.id);
+    this.preencherAudiosExistentes(audiosResumo, existente.id);
   }
 
   private preencherImagensExistentes(
@@ -561,22 +923,30 @@ export class VistoriaIrregularidadePage implements OnInit {
     const item = imagensResumo.find((i) => i.idirregularidade === irregularidadeId);
     const imagens = item?.imagens ?? [];
     this.fotos = imagens.map((img) => {
-      const mimeType = this.getMimeTypeFromFilename(img.nomeArquivo);
       return {
         nomeArquivo: img.nomeArquivo,
         tamanho: Number(img.tamanho) || 0,
         dadosBase64: img.dadosBase64,
-        preview: `data:${mimeType};base64,${img.dadosBase64}`,
       };
     });
   }
 
-  private preencherAudiosExistentesCount(
+  private preencherAudiosExistentes(
     audiosResumo: IrregularidadeAudioResumo[],
     irregularidadeId: string,
   ): void {
+    this.revogarTodosPreviewsAudio();
     const item = audiosResumo.find((a) => a.idirregularidade === irregularidadeId);
-    this.audiosExistentesCount = item?.audios?.length ?? 0;
+    const audios = item?.audios ?? [];
+    this.audios = audios.map((audio) => ({
+      id: audio.id,
+      nomeArquivo: audio.nomeArquivo,
+      base64: audio.dadosBase64,
+      mimeType: audio.mimeType || 'audio/m4a',
+      previewUrl: this.criarPreviewAudioBlobUrl(audio.dadosBase64, audio.mimeType || 'audio/m4a'),
+      durationMs: audio.duracaoMs ?? undefined,
+    }));
+    this.audiosExistentesCount = this.audios.length;
   }
 
   private getMimeTypeFromFilename(nomeArquivo: string): string {
@@ -610,6 +980,66 @@ export class VistoriaIrregularidadePage implements OnInit {
       bytes[i] = byteString.charCodeAt(i);
     }
     return new Blob([bytes], { type: mimeType });
+  }
+
+  private criarPreviewAudioBlobUrl(base64: string, mimeType: string): string {
+    const blob = this.base64ToBlob(base64, mimeType || 'audio/m4a');
+    const url = URL.createObjectURL(blob);
+    this.audioObjectUrls.add(url);
+    return url;
+  }
+
+  private revogarPreviewAudio(url?: string): void {
+    if (!url) return;
+    URL.revokeObjectURL(url);
+    this.audioObjectUrls.delete(url);
+  }
+
+  private revogarTodosPreviewsAudio(): void {
+    for (const url of this.audioObjectUrls) {
+      URL.revokeObjectURL(url);
+    }
+    this.audioObjectUrls.clear();
+  }
+
+  private revogarPreviewsRegistroVisualizacao(): void {
+    for (const url of this.registroPreviewAudioUrls) {
+      this.revogarPreviewAudio(url);
+    }
+    this.registroPreviewAudioUrls.clear();
+  }
+
+  private limparMidiasEmMemoria(): void {
+    this.observacao = '';
+    this.fotos = [];
+    this.revogarTodosPreviewsAudio();
+    this.audios = [];
+    this.audiosExistentesCount = 0;
+    this.audioBase64 = undefined;
+    this.audioMimeType = undefined;
+    this.audioDurationMs = undefined;
+    this.registroVisualizacao = null;
+    this.exibirRegistroVisualizacao = false;
+    this.revogarPreviewsRegistroVisualizacao();
+    this.cacheMidiasRegistros.clear();
+    this.pararContadorGravacao();
+  }
+
+  fecharVisualizacaoRegistro(): void {
+    this.exibirRegistroVisualizacao = false;
+    this.registroVisualizacao = null;
+    this.revogarPreviewsRegistroVisualizacao();
+    this.fecharPreviewImagemRegistro();
+  }
+
+  abrirPreviewImagemRegistro(src: string, nomeArquivo: string): void {
+    this.previewImagemRegistroSrc = src;
+    this.previewImagemRegistroNome = nomeArquivo;
+  }
+
+  fecharPreviewImagemRegistro(): void {
+    this.previewImagemRegistroSrc = null;
+    this.previewImagemRegistroNome = null;
   }
 
   private aplicarBootstrap(bootstrap: VistoriaBootstrap): boolean {

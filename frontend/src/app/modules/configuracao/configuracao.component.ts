@@ -130,4 +130,5 @@ export class ConfiguracaoComponent implements OnInit {
       });
     }
   }
+
 }

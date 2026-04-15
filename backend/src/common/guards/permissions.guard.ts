@@ -44,14 +44,20 @@ export class PermissionsGuard implements CanActivate {
     }
 
     try {
-      // Usar a mesma configuração de secret que a JwtStrategy
+      const jwtSecret =
+        this.configService.get<string>('app.jwtSecret') ||
+        this.configService.get<string>('JWT_SECRET') ||
+        process.env.JWT_SECRET ||
+        'default-secret-key';
+
+      // Usar a mesma configuração de secret definida no app
       const payload = this.jwtService.verify(token, {
-        secret: this.configService.get('JWT_SECRET', 'default-secret-key'),
+        secret: jwtSecret,
       });
       // Carregar usuário com perfil para verificar permissões
       const user = await this.userRepository.findOne({
         where: { id: payload.sub },
-        relations: ['perfil'],
+        relations: ['perfil', 'empresa'],
       });
 
       if (!user) {

@@ -26,6 +26,27 @@ ion-footer ion-button {
   --border-radius: 12px;
 }
 
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-voltar {
+  flex: 0 0 30%;
+  min-width: 0;
+}
+
+.btn-main {
+  flex: 1 1 70%;
+  min-width: 0;
+  font-size: 1.05rem;
+  --background: #f5930a !important;
+  --background-hover: #dd8509 !important;
+  --background-activated: #c97708 !important;
+  --color: #ffffff !important;
+}
+
 .content {
   display: flex;
   flex-direction: column;
@@ -46,38 +67,37 @@ ion-footer ion-button {
 .selected-context {
   margin: 12px 12px 8px;
   width: calc(100% - 24px);
-  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.context-card {
+  padding: 10px 12px;
   border-radius: 12px;
-  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
-  border: 1px solid #d7e3ff;
-  box-shadow: 0 2px 8px rgba(25, 88, 191, 0.08);
-  text-align: left;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  cursor: default;
 }
 
-.selected-context p {
-  margin: 0 0 8px;
-  font-size: 1.02rem;
+.context-card strong {
   color: #0f172a;
-  display: block;
-  line-height: 1.4;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-
-.selected-context p:last-child {
-  margin-bottom: 0;
-}
-
-.selected-context p strong {
-  display: inline;
-  color: #1d4ed8;
+  font-weight: 700;
   margin-right: 4px;
 }
 
-.selected-context .context-inline {
-  margin: 0;
+.context-card span {
+  color: #334155;
+  word-break: break-word;
 }
 
 .actions {
   margin-top: 24px;
+}
+
+.cards-selection-title {
+  margin: 0;
+  font-weight: 700;
+  color: #1d4ed8;
 }

@@ -10,6 +10,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Perfil } from '../../perfil/entities/perfil.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { DepartamentoUsuario } from '../../departamento/entities/departamento-usuario.entity';
+import { EmpresaTerceira } from '../../empresa-terceira/entities/empresa-terceira.entity';
 
 @Entity('usuarios')
 @Index(['email'], { unique: true })
@@ -60,6 +61,23 @@ export class Usuario extends BaseEntity {
     eager: false,
   })
   departamentosUsuario?: DepartamentoUsuario[];
+
+  @ApiProperty({
+    description: 'Empresa vinculada ao usuário',
+    required: false,
+    type: () => EmpresaTerceira,
+  })
+  @ManyToOne(() => EmpresaTerceira, { nullable: true, eager: false })
+  @JoinColumn({ name: 'idEmpresa' })
+  empresa?: EmpresaTerceira;
+
+  @ApiProperty({
+    description: 'ID da empresa vinculada ao usuário',
+    required: false,
+    format: 'uuid',
+  })
+  @Column({ type: 'uuid', nullable: true })
+  idEmpresa?: string;
 
   @ApiProperty({
     description: 'Tema preferido do usuário',

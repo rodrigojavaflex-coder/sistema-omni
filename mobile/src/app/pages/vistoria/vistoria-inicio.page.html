@@ -91,7 +91,7 @@
     </ion-list>
     <ion-item *ngIf="selectedVeiculo">
       <ion-label>
-        <p>Último Odômetro: {{ ultimoOdometro === null ? 'Sem histórico' : (ultimoOdometro | number:'1.0-0') }}</p>
+        <p>Último Odômetro: {{ formatarNumeroSemSeparador(ultimoOdometro) }}</p>
         <p>Combustível: {{ selectedVeiculo.combustivel || '-' }}</p>
       </ion-label>
     </ion-item>
@@ -135,7 +135,7 @@
       <ion-label position="stacked" class="odometro-label">
         Odômetro
         <span class="ultimo-odometro-destaque" *ngIf="ultimoOdometro !== null">
-          Último odômetro: {{ ultimoOdometro | number:'1.0-0' }}
+          Último odômetro: {{ formatarNumeroSemSeparador(ultimoOdometro) }}
         </span>
       </ion-label>
       <ion-input

@@ -10,6 +10,7 @@ import {
   IonContent,
   IonFooter,
   IonHeader,
+  IonIcon,
   IonTitle,
   IonToolbar,
   IonButtons,
@@ -39,6 +40,7 @@ import { AuthService } from '../../services/auth.service';
     IonContent,
     IonFooter,
     IonHeader,
+    IonIcon,
     IonCard,
     IonCardHeader,
     IonCardTitle,
@@ -74,7 +76,7 @@ export class VistoriaAreasPage implements OnInit {
   componentes: AreaComponente[] = [];
   loadingComponentes = false;
   irregularidadesPorComponente: Record<string, number> = {};
-  pendentesPorComponente = new Set<string>();
+  contagemPendentesPorComponente: Record<string, number> = {};
   private irregularidadesList: IrregularidadeResumo[] = [];
   private pendentesList: IrregularidadeResumo[] = [];
   private reopenAreaId: string | null = null;
@@ -198,7 +200,7 @@ export class VistoriaAreasPage implements OnInit {
     this.selectedArea = area;
     this.componentes = [];
     this.irregularidadesPorComponente = {};
-    this.pendentesPorComponente = new Set<string>();
+    this.contagemPendentesPorComponente = {};
     await this.carregarComponentesDaArea();
   }
 
@@ -209,7 +211,7 @@ export class VistoriaAreasPage implements OnInit {
     this.errorMessage = '';
     this.loadingComponentes = true;
     this.irregularidadesPorComponente = {};
-    this.pendentesPorComponente = new Set<string>();
+    this.contagemPendentesPorComponente = {};
     this.cdr.detectChanges();
     try {
       const vistoriaId = this.flowService.getVistoriaId();
@@ -228,7 +230,10 @@ export class VistoriaAreasPage implements OnInit {
         });
       this.pendentesList
         .filter((item) => item.idarea === area.id)
-        .forEach((item) => this.pendentesPorComponente.add(item.idcomponente));
+        .forEach((item) => {
+          this.contagemPendentesPorComponente[item.idcomponente] =
+            (this.contagemPendentesPorComponente[item.idcomponente] ?? 0) + 1;
+        });
     } catch {
       this.errorMessage = 'Erro ao carregar componentes. Tente novamente.';
     } finally {
@@ -360,7 +365,7 @@ export class VistoriaAreasPage implements OnInit {
     if (!this.canViewHistoricoVeiculo) {
       return;
     }
-    this.router.navigate(['/vistoria/historico-veiculo'], {
+    this.router.navigate(['/vistoria/pendencias-veiculo'], {
       state: { fromMenu: false },
     });
   }

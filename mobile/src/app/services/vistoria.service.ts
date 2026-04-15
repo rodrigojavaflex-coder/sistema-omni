@@ -11,6 +11,11 @@ import {
   IrregularidadeImagemResumo,
 } from '../models/irregularidade.model';
 
+export interface CriarIrregularidadeResponse {
+  id: string;
+  numeroIrregularidade?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class VistoriaService {
   private http = inject(HttpClient);
@@ -99,9 +104,9 @@ export class VistoriaService {
   async criarIrregularidade(
     vistoriaId: string,
     payload: { idarea: string; idcomponente: string; idsintoma: string; observacao?: string },
-  ): Promise<{ id: string }> {
+  ): Promise<CriarIrregularidadeResponse> {
     return firstValueFrom(
-      this.http.post<{ id: string }>(
+      this.http.post<CriarIrregularidadeResponse>(
         `${this.apiBaseUrl}/vistoria/${vistoriaId}/irregularidades`,
         payload,
       ),
@@ -130,20 +135,28 @@ export class VistoriaService {
 
   async listarIrregularidadesImagens(
     vistoriaId: string,
+    irregularidadeId?: string,
   ): Promise<IrregularidadeImagemResumo[]> {
+    const query = irregularidadeId
+      ? `?irregularidadeId=${encodeURIComponent(irregularidadeId)}`
+      : '';
     return firstValueFrom(
       this.http.get<IrregularidadeImagemResumo[]>(
-        `${this.apiBaseUrl}/vistoria/${vistoriaId}/irregularidades/imagens`,
+        `${this.apiBaseUrl}/vistoria/${vistoriaId}/irregularidades/imagens${query}`,
       ),
     );
   }
 
   async listarIrregularidadesAudios(
     vistoriaId: string,
+    irregularidadeId?: string,
   ): Promise<IrregularidadeAudioResumo[]> {
+    const query = irregularidadeId
+      ? `?irregularidadeId=${encodeURIComponent(irregularidadeId)}`
+      : '';
     return firstValueFrom(
       this.http.get<IrregularidadeAudioResumo[]>(
-        `${this.apiBaseUrl}/vistoria/${vistoriaId}/irregularidades/audios`,
+        `${this.apiBaseUrl}/vistoria/${vistoriaId}/irregularidades/audios${query}`,
       ),
     );
   }
@@ -179,6 +192,14 @@ export class VistoriaService {
       this.http.post<void>(
         `${this.apiBaseUrl}/irregularidades/${irregularidadeId}/audio`,
         formData,
+      ),
+    );
+  }
+
+  async removerAudiosIrregularidade(irregularidadeId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete<void>(
+        `${this.apiBaseUrl}/irregularidades/${irregularidadeId}/audio`,
       ),
     );
   }

@@ -380,74 +380,35 @@ function Configure-IIS {
         Write-Host "  OK: Binding adicionado!" -ForegroundColor Green
     }
     
-    # Criar web.config para proxy reverso e arquivos estaticos (SEMPRE sobrescrever)
-    Write-Host "  Criando web.config com proxy reverso..." -ForegroundColor Yellow
+    # Criar web.config da aplicacao /omni no padrao SPA (SEMPRE sobrescrever)
+    Write-Host "  Criando web.config da aplicacao /omni no padrao SPA..." -ForegroundColor Yellow
     
     $webConfig = @"
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <system.webServer>
-        <!-- MIME Types para arquivos estaticos -->
-        <staticContent>
-            <remove fileExtension=".json"/>
-            <remove fileExtension=".woff"/>
-            <remove fileExtension=".woff2"/>
-            <mimeMap fileExtension=".json" mimeType="application/json"/>
-            <mimeMap fileExtension=".woff" mimeType="application/font-woff"/>
-            <mimeMap fileExtension=".woff2" mimeType="application/font-woff2"/>
-        </staticContent>
+  <system.webServer>
+    <staticContent>
+      <remove fileExtension=".json"/>
+      <remove fileExtension=".woff"/>
+      <remove fileExtension=".woff2"/>
+      <mimeMap fileExtension=".json" mimeType="application/json"/>
+      <mimeMap fileExtension=".woff" mimeType="application/font-woff"/>
+      <mimeMap fileExtension=".woff2" mimeType="font/woff2"/>
+    </staticContent>
+    <rewrite>
+      <rules>
+        <rule name="Angular Routes" stopProcessing="true">
+          <match url=".*" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="/omni/index.html" />
+        </rule>
 
-        <!-- URL Rewrite Rules -->
-        <rewrite>
-            <rules>
-                <!-- PROXY REVERSO 1: /omni/api/* -> localhost:8080/api/* -->
-                <rule name="API Proxy with omni prefix" stopProcessing="true">
-                    <match url="^omni/api/(.*)" />
-                    <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
-                </rule>
-
-                <!-- PROXY REVERSO 2: /api/* -> localhost:8080/api/* (DIRETO - SEM /omni/) -->
-                <rule name="API Proxy direct" stopProcessing="true">
-                    <match url="^api/(.*)" />
-                    <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
-                </rule>
-
-                <!-- ANGULAR ROUTING: Redirecionar para index.html -->
-                <rule name="Angular Routes" stopProcessing="true">
-                    <match url=".*" />
-                    <conditions logicalGrouping="MatchAll">
-                        <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
-                        <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
-                        <!-- Nao aplicar a requisicoes da API (com ou sem /omni/) -->
-                        <add input="{REQUEST_URI}" pattern="^/(omni/)?api" negate="true" />
-                    </conditions>
-                    <action type="Rewrite" url="/omni/index.html" />
-                </rule>
-            </rules>
-        </rewrite>
-
-        <!-- Headers para seguranca -->
-        <httpProtocol>
-            <customHeaders>
-                <add name="X-Content-Type-Options" value="nosniff" />
-            </customHeaders>
-        </httpProtocol>
-
-        <defaultDocument>
-            <files>
-                <clear />
-                <add value="index.html" />
-            </files>
-        </defaultDocument>
-        <staticContent>
-            <remove fileExtension=".json" />
-            <mimeMap fileExtension=".json" mimeType="application/json" />
-            <remove fileExtension=".woff" />
-            <mimeMap fileExtension=".woff" mimeType="application/font-woff" />
-            <remove fileExtension=".woff2" />
-            <mimeMap fileExtension=".woff2" mimeType="font/woff2" />
-        </staticContent>
-    </system.webServer>
+      </rules>
+    </rewrite>
+  </system.webServer>
 </configuration>
 "@
     
@@ -468,7 +429,7 @@ function Configure-IIS {
     }
     
     # =========================================================================
-    # CRITICAL: Criar web.config na RAIZ do IIS para capturar /api/* GLOBAL
+    # CRITICAL: Criar web.config GLOBAL na raiz do IIS no padrao da raiz
     # =========================================================================
     Write-Host "  Criando web.config GLOBAL na raiz do IIS..." -ForegroundColor Yellow
     
@@ -478,11 +439,27 @@ function Configure-IIS {
     <system.webServer>
         <rewrite>
             <rules>
-                <!-- PROXY GLOBAL: /api/* -> localhost:8080/api/* -->
-                <rule name="Global API Proxy" stopProcessing="true">
+                <!-- 1) Canonical host (sem forcar https aqui) -->
+                <rule name="Canonical host only" stopProcessing="true">
+                    <match url="(.*)" />
+                    <conditions logicalGrouping="MatchAll">
+                        <add input="{HTTP_HOST}" pattern="^sistemas\.metrobus\.go\.gov\.br(:\d+)?$" negate="true" />
+                    </conditions>
+                    <action type="Redirect" url="https://sistemas.metrobus.go.gov.br/{R:1}" redirectType="Permanent" />
+                </rule>
+
+                <!-- 2) Redirect raiz -->
+                <rule name="Redirect root to /omni" stopProcessing="true">
+                    <match url="^$" />
+                    <action type="Redirect" url="/omni/" redirectType="Permanent" />
+                </rule>
+
+                <!-- 3) API proxy -->
+                <rule name="API Proxy" stopProcessing="true">
                     <match url="^api/(.*)" />
                     <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
                 </rule>
+
             </rules>
         </rewrite>
     </system.webServer>
@@ -493,7 +470,7 @@ function Configure-IIS {
         $rootIisPath = "C:\inetpub\wwwroot"
         $rootWebConfig | Out-File -FilePath "$rootIisPath\web.config" -Encoding UTF8 -Force
         Write-Host "  OK: web.config GLOBAL criado em $rootIisPath!" -ForegroundColor Green
-        Write-Host "  -> Captura /api/* ANTES da aplicacao /omni/" -ForegroundColor Gray
+        Write-Host "  -> Host canonico + redirect / + proxy /api" -ForegroundColor Gray
     } catch {
         Write-Host "  AVISO: Falha ao criar web.config global: $($_.Exception.Message)" -ForegroundColor Yellow
         Write-Host "  O proxy ainda funcionara via /omni/api/*" -ForegroundColor Yellow
@@ -596,7 +573,7 @@ function Copy-FrontendFiles {
     Copy-Item "$sourceFrontend\*" $iisPath -Recurse -Force
     Write-Host "  OK: Frontend copiado para C:\inetpub\wwwroot\omni" -ForegroundColor Green
     
-    # Criar web.config para IIS
+    # Criar web.config para IIS no padrao SPA da aplicacao /omni
     $webConfig = @'
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
@@ -607,15 +584,10 @@ function Copy-FrontendFiles {
       <remove fileExtension=".woff2"/>
       <mimeMap fileExtension=".json" mimeType="application/json"/>
       <mimeMap fileExtension=".woff" mimeType="application/font-woff"/>
-      <mimeMap fileExtension=".woff2" mimeType="application/font-woff2"/>
+      <mimeMap fileExtension=".woff2" mimeType="font/woff2"/>
     </staticContent>
     <rewrite>
       <rules>
-        <!-- Proxy reverso para API -->
-        <rule name="API Proxy" stopProcessing="true">
-          <match url="^api/(.*)" />
-          <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
-        </rule>
         <!-- Angular routing - redirecionar para index.html -->
         <rule name="Angular Routes" stopProcessing="true">
           <match url=".*" />

@@ -65,13 +65,18 @@ export const routes: Routes = [
     data: { permissions: ['vistoria_mobile:create'] },
   },
   {
-    path: 'vistoria/historico-veiculo',
+    path: 'vistoria/pendencias-veiculo',
     loadComponent: () =>
       import('./pages/vistoria/vistoria-historico-veiculo.page').then(
         m => m.VistoriaHistoricoVeiculoPage,
       ),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ['vistoria_web_historico_veiculo:read'] },
+  },
+  {
+    path: 'vistoria/historico-veiculo',
+    redirectTo: 'vistoria/pendencias-veiculo',
+    pathMatch: 'full',
   },
   {
     path: '**',

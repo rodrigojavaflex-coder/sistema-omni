@@ -47,6 +47,15 @@ export class Meta extends BaseEntity {
   @Column({ type: 'numeric', precision: 14, scale: 2, nullable: true })
   valorMeta?: number;
 
+  @Column({ type: 'numeric', precision: 14, scale: 2, nullable: true })
+  valorMetaMensal?: number;
+
+  @Column({ type: 'numeric', precision: 14, scale: 4, nullable: true })
+  taxaDeCrescimento?: number;
+
+  @Column({ type: 'numeric', precision: 14, scale: 2, nullable: true })
+  valorMetaInicial?: number;
+
   @Column({
     type: 'varchar',
     length: 20,

@@ -24,6 +24,8 @@ export interface IrregularidadeResumo {
   descricaoSintoma?: string;
   observacao?: string;
   resolvido: boolean;
+  statusAtual?: string;
+  idEmpresaManutencao?: string;
   atualizadoEm: string;
 }
 

@@ -68,6 +68,9 @@ export class MetaFormComponent extends BaseFormComponent<CreateMetaDto | UpdateM
       inicioDaMeta: ['', [Validators.required]],
       prazoFinal: ['', [Validators.required]],
       valorMeta: [null, [Validators.required, Validators.pattern(/^-?\d+(\.\d{1,2})?$/)]],
+      valorMetaMensal: [null, [Validators.pattern(/^-?\d+(\.\d{1,2})?$/)]],
+      taxaDeCrescimento: [null, [Validators.pattern(/^-?\d+([.,]\d{1,4})?$/)]],
+      valorMetaInicial: [null, [Validators.pattern(/^-?\d+(\.\d{1,2})?$/)]],
     });
   }
 
@@ -76,6 +79,24 @@ export class MetaFormComponent extends BaseFormComponent<CreateMetaDto | UpdateM
     const valorMeta =
       formValue.valorMeta !== null && formValue.valorMeta !== undefined && formValue.valorMeta !== ''
         ? Number(formValue.valorMeta)
+        : undefined;
+    const valorMetaMensal =
+      formValue.valorMetaMensal !== null &&
+      formValue.valorMetaMensal !== undefined &&
+      formValue.valorMetaMensal !== ''
+        ? Number(formValue.valorMetaMensal)
+        : undefined;
+    const taxaDeCrescimento =
+      formValue.taxaDeCrescimento !== null &&
+      formValue.taxaDeCrescimento !== undefined &&
+      formValue.taxaDeCrescimento !== ''
+        ? Number(String(formValue.taxaDeCrescimento).replace(',', '.'))
+        : undefined;
+    const valorMetaInicial =
+      formValue.valorMetaInicial !== null &&
+      formValue.valorMetaInicial !== undefined &&
+      formValue.valorMetaInicial !== ''
+        ? Number(formValue.valorMetaInicial)
         : undefined;
 
     return {
@@ -88,6 +109,9 @@ export class MetaFormComponent extends BaseFormComponent<CreateMetaDto | UpdateM
       inicioDaMeta: formValue.inicioDaMeta,
       prazoFinal: formValue.prazoFinal,
       valorMeta,
+      valorMetaMensal,
+      taxaDeCrescimento,
+      valorMetaInicial,
     };
   }
 
@@ -111,6 +135,9 @@ export class MetaFormComponent extends BaseFormComponent<CreateMetaDto | UpdateM
       inicioDaMeta: meta.inicioDaMeta,
       prazoFinal: meta.prazoFinal,
       valorMeta: meta.valorMeta ?? null,
+      valorMetaMensal: meta.valorMetaMensal ?? null,
+      taxaDeCrescimento: this.formatTaxaForDisplay(meta.taxaDeCrescimento),
+      valorMetaInicial: meta.valorMetaInicial ?? null,
     });
   }
 
@@ -128,4 +155,12 @@ export class MetaFormComponent extends BaseFormComponent<CreateMetaDto | UpdateM
     const all = await firstValueFrom(this.departamentoService.getAll());
     this.departamentos = all.filter((d) => ids.includes(d.id));
   }
+
+  private formatTaxaForDisplay(value: number | null | undefined): string | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    return String(value).replace('.', ',');
+  }
+
 }

@@ -9,6 +9,7 @@ import { Perfil } from '../perfil/entities/perfil.entity';
 import { Departamento } from '../departamento/entities/departamento.entity';
 import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
+import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
       Perfil,
       Departamento,
       DepartamentoUsuario,
+      EmpresaTerceira,
     ]),
     JwtModule,
     ConfigModule,

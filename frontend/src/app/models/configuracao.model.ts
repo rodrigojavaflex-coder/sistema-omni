@@ -10,8 +10,27 @@ export interface Configuracao {
   auditarAlteracao: boolean;
   auditarExclusao: boolean;
   auditarSenhaAlterada: boolean;
+  tempoFluxoConfig?: TempoFluxoConfig;
   criadoEm: string;
   atualizadoEm: string;
+}
+
+export type FluxoTelaConfiguracao = 'tratamento' | 'manutencao' | 'validacaoFinal';
+
+export interface TempoFaixaConfig {
+  minHoras: number;
+  maxHoras: number | null;
+  label: string;
+  corHex: string;
+  mostrarCor: boolean;
+  mostrarRotulo: boolean;
+  ativo: boolean;
+}
+
+export interface TempoFluxoConfig {
+  tratamento: TempoFaixaConfig[];
+  manutencao: TempoFaixaConfig[];
+  validacaoFinal: TempoFaixaConfig[];
 }
 
 export interface CreateConfiguracaoDto {
@@ -24,6 +43,7 @@ export interface CreateConfiguracaoDto {
   auditarAlteracao?: boolean;
   auditarExclusao?: boolean;
   auditarSenhaAlterada?: boolean;
+  tempoFluxoConfig?: TempoFluxoConfig;
 }
 
 export interface UpdateConfiguracaoDto extends Partial<CreateConfiguracaoDto> {}

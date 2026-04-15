@@ -1,5 +1,9 @@
 export enum Permission {
   CONFIGURACAO_ACCESS = 'configuracao:access',
+  CONFIGURACAO_TEMPO_FLUXO_ACCESS = 'configuracao_tempo_fluxo:access',
+  CONFIGURACAO_TEMPO_FLUXO_CREATE = 'configuracao_tempo_fluxo:create',
+  CONFIGURACAO_TEMPO_FLUXO_UPDATE = 'configuracao_tempo_fluxo:update',
+  CONFIGURACAO_TEMPO_FLUXO_DELETE = 'configuracao_tempo_fluxo:delete',
   // Usuários
   USER_CREATE = 'user:create',
   USER_READ = 'user:read',
@@ -96,6 +100,15 @@ export enum Permission {
   // Vistoria Web
   VISTORIA_WEB_READ = 'vistoria_web:read',
   VISTORIA_WEB_HISTORICO_VEICULO_READ = 'vistoria_web_historico_veiculo:read',
+  // Fluxo de Irregularidades
+  IRREGULARIDADE_TRATAMENTO_READ = 'irregularidade_tratamento:read',
+  IRREGULARIDADE_TRATAMENTO_UPDATE = 'irregularidade_tratamento:update',
+  IRREGULARIDADE_MANUTENCAO_READ = 'irregularidade_manutencao:read',
+  IRREGULARIDADE_MANUTENCAO_START = 'irregularidade_manutencao:start',
+  IRREGULARIDADE_MANUTENCAO_FINISH = 'irregularidade_manutencao:finish',
+  IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING = 'irregularidade_manutencao:mark_not_proceeding',
+  IRREGULARIDADE_VALIDACAO_FINAL_READ = 'irregularidade_validacao_final:read',
+  IRREGULARIDADE_VALIDACAO_FINAL_UPDATE = 'irregularidade_validacao_final:update',
   AREAVISTORIADA_CREATE = 'areavistoriada:create',
   AREAVISTORIADA_READ = 'areavistoriada:read',
   AREAVISTORIADA_UPDATE = 'areavistoriada:update',
@@ -139,6 +152,8 @@ export interface Usuario {
   atualizadoEm: Date;
   tema?: string; // Tema preferido do usuário (Claro ou Escuro)
   departamentos?: { id: string; nomeDepartamento: string }[];
+  idEmpresa?: string;
+  empresa?: { id: string; descricao: string };
 }
 
 export interface ChangePasswordDto {
@@ -155,6 +170,7 @@ export interface CreateUsuarioDto {
   tema?: string; // Tema preferido (Claro ou Escuro)
   perfilId: string; // ID do perfil do usuário
   departamentoIds?: string[];
+  idEmpresa?: string;
 }
 
 export interface UpdateUsuarioDto {
@@ -165,6 +181,7 @@ export interface UpdateUsuarioDto {
   tema?: string; // Permitir atualizar tema do usuário (Claro ou Escuro)
   perfilId?: string; // Atualizar perfil do usuário
   departamentoIds?: string[];
+  idEmpresa?: string;
 }
 
 export interface FindUsuariosDto {

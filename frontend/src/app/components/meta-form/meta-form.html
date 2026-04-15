@@ -50,6 +50,27 @@
             {{ getFieldError('valorMeta') || 'Meta é obrigatória e deve ser um número com até duas casas decimais' }}
           </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Valor Meta Mensal</label>
+          <input type="number" step="0.01" formControlName="valorMetaMensal" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('valorMetaMensal')">
+            {{ getFieldError('valorMetaMensal') || 'Valor Meta Mensal deve ser um número com até duas casas decimais' }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Taxa de Crescimento</label>
+          <input type="text" inputmode="decimal" formControlName="taxaDeCrescimento" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('taxaDeCrescimento')">
+            {{ getFieldError('taxaDeCrescimento') || 'Taxa de Crescimento deve ser um número com até quatro casas decimais' }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor Meta Inicial</label>
+          <input type="number" step="0.01" formControlName="valorMetaInicial" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('valorMetaInicial')">
+            {{ getFieldError('valorMetaInicial') || 'Valor Meta Inicial deve ser um número com até duas casas decimais' }}
+          </div>
+        </div>
       </div>
 
       <div class="form-inline">

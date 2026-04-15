@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DecimalPipe, NgFor, NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   AlertController,
@@ -45,7 +45,6 @@ import { ErrorMessageService } from '../../services/error-message.service';
   imports: [
     NgIf,
     NgFor,
-    DecimalPipe,
     FormsModule,
     IonContent,
     IonFooter,
@@ -183,7 +182,6 @@ export class VistoriaInicioPage implements OnInit {
         veiculoModeloNome: modeloNome ?? undefined,
         datavistoria: atualizada.datavistoria ?? vistoria.datavistoria,
       });
-      void this.bootstrapService.warmup(atualizada.id);
       this.router.navigate(['/vistoria/areas']);
     } catch (error: any) {
       this.errorMessage = this.errorMessageService.fromApi(
@@ -306,9 +304,14 @@ export class VistoriaInicioPage implements OnInit {
       return;
     }
     this.odometro = parsed;
-    this.odometroDisplay = parsed
-      .toString()
-      .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    this.odometroDisplay = parsed.toString();
+  }
+
+  formatarNumeroSemSeparador(value: number | null): string {
+    if (value === null || value === undefined) {
+      return 'Sem histórico';
+    }
+    return Math.trunc(value).toString();
   }
 
   selecionarMotorista(motorista: Motorista): void {
@@ -398,7 +401,6 @@ export class VistoriaInicioPage implements OnInit {
             veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? undefined,
             datavistoria: this.datavistoriaIso,
           });
-          void this.bootstrapService.warmup(atualizada.id);
           this.router.navigate(['/vistoria/areas']);
           return;
         } catch (errorAtualizacao: any) {
@@ -427,7 +429,6 @@ export class VistoriaInicioPage implements OnInit {
         veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? undefined,
         datavistoria: this.datavistoriaIso,
       });
-      void this.bootstrapService.warmup(vistoria.id);
       this.router.navigate(['/vistoria/areas']);
     } catch (error: any) {
       this.errorMessage = this.errorMessageService.fromApi(

@@ -7,6 +7,7 @@ import {
   IsDateString,
   IsEnum,
   IsNumber,
+  IsOptional,
 } from 'class-validator';
 import { PolaridadeMeta } from '../enums/polaridade-meta.enum';
 import { UnidadeMeta } from '../enums/unidade-meta.enum';
@@ -72,6 +73,54 @@ export class CreateMetaDto {
   )
   @IsNotEmpty({ message: 'valorMeta é obrigatório' })
   valorMeta: number;
+
+  @ApiProperty({
+    description: 'Valor da meta mensal',
+    required: false,
+    type: Number,
+    example: 123.45,
+  })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    {
+      message:
+        'valorMetaMensal deve ser um número com até duas casas decimais',
+    },
+  )
+  @IsOptional()
+  valorMetaMensal?: number;
+
+  @ApiProperty({
+    description: 'Taxa de crescimento da meta',
+    required: false,
+    type: Number,
+    example: 5.2525,
+  })
+  @IsNumber(
+    { maxDecimalPlaces: 4 },
+    {
+      message:
+        'taxaDeCrescimento deve ser um número com até quatro casas decimais',
+    },
+  )
+  @IsOptional()
+  taxaDeCrescimento?: number;
+
+  @ApiProperty({
+    description: 'Valor inicial da meta',
+    required: false,
+    type: Number,
+    example: 1000.0,
+  })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    {
+      message:
+        'valorMetaInicial deve ser um número com até duas casas decimais',
+    },
+  )
+  @IsOptional()
+  valorMetaInicial?: number;
 
   @ApiProperty({
     description: 'Unidade de medida da meta',
