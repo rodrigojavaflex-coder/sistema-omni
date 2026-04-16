@@ -7,6 +7,10 @@ param(
     [string]$ServiceName = "OMNI-Sistema"
 )
 
+$dependencyInstallOk = $true
+$migrationOk = $true
+$readinessOk = $false
+
 # Verificar se esta executando como Administrador
 if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Host "ERRO: Este script deve ser executado como Administrador!" -ForegroundColor Red
@@ -24,6 +28,7 @@ $sourceBackend = "$PSScriptRoot\ArquivosBackend"
 $sourceFrontend = "$PSScriptRoot\ArquivosFrontend"
 $backendPath = "C:\Deploy\OMNI"
 $frontendPath = "C:\inetpub\wwwroot\omni"
+$previousLockHash = $null
 
 # =============================================================================
 # 1. VERIFICAR SE ARQUIVOS DE ORIGEM EXISTEM
@@ -108,6 +113,14 @@ Write-Host "`n4. Atualizando backend..." -ForegroundColor Cyan
 
 # Verificar se .env existe no destino
 $envExists = Test-Path "$backendPath\.env"
+$destLockPath = "$backendPath\package-lock.json"
+if (Test-Path $destLockPath) {
+    try {
+        $previousLockHash = (Get-FileHash $destLockPath -Algorithm MD5).Hash
+    } catch {
+        $previousLockHash = $null
+    }
+}
 if ($envExists) {
     Write-Host "  INFO: .env existente sera preservado" -ForegroundColor Yellow
     # Fazer backup do .env
@@ -197,16 +210,15 @@ Write-Host "  OK: Frontend atualizado!" -ForegroundColor Green
 # =============================================================================
 Write-Host "`n6. Verificando dependencias..." -ForegroundColor Cyan
 
-# Verificar se package.json mudou
+# Verificar se package-lock mudou OU se node_modules está inconsistente/ausente
 $needsInstall = $false
 
-if (Test-Path "$backendPath\package-lock.json") {
+if (Test-Path "$sourceBackend\package-lock.json") {
     Write-Host "  Comparando package-lock.json..." -ForegroundColor Yellow
     
     $sourceHash = (Get-FileHash "$sourceBackend\package-lock.json" -Algorithm MD5).Hash
-    $destHash = (Get-FileHash "$backendPath\package-lock.json" -Algorithm MD5).Hash
     
-    if ($sourceHash -ne $destHash) {
+    if ($null -eq $previousLockHash -or $sourceHash -ne $previousLockHash) {
         $needsInstall = $true
         Write-Host "  INFO: package-lock.json alterado, dependencias serao atualizadas" -ForegroundColor Yellow
     } else {
@@ -215,27 +227,62 @@ if (Test-Path "$backendPath\package-lock.json") {
 } else {
     # Primeira vez ou sem package-lock
     $needsInstall = $true
-    Write-Host "  INFO: package-lock.json nao encontrado, instalando dependencias" -ForegroundColor Yellow
+    Write-Host "  INFO: package-lock.json de origem nao encontrado, instalando dependencias" -ForegroundColor Yellow
+}
+
+if (-not (Test-Path "$backendPath\node_modules")) {
+    $needsInstall = $true
+    Write-Host "  INFO: node_modules ausente, instalando dependencias" -ForegroundColor Yellow
+}
+
+if (-not $needsInstall) {
+    try {
+        Push-Location $backendPath
+        npm ls --omit=dev --depth=0 *> $null
+        if ($LASTEXITCODE -ne 0) {
+            $needsInstall = $true
+            Write-Host "  INFO: Dependencias inconsistentes, forçando reinstalacao" -ForegroundColor Yellow
+        }
+    } catch {
+        $needsInstall = $true
+        Write-Host "  INFO: Falha na verificacao de dependencias, forçando reinstalacao" -ForegroundColor Yellow
+    } finally {
+        Pop-Location
+    }
 }
 
 if ($needsInstall) {
-    Write-Host "  Executando npm install --production..." -ForegroundColor Yellow
+    Write-Host "  Executando npm ci --omit=dev..." -ForegroundColor Yellow
     try {
         Push-Location $backendPath
-        npm install --production --silent
+        npm ci --omit=dev --silent
         if ($LASTEXITCODE -eq 0) {
             Write-Host "  OK: Dependencias instaladas com sucesso!" -ForegroundColor Green
         } else {
-            Write-Host "  AVISO: Erro ao instalar dependencias (codigo: $LASTEXITCODE)" -ForegroundColor Yellow
-            Write-Host "  Execute manualmente: cd C:\Deploy\OMNI && npm install --production" -ForegroundColor Yellow
+            Write-Host "  AVISO: npm ci falhou (codigo: $LASTEXITCODE), tentando npm install --omit=dev..." -ForegroundColor Yellow
+            npm install --omit=dev --silent
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "  OK: Dependencias instaladas via npm install!" -ForegroundColor Green
+            } else {
+                $dependencyInstallOk = $false
+                Write-Host "  AVISO: Erro ao instalar dependencias (codigo: $LASTEXITCODE)" -ForegroundColor Yellow
+                Write-Host "  Execute manualmente: cd C:\Deploy\OMNI && npm ci --omit=dev" -ForegroundColor Yellow
+            }
         }
     } catch {
+        $dependencyInstallOk = $false
         Write-Host "  ERRO: Falha ao instalar dependencias: $($_.Exception.Message)" -ForegroundColor Red
     } finally {
         Pop-Location
     }
 } else {
     Write-Host "  OK: Pulando instalacao (dependencias ja atualizadas)" -ForegroundColor Green
+}
+
+if (-not $dependencyInstallOk) {
+    Write-Host "`nERRO CRITICO: Atualizacao interrompida por falha na instalacao de dependencias." -ForegroundColor Red
+    Write-Host "O servico continuara parado para evitar subir uma versao quebrada." -ForegroundColor Red
+    exit 1
 }
 
 # =============================================================================
@@ -248,13 +295,21 @@ try {
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  OK: Migrations executadas com sucesso!" -ForegroundColor Green
     } else {
+        $migrationOk = $false
         Write-Host "  AVISO: Erro ao executar migrations (codigo: $LASTEXITCODE)" -ForegroundColor Yellow
         Write-Host "  Execute manualmente: cd C:\Deploy\OMNI && npm run migration:run:prod" -ForegroundColor Yellow
     }
 } catch {
+    $migrationOk = $false
     Write-Host "  ERRO: Falha ao executar migrations: $($_.Exception.Message)" -ForegroundColor Red
 } finally {
     Pop-Location
+}
+
+if (-not $migrationOk) {
+    Write-Host "`nERRO CRITICO: Atualizacao interrompida por falha nas migrations." -ForegroundColor Red
+    Write-Host "Corrija as migrations e execute novamente antes de iniciar o servico." -ForegroundColor Red
+    exit 1
 }
 
 # =============================================================================
@@ -445,6 +500,7 @@ Start-Sleep 2
 
 try {
     $null = Invoke-WebRequest -Uri "http://localhost:8080/api" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+    $readinessOk = $true
     Write-Host "  OK: Backend respondendo corretamente!" -ForegroundColor Green
 } catch {
     Write-Host "  AVISO: Backend nao esta respondendo ainda" -ForegroundColor Yellow
@@ -463,3 +519,8 @@ Write-Host "  Status do servico: nssm status $ServiceName" -ForegroundColor Whit
 Write-Host "  Ver logs: Get-Content C:\Deploy\OMNI\logs\omni-stderr.log -Tail 50" -ForegroundColor White
 Write-Host "  Acessar sistema: http://gestaodetransporte.com/omni" -ForegroundColor White
 Write-Host ""
+
+if (-not $readinessOk) {
+    Write-Host "ATENCAO: Atualizacao finalizada, mas o backend ainda nao respondeu no health-check." -ForegroundColor Yellow
+    exit 2
+}

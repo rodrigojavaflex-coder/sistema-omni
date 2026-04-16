@@ -122,9 +122,11 @@ export class UserListComponent extends BaseListComponent<Usuario> {
 
   private generatePrintReport(user: Usuario): void {
     // Gerar HTML do relatório
-    const permissionsList = user.perfil && user.perfil.permissoes && user.perfil.permissoes.length > 0
-      ? user.perfil.permissoes.map(p => `<li>${this.formatPermission(p)}</li>`).join('')
+    const consolidatedPermissions = this.getUserPermissions(user);
+    const permissionsList = consolidatedPermissions.length > 0
+      ? consolidatedPermissions.map(p => `<li>${this.formatPermission(p)}</li>`).join('')
       : '<li style="color: #666; font-style: italic;">Nenhuma permissão atribuída</li>';
+    const perfisLabel = this.getUserProfilesLabel(user);
 
     const printContent = `
       <!DOCTYPE html>
@@ -263,12 +265,12 @@ export class UserListComponent extends BaseListComponent<Usuario> {
         <div class="section">
           <div class="section-title">Perfil e Permissões</div>
           <div class="info-row">
-            <span class="info-label">Perfil:</span>
-            <span class="info-value">${user.perfil ? user.perfil.nomePerfil : 'Não atribuído'}</span>
+            <span class="info-label">Perfis:</span>
+            <span class="info-value">${perfisLabel}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Total de Permissões:</span>
-            <span class="info-value">${user.perfil && user.perfil.permissoes ? user.perfil.permissoes.length : 0}</span>
+            <span class="info-value">${consolidatedPermissions.length}</span>
           </div>
           <div class="info-row" style="flex-direction: column;">
             <span class="info-label" style="margin-bottom: 10px;">Permissões:</span>
@@ -434,11 +436,11 @@ export class UserListComponent extends BaseListComponent<Usuario> {
   }
 
   protected getExportDataExcel(items: Usuario[]): { headers: string[], data: any[][] } {
-    const headers = ['Nome', 'E-mail', 'Perfil', 'Status', 'Criado em'];
+    const headers = ['Nome', 'E-mail', 'Perfis', 'Status', 'Criado em'];
     const data = items.map(item => [
       item.nome,
       item.email,
-      item.perfil ? item.perfil.nomePerfil : 'Sem perfil',
+      this.getUserProfilesLabel(item),
       item.ativo ? 'Ativo' : 'Inativo',
       new Date(item.criadoEm).toLocaleDateString('pt-BR')
     ]);
@@ -448,11 +450,11 @@ export class UserListComponent extends BaseListComponent<Usuario> {
   
 
   protected getExportDataPDF(items: Usuario[]): { headers: string[], data: any[][] } {
-    const headers = ['Nome', 'E-mail', 'Perfil', 'Status', 'Criado em'];
+    const headers = ['Nome', 'E-mail', 'Perfis', 'Status', 'Criado em'];
     const data = items.map(item => [
       item.nome,
       item.email,
-      item.perfil ? item.perfil.nomePerfil : 'Sem perfil',
+      this.getUserProfilesLabel(item),
       item.ativo ? 'Ativo' : 'Inativo',
       new Date(item.criadoEm).toLocaleDateString('pt-BR')
     ]);
@@ -472,5 +474,16 @@ export class UserListComponent extends BaseListComponent<Usuario> {
   formatDepartamentos(deps: { nomeDepartamento: string }[] | undefined): string {
     if (!deps || deps.length === 0) return '-';
     return deps.map((d) => d.nomeDepartamento).join(', ');
+  }
+
+  private getUserProfilesLabel(user: Usuario): string {
+    if (!user.perfis?.length) return 'Sem perfil';
+    return user.perfis.map((perfil) => perfil.nomePerfil).join(', ');
+  }
+
+  private getUserPermissions(user: Usuario): string[] {
+    return Array.from(
+      new Set((user.perfis || []).flatMap((perfil) => perfil.permissoes || [])),
+    );
   }
 }

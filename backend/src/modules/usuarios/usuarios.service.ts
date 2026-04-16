@@ -57,14 +57,14 @@ export class UsuariosService {
         saltRounds,
       );
 
-      // Buscar perfil pelo ID
-      const perfil = await this.perfilRepository.findOne({
-        where: { id: createUsuarioDto.perfilId },
+      const perfilIds = Array.from(new Set(createUsuarioDto.perfilIds || [])).filter(
+        Boolean,
+      );
+      const perfis = await this.perfilRepository.find({
+        where: { id: In(perfilIds) },
       });
-      if (!perfil) {
-        throw new NotFoundException(
-          `Perfil com ID ${createUsuarioDto.perfilId} não encontrado`,
-        );
+      if (!perfis.length || perfis.length !== perfilIds.length) {
+        throw new NotFoundException('Um ou mais perfis informados não foram encontrados');
       }
       // Montar dados do usuário
       let empresa: EmpresaTerceira | undefined;
@@ -86,7 +86,7 @@ export class UsuariosService {
         senha: hashedPassword,
         ativo: createUsuarioDto.ativo ?? true,
         tema: createUsuarioDto.tema || 'Claro',
-        perfil,
+        perfis,
         empresa,
       };
 
@@ -169,9 +169,10 @@ export class UsuariosService {
 
     const queryBuilder = this.usuarioRepository
       .createQueryBuilder('user')
-      .leftJoinAndSelect('user.perfil', 'perfil')
+      .leftJoinAndSelect('user.perfis', 'perfis')
       .leftJoinAndSelect('user.departamentosUsuario', 'du')
-      .leftJoinAndSelect('du.departamento', 'departamento');
+      .leftJoinAndSelect('du.departamento', 'departamento')
+      .distinct(true);
 
     if (nome) {
       queryBuilder.andWhere('user.nome ILIKE :nome', { nome: `%${nome}%` });
@@ -200,10 +201,10 @@ export class UsuariosService {
   }
 
   async findOne(id: string): Promise<Usuario> {
-    // Carregar usuário incluindo a relação com Perfil para que user.perfil esteja disponível
+    // Carregar usuário incluindo os perfis para disponibilizar permissões consolidadas
     const user = await this.usuarioRepository.findOne({
       where: { id },
-      relations: ['perfil'],
+      relations: ['perfis'],
     });
 
     if (!user) {
@@ -255,16 +256,17 @@ export class UsuariosService {
       user.email = updateUsuarioDto.email;
     if (updateUsuarioDto.ativo !== undefined)
       user.ativo = updateUsuarioDto.ativo;
-    if (updateUsuarioDto.perfilId !== undefined) {
-      const perfil = await this.perfilRepository.findOne({
-        where: { id: updateUsuarioDto.perfilId },
+    if (updateUsuarioDto.perfilIds !== undefined) {
+      const perfilIds = Array.from(new Set(updateUsuarioDto.perfilIds || [])).filter(
+        Boolean,
+      );
+      const perfis = await this.perfilRepository.find({
+        where: { id: In(perfilIds) },
       });
-      if (!perfil) {
-        throw new NotFoundException(
-          `Perfil com ID ${updateUsuarioDto.perfilId} não encontrado`,
-        );
+      if (!perfis.length || perfis.length !== perfilIds.length) {
+        throw new NotFoundException('Um ou mais perfis informados não foram encontrados');
       }
-      user.perfil = perfil;
+      user.perfis = perfis;
     }
     if (updateUsuarioDto.idEmpresa !== undefined) {
       if (!updateUsuarioDto.idEmpresa) {

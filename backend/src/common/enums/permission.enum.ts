@@ -14,6 +14,12 @@ export enum Permission {
   // Relatórios
   REPORTS_VIEW = 'reports:view',
 
+  // BI - Links externos
+  BI_ACESSO_LINK_CREATE = 'bi_acesso_link:create',
+  BI_ACESSO_LINK_READ = 'bi_acesso_link:read',
+  BI_ACESSO_LINK_UPDATE = 'bi_acesso_link:update',
+  BI_ACESSO_LINK_DELETE = 'bi_acesso_link:delete',
+
   // Auditoria
   AUDIT_VIEW = 'audit:view',
 
@@ -171,6 +177,12 @@ export const PERMISSION_GROUPS = {
   ],
   Relatórios: [
     { key: Permission.REPORTS_VIEW, label: 'Acessar menu Relatórios' },
+  ],
+  'BI - Administração': [
+    { key: Permission.BI_ACESSO_LINK_CREATE, label: 'Cadastrar links de BI' },
+    { key: Permission.BI_ACESSO_LINK_READ, label: 'Visualizar links de BI' },
+    { key: Permission.BI_ACESSO_LINK_UPDATE, label: 'Editar links de BI' },
+    { key: Permission.BI_ACESSO_LINK_DELETE, label: 'Excluir links de BI' },
   ],
   Auditoria: [
     { key: Permission.AUDIT_VIEW, label: 'Visualizar logs de auditoria' },

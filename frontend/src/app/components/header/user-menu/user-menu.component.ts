@@ -50,5 +50,10 @@ export class UserMenuComponent {
     if (!deps || deps.length === 0) return 'N/D';
     return deps.map(dep => dep.nomeDepartamento).join(', ');
   }
+
+  formatPerfis(perfis: { nomePerfil: string }[] | undefined): string {
+    if (!perfis || perfis.length === 0) return 'N/D';
+    return perfis.map((perfil) => perfil.nomePerfil).join(', ');
+  }
 }
 

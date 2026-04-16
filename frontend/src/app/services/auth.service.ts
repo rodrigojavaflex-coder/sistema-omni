@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
-import { Usuario, Permission } from '../models/usuario.model';
+import { Usuario } from '../models/usuario.model';
 import { ThemeService } from './theme.service';
 import { environment } from '../../environments/environment';
 
@@ -136,11 +136,13 @@ export class AuthService {
   /**
    * Verifica se usuário tem determinada permissão
    */
-  hasPermission(permission: Permission): boolean {
+  hasPermission(permission: string): boolean {
     const user = this.currentUserSubject.value;
     if (!user) return false;
 
-    const userPermissions = (user as any).perfil?.permissoes || (user as any).permissions || [];
+    const userPermissions = Array.from(
+      new Set((user.perfis || []).flatMap((perfil) => perfil.permissoes || [])),
+    );
 
     return userPermissions.includes(permission) || false;
   }
@@ -148,7 +150,7 @@ export class AuthService {
   /**
    * Verifica se usuário tem alguma das permissões fornecidas
    */
-  hasAnyPermission(permissions: Permission[]): boolean {
+  hasAnyPermission(permissions: string[]): boolean {
     return permissions.some(permission => this.hasPermission(permission));
   }
 

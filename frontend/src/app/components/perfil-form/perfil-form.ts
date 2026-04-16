@@ -22,12 +22,12 @@ export class PerfilFormComponent implements OnInit {
 
   perfilForm: FormGroup = this.fb.group({
     nomePerfil: ['', Validators.required],
-    permissoes: [[] as Permission[]]
+    permissoes: [[] as string[]]
   });
-  permissionGroups: Record<string, { key: Permission; label: string }[]> = {};
+  permissionGroups: Record<string, { key: string; label: string }[]> = {};
   // Filter para busca de permissões
   permissionFilter = '';
-  filteredPermissionGroups: Record<string, { key: Permission; label: string }[]> = {};
+  filteredPermissionGroups: Record<string, { key: string; label: string }[]> = {};
   loading = false;
   error: string | null = null;
   isEditMode = false;
@@ -67,8 +67,8 @@ export class PerfilFormComponent implements OnInit {
     });
   }
 
-  onPermissionChange(permission: Permission, checked: boolean): void {
-    const perms: Permission[] = this.perfilForm.value.permissoes || [];
+  onPermissionChange(permission: string, checked: boolean): void {
+    const perms: string[] = this.perfilForm.value.permissoes || [];
     const updated = checked ? [...perms, permission] : perms.filter(p => p !== permission);
     this.perfilForm.get('permissoes')?.setValue(updated);
   }
@@ -115,8 +115,8 @@ export class PerfilFormComponent implements OnInit {
   public selectAllFiltered(): void {
     const allKeys = Object.values(this.filteredPermissionGroups)
       .flat()
-      .map(item => item.key as Permission);
-    const current: Permission[] = this.perfilForm.value.permissoes || [];
+      .map(item => item.key);
+    const current: string[] = this.perfilForm.value.permissoes || [];
     const combined = Array.from(new Set([...current, ...allKeys]));
     this.perfilForm.get('permissoes')?.setValue(combined);
   }
@@ -125,22 +125,22 @@ export class PerfilFormComponent implements OnInit {
   public deselectAllFiltered(): void {
     const allKeys = Object.values(this.filteredPermissionGroups)
       .flat()
-      .map(item => item.key as Permission);
-    const current: Permission[] = this.perfilForm.value.permissoes || [];
+      .map(item => item.key);
+    const current: string[] = this.perfilForm.value.permissoes || [];
     const filtered = current.filter(p => !allKeys.includes(p));
     this.perfilForm.get('permissoes')?.setValue(filtered);
   }
   // Verifica se todas as permissões de um grupo estão selecionadas
   public isGroupSelected(groupName: string): boolean {
     const group = this.filteredPermissionGroups[groupName] || [];
-    const current: Permission[] = this.perfilForm.value.permissoes || [];
+    const current: string[] = this.perfilForm.value.permissoes || [];
     return group.every(item => current.includes(item.key));
   }
 
   // Seleciona ou desmarca todas as permissões de um grupo
   public toggleSelectGroup(groupName: string, selected: boolean): void {
     const group = this.filteredPermissionGroups[groupName] || [];
-    let perms: Permission[] = this.perfilForm.value.permissoes || [];
+    let perms: string[] = this.perfilForm.value.permissoes || [];
     const keys = group.map(item => item.key);
     if (selected) {
       perms = Array.from(new Set([...perms, ...keys]));
@@ -151,7 +151,7 @@ export class PerfilFormComponent implements OnInit {
   }
   
   /** Retorna todas as chaves de permissões atualmente filtradas */
-  public get filteredKeys(): Permission[] {
+  public get filteredKeys(): string[] {
     return Object.values(this.filteredPermissionGroups)
       .flat()
       .map(item => item.key);
@@ -160,14 +160,14 @@ export class PerfilFormComponent implements OnInit {
   /** Indica se todas as permissões filtradas já estão marcadas */
   public get allFilteredSelected(): boolean {
     const keys = this.filteredKeys;
-    const current: Permission[] = this.perfilForm.value.permissoes || [];
+    const current: string[] = this.perfilForm.value.permissoes || [];
     return keys.length > 0 && keys.every(k => current.includes(k));
   }
 
   /** Indica se alguma das permissões filtradas está marcada */
   public get anyFilteredSelected(): boolean {
     const keys = this.filteredKeys;
-    const current: Permission[] = this.perfilForm.value.permissoes || [];
+    const current: string[] = this.perfilForm.value.permissoes || [];
     return keys.some(k => current.includes(k));
   }
 

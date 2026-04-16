@@ -35,12 +35,16 @@ import {
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Perfil } from '../perfil/entities/perfil.entity';
+import { BiAcessoService } from '../bi-acesso/bi-acesso.service';
 
 @ApiTags('Usuários')
 @Controller('users')
 @ApiBearerAuth()
 export class UsuariosController {
-  constructor(private readonly usuariosService: UsuariosService) {}
+  constructor(
+    private readonly usuariosService: UsuariosService,
+    private readonly biAcessoService: BiAcessoService,
+  ) {}
 
   @Post()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -69,8 +73,12 @@ export class UsuariosController {
     status: HttpStatus.OK,
     description: 'Lista de permissões agrupadas por categoria',
   })
-  getPermissions() {
-    return PERMISSION_GROUPS;
+  async getPermissions() {
+    const biPermissionItems = await this.biAcessoService.getPermissionItems();
+    return {
+      ...PERMISSION_GROUPS,
+      BI: biPermissionItems,
+    };
   }
 
   @Get('profiles')

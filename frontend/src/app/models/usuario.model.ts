@@ -14,6 +14,12 @@ export enum Permission {
   // Relatórios
   REPORTS_VIEW = 'reports:view',
 
+  // BI - Links externos
+  BI_ACESSO_LINK_CREATE = 'bi_acesso_link:create',
+  BI_ACESSO_LINK_READ = 'bi_acesso_link:read',
+  BI_ACESSO_LINK_UPDATE = 'bi_acesso_link:update',
+  BI_ACESSO_LINK_DELETE = 'bi_acesso_link:delete',
+
   // Auditoria
   AUDIT_VIEW = 'audit:view',
 
@@ -131,7 +137,7 @@ export enum Permission {
 
 export interface PermissionGroup {
   [groupName: string]: {
-    key: Permission;
+    key: string;
     label: string;
   }[];
 }
@@ -139,7 +145,7 @@ export interface PermissionGroup {
 export interface Perfil {
   id: string;
   nomePerfil: string;
-  permissoes: Permission[];
+  permissoes: string[];
 }
 
 export interface Usuario {
@@ -147,7 +153,7 @@ export interface Usuario {
   nome: string;
   email: string;
   ativo: boolean;
-  perfil: Perfil;
+  perfis: Perfil[];
   criadoEm: Date;
   atualizadoEm: Date;
   tema?: string; // Tema preferido do usuário (Claro ou Escuro)
@@ -168,7 +174,7 @@ export interface CreateUsuarioDto {
   senha: string;
   ativo?: boolean;
   tema?: string; // Tema preferido (Claro ou Escuro)
-  perfilId: string; // ID do perfil do usuário
+  perfilIds: string[]; // IDs dos perfis do usuário
   departamentoIds?: string[];
   idEmpresa?: string;
 }
@@ -179,7 +185,7 @@ export interface UpdateUsuarioDto {
   senha?: string;
   ativo?: boolean;
   tema?: string; // Permitir atualizar tema do usuário (Claro ou Escuro)
-  perfilId?: string; // Atualizar perfil do usuário
+  perfilIds?: string[]; // Atualizar perfis do usuário
   departamentoIds?: string[];
   idEmpresa?: string;
 }

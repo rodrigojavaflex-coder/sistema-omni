@@ -6,6 +6,7 @@ import { PerfilService } from './perfil.service';
 import { PerfilController } from './perfil.controller';
 import { Perfil } from './entities/perfil.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
+import { BiAcessoModule } from '../bi-acesso/bi-acesso.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
     AuthModule,
     // Importar UsuariosModule para disponibilizar PermissionsGuard e UsuarioRepository
     UsuariosModule,
+    BiAcessoModule,
   ],
   providers: [PerfilService],
   controllers: [PerfilController],

@@ -1,0 +1,93 @@
+<div class="list-container">
+  <div class="list-header">
+    <h2>Cadastro de BI</h2>
+    <button class="btn btn-secondary" type="button" (click)="startCreate()">Novo</button>
+  </div>
+
+  @if (error) {
+    <div class="error-message">{{ error }}</div>
+  }
+
+  <div class="form-card">
+    <h3>{{ editingId ? 'Editar link' : 'Novo link' }}</h3>
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="form-grid">
+        <label>
+          Nome do menu
+          <input type="text" formControlName="nomeMenu" />
+        </label>
+        <label>
+          URL
+          <input type="url" formControlName="url" placeholder="https://..." />
+        </label>
+        <label>
+          Ordem
+          <input type="number" formControlName="ordem" min="1" />
+        </label>
+      </div>
+      <label class="checkbox-field">
+        <input type="checkbox" formControlName="ativo" />
+        Link ativo
+      </label>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="saving">
+          {{ editingId ? 'Atualizar' : 'Salvar' }}
+        </button>
+        @if (editingId) {
+          <button class="btn btn-secondary" type="button" (click)="cancelEdit()">
+            Cancelar edição
+          </button>
+        }
+      </div>
+    </form>
+  </div>
+
+  @if (loading) {
+    <div class="loading">Carregando links...</div>
+  } @else {
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>URL</th>
+            <th>Grupo/Subgrupo</th>
+            <th>Ordem</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (link of links; track link.id) {
+            <tr>
+              <td>{{ link.nomeMenu }}</td>
+              <td>
+                <a [href]="link.url" target="_blank" rel="noopener noreferrer">{{ link.url }}</a>
+              </td>
+              <td>{{ link.grupoMenu }} / {{ link.subgrupoMenu }}</td>
+              <td>{{ link.ordem }}</td>
+              <td>{{ link.ativo ? 'Ativo' : 'Inativo' }}</td>
+              <td class="table-actions">
+                @if (authService.hasAnyPermission([permissions.BI_ACESSO_LINK_UPDATE])) {
+                  <button class="btn btn-small btn-primary" type="button" (click)="startEdit(link)">
+                    Editar
+                  </button>
+                }
+                @if (authService.hasAnyPermission([permissions.BI_ACESSO_LINK_DELETE])) {
+                  <button class="btn btn-small btn-danger" type="button" (click)="remove(link)">
+                    Excluir
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+          @if (links.length === 0) {
+            <tr>
+              <td colspan="6" class="no-data">Nenhum link de BI cadastrado.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

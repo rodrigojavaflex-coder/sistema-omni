@@ -4,8 +4,9 @@ export interface MenuItem {
   label: string;
   title?: string; // tooltip (ex.: nome completo quando o label é abreviado)
   route?: string;
+  externalUrl?: string;
   icon: string;
-  requiredPermissions: Permission[];
+  requiredPermissions: string[];
   isSubmenu?: boolean;
   submenuItems?: MenuItem[];
   parentMenu?: string;
@@ -47,7 +48,20 @@ export const MENU_CONFIGURATION: MenuConfig = {
           icon: 'feather-activity',
           requiredPermissions: [Permission.CONFIGURACAO_TEMPO_FLUXO_ACCESS],
           parentMenu: 'Administração'
-        }, {
+        },
+        {
+          label: 'BI - Cadastro',
+          route: '/bi-acesso-links',
+          icon: 'feather-pie-chart',
+          requiredPermissions: [
+            Permission.BI_ACESSO_LINK_READ,
+            Permission.BI_ACESSO_LINK_CREATE,
+            Permission.BI_ACESSO_LINK_UPDATE,
+            Permission.BI_ACESSO_LINK_DELETE,
+          ],
+          parentMenu: 'Administração'
+        },
+        {
           label: 'Usuários',
           route: '/users',
           icon: 'feather-users',
@@ -332,6 +346,14 @@ export const MENU_CONFIGURATION: MenuConfig = {
               parentMenu: 'Gestão'
             }
           ]
+        },
+        {
+          label: 'BI',
+          icon: 'feather-pie-chart',
+          requiredPermissions: [],
+          isSubmenu: true,
+          parentMenu: 'Gestão',
+          submenuItems: [],
         },
         {
           label: 'Painel de Metas',

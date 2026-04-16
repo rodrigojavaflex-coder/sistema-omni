@@ -54,10 +54,10 @@ export class PermissionsGuard implements CanActivate {
       const payload = this.jwtService.verify(token, {
         secret: jwtSecret,
       });
-      // Carregar usuário com perfil para verificar permissões
+      // Carregar usuário com perfis para verificar permissões
       const user = await this.userRepository.findOne({
         where: { id: payload.sub },
-        relations: ['perfil', 'empresa'],
+        relations: ['perfis', 'empresa'],
       });
 
       if (!user) {
@@ -68,9 +68,10 @@ export class PermissionsGuard implements CanActivate {
         throw new ForbiddenException('Usuário inativo');
       }
 
-      // Verificar se o usuário tem pelo menos uma das permissões necessárias
-      // Verificar se o perfil do usuário possui as permissões necessárias
-      const userPermissions = user.perfil?.permissoes || [];
+      // União de permissões de todos os perfis vinculados ao usuário
+      const userPermissions = Array.from(
+        new Set((user.perfis || []).flatMap((perfil) => perfil.permissoes || [])),
+      );
 
       const hasPermission = requiredPermissions.some((permission) =>
         userPermissions.includes(permission),

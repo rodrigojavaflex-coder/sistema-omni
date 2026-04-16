@@ -12,7 +12,10 @@
           <div class="user-name-horizontal">{{ user.nome }}</div>
           <div class="user-email">{{ user.email }}</div>
           <div class="user-meta">
-            <div class="user-meta-line">Perfil: {{ user.perfil.nomePerfil || 'N/D' }}</div>
+            <div class="user-meta-line">
+              Perfis:
+              {{ formatPerfis(user.perfis) }}
+            </div>
             <div class="user-meta-line">
               Departamentos: {{ formatDepartamentos(user.departamentos) }}
             </div>

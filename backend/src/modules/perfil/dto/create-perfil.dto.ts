@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsArray, IsEnum } from 'class-validator';
+import { IsArray, IsNotEmpty, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Permission } from '../../../common/enums/permission.enum';
 
@@ -15,6 +15,6 @@ export class CreatePerfilDto {
     description: 'Lista de permissões associadas ao perfil',
   })
   @IsArray()
-  @IsEnum(Permission, { each: true })
-  permissoes: Permission[];
+  @IsString({ each: true })
+  permissoes: string[];
 }

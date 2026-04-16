@@ -29,3 +29,7 @@
   margin-top: 6px;
 }
 
+.submenu-link.submenu-toggle .submenu-text {
+  flex: 0 1 auto;
+}
+

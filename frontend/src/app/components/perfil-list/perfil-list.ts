@@ -29,7 +29,7 @@ export class PerfilListComponent extends BaseListComponent<Perfil> implements On
 
 
   // Mapeamento de permissões e labels
-  permissionGroups: Record<string, { key: Permission; label: string }[]> = {};
+  permissionGroups: Record<string, { key: string; label: string }[]> = {};
   formattedPermissoes: Record<string, string> = {};
 
   Permission = Permission;
@@ -100,7 +100,7 @@ export class PerfilListComponent extends BaseListComponent<Perfil> implements On
 
   // Converte chaves de permissão em labels amigáveis para exibição
   private formatarPermissoes(): void {
-    const mapLabels = new Map<Permission, string>();
+    const mapLabels = new Map<string, string>();
     Object.values(this.permissionGroups).forEach(group => {
       group.forEach(item => mapLabels.set(item.key, item.label));
     });
@@ -165,7 +165,7 @@ export class PerfilListComponent extends BaseListComponent<Perfil> implements On
 
   protected getExportDataExcel(items: Perfil[]): { headers: string[], data: any[][] } {
     // Formatar permissões para os itens carregados
-    const mapLabels = new Map<Permission, string>();
+    const mapLabels = new Map<string, string>();
     Object.values(this.permissionGroups).forEach(group => {
       group.forEach(item => mapLabels.set(item.key, item.label));
     });
@@ -182,7 +182,7 @@ export class PerfilListComponent extends BaseListComponent<Perfil> implements On
 
   protected getExportDataPDF(items: Perfil[]): { headers: string[], data: any[][] } {
     // Formatar permissões para os itens carregados
-    const mapLabels = new Map<Permission, string>();
+    const mapLabels = new Map<string, string>();
     Object.values(this.permissionGroups).forEach(group => {
       group.forEach(item => mapLabels.set(item.key, item.label));
     });

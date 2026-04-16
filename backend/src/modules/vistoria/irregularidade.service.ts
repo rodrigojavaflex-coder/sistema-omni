@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, QueryFailedError, Repository } from 'typeorm';
-import sharp from 'sharp';
 import { Irregularidade } from './entities/irregularidade.entity';
 import { IrregularidadeMidia } from './entities/irregularidade-midia.entity';
 import { Vistoria } from './entities/vistoria.entity';
@@ -910,49 +909,7 @@ export class IrregularidadeService {
     mimeType: string,
     nomeArquivo: string,
   ): Promise<{ buffer: Buffer; mimeType: string; nomeArquivo: string }> {
-    try {
-      const pipeline = sharp(buffer).rotate().resize({
-        width: 1440,
-        height: 1440,
-        fit: 'inside',
-        withoutEnlargement: true,
-      });
-
-      if (mimeType === 'image/png') {
-        const out = await pipeline.png({
-          compressionLevel: 9,
-          adaptiveFiltering: true,
-          palette: true,
-          quality: 85,
-          effort: 8,
-        }).toBuffer();
-        return { buffer: out, mimeType: 'image/png', nomeArquivo: this.alterarExtensaoArquivo(nomeArquivo, 'png') };
-      }
-
-      if (mimeType === 'image/webp') {
-        const out = await pipeline.webp({
-          quality: 80,
-          effort: 6,
-        }).toBuffer();
-        return { buffer: out, mimeType: 'image/webp', nomeArquivo: this.alterarExtensaoArquivo(nomeArquivo, 'webp') };
-      }
-
-      const out = await pipeline.jpeg({
-        quality: 80,
-        mozjpeg: true,
-        progressive: true,
-        chromaSubsampling: '4:2:0',
-      }).toBuffer();
-      return { buffer: out, mimeType: 'image/jpeg', nomeArquivo: this.alterarExtensaoArquivo(nomeArquivo, 'jpg') };
-    } catch {
-      // Fallback seguro para manter fluxo de upload mesmo se o otimizador falhar.
-      return { buffer, mimeType, nomeArquivo };
-    }
-  }
-
-  private alterarExtensaoArquivo(nomeArquivo: string, novaExtensao: string): string {
-    const base = nomeArquivo.replace(/\.[^.]+$/, '');
-    return `${base}.${novaExtensao}`;
+    return { buffer, mimeType, nomeArquivo };
   }
 
   private toResumo(

@@ -1,0 +1,51 @@
+.form-card {
+  background: var(--background-color, #fff);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+}
+
+.form-card h3 {
+  margin: 0 0 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  gap: 0.35rem;
+}
+
+input[type='text'],
+input[type='url'],
+input[type='number'] {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+}
+
+.checkbox-field {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  font-weight: 500;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.no-data {
+  text-align: center;
+}

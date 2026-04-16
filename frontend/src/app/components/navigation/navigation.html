@@ -46,18 +46,34 @@
         <li class="nav-item">
           <!-- Item de menu normal -->
           @if (!item.isSubmenu) {
-            <a 
-              [routerLink]="item.route" 
-              [class.active]="isRouteActive(item.route || '')"
-              class="nav-link"
-              [attr.title]="!shouldShowExpanded ? item.label : null"
-              (click)="onMenuItemClick()"
-            >
-              <span class="nav-icon" [innerHTML]="getMenuIcon(item.icon)"></span>
-              @if (shouldShowExpanded) {
-                <span class="nav-text">{{ item.label }}</span>
-              }
-            </a>
+            @if (item.externalUrl) {
+              <a
+                [href]="item.externalUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="nav-link"
+                [attr.title]="!shouldShowExpanded ? item.label : null"
+                (click)="onMenuItemClick()"
+              >
+                <span class="nav-icon" [innerHTML]="getMenuIcon(item.icon)"></span>
+                @if (shouldShowExpanded) {
+                  <span class="nav-text">{{ item.label }}</span>
+                }
+              </a>
+            } @else {
+              <a 
+                [routerLink]="item.route" 
+                [class.active]="isRouteActive(item.route || '')"
+                class="nav-link"
+                [attr.title]="!shouldShowExpanded ? item.label : null"
+                (click)="onMenuItemClick()"
+              >
+                <span class="nav-icon" [innerHTML]="getMenuIcon(item.icon)"></span>
+                @if (shouldShowExpanded) {
+                  <span class="nav-text">{{ item.label }}</span>
+                }
+              </a>
+            }
           }
           
           <!-- Item de submenu -->
@@ -105,32 +121,60 @@
                             <ul class="submenu-list nested-list">
                               @for (nestedItem of subItem.submenuItems; track nestedItem.label) {
                                 <li class="submenu-item">
-                                  <a 
-                                    [routerLink]="nestedItem.route" 
-                                    [class.active]="isRouteActive(nestedItem.route || '')"
-                                    class="submenu-link"
-                                    [attr.title]="nestedItem.title || nestedItem.label"
-                                    (click)="onMenuItemClick()"
-                                  >
-                                    <span class="submenu-icon" [innerHTML]="getMenuIcon(nestedItem.icon)"></span>
-                                    <span class="submenu-text">{{ nestedItem.label }}</span>
-                                  </a>
+                                  @if (nestedItem.externalUrl) {
+                                    <a
+                                      [href]="nestedItem.externalUrl"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      class="submenu-link"
+                                      [attr.title]="nestedItem.title || nestedItem.label"
+                                      (click)="onMenuItemClick()"
+                                    >
+                                      <span class="submenu-icon" [innerHTML]="getMenuIcon(nestedItem.icon)"></span>
+                                      <span class="submenu-text">{{ nestedItem.label }}</span>
+                                    </a>
+                                  } @else {
+                                    <a 
+                                      [routerLink]="nestedItem.route" 
+                                      [class.active]="isRouteActive(nestedItem.route || '')"
+                                      class="submenu-link"
+                                      [attr.title]="nestedItem.title || nestedItem.label"
+                                      (click)="onMenuItemClick()"
+                                    >
+                                      <span class="submenu-icon" [innerHTML]="getMenuIcon(nestedItem.icon)"></span>
+                                      <span class="submenu-text">{{ nestedItem.label }}</span>
+                                    </a>
+                                  }
                                 </li>
                               }
                             </ul>
                           }
                         </div>
                       } @else {
-                        <a 
-                          [routerLink]="subItem.route" 
-                          [class.active]="isRouteActive(subItem.route || '')"
-                          class="submenu-link"
-                          [attr.title]="subItem.title || subItem.label"
-                          (click)="onMenuItemClick()"
-                        >
-                          <span class="submenu-icon" [innerHTML]="getMenuIcon(subItem.icon)"></span>
-                          <span class="submenu-text">{{ subItem.label }}</span>
-                        </a>
+                        @if (subItem.externalUrl) {
+                          <a
+                            [href]="subItem.externalUrl"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="submenu-link"
+                            [attr.title]="subItem.title || subItem.label"
+                            (click)="onMenuItemClick()"
+                          >
+                            <span class="submenu-icon" [innerHTML]="getMenuIcon(subItem.icon)"></span>
+                            <span class="submenu-text">{{ subItem.label }}</span>
+                          </a>
+                        } @else {
+                          <a 
+                            [routerLink]="subItem.route" 
+                            [class.active]="isRouteActive(subItem.route || '')"
+                            class="submenu-link"
+                            [attr.title]="subItem.title || subItem.label"
+                            (click)="onMenuItemClick()"
+                          >
+                            <span class="submenu-icon" [innerHTML]="getMenuIcon(subItem.icon)"></span>
+                            <span class="submenu-text">{{ subItem.label }}</span>
+                          </a>
+                        }
                       }
                     </li>
                   }

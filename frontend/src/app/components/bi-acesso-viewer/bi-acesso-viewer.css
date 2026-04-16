@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  height: 100vh;
+}
+
+.bi-container {
+  background: #000;
+  height: 100vh;
+  position: relative;
+  width: 100%;
+}
+
+.btn-back {
+  background: rgba(15, 23, 42, 0.82);
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.78rem;
+  left: 8px;
+  padding: 0.35rem 0.75rem;
+  position: absolute;
+  top: 8px;
+  z-index: 2;
+}
+
+.btn-back:hover {
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.loading {
+  color: #fff;
+  padding: 1rem;
+}
+
+iframe {
+  border: none;
+  height: 100%;
+  width: 100%;
+}

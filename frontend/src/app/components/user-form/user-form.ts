@@ -24,6 +24,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
   availableEmpresas: EmpresaTerceira[] = [];
   departamentos: Departamento[] = [];
   departamentosSelecionados: string[] = [];
+  perfisSelecionados: string[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -55,7 +56,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
       email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
       senha: ['', []],
       ativo: [true],
-      perfilId: ['', Validators.required],
+      perfilIds: [[], Validators.required],
       idEmpresa: [''],
     });
   }
@@ -80,6 +81,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
     this.userService.getProfiles().subscribe({
       next: (profiles) => {
         this.availableProfiles = profiles;
+        this.form?.get('perfilIds')?.setValue(this.getPerfilIdsSelecionados());
         // Após carregar perfis, prosseguir com checagem de modo (create/edit)
         this.checkEditMode();
       },
@@ -97,7 +99,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
       nome: formValue.nome,
       email: formValue.email,
       ativo: formValue.ativo,
-      perfilId: formValue.perfilId,
+      perfilIds: this.getPerfilIdsSelecionados(),
       idEmpresa: formValue.idEmpresa || undefined,
       departamentoIds: this.getDepartamentoIdsSelecionados(),
     };
@@ -121,11 +123,13 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
       nome: user?.nome || '',
       email: user?.email || '',
       ativo: user?.ativo ?? true,
-      perfilId: user?.perfil?.id || '',
+      perfilIds: user?.perfis?.map((perfil) => perfil.id) || [],
       idEmpresa: user?.idEmpresa || '',
     });
+    this.perfisSelecionados = user?.perfis?.map((perfil) => perfil.nomePerfil) || [];
     this.departamentosSelecionados =
       user?.departamentos?.map((d) => d.nomeDepartamento) || [];
+    this.form.get('perfilIds')?.setValue(this.getPerfilIdsSelecionados());
     this.checkPasswordValidator();
   }
 
@@ -161,7 +165,26 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
       .filter((id): id is string => !!id);
   }
 
+  private getPerfilIdsSelecionados(): string[] {
+    if (!this.perfisSelecionados.length) return [];
+    const mapNomeId = new Map(this.availableProfiles.map((perfil) => [perfil.nomePerfil, perfil.id]));
+    return this.perfisSelecionados
+      .map((nome) => mapNomeId.get(nome))
+      .filter((id): id is string => !!id);
+  }
+
   get departamentoOptions(): string[] {
     return this.departamentos.map((d) => d.nomeDepartamento);
+  }
+
+  get perfilOptions(): string[] {
+    return this.availableProfiles.map((perfil) => perfil.nomePerfil);
+  }
+
+  onPerfisSelectionChange(selected: string[]): void {
+    this.perfisSelecionados = selected;
+    this.form.get('perfilIds')?.setValue(this.getPerfilIdsSelecionados());
+    this.form.get('perfilIds')?.markAsTouched();
+    this.form.get('perfilIds')?.updateValueAndValidity();
   }
 }

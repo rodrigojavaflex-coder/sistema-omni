@@ -3,7 +3,9 @@ import {
   Column,
   Index,
   ManyToOne,
+  ManyToMany,
   JoinColumn,
+  JoinTable,
   OneToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
@@ -51,10 +53,14 @@ export class Usuario extends BaseEntity {
   @Column({ default: true })
   ativo: boolean;
 
-  @ApiProperty({ description: 'Perfil do usuário', type: () => Perfil })
-  @ManyToOne(() => Perfil, { eager: true })
-  @JoinColumn({ name: 'perfilId' })
-  perfil: Perfil;
+  @ApiProperty({ description: 'Perfis do usuário', type: () => [Perfil] })
+  @ManyToMany(() => Perfil, (perfil) => perfil.usuarios, { eager: true })
+  @JoinTable({
+    name: 'usuarios_perfis',
+    joinColumn: { name: 'usuario_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'perfil_id', referencedColumnName: 'id' },
+  })
+  perfis: Perfil[];
 
   @OneToMany(() => DepartamentoUsuario, (du) => du.usuario, {
     cascade: false,

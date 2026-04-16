@@ -13,3 +13,4 @@ export * from './componente.service';
 export * from './sintoma.service';
 export * from './matriz-criticidade.service';
 export * from './modelo-veiculo.service';
+export * from './bi-acesso-link.service';

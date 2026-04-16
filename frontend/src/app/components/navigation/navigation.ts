@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
-import { AuthService, NavigationService } from '../../services/index';
+import { AuthService, BiAcessoLinkService, NavigationService } from '../../services/index';
 import { Usuario, Permission } from '../../models/usuario.model';
 import { MenuItem, MENU_CONFIGURATION } from '../../models/menu.model';
 import { MenuState } from '../../services/navigation.service';
+import { BiAcessoMenuItem } from '../../models/bi-acesso-link.model';
 
 @Component({
   selector: 'app-navigation',
@@ -21,6 +22,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
   private navigationService = inject(NavigationService);
   private router = inject(Router);
   private sanitizer = inject(DomSanitizer);
+  private biAcessoLinkService = inject(BiAcessoLinkService);
   private destroy$ = new Subject<void>();
 
   currentUser: Usuario | null = null;
@@ -40,6 +42,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
   // Definir todos os itens de menu disponíveis
   private allMenuItems: MenuItem[] = MENU_CONFIGURATION.items;
+  private dynamicBiMenuItems: MenuItem[] = [];
 
   ngOnInit() {
     // Observar mudanças no usuário atual
@@ -47,8 +50,12 @@ export class NavigationComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(user => {
         this.currentUser = user;
-        this.updateVisibleMenuItems();
-        this.updateSearchableItems();
+        if (!user) {
+          this.dynamicBiMenuItems = [];
+          this.rebuildMenu();
+          return;
+        }
+        this.loadDynamicBiMenuItems();
       });
 
     this.navigationService.menuState$
@@ -115,6 +122,67 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
     // Verificar se usuário tem pelo menos uma das permissões necessárias (via perfil)
     return this.authService.hasAnyPermission(menuItem.requiredPermissions);
+  }
+
+  private loadDynamicBiMenuItems(): void {
+    this.biAcessoLinkService
+      .getMyMenu()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => {
+          this.dynamicBiMenuItems = this.mapBiMenuItems(items);
+          this.rebuildMenu();
+        },
+        error: () => {
+          this.dynamicBiMenuItems = [];
+          this.rebuildMenu();
+        },
+      });
+  }
+
+  private mapBiMenuItems(items: BiAcessoMenuItem[]): MenuItem[] {
+    return items
+      .sort((a, b) => (a.order || 999) - (b.order || 999))
+      .map((item) => ({
+        label: item.label,
+        route: `/bi-acesso/view/${item.id}`,
+        icon: 'feather-bar-chart-2',
+        requiredPermissions: [item.permissionKey],
+        parentMenu: item.group || 'Gestão',
+        order: item.order || 999,
+      }));
+  }
+
+  private rebuildMenu(): void {
+    this.allMenuItems = this.buildMenuWithDynamicBiItems();
+    this.updateVisibleMenuItems();
+    this.updateSearchableItems();
+  }
+
+  private buildMenuWithDynamicBiItems(): MenuItem[] {
+    const cloned = this.cloneMenuItems(MENU_CONFIGURATION.items);
+    const gestaoMenu = cloned.find((item) => item.label === 'Gestão' && item.isSubmenu);
+    if (!gestaoMenu?.submenuItems) {
+      return cloned;
+    }
+
+    const biMenu = gestaoMenu.submenuItems.find(
+      (item) => item.label === 'BI' && item.isSubmenu,
+    );
+    if (!biMenu) {
+      return cloned;
+    }
+
+    biMenu.submenuItems = this.dynamicBiMenuItems;
+    return cloned;
+  }
+
+  private cloneMenuItems(items: MenuItem[]): MenuItem[] {
+    return items.map((item) => ({
+      ...item,
+      requiredPermissions: [...item.requiredPermissions],
+      submenuItems: item.submenuItems ? this.cloneMenuItems(item.submenuItems) : undefined,
+    }));
   }
 
   /**
@@ -219,7 +287,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
         return;
       }
 
-      if (item.route) {
+      if (item.route || item.externalUrl) {
         const parentMenu = parentPath.length ? parentPath.join(' / ') : undefined;
         this.allSearchableItems.push({
           ...item,

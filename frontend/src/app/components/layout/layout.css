@@ -37,6 +37,20 @@
   transition: margin-left 220ms ease;
 }
 
+.layout-shell--bi-viewer {
+  padding-top: 0;
+}
+
+.layout-shell--bi-viewer .layout-shell__main {
+  min-height: 100vh;
+}
+
+.layout-shell--bi-viewer .layout-shell__content {
+  margin-left: 0 !important;
+  min-height: 100vh;
+  padding: 0;
+}
+
 @media (min-width: 1024px) {
   .layout-shell__content {
     margin-left: 0;

@@ -12,6 +12,8 @@ import { HomeComponent } from './components/home/home';
 import { ChangePasswordComponent } from './components/change-password/change-password';
 import { PerfilListComponent } from './components/perfil-list/perfil-list';
 import { PerfilFormComponent } from './components/perfil-form/perfil-form';
+import { BiAcessoLinkListComponent } from './components/bi-acesso-link-list/bi-acesso-link-list';
+import { BiAcessoViewerComponent } from './components/bi-acesso-viewer/bi-acesso-viewer';
 
 export const routes: Routes = [
   // Rota de configuração
@@ -58,6 +60,24 @@ export const routes: Routes = [
     path: 'auditoria',
     component: AuditoriaComponent,
     canActivate: [authGuard]
+  },
+  {
+    path: 'bi-acesso-links',
+    component: BiAcessoLinkListComponent,
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permissions: [
+        Permission.BI_ACESSO_LINK_READ,
+        Permission.BI_ACESSO_LINK_CREATE,
+        Permission.BI_ACESSO_LINK_UPDATE,
+        Permission.BI_ACESSO_LINK_DELETE,
+      ],
+    },
+  },
+  {
+    path: 'bi-acesso/view/:id',
+    component: BiAcessoViewerComponent,
+    canActivate: [authGuard],
   },
   {
     path: 'veiculo',

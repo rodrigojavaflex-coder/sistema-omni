@@ -12,13 +12,15 @@
   *ngIf="isAuthenticated"
   [ngClass]="[
     isDesktop ? 'layout-shell--desktop' : 'layout-shell--mobile',
-    'layout-shell--menu-' + menuState
+    'layout-shell--menu-' + menuState,
+    isBiViewerRoute ? 'layout-shell--bi-viewer' : ''
   ]"
 >
-  <app-header class="layout-shell__header"></app-header>
+  <app-header class="layout-shell__header" *ngIf="!isBiViewerRoute"></app-header>
   <div class="layout-shell__main">
     <app-navigation
       class="layout-shell__sidebar"
+      *ngIf="!isBiViewerRoute"
     ></app-navigation>
     <main class="layout-shell__content">
       <router-outlet></router-outlet>
@@ -26,6 +28,7 @@
   </div>
   <div
     class="layout-shell__overlay"
+    *ngIf="!isBiViewerRoute"
     [class.active]="isMobileOverlayVisible"
     (click)="closeMenu()"
   ></div>

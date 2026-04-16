@@ -47,12 +47,18 @@
 
       <div class="form-inline">
         <div class="form-group">
-          <label class="form-label">Perfil *</label>
-          <select formControlName="perfilId" class="form-select">
-            <option value="">Selecione</option>
-            <option *ngFor="let perfil of availableProfiles" [value]="perfil.id">{{ perfil.nomePerfil }}</option>
-          </select>
-          <div class="form-error" *ngIf="isFieldInvalid('perfilId')">{{ getFieldError('perfilId') }}</div>
+          <label class="form-label">Perfis *</label>
+          <app-multi-select
+            [options]="perfilOptions"
+            name="perfis"
+            [(ngModel)]="perfisSelecionados"
+            (selectionChange)="onPerfisSelectionChange($event)"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Selecione perfis">
+          </app-multi-select>
+          <div class="form-error" *ngIf="isFieldInvalid('perfilIds')">
+            Selecione ao menos um perfil
+          </div>
         </div>
 
         <div class="form-group">

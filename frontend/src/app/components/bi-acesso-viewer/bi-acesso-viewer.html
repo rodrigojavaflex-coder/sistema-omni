@@ -1,0 +1,13 @@
+<div class="bi-container">
+  <button class="btn-back" type="button" (click)="voltarAoSistema()">
+    Voltar ao sistema
+  </button>
+
+  @if (loading) {
+    <div class="loading">Carregando painel...</div>
+  } @else if (error) {
+    <div class="error-message">{{ error }}</div>
+  } @else if (iframeUrl) {
+    <iframe [src]="iframeUrl" title="Painel BI" allowfullscreen="true"></iframe>
+  }
+</div>

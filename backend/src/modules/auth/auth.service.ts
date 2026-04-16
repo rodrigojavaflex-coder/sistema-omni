@@ -101,10 +101,10 @@ export class AuthService {
   async login(loginDto: LoginDto, req?: any): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
 
-    // Buscar usuário pelo email (com perfil)
+    // Buscar usuário pelo email (com perfis)
     const user = await this.userRepository.findOne({
       where: { email },
-      relations: ['perfil'],
+      relations: ['perfis'],
     });
     if (!user) {
       if (await this.shouldAuditAction(AuditAction.LOGIN_FAILED)) {
@@ -164,7 +164,7 @@ export class AuthService {
       const payload = this.jwtService.verify(refreshToken);
       const user = await this.userRepository.findOne({
         where: { id: payload.sub },
-        relations: ['perfil'],
+        relations: ['perfis'],
       });
 
       if (!user || !user.ativo) {
@@ -228,7 +228,7 @@ export class AuthService {
       nome: user.nome,
       email: user.email,
       ativo: user.ativo,
-      perfil: user.perfil,
+      perfis: user.perfis,
       tema: user.tema || 'Claro',
       criadoEm: user.criadoEm,
       atualizadoEm: user.atualizadoEm,
@@ -247,7 +247,7 @@ export class AuthService {
   async validateUserById(userId: string): Promise<Usuario | null> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['perfil'],
+      relations: ['perfis'],
     });
     if (user && user.ativo) {
       return user;
@@ -258,7 +258,7 @@ export class AuthService {
   async getProfile(userId: string): Promise<Usuario> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['perfil'],
+      relations: ['perfis'],
     });
     if (!user) {
       // Auditar tentativa de acesso a perfil inexistente
