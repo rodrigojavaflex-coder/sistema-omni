@@ -300,3 +300,78 @@
     max-width: 720px;
   }
 }
+
+:host-context(body.theme-dark) .vistoria-list-header,
+:host-context(body.theme-dark) .row-subtitle,
+:host-context(body.theme-dark) .irregularidade-obs,
+:host-context(body.theme-dark) .image-meta,
+:host-context(body.theme-dark) .page-info,
+:host-context(body.theme-dark) .irregularidade-audios .audio-dur {
+  color: var(--text-secondary, #94a3b8);
+}
+
+:host-context(body.theme-dark) .vistoria-row,
+:host-context(body.theme-dark) .irregularidade-card,
+:host-context(body.theme-dark) .image-card,
+:host-context(body.theme-dark) .audio-row {
+  background: var(--bg-secondary, #1f2937);
+  border-color: var(--border-color, #334155);
+  color: var(--text-primary, #f8fafc);
+}
+
+:host-context(body.theme-dark) .row-title,
+:host-context(body.theme-dark) .irregularidade-title,
+:host-context(body.theme-dark) .irregularidade-audios,
+:host-context(body.theme-dark) .audio-filename {
+  color: var(--text-primary, #f8fafc);
+}
+
+:host-context(body.theme-dark) .status-andamento {
+  background: rgba(56, 189, 248, 0.22);
+  color: #bae6fd;
+}
+
+:host-context(body.theme-dark) .status-finalizada {
+  background: rgba(34, 197, 94, 0.2);
+  color: #bbf7d0;
+}
+
+:host-context(body.theme-dark) .status-cancelada {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fecaca;
+}
+
+:host-context(body.theme-dark) .status-default {
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+}
+
+:host-context(body.theme-dark) .ir-badge.resolvida {
+  background: rgba(34, 197, 94, 0.2);
+  color: #bbf7d0;
+}
+
+:host-context(body.theme-dark) .ir-badge.pendente {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fde68a;
+}
+
+:host-context(body.theme-dark) .btn-pagination {
+  background: #1f2937;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+:host-context(body.theme-dark) .btn-pagination:hover:not(:disabled) {
+  background: #334155;
+  border-color: #475569;
+}
+
+/* Mantem controles nativos sincronizados com o tema do app */
+:host-context(body.theme-light) .audio-player {
+  color-scheme: light;
+}
+
+:host-context(body.theme-dark) .audio-player {
+  color-scheme: dark;
+}

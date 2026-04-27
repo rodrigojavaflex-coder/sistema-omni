@@ -44,10 +44,10 @@ export class PermissionsGuard implements CanActivate {
     }
 
     try {
+      // Mesma ordem/padrão do JwtModule.registerAsync (JWT_SECRET com fallback default-secret-key)
       const jwtSecret =
-        this.configService.get<string>('app.jwtSecret') ||
-        this.configService.get<string>('JWT_SECRET') ||
-        process.env.JWT_SECRET ||
+        this.configService.get<string>('JWT_SECRET') ??
+        this.configService.get<string>('app.jwtSecret') ??
         'default-secret-key';
 
       // Usar a mesma configuração de secret definida no app

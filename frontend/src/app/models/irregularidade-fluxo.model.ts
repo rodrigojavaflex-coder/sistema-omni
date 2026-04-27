@@ -24,6 +24,7 @@ export interface IrregularidadeFluxoItem {
   idVeiculo?: string;
   veiculoDescricao?: string;
   veiculoPlaca?: string;
+  veiculoModelo?: string;
   vistoriadorNome?: string;
   motoristaNome?: string;
   gravidade?: GravidadeCriticidade;
@@ -32,6 +33,7 @@ export interface IrregularidadeFluxoItem {
   fotos?: IrregularidadeMidiaFluxoItem[];
   audios?: IrregularidadeMidiaFluxoItem[];
   criadoEm: string;
+  entradaStatusEm?: string;
   atualizadoEm: string;
 }
 
@@ -63,6 +65,46 @@ export interface ListarIrregularidadeFiltros {
 
 export interface IniciarManutencaoPayload {
   idEmpresaManutencao: string;
+}
+
+export interface IniciarManutencaoLotePayload {
+  idsIrregularidades: string[];
+  idEmpresaManutencao: string;
+}
+
+export interface RelatorioManutencaoResumoItem {
+  id: string;
+  ordemServico: number;
+  irregularidade: string;
+  observacao?: string;
+  totalImagens: number;
+}
+
+export interface RelatorioManutencaoResumoVeiculo {
+  veiculo: string;
+  placa?: string;
+  modelo?: string;
+  itens: RelatorioManutencaoResumoItem[];
+}
+
+export interface RelatorioManutencaoResumo {
+  emitidoEm: string;
+  emitidoPor?: string;
+  empresa: string;
+  totalIrregularidades: number;
+  totalVeiculos: number;
+  totalAnexos: number;
+  porVeiculo: RelatorioManutencaoResumoVeiculo[];
+}
+
+export interface RelatorioManutencaoPreview {
+  resumo: RelatorioManutencaoResumo;
+  html: string;
+}
+
+export interface RelatorioManutencaoExecucao extends RelatorioManutencaoPreview {
+  totalEnviadas: number;
+  emailEnviado: boolean;
 }
 
 export interface ReclassificarPayload {

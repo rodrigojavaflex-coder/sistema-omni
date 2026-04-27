@@ -11,6 +11,7 @@ export interface Configuracao {
   auditarExclusao: boolean;
   auditarSenhaAlterada: boolean;
   tempoFluxoConfig?: TempoFluxoConfig;
+  emailEnvioConfig?: EmailEnvioConfig;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -44,6 +45,19 @@ export interface CreateConfiguracaoDto {
   auditarExclusao?: boolean;
   auditarSenhaAlterada?: boolean;
   tempoFluxoConfig?: TempoFluxoConfig;
+  emailEnvioConfig?: EmailEnvioConfig;
+}
+
+export interface EmailEnvioConfig {
+  ativo: boolean;
+  host: string;
+  porta: number;
+  usuario?: string;
+  senha?: string;
+  usarTls: boolean;
+  remetenteNome?: string;
+  remetenteEmail?: string;
+  assuntoPadrao?: string;
 }
 
 export interface UpdateConfiguracaoDto extends Partial<CreateConfiguracaoDto> {}

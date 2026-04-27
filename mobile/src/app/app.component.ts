@@ -26,7 +26,7 @@ import {
   settingsOutline,
 } from 'ionicons/icons';
 import { AuthService } from './services/auth.service';
-import { Usuario } from './models/usuario.model';
+import { Perfil, Usuario } from './models/usuario.model';
 import { VistoriaFlowService } from './services/vistoria-flow.service';
 
 @Component({
@@ -75,6 +75,24 @@ export class AppComponent {
 
   get hasVistoriaEmAndamento(): boolean {
     return Boolean(this.flowService.getVistoriaId());
+  }
+
+  get profileDisplayName(): string {
+    const perfis = this.getUserProfiles();
+    if (perfis.length === 0) {
+      return 'Sem perfil';
+    }
+    return perfis.map((perfil) => perfil.nomePerfil).filter(Boolean).join(', ');
+  }
+
+  get userAtivo(): boolean {
+    if (!this.user) {
+      return false;
+    }
+    if (typeof this.user.ativo === 'boolean') {
+      return this.user.ativo;
+    }
+    return (this.user.status ?? '').toUpperCase() === 'ATIVO';
   }
 
   constructor() {
@@ -129,5 +147,18 @@ export class AppComponent {
     }
 
     await this.authService.logout();
+  }
+
+  private getUserProfiles(): Perfil[] {
+    if (!this.user) {
+      return [];
+    }
+    if (Array.isArray(this.user.perfis) && this.user.perfis.length > 0) {
+      return this.user.perfis;
+    }
+    if (this.user.perfil) {
+      return [this.user.perfil];
+    }
+    return [];
   }
 }

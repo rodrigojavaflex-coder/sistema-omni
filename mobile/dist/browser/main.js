@@ -11,7 +11,7 @@ import {
 } from "./chunk-C5VNYMLZ.js";
 import {
   AuthService
-} from "./chunk-2YZPEABG.js";
+} from "./chunk-SUV23HSM.js";
 import "./chunk-3HI66MTA.js";
 import {
   AlertController,
@@ -128,16 +128,16 @@ var routes = [
   },
   {
     path: "login",
-    loadComponent: () => import("./chunk-S6AXOJRB.js").then((m) => m.LoginPage)
+    loadComponent: () => import("./chunk-CHQDUJSO.js").then((m) => m.LoginPage)
   },
   {
     path: "home",
-    loadComponent: () => import("./chunk-IVKYWZ6X.js").then((m) => m.HomePage),
+    loadComponent: () => import("./chunk-KMMELWE3.js").then((m) => m.HomePage),
     canActivate: [authGuard]
   },
   {
     path: "configuracoes",
-    loadComponent: () => import("./chunk-5RVP6IQV.js").then((m) => m.ConfiguracoesPage),
+    loadComponent: () => import("./chunk-TNURA5ZM.js").then((m) => m.ConfiguracoesPage),
     canActivate: [authGuard]
   },
   {
@@ -147,31 +147,31 @@ var routes = [
   },
   {
     path: "vistoria/inicio",
-    loadComponent: () => import("./chunk-FTXT64XA.js").then((m) => m.VistoriaInicioPage),
+    loadComponent: () => import("./chunk-JSPO5AOC.js").then((m) => m.VistoriaInicioPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas",
-    loadComponent: () => import("./chunk-CZEBILXY.js").then((m) => m.VistoriaAreasPage),
+    loadComponent: () => import("./chunk-D3QHE6KS.js").then((m) => m.VistoriaAreasPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId",
-    loadComponent: () => import("./chunk-NXD6SQM7.js").then((m) => m.VistoriaComponentesPage),
+    loadComponent: () => import("./chunk-IVEGCFLW.js").then((m) => m.VistoriaComponentesPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId/componentes/:componenteId",
-    loadComponent: () => import("./chunk-QVVOEY56.js").then((m) => m.VistoriaIrregularidadePage),
+    loadComponent: () => import("./chunk-VP53DUKW.js").then((m) => m.VistoriaIrregularidadePage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/finalizar",
-    loadComponent: () => import("./chunk-4RPNNH6B.js").then((m) => m.VistoriaFinalizarPage),
+    loadComponent: () => import("./chunk-MXDHNRM2.js").then((m) => m.VistoriaFinalizarPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
@@ -226,11 +226,11 @@ function AppComponent_ion_menu_1_div_8_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(ctx_r1.user.email);
     \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate(ctx_r1.user.perfil.nomePerfil || "Sem perfil");
+    \u0275\u0275textInterpolate(ctx_r1.profileDisplayName);
     \u0275\u0275advance(4);
-    \u0275\u0275classProp("active", ctx_r1.user.ativo);
+    \u0275\u0275classProp("active", ctx_r1.userAtivo);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ctx_r1.user.ativo ? "Ativo" : "Inativo", " ");
+    \u0275\u0275textInterpolate1(" ", ctx_r1.userAtivo ? "Ativo" : "Inativo", " ");
   }
 }
 function AppComponent_ion_menu_1_ion_item_10_Template(rf, ctx) {
@@ -366,6 +366,22 @@ var AppComponent = class _AppComponent {
   get hasVistoriaEmAndamento() {
     return Boolean(this.flowService.getVistoriaId());
   }
+  get profileDisplayName() {
+    const perfis = this.getUserProfiles();
+    if (perfis.length === 0) {
+      return "Sem perfil";
+    }
+    return perfis.map((perfil) => perfil.nomePerfil).filter(Boolean).join(", ");
+  }
+  get userAtivo() {
+    if (!this.user) {
+      return false;
+    }
+    if (typeof this.user.ativo === "boolean") {
+      return this.user.ativo;
+    }
+    return (this.user.status ?? "").toUpperCase() === "ATIVO";
+  }
   constructor() {
     addIcons({
       logOutOutline,
@@ -413,6 +429,18 @@ var AppComponent = class _AppComponent {
       }
       yield this.authService.logout();
     });
+  }
+  getUserProfiles() {
+    if (!this.user) {
+      return [];
+    }
+    if (Array.isArray(this.user.perfis) && this.user.perfis.length > 0) {
+      return this.user.perfis;
+    }
+    if (this.user.perfil) {
+      return [this.user.perfil];
+    }
+    return [];
   }
   static \u0275fac = function AppComponent_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _AppComponent)();
@@ -482,12 +510,12 @@ var AppComponent = class _AppComponent {
         <div class="profile-details">
           <div class="detail-row">
             <span class="detail-label">Perfil</span>
-            <span class="detail-value">{{ user.perfil.nomePerfil || 'Sem perfil' }}</span>
+            <span class="detail-value">{{ profileDisplayName }}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Status</span>
-            <span class="detail-badge" [class.active]="user.ativo">
-              {{ user.ativo ? 'Ativo' : 'Inativo' }}
+            <span class="detail-badge" [class.active]="userAtivo">
+              {{ userAtivo ? 'Ativo' : 'Inativo' }}
             </span>
           </div>
         </div>

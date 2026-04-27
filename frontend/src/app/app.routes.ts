@@ -270,7 +270,10 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard, permissionGuard],
     data: {
-      permissions: [Permission.IRREGULARIDADE_TRATAMENTO_READ],
+      permissions: [
+        Permission.IRREGULARIDADE_TRATAMENTO_READ,
+        Permission.IRREGULARIDADE_TRATAMENTO_UPDATE,
+      ],
       modo: 'tratamento',
     },
   },
@@ -282,7 +285,12 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard, permissionGuard],
     data: {
-      permissions: [Permission.IRREGULARIDADE_MANUTENCAO_READ],
+      permissions: [
+        Permission.IRREGULARIDADE_MANUTENCAO_READ,
+        Permission.IRREGULARIDADE_MANUTENCAO_START,
+        Permission.IRREGULARIDADE_MANUTENCAO_FINISH,
+        Permission.IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING,
+      ],
       modo: 'manutencao',
     },
   },
@@ -294,7 +302,10 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard, permissionGuard],
     data: {
-      permissions: [Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ],
+      permissions: [
+        Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
+        Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
+      ],
       modo: 'validacao-final',
     },
   },

@@ -45,11 +45,17 @@ export class EmpresaTerceiraFormComponent
   protected initializeForm(): void {
     this.form = this.fb.group({
       descricao: ['', [Validators.required, Validators.maxLength(300)]],
+      emailsRelatorio: ['', [Validators.maxLength(2000)]],
+      ehEmpresaManutencao: [false],
     });
   }
 
   protected buildFormData(): CreateEmpresaTerceiraDto | UpdateEmpresaTerceiraDto {
-    return { descricao: this.form.value.descricao };
+    return {
+      descricao: this.form.value.descricao,
+      emailsRelatorio: this.form.value.emailsRelatorio || undefined,
+      ehEmpresaManutencao: !!this.form.value.ehEmpresaManutencao,
+    };
   }
 
   protected async saveEntity(data: CreateEmpresaTerceiraDto): Promise<void> {
@@ -67,7 +73,11 @@ export class EmpresaTerceiraFormComponent
     const item: EmpresaTerceira = await firstValueFrom(
       this.empresaService.getById(id),
     );
-    this.form.patchValue({ descricao: item.descricao });
+    this.form.patchValue({
+      descricao: item.descricao,
+      emailsRelatorio: item.emailsRelatorio ?? '',
+      ehEmpresaManutencao: !!item.ehEmpresaManutencao,
+    });
   }
 
   protected override getListRoute(): string {

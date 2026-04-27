@@ -70,6 +70,12 @@ export class IrregularidadeResumoDto {
   criadoEm: string;
 
   @ApiProperty({
+    description: 'Data de entrada no status atual da irregularidade',
+    required: false,
+  })
+  entradaStatusEm?: string;
+
+  @ApiProperty({
     description: 'ID do veículo da vistoria associada',
     format: 'uuid',
     required: false,
@@ -88,6 +94,9 @@ export class IrregularidadeResumoDto {
 
   @ApiProperty({ description: 'Placa do veículo', required: false })
   veiculoPlaca?: string;
+
+  @ApiProperty({ description: 'Modelo do veículo', required: false })
+  veiculoModelo?: string;
 
   @ApiProperty({ description: 'Nome do vistoriador', required: false })
   vistoriadorNome?: string;

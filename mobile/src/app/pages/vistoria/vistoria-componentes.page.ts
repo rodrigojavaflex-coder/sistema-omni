@@ -20,6 +20,7 @@ import {
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { AreaVistoriadaService } from '../../services/area-vistoriada.service';
+import { MatrizCriticidadeService } from '../../services/matriz-criticidade.service';
 import { VistoriaFlowService } from '../../services/vistoria-flow.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { VistoriaBootstrapService } from '../../services/vistoria-bootstrap.service';
@@ -56,6 +57,7 @@ export class VistoriaComponentesPage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private areaService = inject(AreaVistoriadaService);
+  private matrizService = inject(MatrizCriticidadeService);
   private flowService = inject(VistoriaFlowService);
   private vistoriaService = inject(VistoriaService);
   private bootstrapService = inject(VistoriaBootstrapService);
@@ -71,6 +73,7 @@ export class VistoriaComponentesPage implements OnInit {
   loading = false;
   errorMessage = '';
   private initialized = false;
+  private componenteTemMatrizCache = new Map<string, boolean>();
 
   get vistoriaNrDisplay(): string {
     const nr = this.flowService.getNumeroVistoriaDisplay();
@@ -135,12 +138,14 @@ export class VistoriaComponentesPage implements OnInit {
       const bootstrap = await this.bootstrapService.getOrFetch(vistoriaId);
       const areaBootstrap = bootstrap?.areas?.find((a) => a.id === this.areaId);
       if (bootstrap && areaBootstrap) {
-        this.componentes = areaBootstrap.componentes as AreaComponente[];
+        this.componentes = areaBootstrap.componentes
+          .filter((item) => (item.matriz?.length ?? 0) > 0) as AreaComponente[];
         await this.recarregarIndicadores(vistoriaId);
         return;
       }
 
-      this.componentes = await this.areaService.listarComponentes(this.areaId);
+      const componentesRaw = await this.areaService.listarComponentes(this.areaId);
+      this.componentes = await this.filtrarComponentesComMatriz(componentesRaw);
       const veiculoId = this.flowService.getVeiculoId();
       const [irregularidades, pendentes] = await Promise.all([
         this.vistoriaService.listarIrregularidades(vistoriaId),
@@ -282,5 +287,33 @@ export class VistoriaComponentesPage implements OnInit {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  private async filtrarComponentesComMatriz(
+    componentes: AreaComponente[],
+  ): Promise<AreaComponente[]> {
+    const checks = await Promise.all(
+      componentes.map(async (item) => ({
+        item,
+        temMatriz: await this.componenteTemMatriz(item.idComponente),
+      })),
+    );
+    return checks.filter((entry) => entry.temMatriz).map((entry) => entry.item);
+  }
+
+  private async componenteTemMatriz(idComponente: string): Promise<boolean> {
+    const cached = this.componenteTemMatrizCache.get(idComponente);
+    if (cached !== undefined) {
+      return cached;
+    }
+    try {
+      const matriz = await this.matrizService.listarPorComponente(idComponente);
+      const tem = matriz.length > 0;
+      this.componenteTemMatrizCache.set(idComponente, tem);
+      return tem;
+    } catch {
+      this.componenteTemMatrizCache.set(idComponente, false);
+      return false;
+    }
   }
 }

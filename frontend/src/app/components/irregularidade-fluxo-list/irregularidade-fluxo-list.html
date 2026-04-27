@@ -53,9 +53,9 @@
         Enviar para manutenção
       </button>
       <button
-        class="btn btn-secondary"
+        class="btn btn-secondary btn-reclassificar"
         *ngIf="canShowTratamentoActions && canTratamentoUpdate"
-        [disabled]="!hasSelectedItems"
+        [disabled]="!canReclassificarSelecionado"
         (click)="openBulkActionModal('reclassificar')"
       >
         <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -70,6 +70,22 @@
         (click)="openBulkActionModal('cancelar')"
       >
         Cancelar
+      </button>
+      <button
+        class="btn btn-primary"
+        *ngIf="modo === 'manutencao' && canManutencaoFinish"
+        [disabled]="!hasSelectedItems"
+        (click)="openBulkActionModal('concluir')"
+      >
+        Concluir
+      </button>
+      <button
+        class="btn btn-warning"
+        *ngIf="modo === 'manutencao' && canManutencaoNaoProcede"
+        [disabled]="!hasSelectedItems"
+        (click)="openBulkActionModal('nao-procede')"
+      >
+        Não procede
       </button>
       <span class="buttons-row-summary" *ngIf="modo === 'tratamento'">
         {{ items.length }} irregularidade(s) | {{ getSelectedIds().length }} irregularidade(s) selecionada(s)
@@ -95,6 +111,7 @@
       <div
         class="irregularidade-list-header"
         [class.irregularidade-list-header--tratamento]="modo === 'tratamento'"
+        [class.irregularidade-list-header--com-codigo]="modo === 'manutencao'"
       >
         <span class="col-select form-check">
           <input
@@ -106,7 +123,7 @@
           />
         </span>
         <span>Veículo</span>
-        <span *ngIf="modo === 'tratamento'">CODIGO</span>
+        <span *ngIf="modo === 'tratamento' || modo === 'manutencao'">Ordem de Serviço</span>
         <span>Irregularidade</span>
         <span>Gravidade</span>
         <span>Registrado</span>
@@ -124,6 +141,7 @@
         <div
           class="irregularidade-row-grid"
           [class.irregularidade-row-grid--tratamento]="modo === 'tratamento'"
+          [class.irregularidade-row-grid--com-codigo]="modo === 'manutencao'"
         >
           <div class="col-select form-check">
             <input
@@ -137,9 +155,15 @@
           </div>
           <div class="col-veiculo">
             <div class="row-title">{{ item.veiculoDescricao || 'Veículo não informado' }}</div>
-            <div class="row-subtitle">{{ item.veiculoPlaca || '-' }}</div>
+            <div class="row-subtitle">
+              {{
+                item.veiculoPlaca && item.veiculoModelo
+                  ? item.veiculoPlaca + ' · ' + item.veiculoModelo
+                  : item.veiculoPlaca || item.veiculoModelo || '-'
+              }}
+            </div>
           </div>
-          <div class="col-codigo" *ngIf="modo === 'tratamento'">
+          <div class="col-codigo" *ngIf="modo === 'tratamento' || modo === 'manutencao'">
             {{ item.numeroIrregularidade || '-' }}
           </div>
           <div class="col-irregularidade">
@@ -154,14 +178,14 @@
           </div>
           <div class="col-data">{{ item.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</div>
           <div class="col-tempo">
-            <div class="tempo-cell" [ngStyle]="getTempoStyle(item.criadoEm)">
-              <span>{{ getTempoDesdeRegistro(item.criadoEm) }}</span>
-              <small *ngIf="getTempoRotulo(item.criadoEm)">{{ getTempoRotulo(item.criadoEm) }}</small>
+            <div class="tempo-cell" [ngStyle]="getTempoStyle(getTempoReferencia(item))">
+              <span>{{ getTempoDesdeRegistro(getTempoReferencia(item)) }}</span>
+              <small *ngIf="getTempoRotulo(getTempoReferencia(item))">{{ getTempoRotulo(getTempoReferencia(item)) }}</small>
             </div>
           </div>
           <div class="col-status">
             <span [class]="getStatusClass(item.statusAtual)">
-              {{ item.statusAtual }}
+              {{ getStatusLabel(item.statusAtual) }}
             </span>
           </div>
           <div class="col-toggle">
@@ -256,22 +280,6 @@
           </div>
 
           <div class="table-actions" *ngIf="modo !== 'tratamento'">
-            <div class="table-actions" *ngIf="modo === 'manutencao'">
-              <button
-                class="btn btn-small btn-primary"
-                *ngIf="canManutencaoFinish"
-                (click)="$event.stopPropagation(); openConcluirManutencaoModal(item)"
-              >
-                Concluir
-              </button>
-              <button
-                class="btn btn-small btn-warning"
-                *ngIf="canManutencaoNaoProcede"
-                (click)="$event.stopPropagation(); openNaoProcedeModal(item)"
-              >
-                Não procede
-              </button>
-            </div>
             <div class="table-actions" *ngIf="modo === 'validacao-final'">
               <button
                 class="btn btn-small btn-success"
@@ -342,7 +350,7 @@
             <span>{{ evento.dataEvento | date: 'dd/MM/yyyy HH:mm' }}</span>
           </div>
           <div class="historico-item-row">
-            <span>Ação: {{ evento.acao }}</span>
+            <span>Ação: {{ getAcaoHistoricoLabel(evento.acao) }}</span>
           </div>
           <div class="historico-item-row">
             <span>Usuário: {{ evento.usuarioNome || '-' }}</span>
@@ -362,34 +370,159 @@
   </div>
 </div>
 
-<div *ngIf="showActionModal && selectedItemForAction && modalAcao" class="modal-overlay" (click)="closeActionModal()">
+<div *ngIf="showActionModal && selectedItemForAction && modalAcao" class="modal-overlay" (click)="onActionModalOverlayClick()">
   <div class="modal-container modal-container-sm" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>{{ getModalTitle() }}</h3>
       <button class="btn-close" (click)="closeActionModal()">×</button>
     </div>
     <div class="modal-body">
-      <p class="modal-scope">{{ getModalScopeLabel() }}</p>
+      <p class="modal-scope" *ngIf="getModalScopeLabel()">{{ getModalScopeLabel() }}</p>
       <div class="form-group" *ngIf="modalAcao === 'iniciar-manutencao'">
         <label>Empresa de manutenção *</label>
-        <select class="form-select" [(ngModel)]="modalIdEmpresaManutencao">
+        <select
+          class="form-select"
+          [(ngModel)]="modalIdEmpresaManutencao"
+          (ngModelChange)="onEmpresaManutencaoChange()"
+        >
           <option value="">Selecione...</option>
           <option *ngFor="let empresa of empresas" [value]="empresa.id">
             {{ empresa.descricao }}
           </option>
         </select>
+        <small class="field-description" *ngIf="manutencaoEtapa === 'gerando'">
+          Gerando pré-visualização e padronizando anexos do relatório...
+        </small>
+        <small class="field-description" *ngIf="manutencaoEtapa === 'enviando'">
+          Validando e-mail SMTP e enviando PDF antes de encaminhar para manutenção...
+        </small>
+      </div>
+      <div class="form-group" *ngIf="modalAcao === 'iniciar-manutencao' && manutencaoPreview">
+        <div class="resumo-preview-box">
+          <div>
+            <strong>Emissão:</strong> {{ manutencaoPreview.resumo.emitidoEm | date: 'dd/MM/yyyy HH:mm' }}
+            <ng-container *ngIf="manutencaoPreview.resumo.emitidoPor as u">
+              · <strong>Usuário:</strong> {{ u }}
+            </ng-container>
+          </div>
+          <div>
+            <strong>Empresa:</strong> {{ manutencaoPreview.resumo.empresa }}
+          </div>
+          <div>
+            <strong>Total:</strong> {{ manutencaoPreview.resumo.totalIrregularidades }} irregularidade(s)
+            em {{ manutencaoPreview.resumo.totalVeiculos }} veículo(s)
+          </div>
+          <div>
+            <strong>Anexos (imagens):</strong> {{ manutencaoPreview.resumo.totalAnexos }}
+          </div>
+          <button
+            type="button"
+            class="btn btn-link resumo-preview-pdf-btn"
+            (click)="visualizarPreviewRelatorio()"
+            title="Abrir relatório em PDF"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="resumo-preview-pdf-icon"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+            >
+              <path
+                d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"
+              />
+              <path
+                d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.396-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 a5.753 5.753 0 0 1 1.334.05c.364.066.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.712 5.712 0 0 1-.911-.95 a11.651 11.651 0 0 0-1.997.406 a11.307 11.307 0 0 1-1.02 1.51c-.292.35-.609.656-.927.787 a.793.793 0 0 1-.58.029z"
+              />
+            </svg>
+            Visualizar relatório
+          </button>
+        </div>
       </div>
       <div class="form-group" *ngIf="modalAcao === 'reclassificar'">
-        <label>ID Área *</label>
-        <input type="text" class="form-control" [(ngModel)]="modalIdArea" maxlength="36" />
+        <label>Área *</label>
+        <div class="field-description" *ngIf="selectedItemForAction.nomeArea">
+          Atual: <strong>{{ selectedItemForAction.nomeArea }}</strong>
+        </div>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="reclassAreaBusca"
+          (ngModelChange)="onReclassAreaInputChange()"
+          (focus)="onReclassAreaFocus()"
+          (blur)="onReclassAreaBlur()"
+          [disabled]="reclassLoading"
+          placeholder="Digite para buscar área"
+        />
+        <div class="autocomplete-options" *ngIf="showReclassAreaOptions && !reclassLoading">
+          <button
+            type="button"
+            class="autocomplete-option"
+            *ngFor="let area of filteredReclassAreas"
+            (mousedown)="selectReclassArea(area)"
+          >
+            {{ area.nome }}
+          </button>
+          <div class="autocomplete-empty" *ngIf="!filteredReclassAreas.length">Nenhuma área encontrada.</div>
+        </div>
       </div>
       <div class="form-group" *ngIf="modalAcao === 'reclassificar'">
-        <label>ID Componente *</label>
-        <input type="text" class="form-control" [(ngModel)]="modalIdComponente" maxlength="36" />
+        <label>Componente *</label>
+        <div class="field-description" *ngIf="selectedItemForAction.nomeComponente">
+          Atual: <strong>{{ selectedItemForAction.nomeComponente }}</strong>
+        </div>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="reclassComponenteBusca"
+          (ngModelChange)="onReclassComponenteInputChange()"
+          (focus)="onReclassComponenteFocus()"
+          (blur)="onReclassComponenteBlur()"
+          [disabled]="reclassLoading || !modalIdArea"
+          placeholder="Selecione a área para liberar"
+        />
+        <div class="autocomplete-options" *ngIf="showReclassComponenteOptions && modalIdArea && !reclassLoading">
+          <button
+            type="button"
+            class="autocomplete-option"
+            *ngFor="let comp of filteredReclassComponentes"
+            (mousedown)="selectReclassComponente(comp)"
+          >
+            {{ comp.nome }}
+          </button>
+          <div class="autocomplete-empty" *ngIf="!filteredReclassComponentes.length">
+            Nenhum componente encontrado.
+          </div>
+        </div>
       </div>
       <div class="form-group" *ngIf="modalAcao === 'reclassificar'">
-        <label>ID Sintoma *</label>
-        <input type="text" class="form-control" [(ngModel)]="modalIdSintoma" maxlength="36" />
+        <label>Sintoma *</label>
+        <div class="field-description" *ngIf="selectedItemForAction.descricaoSintoma">
+          Atual: <strong>{{ selectedItemForAction.descricaoSintoma }}</strong>
+        </div>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="reclassSintomaBusca"
+          (ngModelChange)="onReclassSintomaInputChange()"
+          (focus)="onReclassSintomaFocus()"
+          (blur)="onReclassSintomaBlur()"
+          [disabled]="reclassLoading || !modalIdComponente"
+          placeholder="Selecione o componente para liberar"
+        />
+        <div class="autocomplete-options" *ngIf="showReclassSintomaOptions && modalIdComponente && !reclassLoading">
+          <button
+            type="button"
+            class="autocomplete-option"
+            *ngFor="let sint of filteredReclassSintomas"
+            (mousedown)="selectReclassSintoma(sint)"
+          >
+            {{ sint.descricao }}
+          </button>
+          <div class="autocomplete-empty" *ngIf="!filteredReclassSintomas.length">
+            Nenhum sintoma encontrado.
+          </div>
+        </div>
       </div>
       <div class="form-group" *ngIf="modalAcao === 'cancelar'">
         <label>Motivo *</label>
@@ -410,7 +543,15 @@
         ></textarea>
       </div>
       <div class="form-group" *ngIf="modalAcao !== 'cancelar' && modalAcao !== 'iniciar-manutencao'">
-        <label>Observação {{ modalAcao === 'reprovar-final' ? '*' : '(opcional)' }}</label>
+        <label>
+          {{
+            modalAcao === 'concluir'
+              ? 'O que foi Executado/tratado: *'
+              : modalAcao === 'nao-procede'
+                ? 'Observação:'
+                : 'Descrição do Problema' + (modalAcao === 'reprovar-final' ? ' *' : '')
+          }}
+        </label>
         <textarea
           class="form-control"
           [(ngModel)]="modalObservacao"

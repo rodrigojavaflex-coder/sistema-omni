@@ -29,6 +29,7 @@ import { SintomasController } from './sintomas.controller';
 import { MatrizCriticidadeController } from './matriz-criticidade.controller';
 import { IrregularidadesController } from './irregularidades.controller';
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
+import { Configuracao } from '../configuracao/entities/configuracao.entity';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.e
       Motorista,
       Usuario,
       EmpresaTerceira,
+      Configuracao,
     ]),
     AuthModule,
   ],

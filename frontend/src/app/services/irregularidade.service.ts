@@ -6,8 +6,11 @@ import {
   CancelarPayload,
   ListarIrregularidadeFiltros,
   IniciarManutencaoPayload,
+  IniciarManutencaoLotePayload,
   IrregularidadeHistoricoItem,
   IrregularidadeFluxoItem,
+  RelatorioManutencaoExecucao,
+  RelatorioManutencaoPreview,
   NaoProcedePayload,
   ReclassificarPayload,
   ReprovarFinalPayload,
@@ -97,6 +100,30 @@ export class IrregularidadeService {
 
   listarHistorico(id: string): Observable<IrregularidadeHistoricoItem[]> {
     return this.http.get<IrregularidadeHistoricoItem[]>(`${this.apiUrl}/${id}/historico`);
+  }
+
+  previewIniciarManutencaoLote(
+    payload: IniciarManutencaoLotePayload,
+  ): Observable<RelatorioManutencaoPreview> {
+    return this.http.post<RelatorioManutencaoPreview>(
+      `${this.apiUrl}/lote/iniciar-manutencao/preview`,
+      payload,
+    );
+  }
+
+  previewPdfIniciarManutencaoLote(payload: IniciarManutencaoLotePayload): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/lote/iniciar-manutencao/preview-pdf`, payload, {
+      responseType: 'blob',
+    });
+  }
+
+  iniciarManutencaoLote(
+    payload: IniciarManutencaoLotePayload,
+  ): Observable<RelatorioManutencaoExecucao> {
+    return this.http.post<RelatorioManutencaoExecucao>(
+      `${this.apiUrl}/lote/iniciar-manutencao`,
+      payload,
+    );
   }
 }
 

@@ -9,6 +9,7 @@ import {
   Post,
   Query,
   Req,
+  StreamableFile,
   UploadedFile,
   UploadedFiles,
   UseGuards,
@@ -30,11 +31,16 @@ import { UpdateIrregularidadeDto } from './dto/update-irregularidade.dto';
 import { ReclassificarIrregularidadeDto } from './dto/reclassificar-irregularidade.dto';
 import { CancelarIrregularidadeDto } from './dto/cancelar-irregularidade.dto';
 import { IniciarManutencaoIrregularidadeDto } from './dto/iniciar-manutencao-irregularidade.dto';
+import { IniciarManutencaoLoteDto } from './dto/iniciar-manutencao-lote.dto';
 import { NaoProcedeIrregularidadeDto } from './dto/nao-procede-irregularidade.dto';
 import { ValidacaoFinalIrregularidadeDto } from './dto/validacao-final-irregularidade.dto';
 import { ReprovarValidacaoFinalIrregularidadeDto } from './dto/reprovar-validacao-final-irregularidade.dto';
 import { IrregularidadeResumoDto } from './dto/irregularidade-resumo.dto';
 import { IrregularidadeHistoricoDto } from './dto/irregularidade-historico.dto';
+import {
+  RelatorioManutencaoExecucaoDto,
+  RelatorioManutencaoPreviewDto,
+} from './dto/relatorio-manutencao.dto';
 
 @ApiTags('irregularidades')
 @ApiBearerAuth()
@@ -48,8 +54,13 @@ export class IrregularidadesController {
   @ApiResponse({ status: 200, type: [IrregularidadeResumoDto] })
   @Permissions(
     Permission.IRREGULARIDADE_TRATAMENTO_READ,
+    Permission.IRREGULARIDADE_TRATAMENTO_UPDATE,
     Permission.IRREGULARIDADE_MANUTENCAO_READ,
+    Permission.IRREGULARIDADE_MANUTENCAO_START,
+    Permission.IRREGULARIDADE_MANUTENCAO_FINISH,
+    Permission.IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING,
     Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
+    Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
   )
   findByStatus(
     @Query('status') status?: string,
@@ -90,13 +101,58 @@ export class IrregularidadesController {
   @ApiResponse({ status: 200, type: [IrregularidadeHistoricoDto] })
   @Permissions(
     Permission.IRREGULARIDADE_TRATAMENTO_READ,
+    Permission.IRREGULARIDADE_TRATAMENTO_UPDATE,
     Permission.IRREGULARIDADE_MANUTENCAO_READ,
+    Permission.IRREGULARIDADE_MANUTENCAO_START,
+    Permission.IRREGULARIDADE_MANUTENCAO_FINISH,
+    Permission.IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING,
     Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
+    Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
   )
   listHistorico(
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<IrregularidadeHistoricoDto[]> {
     return this.irregularidadeService.listHistoricoByIrregularidade(id);
+  }
+
+  @Post('lote/iniciar-manutencao/preview')
+  @ApiOperation({ summary: 'Gerar preview do relatório de envio para manutenção' })
+  @ApiResponse({ status: 200, type: RelatorioManutencaoPreviewDto })
+  @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_START)
+  previewIniciarManutencaoLote(
+    @Body() dto: IniciarManutencaoLoteDto,
+    @Req() req: Request & { user?: { nome?: string } },
+  ): Promise<RelatorioManutencaoPreviewDto> {
+    return this.irregularidadeService.previewIniciarManutencaoLote(dto, req.user);
+  }
+
+  @Post('lote/iniciar-manutencao/preview-pdf')
+  @ApiOperation({ summary: 'Gerar preview em PDF do relatório de envio para manutenção' })
+  @ApiResponse({ status: 200, description: 'Arquivo PDF' })
+  @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_START)
+  async previewPdfIniciarManutencaoLote(
+    @Body() dto: IniciarManutencaoLoteDto,
+    @Req() req: Request & { user?: { nome?: string } },
+  ): Promise<StreamableFile> {
+    const pdf = await this.irregularidadeService.previewPdfIniciarManutencaoLote(dto, req.user);
+    return new StreamableFile(pdf, {
+      type: 'application/pdf',
+      disposition: 'inline; filename="preview-relatorio-manutencao.pdf"',
+    });
+  }
+
+  @Post('lote/iniciar-manutencao')
+  @ApiOperation({
+    summary:
+      'Enviar irregularidades para manutenção em lote, com envio de e-mail e relatório anexo',
+  })
+  @ApiResponse({ status: 200, type: RelatorioManutencaoExecucaoDto })
+  @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_START)
+  iniciarManutencaoLote(
+    @Body() dto: IniciarManutencaoLoteDto,
+    @Req() req: Request & { user?: { id?: string; idEmpresa?: string; nome?: string } },
+  ): Promise<RelatorioManutencaoExecucaoDto> {
+    return this.irregularidadeService.iniciarManutencaoLote(dto, req.user);
   }
 
   @Patch(':id')

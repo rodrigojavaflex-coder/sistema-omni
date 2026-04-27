@@ -6,7 +6,11 @@ import { CreateConfiguracaoDto } from './dto/create-configuracao.dto';
 import { UpdateConfiguracaoDto } from './dto/update-configuracao.dto';
 import { AuditoriaService } from '../../common/services/auditoria.service';
 import { AuditAction } from '../../common/enums/auditoria.enum';
-import { TempoFaixaConfig, TempoFluxoConfig } from './entities/configuracao.entity';
+import {
+  EmailEnvioConfig,
+  TempoFaixaConfig,
+  TempoFluxoConfig,
+} from './entities/configuracao.entity';
 
 @Injectable()
 export class ConfiguracaoService {
@@ -122,6 +126,48 @@ export class ConfiguracaoService {
     };
   }
 
+  private normalizeEmailEnvioConfig(input?: unknown): EmailEnvioConfig | undefined {
+    if (!input) {
+      return undefined;
+    }
+    const source = input as Partial<EmailEnvioConfig>;
+    const host = (source.host ?? '').toString().trim();
+    const porta = Number(source.porta);
+    const ativo = !!source.ativo;
+    const usarTls = source.usarTls === undefined ? true : !!source.usarTls;
+    const usuario = (source.usuario ?? '').toString().trim();
+    const senha = (source.senha ?? '').toString().trim();
+    const remetenteNome = (source.remetenteNome ?? '').toString().trim();
+    const remetenteEmail = (source.remetenteEmail ?? '').toString().trim();
+    const assuntoPadrao = (source.assuntoPadrao ?? '').toString().trim();
+
+    if (ativo) {
+      if (!host) {
+        throw new BadRequestException('Host SMTP é obrigatório quando envio de e-mail está ativo.');
+      }
+      if (!Number.isFinite(porta) || porta <= 0) {
+        throw new BadRequestException('Porta SMTP inválida.');
+      }
+      if (!remetenteEmail) {
+        throw new BadRequestException(
+          'E-mail do remetente é obrigatório quando envio de e-mail está ativo.',
+        );
+      }
+    }
+
+    return {
+      ativo,
+      host,
+      porta: Number.isFinite(porta) && porta > 0 ? porta : 587,
+      usuario: usuario || undefined,
+      senha: senha || undefined,
+      usarTls,
+      remetenteNome: remetenteNome || undefined,
+      remetenteEmail: remetenteEmail || undefined,
+      assuntoPadrao: assuntoPadrao || undefined,
+    };
+  }
+
   async create(
     dto: CreateConfiguracaoDto,
     userId?: string,
@@ -131,6 +177,7 @@ export class ConfiguracaoService {
       ...dto,
       tempoFluxoConfig:
         this.normalizeTempoFluxoConfig(dto.tempoFluxoConfig) ?? defaultTempoFluxo,
+      emailEnvioConfig: this.normalizeEmailEnvioConfig(dto.emailEnvioConfig),
     };
 
     // Busca se já existe configuração (só pode haver uma)
@@ -189,6 +236,7 @@ export class ConfiguracaoService {
     if (!config) {
       config = this.configuracaoRepository.create({
         tempoFluxoConfig: this.buildDefaultTempoFluxoConfig(),
+        emailEnvioConfig: this.normalizeEmailEnvioConfig(undefined),
       });
       config = await this.configuracaoRepository.save(config);
       return config.tempoFluxoConfig as TempoFluxoConfig;
@@ -252,6 +300,10 @@ export class ConfiguracaoService {
         dto.tempoFluxoConfig === undefined
           ? undefined
           : this.normalizeTempoFluxoConfig(dto.tempoFluxoConfig),
+      emailEnvioConfig:
+        dto.emailEnvioConfig === undefined
+          ? undefined
+          : this.normalizeEmailEnvioConfig(dto.emailEnvioConfig),
     };
 
     const config = await this.configuracaoRepository.findOne({ where: { id } });

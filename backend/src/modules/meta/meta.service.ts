@@ -61,6 +61,7 @@ type MetaUpdateFields = {
   taxaDeCrescimento?: number;
   valorMetaInicial?: number;
   unidade?: UnidadeMeta;
+  tipoDaUnidade?: string | null;
   indicador?: IndicadorMeta;
   inicioDaMeta?: string;
 };
@@ -78,6 +79,16 @@ export class MetaService {
     private readonly departamentoRepository: Repository<Departamento>,
   ) {}
 
+  private normalizeTipoDaUnidade(
+    value: string | null | undefined,
+  ): string | null {
+    if (value == null) {
+      return null;
+    }
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  }
+
   private async assertAccess(userId: string, departamentoId: string) {
     const acesso = await this.departamentoUsuarioRepository.findOne({
       where: { usuarioId: userId, departamentoId },
@@ -91,7 +102,10 @@ export class MetaService {
 
   async create(userId: string, dto: CreateMetaDto): Promise<Meta> {
     await this.assertAccess(userId, dto.departamentoId);
-    const meta = this.metaRepository.create(dto);
+    const meta = this.metaRepository.create({
+      ...dto,
+      tipoDaUnidade: this.normalizeTipoDaUnidade(dto.tipoDaUnidade),
+    });
     return this.metaRepository.save(meta);
   }
 
@@ -276,6 +290,7 @@ export class MetaService {
       taxaDeCrescimento,
       valorMetaInicial,
       unidade,
+      tipoDaUnidade,
       indicador,
       inicioDaMeta,
     } = dto as MetaUpdateFields;
@@ -306,6 +321,9 @@ export class MetaService {
     }
     if (unidade !== undefined && unidade !== null) {
       meta.unidade = unidade;
+    }
+    if (tipoDaUnidade !== undefined) {
+      meta.tipoDaUnidade = this.normalizeTipoDaUnidade(tipoDaUnidade);
     }
     if (indicador !== undefined && indicador !== null) {
       meta.indicador = indicador;

@@ -19,6 +19,22 @@
           {{ getFieldError('descricao') }}
         </div>
       </div>
+      <div class="form-group">
+        <label class="form-label">E-mails para relatório</label>
+        <input
+          type="text"
+          formControlName="emailsRelatorio"
+          class="form-input"
+          placeholder="email1@empresa.com, email2@empresa.com"
+        />
+        <small class="form-hint">Separe múltiplos e-mails por vírgula.</small>
+      </div>
+      <div class="form-group">
+        <label class="form-label checkbox-inline">
+          <input type="checkbox" formControlName="ehEmpresaManutencao" />
+          Empresa de manutenção
+        </label>
+      </div>
     </div>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary" [disabled]="loading">

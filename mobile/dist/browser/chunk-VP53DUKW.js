@@ -1,4 +1,7 @@
 import {
+  MatrizCriticidadeService
+} from "./chunk-EYEGL3HD.js";
+import {
   VistoriaBootstrapService
 } from "./chunk-GFAV4T6B.js";
 import {
@@ -19,10 +22,9 @@ import {
 } from "./chunk-C5VNYMLZ.js";
 import {
   AuthService
-} from "./chunk-2YZPEABG.js";
+} from "./chunk-SUV23HSM.js";
 import {
-  ErrorMessageService,
-  environment
+  ErrorMessageService
 } from "./chunk-3HI66MTA.js";
 import {
   ActivatedRoute,
@@ -30,8 +32,6 @@ import {
   ChangeDetectorRef,
   Component,
   FormsModule,
-  HttpClient,
-  Injectable,
   IonButton,
   IonButtons,
   IonCard,
@@ -55,7 +55,6 @@ import {
   NgIf,
   Router,
   ViewChild,
-  firstValueFrom,
   inject,
   setClassMetadata,
   ɵsetClassDebugInfo,
@@ -63,7 +62,6 @@ import {
   ɵɵattribute,
   ɵɵclassProp,
   ɵɵdefineComponent,
-  ɵɵdefineInjectable,
   ɵɵelement,
   ɵɵelementContainerEnd,
   ɵɵelementContainerStart,
@@ -117,30 +115,6 @@ var Camera = registerPlugin("Camera", {
 var VoiceRecorder = registerPlugin("VoiceRecorder", {
   web: () => import("./chunk-F6V6BQOJ.js").then((m) => new m.VoiceRecorderWeb())
 });
-
-// src/app/services/matriz-criticidade.service.ts
-var MatrizCriticidadeService = class _MatrizCriticidadeService {
-  http = inject(HttpClient);
-  apiBaseUrl = Capacitor.getPlatform() !== "web" ? environment.apiUrlNative || environment.apiUrl : environment.apiUrl;
-  listarPorComponente(componenteId) {
-    return __async(this, null, function* () {
-      const matriz = yield firstValueFrom(this.http.get(`${this.apiBaseUrl}/matriz-criticidade`, {
-        params: { idcomponente: componenteId }
-      }));
-      return matriz ?? [];
-    });
-  }
-  static \u0275fac = function MatrizCriticidadeService_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _MatrizCriticidadeService)();
-  };
-  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _MatrizCriticidadeService, factory: _MatrizCriticidadeService.\u0275fac, providedIn: "root" });
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MatrizCriticidadeService, [{
-    type: Injectable,
-    args: [{ providedIn: "root" }]
-  }], null, null);
-})();
 
 // src/app/pages/vistoria/vistoria-irregularidade.page.ts
 var _c0 = ["observacaoInput"];
@@ -2105,4 +2079,4 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
 export {
   VistoriaIrregularidadePage
 };
-//# sourceMappingURL=chunk-QVVOEY56.js.map
+//# sourceMappingURL=chunk-VP53DUKW.js.map

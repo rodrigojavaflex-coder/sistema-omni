@@ -133,6 +133,16 @@ export class CreateMetaDto {
   unidade: UnidadeMeta;
 
   @ApiProperty({
+    description: 'Tipo da unidade (texto livre, opcional)',
+    required: false,
+    maxLength: 30,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(30, { message: 'tipoDaUnidade não pode exceder 30 caracteres' })
+  tipoDaUnidade?: string | null;
+
+  @ApiProperty({
     description: 'Indicador da meta',
     enum: IndicadorMeta,
     enumName: 'IndicadorMeta',

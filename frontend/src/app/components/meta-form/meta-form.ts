@@ -62,6 +62,7 @@ export class MetaFormComponent extends BaseFormComponent<CreateMetaDto | UpdateM
       tituloDaMeta: ['', [Validators.required, Validators.maxLength(200)]],
       polaridade: ['', [Validators.required]],
       unidade: ['', [Validators.required]],
+      tipoDaUnidade: ['', [Validators.maxLength(30)]],
       indicador: ['', [Validators.required]],
       departamentoId: ['', [Validators.required]],
       descricaoDetalhada: ['', [Validators.required]],
@@ -99,10 +100,17 @@ export class MetaFormComponent extends BaseFormComponent<CreateMetaDto | UpdateM
         ? Number(formValue.valorMetaInicial)
         : undefined;
 
+    const tipoRaw = formValue.tipoDaUnidade;
+    const tipoDaUnidade =
+      tipoRaw !== null && tipoRaw !== undefined && String(tipoRaw).trim() !== ''
+        ? String(tipoRaw).trim()
+        : null;
+
     return {
       tituloDaMeta: formValue.tituloDaMeta,
       polaridade: formValue.polaridade,
       unidade: formValue.unidade,
+      tipoDaUnidade,
       indicador: formValue.indicador,
       departamentoId: formValue.departamentoId,
       descricaoDetalhada: formValue.descricaoDetalhada,
@@ -129,6 +137,7 @@ export class MetaFormComponent extends BaseFormComponent<CreateMetaDto | UpdateM
       tituloDaMeta: meta.tituloDaMeta,
       polaridade: meta.polaridade,
       unidade: meta.unidade,
+      tipoDaUnidade: meta.tipoDaUnidade ?? '',
       indicador: meta.indicador,
       departamentoId: meta.departamentoId,
       descricaoDetalhada: meta.descricaoDetalhada,

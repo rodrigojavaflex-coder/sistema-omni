@@ -1,13 +1,31 @@
 <div class="configuracao-container">
   <h2 class="form-title">Configuração do Sistema</h2>
+  <div class="fluxo-tabs">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab === 'sistema'"
+      (click)="activeTab = 'sistema'"
+    >
+      Sistema
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab === 'email'"
+      (click)="activeTab = 'email'"
+    >
+      Envio de E-mail
+    </button>
+  </div>
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="form-group">
+    <div class="form-group" *ngIf="activeTab === 'sistema'">
       <label for="nomeCliente" class="form-label">Nome do Cliente</label>
       <input id="nomeCliente" type="text" formControlName="nomeCliente" class="form-input" placeholder="Digite o nome do cliente" />
     </div>
 
     <!-- Seção de Configurações de Auditoria -->
-    <div class="audit-section">
+    <div class="audit-section" *ngIf="activeTab === 'sistema'">
       <h3 class="section-title">Configurações de Auditoria</h3>
       <p class="section-description">Configure quais tipos de operações serão auditadas no sistema</p>
 
@@ -62,7 +80,7 @@
       </div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" *ngIf="activeTab === 'sistema'">
       <label for="logoRelatorio" class="form-label">Logo do Relatório</label>
       <input id="logoRelatorio" type="file" (change)="onLogoChange($event)" accept="image/png" class="form-input" />
       <small style="color: var(--text-secondary, #999); font-size: 0.75rem; margin-top: 0.25rem; display: block;">Apenas arquivos <b>.png</b> são permitidos.</small>
@@ -74,6 +92,58 @@
         }
       </div>
     </div>
+
+    <div class="audit-section" *ngIf="activeTab === 'email'">
+      <h3 class="section-title">Configuração de envio de relatório</h3>
+      <p class="section-description">
+        Define o envio automático do relatório de Ordem de Serviço para os e-mails cadastrados na empresa de manutenção.
+      </p>
+
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="emailAtivo" class="checkbox-input" />
+          <span class="checkbox-text">Ativar envio de e-mail</span>
+        </label>
+      </div>
+
+      <div class="audit-grid">
+        <div class="form-group">
+          <label class="form-label">Host SMTP</label>
+          <input type="text" class="form-input" formControlName="emailHost" placeholder="smtp.dominio.com.br" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Porta</label>
+          <input type="number" class="form-input" formControlName="emailPorta" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Usuário</label>
+          <input type="text" class="form-input" formControlName="emailUsuario" placeholder="usuario@dominio.com.br" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha</label>
+          <input type="password" class="form-input" formControlName="emailSenha" placeholder="********" />
+        </div>
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="emailUsarTls" class="checkbox-input" />
+            <span class="checkbox-text">Usar TLS</span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nome do remetente</label>
+          <input type="text" class="form-input" formControlName="emailRemetenteNome" placeholder="OMNI" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-mail do remetente</label>
+          <input type="text" class="form-input" formControlName="emailRemetenteEmail" placeholder="nao-responda@dominio.com.br" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assunto padrão</label>
+          <input type="text" class="form-input" formControlName="emailAssuntoPadrao" placeholder="Relatório de Ordem de Serviço" />
+        </div>
+      </div>
+    </div>
+
     <button type="submit" class="btn-primary" [disabled]="loading || form.invalid">
       {{ loading ? 'Salvando...' : 'Salvar Configuração' }}
     </button>

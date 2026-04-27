@@ -337,6 +337,32 @@ html {
   color-scheme: light dark;
 }
 
+/* Fixar esquema de cor conforme tema do app (evita controles nativos
+   mudarem para dark quando o app estiver em light). */
+body.theme-light {
+  color-scheme: light;
+}
+
+body.theme-dark {
+  color-scheme: dark;
+}
+
+body.theme-light input,
+body.theme-light select,
+body.theme-light textarea,
+body.theme-light button,
+body.theme-light audio {
+  color-scheme: light;
+}
+
+body.theme-dark input,
+body.theme-dark select,
+body.theme-dark textarea,
+body.theme-dark button,
+body.theme-dark audio {
+  color-scheme: dark;
+}
+
 /* Estilos para tema escuro específicos */
 body.theme-dark {
   background-color: #1a202c;
@@ -398,6 +424,51 @@ body.theme-dark textarea {
 
 body.theme-dark .form-input::placeholder {
   color: #a0aec0 !important;
+}
+
+/* Acessibilidade global de campos desabilitados (tema escuro) */
+body.theme-dark .form-control:disabled,
+body.theme-dark .form-select:disabled,
+body.theme-dark .form-input:disabled,
+body.theme-dark .form-textarea:disabled,
+body.theme-dark input:disabled,
+body.theme-dark select:disabled,
+body.theme-dark textarea:disabled {
+  background-color: #334155 !important;
+  border-color: #64748b !important;
+  color: #e2e8f0 !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+  opacity: 1 !important;
+  cursor: not-allowed;
+}
+
+body.theme-dark .form-control:disabled::placeholder,
+body.theme-dark .form-select:disabled::placeholder,
+body.theme-dark .form-input:disabled::placeholder,
+body.theme-dark .form-textarea:disabled::placeholder,
+body.theme-dark input:disabled::placeholder,
+body.theme-dark select:disabled::placeholder,
+body.theme-dark textarea:disabled::placeholder {
+  color: #cbd5e1 !important;
+  opacity: 1 !important;
+}
+
+/* Textos auxiliares de formulários no tema escuro */
+body.theme-dark .field-description,
+body.theme-dark .form-help,
+body.theme-dark .hint,
+body.theme-dark .helper-text,
+body.theme-dark small.form-text {
+  color: #cbd5e1 !important;
+  font-weight: 500;
+}
+
+/* Botões secundários desabilitados mais legíveis no tema escuro */
+body.theme-dark .btn.btn-secondary:disabled {
+  background-color: #334155 !important;
+  border-color: #64748b !important;
+  color: #e2e8f0 !important;
+  opacity: 1 !important;
 }
 
 /* Labels e texto */

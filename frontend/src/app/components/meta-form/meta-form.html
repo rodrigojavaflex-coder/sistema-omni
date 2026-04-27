@@ -86,7 +86,20 @@
             {{ getFieldError('unidade') || 'Selecione uma unidade' }}
           </div>
         </div>
-      <div class="form-group">
+        <div class="form-group">
+          <label class="form-label">Tipo da unidade (opcional)</label>
+          <input
+            type="text"
+            formControlName="tipoDaUnidade"
+            class="form-input"
+            maxlength="30"
+            autocomplete="off"
+          />
+          <div class="form-error" *ngIf="isFieldInvalid('tipoDaUnidade')">
+            {{ getFieldError('tipoDaUnidade') }}
+          </div>
+        </div>
+        <div class="form-group">
           <label class="form-label">Indicador *</label>
           <select formControlName="indicador" class="form-select">
             <option value="">Selecione</option>

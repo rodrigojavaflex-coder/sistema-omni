@@ -21,6 +21,7 @@ import {
 import { Router } from '@angular/router';
 import { VistoriaFlowService } from '../../services/vistoria-flow.service';
 import { AreaVistoriadaService } from '../../services/area-vistoriada.service';
+import { MatrizCriticidadeService } from '../../services/matriz-criticidade.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { VistoriaBootstrapService } from '../../services/vistoria-bootstrap.service';
 import { AreaVistoriada, AreaComponente } from '../../models/area-vistoriada.model';
@@ -57,6 +58,7 @@ import { AuthService } from '../../services/auth.service';
 export class VistoriaAreasPage implements OnInit {
   private flowService = inject(VistoriaFlowService);
   private areaService = inject(AreaVistoriadaService);
+  private matrizService = inject(MatrizCriticidadeService);
   private vistoriaService = inject(VistoriaService);
   private bootstrapService = inject(VistoriaBootstrapService);
   private alertController = inject(AlertController);
@@ -79,6 +81,8 @@ export class VistoriaAreasPage implements OnInit {
   contagemPendentesPorComponente: Record<string, number> = {};
   private irregularidadesList: IrregularidadeResumo[] = [];
   private pendentesList: IrregularidadeResumo[] = [];
+  private componentesComMatrizPorArea = new Map<string, AreaComponente[]>();
+  private componenteTemMatrizCache = new Map<string, boolean>();
   private reopenAreaId: string | null = null;
   private initialized = false;
 
@@ -171,6 +175,7 @@ export class VistoriaAreasPage implements OnInit {
       if (this.areas.length === 0) {
         this.areas = await this.areaService.listarAtivas();
       }
+      this.areas = await this.filtrarAreasComMatriz(this.areas);
       const [irregularidades, pendentes] = await Promise.all([
         this.vistoriaService.listarIrregularidades(vistoriaId),
         this.flowService.getVeiculoId()
@@ -218,9 +223,21 @@ export class VistoriaAreasPage implements OnInit {
       const bootstrap = vistoriaId ? this.bootstrapService.getSnapshot(vistoriaId) : null;
       const areaBootstrap = bootstrap?.areas?.find((a) => a.id === area.id);
       if (areaBootstrap) {
-        this.componentes = areaBootstrap.componentes as AreaComponente[];
+        const componentesComMatriz = areaBootstrap.componentes.filter(
+          (item) => (item.matriz?.length ?? 0) > 0,
+        ) as AreaComponente[];
+        this.componentesComMatrizPorArea.set(area.id, componentesComMatriz);
+        this.componentes = componentesComMatriz;
       } else {
-        this.componentes = await this.areaService.listarComponentes(area.id);
+        const cached = this.componentesComMatrizPorArea.get(area.id);
+        if (cached) {
+          this.componentes = cached;
+        } else {
+          const componentesRaw = await this.areaService.listarComponentes(area.id);
+          const componentesComMatriz = await this.filtrarComponentesComMatriz(componentesRaw);
+          this.componentesComMatrizPorArea.set(area.id, componentesComMatriz);
+          this.componentes = componentesComMatriz;
+        }
       }
       this.irregularidadesList
         .filter((item) => item.idarea === area.id)
@@ -243,7 +260,19 @@ export class VistoriaAreasPage implements OnInit {
   }
 
   private aplicarBootstrap(bootstrap: VistoriaBootstrap): void {
-    this.areas = bootstrap.areas;
+    this.componentesComMatrizPorArea.clear();
+    this.areas = bootstrap.areas
+      .map((area) => {
+        const componentesComMatriz = area.componentes.filter(
+          (item) => (item.matriz?.length ?? 0) > 0,
+        ) as AreaComponente[];
+        this.componentesComMatrizPorArea.set(area.id, componentesComMatriz);
+        return {
+          ...area,
+          componentes: componentesComMatriz,
+        };
+      })
+      .filter((area) => area.componentes.length > 0);
     this.aplicarIndicadores(
       bootstrap.irregularidadesVistoria ?? [],
       bootstrap.pendentesVeiculo ?? [],
@@ -377,5 +406,46 @@ export class VistoriaAreasPage implements OnInit {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  private async filtrarAreasComMatriz(areas: AreaVistoriada[]): Promise<AreaVistoriada[]> {
+    const resultado: AreaVistoriada[] = [];
+    for (const area of areas) {
+      const componentesRaw = await this.areaService.listarComponentes(area.id);
+      const componentesComMatriz = await this.filtrarComponentesComMatriz(componentesRaw);
+      if (componentesComMatriz.length > 0) {
+        this.componentesComMatrizPorArea.set(area.id, componentesComMatriz);
+        resultado.push(area);
+      }
+    }
+    return resultado;
+  }
+
+  private async filtrarComponentesComMatriz(
+    componentes: AreaComponente[],
+  ): Promise<AreaComponente[]> {
+    const checks = await Promise.all(
+      componentes.map(async (item) => ({
+        item,
+        temMatriz: await this.componenteTemMatriz(item.idComponente),
+      })),
+    );
+    return checks.filter((entry) => entry.temMatriz).map((entry) => entry.item);
+  }
+
+  private async componenteTemMatriz(idComponente: string): Promise<boolean> {
+    const cached = this.componenteTemMatrizCache.get(idComponente);
+    if (cached !== undefined) {
+      return cached;
+    }
+    try {
+      const matriz = await this.matrizService.listarPorComponente(idComponente);
+      const tem = matriz.length > 0;
+      this.componenteTemMatrizCache.set(idComponente, tem);
+      return tem;
+    } catch {
+      this.componenteTemMatrizCache.set(idComponente, false);
+      return false;
+    }
   }
 }

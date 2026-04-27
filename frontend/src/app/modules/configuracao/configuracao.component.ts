@@ -23,6 +23,7 @@ export class ConfiguracaoComponent implements OnInit {
   error: string | null = null;
   success: string | null = null;
   logoPreview: string | null = null;
+  activeTab: 'sistema' | 'email' = 'sistema';
 
   constructor() {
     this.form = this.fb.group({
@@ -34,7 +35,16 @@ export class ConfiguracaoComponent implements OnInit {
       auditarCriacao: [true],
       auditarAlteracao: [true],
       auditarExclusao: [true],
-      auditarSenhaAlterada: [true]
+      auditarSenhaAlterada: [true],
+      emailAtivo: [false],
+      emailHost: [''],
+      emailPorta: [587],
+      emailUsuario: [''],
+      emailSenha: [''],
+      emailUsarTls: [true],
+      emailRemetenteNome: [''],
+      emailRemetenteEmail: [''],
+      emailAssuntoPadrao: ['Relatório de Ordem de Serviço'],
     });
   }
 
@@ -51,7 +61,17 @@ export class ConfiguracaoComponent implements OnInit {
           auditarCriacao: config.auditarCriacao ?? true,
           auditarAlteracao: config.auditarAlteracao ?? true,
           auditarExclusao: config.auditarExclusao ?? true,
-          auditarSenhaAlterada: config.auditarSenhaAlterada ?? true
+          auditarSenhaAlterada: config.auditarSenhaAlterada ?? true,
+          emailAtivo: config.emailEnvioConfig?.ativo ?? false,
+          emailHost: config.emailEnvioConfig?.host ?? '',
+          emailPorta: config.emailEnvioConfig?.porta ?? 587,
+          emailUsuario: config.emailEnvioConfig?.usuario ?? '',
+          emailSenha: config.emailEnvioConfig?.senha ?? '',
+          emailUsarTls: config.emailEnvioConfig?.usarTls ?? true,
+          emailRemetenteNome: config.emailEnvioConfig?.remetenteNome ?? '',
+          emailRemetenteEmail: config.emailEnvioConfig?.remetenteEmail ?? '',
+          emailAssuntoPadrao:
+            config.emailEnvioConfig?.assuntoPadrao ?? 'Relatório de Ordem de Serviço',
         });
         if (config.logoRelatorio) {
           const backendUrl = environment.apiUrl.replace(/\/api$/, '');
@@ -99,6 +119,20 @@ export class ConfiguracaoComponent implements OnInit {
     formData.append('auditarAlteracao', this.form.value.auditarAlteracao.toString());
     formData.append('auditarExclusao', this.form.value.auditarExclusao.toString());
     formData.append('auditarSenhaAlterada', this.form.value.auditarSenhaAlterada.toString());
+    formData.append(
+      'emailEnvioConfig',
+      JSON.stringify({
+        ativo: !!this.form.value.emailAtivo,
+        host: (this.form.value.emailHost ?? '').trim(),
+        porta: Number(this.form.value.emailPorta ?? 587),
+        usuario: (this.form.value.emailUsuario ?? '').trim() || undefined,
+        senha: (this.form.value.emailSenha ?? '').trim() || undefined,
+        usarTls: !!this.form.value.emailUsarTls,
+        remetenteNome: (this.form.value.emailRemetenteNome ?? '').trim() || undefined,
+        remetenteEmail: (this.form.value.emailRemetenteEmail ?? '').trim() || undefined,
+        assuntoPadrao: (this.form.value.emailAssuntoPadrao ?? '').trim() || undefined,
+      }),
+    );
     const handleError = (err: any) => {
       this.loading = false;
       this.success = null;

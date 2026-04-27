@@ -2,6 +2,9 @@ import {
   AreaVistoriadaService
 } from "./chunk-ILMLSKLF.js";
 import {
+  MatrizCriticidadeService
+} from "./chunk-EYEGL3HD.js";
+import {
   VistoriaBootstrapService
 } from "./chunk-GFAV4T6B.js";
 import {
@@ -12,7 +15,7 @@ import {
 } from "./chunk-E32UKBIK.js";
 import {
   AuthService
-} from "./chunk-2YZPEABG.js";
+} from "./chunk-SUV23HSM.js";
 import {
   ErrorMessageService
 } from "./chunk-3HI66MTA.js";
@@ -240,6 +243,7 @@ var VistoriaComponentesPage = class _VistoriaComponentesPage {
   route = inject(ActivatedRoute);
   router = inject(Router);
   areaService = inject(AreaVistoriadaService);
+  matrizService = inject(MatrizCriticidadeService);
   flowService = inject(VistoriaFlowService);
   vistoriaService = inject(VistoriaService);
   bootstrapService = inject(VistoriaBootstrapService);
@@ -254,6 +258,7 @@ var VistoriaComponentesPage = class _VistoriaComponentesPage {
   loading = false;
   errorMessage = "";
   initialized = false;
+  componenteTemMatrizCache = /* @__PURE__ */ new Map();
   get vistoriaNrDisplay() {
     const nr = this.flowService.getNumeroVistoriaDisplay();
     return nr ? `Vistoria - ${nr}` : "Vistoria";
@@ -313,11 +318,12 @@ var VistoriaComponentesPage = class _VistoriaComponentesPage {
         const bootstrap = yield this.bootstrapService.getOrFetch(vistoriaId);
         const areaBootstrap = bootstrap?.areas?.find((a) => a.id === this.areaId);
         if (bootstrap && areaBootstrap) {
-          this.componentes = areaBootstrap.componentes;
+          this.componentes = areaBootstrap.componentes.filter((item) => (item.matriz?.length ?? 0) > 0);
           yield this.recarregarIndicadores(vistoriaId);
           return;
         }
-        this.componentes = yield this.areaService.listarComponentes(this.areaId);
+        const componentesRaw = yield this.areaService.listarComponentes(this.areaId);
+        this.componentes = yield this.filtrarComponentesComMatriz(componentesRaw);
         const veiculoId = this.flowService.getVeiculoId();
         const [irregularidades, pendentes] = yield Promise.all([
           this.vistoriaService.listarIrregularidades(vistoriaId),
@@ -419,6 +425,34 @@ var VistoriaComponentesPage = class _VistoriaComponentesPage {
   }
   escapeHtml(value) {
     return (value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  filtrarComponentesComMatriz(componentes) {
+    return __async(this, null, function* () {
+      const checks = yield Promise.all(componentes.map((item) => __async(this, null, function* () {
+        return {
+          item,
+          temMatriz: yield this.componenteTemMatriz(item.idComponente)
+        };
+      })));
+      return checks.filter((entry) => entry.temMatriz).map((entry) => entry.item);
+    });
+  }
+  componenteTemMatriz(idComponente) {
+    return __async(this, null, function* () {
+      const cached = this.componenteTemMatrizCache.get(idComponente);
+      if (cached !== void 0) {
+        return cached;
+      }
+      try {
+        const matriz = yield this.matrizService.listarPorComponente(idComponente);
+        const tem = matriz.length > 0;
+        this.componenteTemMatrizCache.set(idComponente, tem);
+        return tem;
+      } catch {
+        this.componenteTemMatrizCache.set(idComponente, false);
+        return false;
+      }
+    });
   }
   static \u0275fac = function VistoriaComponentesPage_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _VistoriaComponentesPage)();
@@ -522,9 +556,9 @@ var VistoriaComponentesPage = class _VistoriaComponentesPage {
   }], null, null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VistoriaComponentesPage, { className: "VistoriaComponentesPage", filePath: "src/app/pages/vistoria/vistoria-componentes.page.ts", lineNumber: 55 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VistoriaComponentesPage, { className: "VistoriaComponentesPage", filePath: "src/app/pages/vistoria/vistoria-componentes.page.ts", lineNumber: 56 });
 })();
 export {
   VistoriaComponentesPage
 };
-//# sourceMappingURL=chunk-NXD6SQM7.js.map
+//# sourceMappingURL=chunk-IVEGCFLW.js.map

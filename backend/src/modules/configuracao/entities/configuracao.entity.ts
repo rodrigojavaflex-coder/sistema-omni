@@ -17,6 +17,18 @@ export interface TempoFluxoConfig {
   validacaoFinal: TempoFaixaConfig[];
 }
 
+export interface EmailEnvioConfig {
+  ativo: boolean;
+  host: string;
+  porta: number;
+  usuario?: string;
+  senha?: string;
+  usarTls: boolean;
+  remetenteNome?: string;
+  remetenteEmail?: string;
+  assuntoPadrao?: string;
+}
+
 @Entity('configuracoes')
 export class Configuracao extends BaseEntity {
   /**
@@ -53,4 +65,7 @@ export class Configuracao extends BaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   tempoFluxoConfig?: TempoFluxoConfig;
+
+  @Column({ type: 'jsonb', nullable: true })
+  emailEnvioConfig?: EmailEnvioConfig;
 }

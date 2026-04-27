@@ -1,58 +1,47 @@
-# Comportamento Geral
-- Responda sempre em Português do Brasil.
-- Seja conciso e direto. Evite explicações teóricas longas, foque no código.
-- Se a solução envolver alterar múltiplos arquivos, use o Composer logic para planejar antes de executar.
+# Quick Start (abertura de tarefa)
+- Deve informar contexto, objetivo, escopo e fora de escopo.
+- Deve listar 2-4 critérios de aceite verificáveis e validação esperada.
+- Em UI, deve exigir tema claro/escuro e estados (hover/focus/disabled).
+- Em negócio, deve citar RN-* do `docs/regras-negocio.md`.
+- Em API/DB, deve indicar contrato esperado e necessidade de migration.
+- Em tarefa grande, deve pedir plano curto antes de implementar.
 
-# Angular (Frontend)
-- Utilize **Standalone Components** em todos os novos desenvolvimentos; recorra a NgModules apenas quando não houver alternativa (ex.: libs herdadas).
-- **Signals** são preferenciais para fluxos novos ou refatorados; mantenha Observables/RxJS onde já existe pipeline consolidado e a migração seria custosa.
-- Prefira `inject()` para dependências; use construtor somente quando precisar chamar `super()` ou realizar inicializações específicas.
-- Tipar explicitamente todos os Observables (incluindo HTTP) e evitar `any`.
-- Mantenha templates limpos: mova lógica não trivial para o componente ou pipes.
+# Regras Gerais
+- Deve responder em Português do Brasil, de forma concisa e prática.
+- Não alterar arquivos fora do escopo sem justificar.
+- Não usar `any` sem justificativa explícita.
+- Deve seguir a prioridade: instrução do usuário > `.cursorrules` > `.cursor/rules/*.mdc` > preferência implícita.
+- Em conflito entre regra documentada e código atual, deve sinalizar e pedir confirmação.
 
-# NestJS (Backend)
-- Preserve a arquitetura Controller → Service → TypeORM Repository, sem camadas extras quando não agregarem valor.
-- Todos os endpoints devem expor DTOs com `class-validator` (ex.: `@ApiProperty` nos DTOs) e usar `@ApiResponse` nos controllers para manter a doc Swagger.
-- Defina tipos de retorno explícitos em services/controllers (`Promise<T>`, etc.).
-- Leia variáveis de ambiente exclusivamente via `ConfigService` ou configs `registerAs` existentes (app, database, googleMaps), migrando gradualmente código legado que ainda usa `process.env`.
-- Ao criar rotas novas, documente-as com decorators do Swagger para manter a documentação viva.
+# Execução da IA
+- Deve descrever o que será alterado antes de editar.
+- Deve validar apenas o necessário ao escopo (lint/build/teste manual).
+- Não criar commit automaticamente; só quando solicitado.
+- Se criar commit, deve usar padrão `tipo(escopo): ação principal`.
+- Em requisito ambíguo, deve pausar e propor 2 opções com impacto.
 
-# Banco de Dados (PostgreSQL)
-- Prefira queries otimizadas e garanta índices coerentes com os filtros utilizados.
-- Quando for necessário alterar a estrutura, certifique-se de que a migração (quando houver) seja reversível (up/down).
-- Use transações para operações críticas ou múltiplos updates, evitando locks desnecessários.
-- Siga as convenções atuais: nomes em snake_case, prefixos `fk_`/`idx_`, chaves primárias UUID por padrão.
-- Revise colunas para ter `NOT NULL`, defaults e constraints (CHECK/UNIQUE) sempre que aplicável, garantindo integridade no próprio banco.
-- Para cargas de dados grandes, considere `COPY`, bulk inserts ou jobs assíncronos para não degradar a aplicação online.
+# Regras Técnicas
+- Frontend (Angular): deve usar Standalone Components; deve preferir `inject()`; deve preferir Signals em fluxos novos; deve tipar Observables/HTTP; não deve concentrar lógica complexa em template.
+- UI/UX: deve suportar tema claro/escuro; não deve usar cores hardcoded; deve usar tokens/variáveis; deve garantir contraste e consistência em componentes críticos.
+- Backend (NestJS): deve manter Controller -> Service -> Repository; deve usar DTO + `class-validator` + Swagger em endpoints novos; deve definir tipos de retorno explícitos; deve usar env via ConfigService/registerAs.
+- Banco (PostgreSQL): deve manter snake_case, índices/constraints coerentes e transações quando necessário; não deve introduzir N+1.
 
-# Mobile (Ionic/Capacitor)
-- Use componentes de `@ionic/angular/standalone`; evite `IonicModule`.
-- Evite `ion-menu` no web; condicione por plataforma quando necessário.
-- Preferir `androidScheme: 'https'` em produção e usar túnel HTTPS nos testes.
-- Priorizar soluções visuais e componentes que funcionem igual em Android e iOS.
-- Evitar depender de Shadow DOM/::part para estilos críticos no Android.
-- Para seletores binários (ex.: Conforme/Não conforme), preferir ion-chip/ion-button com classes ao invés de ion-segment.
+# Migrations e Contratos
+- Deve criar migration para mudança estrutural (tabela/coluna/índice/constraint/tipo/default/nullable).
+- Toda migration deve ter `up`/`down` reversíveis e nome com intenção de negócio.
+- Não misturar migration estrutural com carga de dados grande sem necessidade.
+- Mudança de API deve validar DTO, contrato de resposta e impacto em consumidores.
 
-# Endpoints (túneis Cloudflare)
-- DEV: https://api-dev.sistemasfarmamais.com/api  (localhost:3000)
-- PROD: https://api.sistemasfarmamais.com/api     (localhost:8080)
-- `environment.ts` deve apontar para o túnel DEV em `apiUrl` e `apiUrlNative`.
-- `environment.prod.ts` deve apontar para o túnel PROD em `apiUrl` e `apiUrlNative`.
-- Nunca usar `10.0.2.2` em APK para celular físico (apenas emulador).
+# Ambientes (Túneis)
+- DEV: https://api-dev.sistemasfarmamais.com/api
+- PROD: https://api.sistemasfarmamais.com/api
+- `environment.ts` deve apontar DEV em `apiUrl` e `apiUrlNative`.
+- `environment.prod.ts` deve apontar PROD em `apiUrl` e `apiUrlNative`.
+- Não usar `10.0.2.2` em APK para dispositivo físico.
 
-# Biometria
-- Só exibir opções se `NativeBiometric.isAvailable()` retornar true.
-- Guardar credenciais no secure storage; não usar `Preferences` para dados sensíveis.
-
-# UI/UX
-- Limpar formulário de login em `ionViewWillEnter`.
-- Evitar lógica pesada nos templates (mantenha no componente).
-
-# Logs/Erros
-- Mensagens de erro devem incluir status HTTP e detalhe do backend, sem expor URL em produção.
-
-# Testes no Android Studio (Emulador)
-- Emulador deve usar sempre o túnel DEV:
-  - https://api-dev.sistemasfarmamais.com/api
-- Nunca usar `10.0.2.2` em builds de teste (evitar divergência entre emulador e celular físico).
-- Ao gerar APK de teste, garantir `environment.ts` apontando para o túnel DEV.
+# Segurança e Fechamento
+- Não alterar artefatos gerados/temporários (`dist/`, `build/`, caches, uploads) sem solicitação explícita.
+- Não incluir/alterar segredos, `.env` ou credenciais sem confirmação explícita.
+- Deve sempre retornar: o que mudou, arquivos impactados, validações executadas e riscos residuais.
+- Em API/DB, deve informar impacto em consumidores e necessidade de migration/ajuste de contrato.
+- Deve incluir passo a passo curto de validação manual (1-3 passos).

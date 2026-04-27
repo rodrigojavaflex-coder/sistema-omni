@@ -45,6 +45,7 @@ export interface Meta {
   tituloDaMeta: string;
   polaridade: PolaridadeMeta;
   unidade: UnidadeMeta;
+  tipoDaUnidade?: string | null;
   indicador: IndicadorMeta;
   departamentoId: string;
   departamento?: { id: string; nomeDepartamento: string };
@@ -63,6 +64,7 @@ export interface CreateMetaDto {
   tituloDaMeta: string;
   polaridade: PolaridadeMeta;
   unidade: UnidadeMeta;
+  tipoDaUnidade?: string | null;
   indicador: IndicadorMeta;
   departamentoId: string;
   descricaoDetalhada?: string;

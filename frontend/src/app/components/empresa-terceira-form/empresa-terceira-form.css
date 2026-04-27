@@ -1,1 +1,8 @@
 /* Usando classes globais */
+
+.form-hint {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.75rem;
+}

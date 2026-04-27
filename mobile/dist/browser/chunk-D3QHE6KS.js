@@ -2,6 +2,9 @@ import {
   AreaVistoriadaService
 } from "./chunk-ILMLSKLF.js";
 import {
+  MatrizCriticidadeService
+} from "./chunk-EYEGL3HD.js";
+import {
   VistoriaBootstrapService
 } from "./chunk-GFAV4T6B.js";
 import {
@@ -12,7 +15,7 @@ import {
 } from "./chunk-E32UKBIK.js";
 import {
   AuthService
-} from "./chunk-2YZPEABG.js";
+} from "./chunk-SUV23HSM.js";
 import {
   ErrorMessageService
 } from "./chunk-3HI66MTA.js";
@@ -75,7 +78,9 @@ import "./chunk-FDXV3QXU.js";
 import "./chunk-YPIUQMS2.js";
 import "./chunk-QGYUETGI.js";
 import {
-  __async
+  __async,
+  __spreadProps,
+  __spreadValues
 } from "./chunk-3RNQ4BE2.js";
 
 // src/app/pages/vistoria/vistoria-areas.page.ts
@@ -428,6 +433,7 @@ function VistoriaAreasPage_ion_footer_22_Template(rf, ctx) {
 var VistoriaAreasPage = class _VistoriaAreasPage {
   flowService = inject(VistoriaFlowService);
   areaService = inject(AreaVistoriadaService);
+  matrizService = inject(MatrizCriticidadeService);
   vistoriaService = inject(VistoriaService);
   bootstrapService = inject(VistoriaBootstrapService);
   alertController = inject(AlertController);
@@ -448,6 +454,8 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
   contagemPendentesPorComponente = {};
   irregularidadesList = [];
   pendentesList = [];
+  componentesComMatrizPorArea = /* @__PURE__ */ new Map();
+  componenteTemMatrizCache = /* @__PURE__ */ new Map();
   reopenAreaId = null;
   initialized = false;
   /** Número da vistoria para exibição abaixo da barra */
@@ -531,6 +539,7 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
         if (this.areas.length === 0) {
           this.areas = yield this.areaService.listarAtivas();
         }
+        this.areas = yield this.filtrarAreasComMatriz(this.areas);
         const [irregularidades, pendentes] = yield Promise.all([
           this.vistoriaService.listarIrregularidades(vistoriaId),
           this.flowService.getVeiculoId() ? this.vistoriaService.listarIrregularidadesPendentes(this.flowService.getVeiculoId()) : Promise.resolve([])
@@ -577,9 +586,19 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
         const bootstrap = vistoriaId ? this.bootstrapService.getSnapshot(vistoriaId) : null;
         const areaBootstrap = bootstrap?.areas?.find((a) => a.id === area.id);
         if (areaBootstrap) {
-          this.componentes = areaBootstrap.componentes;
+          const componentesComMatriz = areaBootstrap.componentes.filter((item) => (item.matriz?.length ?? 0) > 0);
+          this.componentesComMatrizPorArea.set(area.id, componentesComMatriz);
+          this.componentes = componentesComMatriz;
         } else {
-          this.componentes = yield this.areaService.listarComponentes(area.id);
+          const cached = this.componentesComMatrizPorArea.get(area.id);
+          if (cached) {
+            this.componentes = cached;
+          } else {
+            const componentesRaw = yield this.areaService.listarComponentes(area.id);
+            const componentesComMatriz = yield this.filtrarComponentesComMatriz(componentesRaw);
+            this.componentesComMatrizPorArea.set(area.id, componentesComMatriz);
+            this.componentes = componentesComMatriz;
+          }
         }
         this.irregularidadesList.filter((item) => item.idarea === area.id).forEach((item) => {
           this.irregularidadesPorComponente[item.idcomponente] = (this.irregularidadesPorComponente[item.idcomponente] ?? 0) + 1;
@@ -596,7 +615,14 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
     });
   }
   aplicarBootstrap(bootstrap) {
-    this.areas = bootstrap.areas;
+    this.componentesComMatrizPorArea.clear();
+    this.areas = bootstrap.areas.map((area) => {
+      const componentesComMatriz = area.componentes.filter((item) => (item.matriz?.length ?? 0) > 0);
+      this.componentesComMatrizPorArea.set(area.id, componentesComMatriz);
+      return __spreadProps(__spreadValues({}, area), {
+        componentes: componentesComMatriz
+      });
+    }).filter((area) => area.componentes.length > 0);
     this.aplicarIndicadores(bootstrap.irregularidadesVistoria ?? [], bootstrap.pendentesVeiculo ?? []);
   }
   aplicarIndicadores(irregularidades, pendentesRaw) {
@@ -693,6 +719,48 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
   }
   escapeHtml(value) {
     return (value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  filtrarAreasComMatriz(areas) {
+    return __async(this, null, function* () {
+      const resultado = [];
+      for (const area of areas) {
+        const componentesRaw = yield this.areaService.listarComponentes(area.id);
+        const componentesComMatriz = yield this.filtrarComponentesComMatriz(componentesRaw);
+        if (componentesComMatriz.length > 0) {
+          this.componentesComMatrizPorArea.set(area.id, componentesComMatriz);
+          resultado.push(area);
+        }
+      }
+      return resultado;
+    });
+  }
+  filtrarComponentesComMatriz(componentes) {
+    return __async(this, null, function* () {
+      const checks = yield Promise.all(componentes.map((item) => __async(this, null, function* () {
+        return {
+          item,
+          temMatriz: yield this.componenteTemMatriz(item.idComponente)
+        };
+      })));
+      return checks.filter((entry) => entry.temMatriz).map((entry) => entry.item);
+    });
+  }
+  componenteTemMatriz(idComponente) {
+    return __async(this, null, function* () {
+      const cached = this.componenteTemMatrizCache.get(idComponente);
+      if (cached !== void 0) {
+        return cached;
+      }
+      try {
+        const matriz = yield this.matrizService.listarPorComponente(idComponente);
+        const tem = matriz.length > 0;
+        this.componenteTemMatrizCache.set(idComponente, tem);
+        return tem;
+      } catch {
+        this.componenteTemMatrizCache.set(idComponente, false);
+        return false;
+      }
+    });
   }
   static \u0275fac = function VistoriaAreasPage_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _VistoriaAreasPage)();
@@ -953,9 +1021,9 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
   }], null, null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VistoriaAreasPage, { className: "VistoriaAreasPage", filePath: "src/app/pages/vistoria/vistoria-areas.page.ts", lineNumber: 57 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VistoriaAreasPage, { className: "VistoriaAreasPage", filePath: "src/app/pages/vistoria/vistoria-areas.page.ts", lineNumber: 58 });
 })();
 export {
   VistoriaAreasPage
 };
-//# sourceMappingURL=chunk-CZEBILXY.js.map
+//# sourceMappingURL=chunk-D3QHE6KS.js.map

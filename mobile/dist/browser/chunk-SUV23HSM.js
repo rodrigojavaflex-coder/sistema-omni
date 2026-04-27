@@ -20,7 +20,9 @@ import {
   registerPlugin as registerPlugin2
 } from "./chunk-Y5RNAJMB.js";
 import {
-  __async
+  __async,
+  __spreadProps,
+  __spreadValues
 } from "./chunk-3RNQ4BE2.js";
 
 // node_modules/@capacitor/preferences/dist/esm/index.js
@@ -105,8 +107,9 @@ var AuthService = class _AuthService {
           throw new Error("Tokens de autentica\xE7\xE3o n\xE3o recebidos");
         }
         yield this.setTokens(accessToken, refreshToken);
-        yield this.setUser(response.user);
-        this.currentUserSubject.next(response.user);
+        const normalizedUser = this.normalizeUser(response.user);
+        yield this.setUser(normalizedUser);
+        this.currentUserSubject.next(normalizedUser);
         this.isAuthenticatedSubject.next(true);
         this.biometricSessionVerified = true;
         if (options?.navigate !== false) {
@@ -190,14 +193,25 @@ var AuthService = class _AuthService {
     if (!user) {
       return [];
     }
-    const raw = user.perfil?.permissoes;
-    if (!raw) {
-      return [];
+    const permissions = /* @__PURE__ */ new Set();
+    const perfis = this.getUserProfiles(user);
+    for (const perfil of perfis) {
+      const raw = perfil?.permissoes;
+      if (!raw) {
+        continue;
+      }
+      if (Array.isArray(raw)) {
+        raw.forEach((permission) => {
+          const normalized = `${permission ?? ""}`.trim();
+          if (normalized) {
+            permissions.add(normalized);
+          }
+        });
+        continue;
+      }
+      raw.split(",").map((value) => value.trim()).filter((value) => value.length > 0).forEach((value) => permissions.add(value));
     }
-    if (Array.isArray(raw)) {
-      return raw;
-    }
-    return raw.split(",").map((value) => value.trim()).filter((value) => value.length > 0);
+    return Array.from(permissions);
   }
   /**
    * Obtém o access token
@@ -243,7 +257,7 @@ var AuthService = class _AuthService {
       const userStr = yield Preferences.get({ key: this.USER_KEY });
       if (accessToken && userStr.value) {
         try {
-          const user = JSON.parse(userStr.value);
+          const user = this.normalizeUser(JSON.parse(userStr.value));
           this.currentUserSubject.next(user);
           this.isAuthenticatedSubject.next(true);
         } catch (error) {
@@ -267,6 +281,28 @@ var AuthService = class _AuthService {
   setUser(user) {
     return __async(this, null, function* () {
       yield Preferences.set({ key: this.USER_KEY, value: JSON.stringify(user) });
+    });
+  }
+  getUserProfiles(user) {
+    if (Array.isArray(user.perfis) && user.perfis.length > 0) {
+      return user.perfis.filter((perfil) => Boolean(perfil));
+    }
+    if (user.perfil) {
+      return [user.perfil];
+    }
+    return [];
+  }
+  normalizeUser(user) {
+    if (!user) {
+      return user;
+    }
+    const perfis = Array.isArray(user.perfis) ? user.perfis.filter((perfil2) => Boolean(perfil2)) : [];
+    const perfil = user.perfil ?? perfis[0];
+    const ativo = typeof user.ativo === "boolean" ? user.ativo : (user.status ?? "").toUpperCase() === "ATIVO";
+    return __spreadProps(__spreadValues({}, user), {
+      perfil,
+      perfis: perfis.length > 0 ? perfis : perfil ? [perfil] : [],
+      ativo
     });
   }
   /**
@@ -471,4 +507,4 @@ var AuthService = class _AuthService {
 export {
   AuthService
 };
-//# sourceMappingURL=chunk-2YZPEABG.js.map
+//# sourceMappingURL=chunk-SUV23HSM.js.map

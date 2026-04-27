@@ -1,6 +1,6 @@
 import {
   AuthService
-} from "./chunk-2YZPEABG.js";
+} from "./chunk-SUV23HSM.js";
 import "./chunk-3HI66MTA.js";
 import {
   Component,
@@ -100,11 +100,11 @@ function HomePage_div_6_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(ctx_r0.user.email);
     \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate(ctx_r0.user.perfil.nomePerfil || "Sem perfil");
+    \u0275\u0275textInterpolate(ctx_r0.profileDisplayName);
     \u0275\u0275advance(4);
-    \u0275\u0275classProp("active", ctx_r0.user.ativo);
+    \u0275\u0275classProp("active", ctx_r0.userAtivo);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ctx_r0.user.ativo ? "Ativo" : "Inativo", " ");
+    \u0275\u0275textInterpolate1(" ", ctx_r0.userAtivo ? "Ativo" : "Inativo", " ");
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r0.canStartVistoria);
   }
@@ -120,6 +120,34 @@ var HomePage = class _HomePage {
   }
   get canStartVistoria() {
     return this.authService.hasPermission("vistoria_mobile:create");
+  }
+  get profileDisplayName() {
+    const perfis = this.getUserProfiles();
+    if (perfis.length === 0) {
+      return "Sem perfil";
+    }
+    return perfis.map((perfil) => perfil.nomePerfil).filter(Boolean).join(", ");
+  }
+  get userAtivo() {
+    if (!this.user) {
+      return false;
+    }
+    if (typeof this.user.ativo === "boolean") {
+      return this.user.ativo;
+    }
+    return (this.user.status ?? "").toUpperCase() === "ATIVO";
+  }
+  getUserProfiles() {
+    if (!this.user) {
+      return [];
+    }
+    if (Array.isArray(this.user.perfis) && this.user.perfis.length > 0) {
+      return this.user.perfis;
+    }
+    if (this.user.perfil) {
+      return [this.user.perfil];
+    }
+    return [];
   }
   static \u0275fac = function HomePage_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _HomePage)();
@@ -192,12 +220,12 @@ var HomePage = class _HomePage {
       <div class="profile-details">
         <div class="detail-row">
           <span class="detail-label">Perfil</span>
-          <span class="detail-value">{{ user.perfil.nomePerfil || 'Sem perfil' }}</span>
+          <span class="detail-value">{{ profileDisplayName }}</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Status</span>
-          <span class="detail-badge" [class.active]="user.ativo">
-            {{ user.ativo ? 'Ativo' : 'Inativo' }}
+          <span class="detail-badge" [class.active]="userAtivo">
+            {{ userAtivo ? 'Ativo' : 'Inativo' }}
           </span>
         </div>
       </div>
@@ -220,4 +248,4 @@ var HomePage = class _HomePage {
 export {
   HomePage
 };
-//# sourceMappingURL=chunk-IVKYWZ6X.js.map
+//# sourceMappingURL=chunk-KMMELWE3.js.map

@@ -38,6 +38,20 @@ export class ConfiguracaoController {
     return raw;
   }
 
+  private parseEmailEnvioConfig(raw: unknown) {
+    if (!raw) {
+      return undefined;
+    }
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return undefined;
+      }
+    }
+    return raw;
+  }
+
   @Post()
   @Permissions(Permission.CONFIGURACAO_ACCESS)
   @UseInterceptors(
@@ -79,6 +93,7 @@ export class ConfiguracaoController {
         ? req.body.auditarSenhaAlterada === 'true'
         : true,
       tempoFluxoConfig: this.parseTempoFluxoConfig(req.body.tempoFluxoConfig),
+      emailEnvioConfig: this.parseEmailEnvioConfig(req.body.emailEnvioConfig),
     };
 
     return this.configuracaoService.create(body, req?.user?.id);
@@ -161,6 +176,7 @@ export class ConfiguracaoController {
         ? req.body.auditarSenhaAlterada === 'true'
         : undefined,
       tempoFluxoConfig: this.parseTempoFluxoConfig(req.body.tempoFluxoConfig),
+      emailEnvioConfig: this.parseEmailEnvioConfig(req.body.emailEnvioConfig),
     };
 
     return this.configuracaoService.update(id, body, req?.user?.id);

@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -33,8 +34,11 @@ export class EmpresaTerceiraController {
 
   @Get()
   @Permissions(Permission.EMPRESATERCIRA_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
-  findAll() {
-    return this.service.findAll();
+  findAll(@Query('manutencao') manutencao?: string) {
+    const onlyManutencao = ['true', '1', 'sim', 'yes'].includes(
+      (manutencao ?? '').toLowerCase(),
+    );
+    return this.service.findAll(onlyManutencao);
   }
 
   @Get(':id')

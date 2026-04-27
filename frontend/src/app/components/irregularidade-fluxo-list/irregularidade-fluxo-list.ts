@@ -7,10 +7,12 @@ import { finalize } from 'rxjs/operators';
 import { IrregularidadeService } from '../../services/irregularidade.service';
 import { EmpresaTerceiraService } from '../../services/empresa-terceira.service';
 import {
-  IniciarManutencaoPayload,
+  IniciarManutencaoLotePayload,
+  RelatorioManutencaoExecucao,
   IrregularidadeHistoricoItem,
   IrregularidadeMidiaFluxoItem,
   IrregularidadeFluxoItem,
+  RelatorioManutencaoPreview,
   StatusIrregularidade,
 } from '../../models/irregularidade-fluxo.model';
 import { GravidadeCriticidade } from '../../models/matriz-criticidade.model';
@@ -21,6 +23,12 @@ import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/vei
 import { Veiculo } from '../../models/veiculo.model';
 import { ConfiguracaoService } from '../../services/configuracao.service';
 import { TempoFaixaConfig, TempoFluxoConfig } from '../../models/configuracao.model';
+import { AreaVistoriadaService } from '../../services/area-vistoriada.service';
+import { MatrizCriticidadeService } from '../../services/matriz-criticidade.service';
+import { VeiculoService } from '../../services/veiculo.service';
+import { AreaVistoriada, AreaComponente } from '../../models/area-vistoriada.model';
+import { MatrizCriticidade } from '../../models/matriz-criticidade.model';
+import { firstValueFrom } from 'rxjs';
 
 type FluxoModo = 'tratamento' | 'manutencao' | 'validacao-final';
 type ModalAcao =
@@ -47,6 +55,9 @@ export class IrregularidadeFluxoListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(AuthService);
   private readonly configuracaoService = inject(ConfiguracaoService);
+  private readonly areaService = inject(AreaVistoriadaService);
+  private readonly matrizService = inject(MatrizCriticidadeService);
+  private readonly veiculoService = inject(VeiculoService);
 
   loading = false;
   error = '';
@@ -81,6 +92,19 @@ export class IrregularidadeFluxoListComponent implements OnInit {
   modalObservacao = '';
   modalMotivoCancelamento = '';
   modalMotivoNaoProcede = '';
+  reclassAreas: AreaVistoriada[] = [];
+  reclassComponentes: Array<{ id: string; nome: string }> = [];
+  reclassSintomas: Array<{ id: string; descricao: string }> = [];
+  reclassAreaBusca = '';
+  reclassComponenteBusca = '';
+  reclassSintomaBusca = '';
+  showReclassAreaOptions = false;
+  showReclassComponenteOptions = false;
+  showReclassSintomaOptions = false;
+  reclassLoading = false;
+  manutencaoPreviewLoading = false;
+  manutencaoPreview: RelatorioManutencaoPreview | null = null;
+  manutencaoEtapa: 'idle' | 'gerando' | 'enviando' = 'idle';
   imagemAmpliadaSrc = '';
   imagemAmpliadaTitulo = '';
   tempoFaixasAtivas: TempoFaixaConfig[] = [];
@@ -156,7 +180,7 @@ export class IrregularidadeFluxoListComponent implements OnInit {
       return;
     }
     if (this.modo === 'manutencao') {
-      this.titulo = 'Fila de Manutenção';
+      this.titulo = 'Manutenção';
       this.descricao =
         'Itens em manutenção da empresa logada, com ações de conclusão e não procede.';
       this.statusFiltro = [StatusIrregularidade.EM_MANUTENCAO];
@@ -169,7 +193,7 @@ export class IrregularidadeFluxoListComponent implements OnInit {
   }
 
   private loadEmpresas(): void {
-    this.empresaService.getAll().subscribe({
+    this.empresaService.getAll({ somenteManutencao: true }).subscribe({
       next: (empresas) => {
         this.empresas = empresas ?? [];
       },
@@ -179,7 +203,7 @@ export class IrregularidadeFluxoListComponent implements OnInit {
     });
   }
 
-  loadItems(): void {
+  loadItems(avisoPosEmail?: string): void {
     this.loading = true;
     this.error = '';
     this.info = '';
@@ -204,7 +228,9 @@ export class IrregularidadeFluxoListComponent implements OnInit {
             return aTime - bTime;
           });
           this.selectedIds.clear();
-          if (this.items.length === 0) {
+          if (avisoPosEmail?.trim()) {
+            this.info = avisoPosEmail.trim();
+          } else if (this.items.length === 0) {
             this.info = 'Nenhuma irregularidade encontrada com os filtros informados.';
           }
         },
@@ -265,6 +291,10 @@ export class IrregularidadeFluxoListComponent implements OnInit {
   openBulkActionModal(acao: ModalAcao): void {
     const ids = this.getSelectedIds();
     if (!ids.length) return;
+    if (acao === 'reclassificar' && ids.length !== 1) {
+      this.info = 'Para reclassificar, selecione apenas uma irregularidade.';
+      return;
+    }
     const first = this.items.find((item) => item.id === ids[0]);
     if (!first) return;
     this.openActionModal(first, acao, ids);
@@ -281,9 +311,24 @@ export class IrregularidadeFluxoListComponent implements OnInit {
     this.modalIdArea = item.idarea;
     this.modalIdComponente = item.idcomponente;
     this.modalIdSintoma = item.idsintoma;
-    this.modalObservacao = '';
+    this.modalObservacao = acao === 'reclassificar' ? item.observacao ?? '' : '';
     this.modalMotivoCancelamento = '';
     this.modalMotivoNaoProcede = '';
+    this.manutencaoPreview = null;
+    this.manutencaoPreviewLoading = false;
+    this.reclassAreas = [];
+    this.reclassComponentes = [];
+    this.reclassSintomas = [];
+    this.reclassAreaBusca = item.nomeArea ?? '';
+    this.reclassComponenteBusca = item.nomeComponente ?? '';
+    this.reclassSintomaBusca = item.descricaoSintoma ?? '';
+    this.showReclassAreaOptions = false;
+    this.showReclassComponenteOptions = false;
+    this.showReclassSintomaOptions = false;
+    this.reclassLoading = false;
+    if (acao === 'reclassificar') {
+      void this.prepareReclassificacaoOptions(item);
+    }
   }
 
   closeActionModal(): void {
@@ -293,6 +338,19 @@ export class IrregularidadeFluxoListComponent implements OnInit {
     this.actionTargetIds = [];
     this.isSavingAction = false;
     this.modalError = '';
+    this.manutencaoPreview = null;
+    this.manutencaoPreviewLoading = false;
+    this.manutencaoEtapa = 'idle';
+    this.reclassAreas = [];
+    this.reclassComponentes = [];
+    this.reclassSintomas = [];
+    this.reclassAreaBusca = '';
+    this.reclassComponenteBusca = '';
+    this.reclassSintomaBusca = '';
+    this.showReclassAreaOptions = false;
+    this.showReclassComponenteOptions = false;
+    this.showReclassSintomaOptions = false;
+    this.reclassLoading = false;
   }
 
   getModalTitle(): string {
@@ -306,7 +364,7 @@ export class IrregularidadeFluxoListComponent implements OnInit {
       case 'concluir':
         return 'Concluir manutenção';
       case 'nao-procede':
-        return 'Marcar não procede';
+        return 'Não Procede';
       case 'validar-final':
         return 'Validar final';
       case 'reprovar-final':
@@ -317,7 +375,12 @@ export class IrregularidadeFluxoListComponent implements OnInit {
   }
 
   getModalPrimaryButtonLabel(): string {
-    if (this.isSavingAction) return 'Salvando...';
+    if (this.isSavingAction) {
+      if (this.modalAcao === 'iniciar-manutencao') {
+        return 'Enviando e-mail e encaminhando...';
+      }
+      return 'Salvando...';
+    }
     switch (this.modalAcao) {
       case 'iniciar-manutencao':
         return 'Enviar manutenção';
@@ -339,15 +402,16 @@ export class IrregularidadeFluxoListComponent implements OnInit {
   }
 
   getModalScopeLabel(): string {
-    return this.actionTargetIds.length > 1
-      ? `Aplicando em ${this.actionTargetIds.length} irregularidades selecionadas.`
-      : `Aplicando em 1 irregularidade.`;
+    if (this.actionTargetIds.length <= 1) {
+      return '';
+    }
+    return `Aplicando em ${this.actionTargetIds.length} irregularidades selecionadas.`;
   }
 
   canSubmitActionModal(): boolean {
     if (this.isSavingAction || !this.modalAcao || !this.selectedItemForAction) return false;
     if (this.modalAcao === 'iniciar-manutencao') {
-      return !!this.modalIdEmpresaManutencao;
+      return !!this.modalIdEmpresaManutencao && !!this.manutencaoPreview;
     }
     if (this.modalAcao === 'reclassificar') {
       return !!(
@@ -357,6 +421,7 @@ export class IrregularidadeFluxoListComponent implements OnInit {
       );
     }
     if (this.modalAcao === 'cancelar') return !!this.modalMotivoCancelamento.trim();
+    if (this.modalAcao === 'concluir') return !!this.modalObservacao.trim();
     if (this.modalAcao === 'nao-procede') return !!this.modalMotivoNaoProcede.trim();
     if (this.modalAcao === 'reprovar-final') return !!this.modalObservacao.trim();
     return true;
@@ -374,13 +439,32 @@ export class IrregularidadeFluxoListComponent implements OnInit {
     let fallbackError = 'Erro ao executar ação.';
 
     if (this.modalAcao === 'iniciar-manutencao') {
-      const payload: IniciarManutencaoPayload = {
+      const payload: IniciarManutencaoLotePayload = {
         idEmpresaManutencao: this.modalIdEmpresaManutencao,
+        idsIrregularidades: itemIds,
       };
-      for (const itemId of itemIds) {
-        requests.push(this.irregularidadeService.iniciarManutencao(itemId, payload));
-      }
-      fallbackError = 'Erro ao enviar irregularidades para manutenção.';
+      this.isSavingAction = true;
+      this.manutencaoEtapa = 'enviando';
+      this.modalError = '';
+      this.irregularidadeService
+        .iniciarManutencaoLote(payload)
+        .pipe(
+          finalize(() => {
+            this.isSavingAction = false;
+            this.manutencaoEtapa = 'idle';
+          }),
+        )
+        .subscribe({
+          next: (res) => {
+            this.closeActionModal();
+            this.loadItems(this.buildMensagemSucessoManutencao(res));
+          },
+          error: (err) => {
+            this.modalError =
+              err?.error?.message || 'Erro ao enviar irregularidades para manutenção.';
+          },
+        });
+      return;
     } else if (this.modalAcao === 'reclassificar') {
       for (const itemId of itemIds) {
         requests.push(
@@ -456,8 +540,331 @@ export class IrregularidadeFluxoListComponent implements OnInit {
       });
   }
 
+  gerarPreviewManutencao(): void {
+    if (!this.modalIdEmpresaManutencao) {
+      this.modalError = 'Selecione a empresa de manutenção.';
+      return;
+    }
+    if (!this.actionTargetIds.length) {
+      this.modalError = 'Selecione ao menos uma irregularidade.';
+      return;
+    }
+
+    this.modalError = '';
+    this.manutencaoEtapa = 'gerando';
+    this.manutencaoPreviewLoading = true;
+    this.manutencaoPreview = null;
+
+    this.irregularidadeService
+      .previewIniciarManutencaoLote({
+        idEmpresaManutencao: this.modalIdEmpresaManutencao,
+        idsIrregularidades: this.actionTargetIds,
+      })
+      .pipe(
+        finalize(() => {
+          this.manutencaoPreviewLoading = false;
+          this.manutencaoEtapa = 'idle';
+        }),
+      )
+      .subscribe({
+        next: (preview) => {
+          this.manutencaoPreview = preview;
+        },
+        error: (err) => {
+          this.modalError = err?.error?.message || 'Erro ao gerar pré-visualização do relatório.';
+        },
+      });
+  }
+
+  onEmpresaManutencaoChange(): void {
+    this.manutencaoPreview = null;
+    this.modalError = '';
+    this.manutencaoEtapa = 'idle';
+    if (this.modalIdEmpresaManutencao) {
+      this.gerarPreviewManutencao();
+    }
+  }
+
+  onActionModalOverlayClick(): void {
+    return;
+  }
+
+  private async prepareReclassificacaoOptions(item: IrregularidadeFluxoItem): Promise<void> {
+    this.reclassLoading = true;
+    this.modalError = '';
+    try {
+      const idModelo = await this.resolveModeloVeiculoId(item.idVeiculo);
+      this.reclassAreas = await firstValueFrom(this.areaService.getAll(idModelo, true));
+      await this.loadComponentesByArea(this.modalIdArea, item.idcomponente);
+      await this.loadSintomasByComponente(this.modalIdComponente, item.idsintoma);
+      this.syncReclassLabels(item);
+    } catch (err: any) {
+      this.modalError =
+        err?.error?.message || 'Não foi possível carregar opções de reclassificação.';
+    } finally {
+      this.reclassLoading = false;
+    }
+  }
+
+  private async resolveModeloVeiculoId(idVeiculo?: string): Promise<string | undefined> {
+    if (!idVeiculo) return undefined;
+    const veiculo = await firstValueFrom(this.veiculoService.getById(idVeiculo));
+    return veiculo?.idModelo;
+  }
+
+  private async loadComponentesByArea(
+    idArea: string,
+    keepSelectedId?: string,
+  ): Promise<void> {
+    this.reclassComponentes = [];
+    this.reclassSintomas = [];
+    if (!idArea) return;
+    const vinculados = await firstValueFrom(this.areaService.listComponentes(idArea));
+    this.reclassComponentes = (vinculados ?? [])
+      .map((v: AreaComponente | Record<string, unknown>) => {
+        const raw = v as Record<string, unknown>;
+        const id = String(raw['idComponente'] ?? raw['idcomponente'] ?? '').trim();
+        const componente = raw['componente'] as Record<string, unknown> | undefined;
+        const nome = String(componente?.['nome'] ?? raw['nomeComponente'] ?? id).trim();
+        return { id, nome };
+      })
+      .filter((c) => !!c.id)
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+    if (
+      keepSelectedId &&
+      this.reclassComponentes.some((c) => c.id === keepSelectedId)
+    ) {
+      this.modalIdComponente = keepSelectedId;
+    } else {
+      this.modalIdComponente = '';
+      this.reclassComponenteBusca = '';
+      this.modalIdSintoma = '';
+      this.reclassSintomaBusca = '';
+    }
+  }
+
+  private async loadSintomasByComponente(
+    idComponente: string,
+    keepSelectedId?: string,
+  ): Promise<void> {
+    this.reclassSintomas = [];
+    if (!idComponente) return;
+    const matriz = await firstValueFrom(this.matrizService.getAll(idComponente));
+    const map = new Map<string, string>();
+    (matriz ?? []).forEach((m: MatrizCriticidade) => {
+      if (m.idSintoma) {
+        map.set(m.idSintoma, m.sintoma?.descricao ?? m.idSintoma);
+      }
+    });
+    this.reclassSintomas = Array.from(map.entries())
+      .map(([id, descricao]) => ({ id, descricao }))
+      .sort((a, b) => a.descricao.localeCompare(b.descricao));
+    if (
+      keepSelectedId &&
+      this.reclassSintomas.some((s) => s.id === keepSelectedId)
+    ) {
+      this.modalIdSintoma = keepSelectedId;
+    } else {
+      this.modalIdSintoma = '';
+      this.reclassSintomaBusca = '';
+    }
+  }
+
+  private syncReclassLabels(item: IrregularidadeFluxoItem): void {
+    const areaAtual =
+      this.reclassAreas.find((a) => a.id === this.modalIdArea)?.nome || item.nomeArea || '';
+    const componenteAtual =
+      this.reclassComponentes.find((c) => c.id === this.modalIdComponente)?.nome ||
+      item.nomeComponente ||
+      '';
+    const sintomaAtual =
+      this.reclassSintomas.find((s) => s.id === this.modalIdSintoma)?.descricao ||
+      item.descricaoSintoma ||
+      '';
+    this.reclassAreaBusca = areaAtual;
+    this.reclassComponenteBusca = componenteAtual;
+    this.reclassSintomaBusca = sintomaAtual;
+  }
+
+  get filteredReclassAreas(): AreaVistoriada[] {
+    const termo = this.reclassAreaBusca.trim().toLowerCase();
+    if (!termo) return this.reclassAreas;
+    return this.reclassAreas.filter((a) => a.nome.toLowerCase().includes(termo));
+  }
+
+  get filteredReclassComponentes(): Array<{ id: string; nome: string }> {
+    const termo = this.reclassComponenteBusca.trim().toLowerCase();
+    if (!termo) return this.reclassComponentes;
+    return this.reclassComponentes.filter((c) =>
+      c.nome.toLowerCase().includes(termo),
+    );
+  }
+
+  get filteredReclassSintomas(): Array<{ id: string; descricao: string }> {
+    const termo = this.reclassSintomaBusca.trim().toLowerCase();
+    if (!termo) return this.reclassSintomas;
+    return this.reclassSintomas.filter((s) =>
+      s.descricao.toLowerCase().includes(termo),
+    );
+  }
+
+  onReclassAreaFocus(): void {
+    this.showReclassAreaOptions = true;
+  }
+
+  onReclassComponenteFocus(): void {
+    if (!this.modalIdArea) return;
+    this.showReclassComponenteOptions = true;
+  }
+
+  onReclassSintomaFocus(): void {
+    if (!this.modalIdComponente) return;
+    this.showReclassSintomaOptions = true;
+  }
+
+  onReclassAreaBlur(): void {
+    setTimeout(() => (this.showReclassAreaOptions = false), 150);
+  }
+
+  onReclassComponenteBlur(): void {
+    setTimeout(() => (this.showReclassComponenteOptions = false), 150);
+  }
+
+  onReclassSintomaBlur(): void {
+    setTimeout(() => (this.showReclassSintomaOptions = false), 150);
+  }
+
+  selectReclassArea(area: AreaVistoriada): void {
+    this.reclassAreaBusca = area.nome;
+    this.modalIdArea = area.id;
+    this.showReclassAreaOptions = false;
+    this.modalIdComponente = '';
+    this.reclassComponenteBusca = '';
+    this.modalIdSintoma = '';
+    this.reclassSintomaBusca = '';
+    this.reclassSintomas = [];
+    void this.loadComponentesByArea(this.modalIdArea).then(() => {
+      this.showReclassComponenteOptions = true;
+    });
+  }
+
+  selectReclassComponente(comp: { id: string; nome: string }): void {
+    this.reclassComponenteBusca = comp.nome;
+    this.modalIdComponente = comp.id;
+    this.showReclassComponenteOptions = false;
+    this.modalIdSintoma = '';
+    this.reclassSintomaBusca = '';
+    void this.loadSintomasByComponente(this.modalIdComponente);
+  }
+
+  selectReclassSintoma(sint: { id: string; descricao: string }): void {
+    this.reclassSintomaBusca = sint.descricao;
+    this.modalIdSintoma = sint.id;
+    this.showReclassSintomaOptions = false;
+  }
+
+  onReclassAreaInputChange(): void {
+    this.showReclassAreaOptions = true;
+    const termo = this.reclassAreaBusca.trim().toLowerCase();
+    const found = this.reclassAreas.find(
+      (a) => a.nome.trim().toLowerCase() === termo,
+    );
+    this.modalIdArea = found?.id ?? '';
+    this.modalIdComponente = '';
+    this.reclassComponenteBusca = '';
+    this.modalIdSintoma = '';
+    this.reclassSintomaBusca = '';
+    this.reclassSintomas = [];
+    if (this.modalIdArea) {
+      void this.loadComponentesByArea(this.modalIdArea);
+    } else {
+      this.reclassComponentes = [];
+    }
+  }
+
+  onReclassComponenteInputChange(): void {
+    this.showReclassComponenteOptions = !!this.modalIdArea;
+    const termo = this.reclassComponenteBusca.trim().toLowerCase();
+    const found = this.reclassComponentes.find(
+      (c) => c.nome.trim().toLowerCase() === termo,
+    );
+    this.modalIdComponente = found?.id ?? '';
+    this.modalIdSintoma = '';
+    this.reclassSintomaBusca = '';
+    if (this.modalIdComponente) {
+      void this.loadSintomasByComponente(this.modalIdComponente);
+    } else {
+      this.reclassSintomas = [];
+    }
+  }
+
+  onReclassSintomaInputChange(): void {
+    this.showReclassSintomaOptions = !!this.modalIdComponente;
+    const termo = this.reclassSintomaBusca.trim().toLowerCase();
+    const found = this.reclassSintomas.find(
+      (s) => s.descricao.trim().toLowerCase() === termo,
+    );
+    this.modalIdSintoma = found?.id ?? '';
+  }
+
+  visualizarPreviewRelatorio(): void {
+    if (!this.modalIdEmpresaManutencao || !this.actionTargetIds.length) {
+      return;
+    }
+    this.modalError = '';
+    this.irregularidadeService
+      .previewPdfIniciarManutencaoLote({
+        idEmpresaManutencao: this.modalIdEmpresaManutencao,
+        idsIrregularidades: this.actionTargetIds,
+      })
+      .subscribe({
+        next: async (blob) => {
+          if (!blob?.size) {
+            this.modalError = 'O servidor retornou um PDF vazio.';
+            return;
+          }
+          const head = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+          const isPdf = head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46;
+          if (!isPdf) {
+            try {
+              const text = await blob.text();
+              const parsed = JSON.parse(text) as { message?: string };
+              this.modalError = parsed?.message ?? 'Resposta inválida ao gerar o PDF.';
+            } catch {
+              this.modalError = 'Não foi possível abrir o PDF (arquivo corrompido ou formato inválido).';
+            }
+            return;
+          }
+          const pdfBlob =
+            blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' });
+          const url = URL.createObjectURL(pdfBlob);
+          window.open(url, '_blank', 'noopener,noreferrer');
+          setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        },
+        error: (err) => {
+          const body = err?.error;
+          if (body instanceof Blob) {
+            void body.text().then((text) => {
+              try {
+                const parsed = JSON.parse(text) as { message?: string };
+                this.modalError = parsed?.message ?? 'Erro ao gerar visualização em PDF.';
+              } catch {
+                this.modalError = text || 'Erro ao gerar visualização em PDF.';
+              }
+            });
+            return;
+          }
+          this.modalError = err?.error?.message || 'Erro ao gerar visualização em PDF.';
+        },
+      });
+  }
+
   get hasSelectedItems(): boolean {
     return this.getSelectedIds().length > 0;
+  }
+
+  get canReclassificarSelecionado(): boolean {
+    return this.getSelectedIds().length === 1;
   }
 
   get canShowTratamentoActions(): boolean {
@@ -632,6 +1039,46 @@ export class IrregularidadeFluxoListComponent implements OnInit {
     return `${this.getStatusLabel(evento.statusOrigem)} -> ${destino}`;
   }
 
+  getAcaoHistoricoLabel(acao?: string | null): string {
+    if (!acao) {
+      return '-';
+    }
+
+    const normalizada = acao.trim().toLowerCase();
+    switch (normalizada) {
+      case 'registrar':
+        return 'Registrar irregularidade';
+      case 'reclassificar':
+        return 'Reclassificar irregularidade';
+      case 'cancelar':
+        return 'Cancelar irregularidade';
+      case 'iniciar_manutencao':
+        return 'Iniciar manutenção';
+      case 'concluir_manutencao':
+        return 'Concluir manutenção';
+      case 'marcar_nao_procede':
+        return 'Marcar como não procede';
+      case 'validar_final':
+        return 'Validar final';
+      case 'reprovar_validacao_final':
+        return 'Reprovar validação final';
+      default:
+        return this.formatarAcaoHistoricoFallback(acao);
+    }
+  }
+
+  private formatarAcaoHistoricoFallback(acao: string): string {
+    const texto = acao
+      .trim()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+    if (!texto) {
+      return '-';
+    }
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+
   formatTempoEtapa(tempoEtapaMs?: number): string {
     if (tempoEtapaMs === null || tempoEtapaMs === undefined || tempoEtapaMs < 0) {
       return '-';
@@ -649,6 +1096,13 @@ export class IrregularidadeFluxoListComponent implements OnInit {
       return `${horas}h ${minutos}min`;
     }
     return `${minutos}min`;
+  }
+
+  getTempoReferencia(item: IrregularidadeFluxoItem): string {
+    if (item.statusAtual === StatusIrregularidade.EM_MANUTENCAO && item.entradaStatusEm) {
+      return item.entradaStatusEm;
+    }
+    return item.criadoEm;
   }
 
   getTempoDesdeRegistro(criadoEm: string): string {
@@ -740,6 +1194,13 @@ export class IrregularidadeFluxoListComponent implements OnInit {
       return this.statusOptions;
     }
     return [this.filtroStatus];
+  }
+
+  private buildMensagemSucessoManutencao(res: RelatorioManutencaoExecucao): string {
+    const total = Number(res?.totalEnviadas ?? 0);
+    const totalVeiculos = Number(res?.resumo?.totalVeiculos ?? 0);
+    const totalAnexos = Number(res?.resumo?.totalAnexos ?? 0);
+    return `Encaminhamento concluído com sucesso: ${total} irregularidade(s) em ${totalVeiculos} veículo(s), com ${totalAnexos} anexo(s) no relatório.`;
   }
 }
 

@@ -7,7 +7,7 @@ import { SecureStoragePlugin } from 'capacitor-secure-storage-plugin';
 import { NativeBiometric } from 'capacitor-native-biometric';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Usuario, AuthResponse } from '../models/usuario.model';
+import { Usuario, Perfil, AuthResponse } from '../models/usuario.model';
 import { ErrorMessageService } from './error-message.service';
 
 @Injectable({
@@ -62,9 +62,10 @@ export class AuthService {
         throw new Error('Tokens de autenticação não recebidos');
       }
       await this.setTokens(accessToken, refreshToken);
-      await this.setUser(response.user);
+      const normalizedUser = this.normalizeUser(response.user);
+      await this.setUser(normalizedUser);
       
-      this.currentUserSubject.next(response.user);
+      this.currentUserSubject.next(normalizedUser);
       this.isAuthenticatedSubject.next(true);
       this.biometricSessionVerified = true;
       
@@ -160,17 +161,29 @@ export class AuthService {
     if (!user) {
       return [];
     }
-    const raw = user.perfil?.permissoes;
-    if (!raw) {
-      return [];
+    const permissions = new Set<string>();
+    const perfis = this.getUserProfiles(user);
+    for (const perfil of perfis) {
+      const raw = perfil?.permissoes;
+      if (!raw) {
+        continue;
+      }
+      if (Array.isArray(raw)) {
+        raw.forEach((permission) => {
+          const normalized = `${permission ?? ''}`.trim();
+          if (normalized) {
+            permissions.add(normalized);
+          }
+        });
+        continue;
+      }
+      raw
+        .split(',')
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0)
+        .forEach((value) => permissions.add(value));
     }
-    if (Array.isArray(raw)) {
-      return raw;
-    }
-    return raw
-      .split(',')
-      .map((value) => value.trim())
-      .filter((value) => value.length > 0);
+    return Array.from(permissions);
   }
 
   /**
@@ -218,7 +231,7 @@ export class AuthService {
 
     if (accessToken && userStr.value) {
       try {
-        const user = JSON.parse(userStr.value);
+        const user = this.normalizeUser(JSON.parse(userStr.value));
         this.currentUserSubject.next(user);
         this.isAuthenticatedSubject.next(true);
       } catch (error) {
@@ -240,6 +253,37 @@ export class AuthService {
    */
   private async setUser(user: Usuario): Promise<void> {
     await Preferences.set({ key: this.USER_KEY, value: JSON.stringify(user) });
+  }
+
+  private getUserProfiles(user: Usuario): Perfil[] {
+    if (Array.isArray(user.perfis) && user.perfis.length > 0) {
+      return user.perfis.filter((perfil): perfil is Perfil => Boolean(perfil));
+    }
+    if (user.perfil) {
+      return [user.perfil];
+    }
+    return [];
+  }
+
+  private normalizeUser(user: Usuario): Usuario {
+    if (!user) {
+      return user;
+    }
+    const perfis = Array.isArray(user.perfis)
+      ? user.perfis.filter((perfil): perfil is Perfil => Boolean(perfil))
+      : [];
+    const perfil = user.perfil ?? perfis[0];
+    const ativo =
+      typeof user.ativo === 'boolean'
+        ? user.ativo
+        : ((user.status ?? '').toUpperCase() === 'ATIVO');
+
+    return {
+      ...user,
+      perfil,
+      perfis: perfis.length > 0 ? perfis : (perfil ? [perfil] : []),
+      ativo,
+    };
   }
 
   /**

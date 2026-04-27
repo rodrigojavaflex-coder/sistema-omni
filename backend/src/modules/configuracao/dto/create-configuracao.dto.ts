@@ -94,4 +94,22 @@ export class CreateConfiguracaoDto {
   @IsOptional()
   @IsObject()
   tempoFluxoConfig?: any;
+
+  @ApiPropertyOptional({
+    description: 'Configuração SMTP para envio de e-mails de relatório',
+    example: {
+      ativo: false,
+      host: 'smtp.seudominio.com.br',
+      porta: 587,
+      usuario: 'usuario@seudominio.com.br',
+      senha: '******',
+      usarTls: true,
+      remetenteNome: 'OMNI',
+      remetenteEmail: 'nao-responda@seudominio.com.br',
+      assuntoPadrao: 'Relatório de Ordem de Serviço',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  emailEnvioConfig?: any;
 }

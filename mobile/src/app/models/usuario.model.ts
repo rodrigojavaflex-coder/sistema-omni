@@ -9,8 +9,10 @@ export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  perfil: Perfil;
-  ativo: boolean;
+  perfil?: Perfil;
+  perfis?: Perfil[];
+  ativo?: boolean;
+  status?: string;
   tema?: string;
 }
 

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -16,6 +17,27 @@ export class EmpresaTerceiraService {
     private readonly repository: Repository<EmpresaTerceira>,
   ) {}
 
+  private normalizeEmailsRelatorio(input?: string): string | undefined {
+    if (!input) {
+      return undefined;
+    }
+    const emails = input
+      .split(',')
+      .map((email) => email.trim())
+      .filter(Boolean);
+    if (emails.length === 0) {
+      return undefined;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidos = emails.filter((email) => !emailRegex.test(email));
+    if (invalidos.length > 0) {
+      throw new BadRequestException(
+        `E-mails inválidos para relatório: ${invalidos.join(', ')}`,
+      );
+    }
+    return emails.join(', ');
+  }
+
   async create(dto: CreateEmpresaTerceiraDto): Promise<EmpresaTerceira> {
     const descricaoNorm = dto.descricao.trim();
     const existente = await this.repository.findOne({
@@ -26,12 +48,17 @@ export class EmpresaTerceiraService {
         `Já existe uma empresa terceira com a descrição "${descricaoNorm}"`,
       );
     }
-    const entidade = this.repository.create({ descricao: descricaoNorm });
+    const entidade = this.repository.create({
+      descricao: descricaoNorm,
+      emailsRelatorio: this.normalizeEmailsRelatorio(dto.emailsRelatorio),
+      ehEmpresaManutencao: !!dto.ehEmpresaManutencao,
+    });
     return this.repository.save(entidade);
   }
 
-  async findAll(): Promise<EmpresaTerceira[]> {
+  async findAll(onlyManutencao = false): Promise<EmpresaTerceira[]> {
     return this.repository.find({
+      where: onlyManutencao ? { ehEmpresaManutencao: true } : {},
       order: { descricao: 'ASC' },
     });
   }
@@ -60,6 +87,12 @@ export class EmpresaTerceiraService {
         );
       }
       entidade.descricao = descricaoNorm;
+    }
+    if (dto.emailsRelatorio !== undefined) {
+      entidade.emailsRelatorio = this.normalizeEmailsRelatorio(dto.emailsRelatorio);
+    }
+    if (dto.ehEmpresaManutencao !== undefined) {
+      entidade.ehEmpresaManutencao = !!dto.ehEmpresaManutencao;
     }
     return this.repository.save(entidade);
   }

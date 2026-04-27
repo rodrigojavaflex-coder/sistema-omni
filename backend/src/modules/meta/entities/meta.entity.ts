@@ -64,6 +64,9 @@ export class Meta extends BaseEntity {
   })
   unidade: UnidadeMeta;
 
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  tipoDaUnidade?: string | null;
+
   @Column({
     type: 'varchar',
     length: 20,

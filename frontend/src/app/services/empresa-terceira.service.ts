@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
@@ -16,8 +16,12 @@ export class EmpresaTerceiraService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<EmpresaTerceira[]> {
-    return this.http.get<EmpresaTerceira[]>(this.apiUrl);
+  getAll(options?: { somenteManutencao?: boolean }): Observable<EmpresaTerceira[]> {
+    let params = new HttpParams();
+    if (options?.somenteManutencao) {
+      params = params.set('manutencao', 'true');
+    }
+    return this.http.get<EmpresaTerceira[]>(this.apiUrl, { params });
   }
 
   getById(id: string): Observable<EmpresaTerceira> {

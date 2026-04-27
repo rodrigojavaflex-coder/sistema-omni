@@ -12,7 +12,7 @@ import {
   IonButton
 } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
-import { Usuario } from '../../models/usuario.model';
+import { Perfil, Usuario } from '../../models/usuario.model';
 
 @Component({
   selector: 'app-home',
@@ -43,5 +43,36 @@ export class HomePage implements OnInit {
 
   get canStartVistoria(): boolean {
     return this.authService.hasPermission('vistoria_mobile:create');
+  }
+
+  get profileDisplayName(): string {
+    const perfis = this.getUserProfiles();
+    if (perfis.length === 0) {
+      return 'Sem perfil';
+    }
+    return perfis.map((perfil) => perfil.nomePerfil).filter(Boolean).join(', ');
+  }
+
+  get userAtivo(): boolean {
+    if (!this.user) {
+      return false;
+    }
+    if (typeof this.user.ativo === 'boolean') {
+      return this.user.ativo;
+    }
+    return (this.user.status ?? '').toUpperCase() === 'ATIVO';
+  }
+
+  private getUserProfiles(): Perfil[] {
+    if (!this.user) {
+      return [];
+    }
+    if (Array.isArray(this.user.perfis) && this.user.perfis.length > 0) {
+      return this.user.perfis;
+    }
+    if (this.user.perfil) {
+      return [this.user.perfil];
+    }
+    return [];
   }
 }

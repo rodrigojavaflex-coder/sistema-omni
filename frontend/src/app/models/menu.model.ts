@@ -149,6 +149,19 @@ export const MENU_CONFIGURATION: MenuConfig = {
               ],
               parentMenu: 'Cadastros'
             },
+            {
+              label: 'Empresas',
+              title: 'Empresas Terceiras',
+              route: '/empresa-terceira',
+              icon: 'feather-briefcase',
+              requiredPermissions: [
+                Permission.EMPRESATERCIRA_CREATE,
+                Permission.EMPRESATERCIRA_READ,
+                Permission.EMPRESATERCIRA_UPDATE,
+                Permission.EMPRESATERCIRA_DELETE
+              ],
+              parentMenu: 'Cadastros'
+            },
           ]
         },
         {
@@ -205,19 +218,6 @@ export const MENU_CONFIGURATION: MenuConfig = {
                 Permission.CATEGORIAOCORRENCIA_READ,
                 Permission.CATEGORIAOCORRENCIA_UPDATE,
                 Permission.CATEGORIAOCORRENCIA_DELETE
-              ],
-              parentMenu: 'Cadastros'
-            },
-            {
-              label: 'Empresas',
-              title: 'Empresas Terceiras',
-              route: '/empresa-terceira',
-              icon: 'feather-briefcase',
-              requiredPermissions: [
-                Permission.EMPRESATERCIRA_CREATE,
-                Permission.EMPRESATERCIRA_READ,
-                Permission.EMPRESATERCIRA_UPDATE,
-                Permission.EMPRESATERCIRA_DELETE
               ],
               parentMenu: 'Cadastros'
             },
@@ -328,21 +328,32 @@ export const MENU_CONFIGURATION: MenuConfig = {
               label: 'Tratamento',
               route: '/irregularidades/tratamento',
               icon: 'feather-activity',
-              requiredPermissions: [Permission.IRREGULARIDADE_TRATAMENTO_READ],
+              requiredPermissions: [
+                Permission.IRREGULARIDADE_TRATAMENTO_READ,
+                Permission.IRREGULARIDADE_TRATAMENTO_UPDATE,
+              ],
               parentMenu: 'Gestão'
             },
             {
               label: 'Manutenção',
               route: '/irregularidades/manutencao',
               icon: 'feather-settings',
-              requiredPermissions: [Permission.IRREGULARIDADE_MANUTENCAO_READ],
+              requiredPermissions: [
+                Permission.IRREGULARIDADE_MANUTENCAO_READ,
+                Permission.IRREGULARIDADE_MANUTENCAO_START,
+                Permission.IRREGULARIDADE_MANUTENCAO_FINISH,
+                Permission.IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING,
+              ],
               parentMenu: 'Gestão'
             },
             {
               label: 'Validação',
               route: '/irregularidades/validacao-final',
               icon: 'feather-check',
-              requiredPermissions: [Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ],
+              requiredPermissions: [
+                Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
+                Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
+              ],
               parentMenu: 'Gestão'
             }
           ]
