@@ -383,6 +383,23 @@ export class AuthService {
     }
   }
 
+  async requestPasswordReset(email: string): Promise<{ message: string }> {
+    return firstValueFrom(
+      this.http.post<{ message: string }>(`${this.apiUrl}/password-reset/request`, { email }),
+    );
+  }
+
+  async confirmPasswordReset(body: {
+    email: string;
+    code: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<{ message: string }> {
+    return firstValueFrom(
+      this.http.post<{ message: string }>(`${this.apiUrl}/password-reset/confirm`, body),
+    );
+  }
+
   private clearAuthData(shouldRedirect: boolean = false): void {
     // Evitar redirecionamentos desnecessários se já estamos na página de login
     const isAlreadyOnLogin = this.router.url.includes('/login');

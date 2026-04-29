@@ -1,0 +1,123 @@
+<ion-content [fullscreen]="true">
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <h1 class="login-title">Redefinir senha</h1>
+        <p class="login-subtitle" *ngIf="step === 1">Informe o e-mail do seu login</p>
+        <p class="login-subtitle" *ngIf="step === 2 && !sucesso">Código e nova senha</p>
+        <p class="login-subtitle" *ngIf="sucesso" style="text-align: center">{{ sucessoMensagem }}</p>
+        <p class="digital-hint" *ngIf="sucesso && avisoDigital">{{ avisoDigital }}</p>
+      </div>
+
+      <ng-container *ngIf="sucesso; else formBlock">
+        <div class="login-form" style="margin-top: 0.5rem">
+          <button type="button" class="login-button" (click)="irParaLogin()">Ir para o login</button>
+        </div>
+      </ng-container>
+      <ng-template #formBlock>
+        <form
+          *ngIf="step === 1"
+          [formGroup]="formEmail"
+          (ngSubmit)="onSubmitEmail()"
+          class="login-form"
+        >
+          <div class="input-group">
+            <input
+              type="email"
+              id="rs-email"
+              formControlName="email"
+              class="form-input"
+              [class.error]="formEmail.get('email')?.invalid && formEmail.get('email')?.touched"
+              placeholder="E-mail"
+              autocomplete="email"
+            />
+            <div
+              class="error-message"
+              *ngIf="formEmail.get('email')?.invalid && formEmail.get('email')?.touched"
+            >
+              <span *ngIf="formEmail.get('email')?.errors?.['required']">E-mail é obrigatório</span>
+              <span *ngIf="formEmail.get('email')?.errors?.['email']">E-mail inválido</span>
+            </div>
+          </div>
+          <div class="alert-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+          <button type="submit" class="login-button" [disabled]="formEmail.invalid || isLoading">
+            <span *ngIf="!isLoading" class="button-text">Enviar código</span>
+            <span *ngIf="isLoading" class="button-text">
+              <ion-spinner name="crescent"></ion-spinner>
+              Enviando...
+            </span>
+          </button>
+          <a routerLink="/login" class="pr-link">Voltar ao login</a>
+        </form>
+
+        <form
+          *ngIf="step === 2"
+          [formGroup]="formConfirmar"
+          (ngSubmit)="onSubmitConfirmar()"
+          class="login-form"
+        >
+          <div class="info-banner" *ngIf="infoMessage">{{ infoMessage }}</div>
+          <p class="email-hint">Código enviado para: <strong>{{ emailPendente }}</strong></p>
+          <div class="input-group">
+            <input
+              type="text"
+              id="rs-code"
+              formControlName="code"
+              class="form-input"
+              (input)="onCodeInput($event)"
+              [class.error]="formConfirmar.get('code')?.invalid && formConfirmar.get('code')?.touched"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="6"
+              placeholder="000000" />
+            <div
+              class="error-message"
+              *ngIf="formConfirmar.get('code')?.invalid && formConfirmar.get('code')?.touched"
+            >
+              Informe os 6 dígitos
+            </div>
+          </div>
+          <div class="input-group">
+            <input
+              type="password"
+              id="rs-np"
+              formControlName="newPassword"
+              class="form-input"
+              [class.error]="
+                formConfirmar.get('newPassword')?.invalid && formConfirmar.get('newPassword')?.touched
+              "
+              placeholder="Nova senha"
+              autocomplete="new-password" />
+            <div
+              class="error-message"
+              *ngIf="formConfirmar.get('newPassword')?.invalid && formConfirmar.get('newPassword')?.touched"
+            >
+              Mín. 6 caracteres, com letra e número
+            </div>
+          </div>
+          <div class="input-group">
+            <input
+              type="password"
+              id="rs-cf"
+              formControlName="confirmPassword"
+              class="form-input"
+              placeholder="Confirmar senha"
+              autocomplete="new-password" />
+          </div>
+          <div class="alert-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+          <button type="submit" class="login-button" [disabled]="formConfirmar.invalid || isLoading">
+            <span *ngIf="!isLoading" class="button-text">Redefinir senha</span>
+            <span *ngIf="isLoading" class="button-text">
+              <ion-spinner name="crescent"></ion-spinner>
+              Salvando...
+            </span>
+          </button>
+          <button type="button" class="btn-secondary" (click)="voltarEmail()" [disabled]="isLoading">
+            Usar outro e-mail
+          </button>
+          <a routerLink="/login" class="pr-link">Voltar ao login</a>
+        </form>
+      </ng-template>
+    </div>
+  </div>
+</ion-content>

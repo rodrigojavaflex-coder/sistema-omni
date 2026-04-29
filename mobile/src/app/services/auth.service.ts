@@ -462,6 +462,23 @@ export class AuthService {
     return Capacitor.getPlatform() !== 'web';
   }
 
+  async requestPasswordReset(email: string): Promise<{ message: string }> {
+    return firstValueFrom(
+      this.http.post<{ message: string }>(`${this.apiUrl}/password-reset/request`, { email }),
+    );
+  }
+
+  async confirmPasswordReset(body: {
+    email: string;
+    code: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<{ message: string }> {
+    return firstValueFrom(
+      this.http.post<{ message: string }>(`${this.apiUrl}/password-reset/confirm`, body),
+    );
+  }
+
   private resolveApiBaseUrl(): string {
     const platform = Capacitor.getPlatform();
     const baseUrl = this.isNativePlatform()

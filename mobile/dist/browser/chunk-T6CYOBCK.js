@@ -1,7 +1,7 @@
 import {
   ErrorMessageService,
   environment
-} from "./chunk-3HI66MTA.js";
+} from "./chunk-P3DEM65Q.js";
 import {
   BehaviorSubject,
   HttpClient,
@@ -11,7 +11,7 @@ import {
   inject,
   setClassMetadata,
   ɵɵdefineInjectable
-} from "./chunk-37Y5E3Q6.js";
+} from "./chunk-IS355SV5.js";
 import {
   Capacitor,
   registerPlugin
@@ -481,6 +481,16 @@ var AuthService = class _AuthService {
   isNativePlatform() {
     return Capacitor.getPlatform() !== "web";
   }
+  requestPasswordReset(email) {
+    return __async(this, null, function* () {
+      return firstValueFrom(this.http.post(`${this.apiUrl}/password-reset/request`, { email }));
+    });
+  }
+  confirmPasswordReset(body) {
+    return __async(this, null, function* () {
+      return firstValueFrom(this.http.post(`${this.apiUrl}/password-reset/confirm`, body));
+    });
+  }
   resolveApiBaseUrl() {
     const platform = Capacitor.getPlatform();
     const baseUrl = this.isNativePlatform() ? environment.apiUrlNative || environment.apiUrl : environment.apiUrl;
@@ -507,4 +517,4 @@ var AuthService = class _AuthService {
 export {
   AuthService
 };
-//# sourceMappingURL=chunk-SUV23HSM.js.map
+//# sourceMappingURL=chunk-T6CYOBCK.js.map

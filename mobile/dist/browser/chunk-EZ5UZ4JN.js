@@ -1,7 +1,7 @@
 import {
   AuthService
-} from "./chunk-SUV23HSM.js";
-import "./chunk-3HI66MTA.js";
+} from "./chunk-T6CYOBCK.js";
+import "./chunk-P3DEM65Q.js";
 import {
   AlertController,
   CommonModule,
@@ -32,7 +32,7 @@ import {
   ɵɵproperty,
   ɵɵtemplate,
   ɵɵtext
-} from "./chunk-37Y5E3Q6.js";
+} from "./chunk-IS355SV5.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import "./chunk-5JG7MXFI.js";
@@ -229,4 +229,4 @@ var ConfiguracoesPage = class _ConfiguracoesPage {
 export {
   ConfiguracoesPage
 };
-//# sourceMappingURL=chunk-TNURA5ZM.js.map
+//# sourceMappingURL=chunk-EZ5UZ4JN.js.map

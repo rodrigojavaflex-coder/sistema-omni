@@ -142,6 +142,22 @@
   gap: 0.5rem;
 }
 
+.forgot-link {
+  display: block;
+  text-align: center;
+  margin: 0.75rem 0 0.25rem 0;
+  font-size: 0.9rem;
+  color: #2563eb;
+  text-decoration: none;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+}
+
+.forgot-link:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
 .biometric-button {
   width: 100%;
   padding: 0.8rem;

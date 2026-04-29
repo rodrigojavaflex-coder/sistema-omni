@@ -32,6 +32,24 @@ Copie o bloco abaixo para cada regra nova.
 
 ## Modulos
 
+### Autenticacao
+
+### RN-AUTH-001 - Recuperacao de senha por codigo (OTP) por e-mail
+- **Modulo:** Autenticacao
+- **Fluxo:** Usuario nao lembra a senha; informa o e-mail de login, recebe codigo numerico por e-mail e define nova senha
+- **Descricao:** A API responde de forma generica na solicitacao (nao revela se o e-mail existe). Codigo e de uso unico, com prazo, limite de tentativas e limite de frequencia; envio de e-mail depende da `emailEnvioConfig` (SMTP) ativa em Configuracoes. Senha redefinida com as mesmas regras de complexidade do cadastro.
+- **Condicoes de entrada:** E-mail com formato valido; usuario ativo (fluxo interno, sem vazar inexistencia de conta)
+- **Validacoes:** Codigo de 6 digitos; bloqueio apos N tentativas; cooldown entre solicitacoes; teto de solicitacoes por hora para usuario existente
+- **Acoes do sistema:** Gera e envia codigo, invalida tentativas anteriores, ao confirmar aplica hash da nova senha (bcrypt) e audita redefinicao (quando configurado)
+- **Mensagens ao usuario:** Resposta de solicitacao unica; erros de confirmacao nao expoem existencia de conta; 429 com mensagem generica de excesso
+- **Permissoes envolvidas:** Nenhuma (rota publica)
+- **Dados impactados:** `password_reset_otp`, `password_reset_throttle`, `usuarios.senha`
+- **Rastreabilidade:** `CHANGE_PASSWORD` em auditoria (sem registro do codigo)
+- **Criterios de aceite:** (1) Solicitar com e-mail existente e SMTP ok envia e-mail; (2) confirmar com codigo e senhas validas altera login; (3) codigo reutilizado ou expirado e recusado
+- **Cenarios de excecao:** SMTP inativo, falha de envio (usuario ve mensagem generica; log servidor); muitas solicitacoes (429)
+- **Origem da regra:** Requisito de produto, 2026-04-27
+- **Status:** Implementada
+
 ### 1. Vistoria
 #### Regras
 - [ ] RN-VIS-001 - Placeholder
@@ -86,4 +104,5 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-04-27: RN-AUTH-001 Recuperacao de senha por OTP (e-mail), web e mobile.
 - 2026-04-22: Criacao do template inicial.

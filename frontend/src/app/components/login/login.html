@@ -1,24 +1,26 @@
 <div class="login-wrapper">
   <div class="login-card">
-    <!-- Header minimalista -->
     <div class="login-header">
       <h1 class="login-title">Bem-vindo</h1>
       <p class="login-subtitle">Entre com suas credenciais</p>
     </div>
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-      
-      <!-- Campo Email -->
       <div class="input-group">
-        <input 
-          type="email" 
-          id="email" 
+        <input
+          type="email"
+          id="email"
+          name="username"
           formControlName="email"
           class="form-input"
           [class.error]="email?.invalid && email?.touched"
           placeholder="Email"
+          autocomplete="username"
+          inputmode="email"
+          autocapitalize="none"
+          spellcheck="false"
           required
-        >
+        />
         <label for="email" class="form-label">Email</label>
         @if (email?.invalid && email?.touched) {
           <div class="error-message">
@@ -32,17 +34,17 @@
         }
       </div>
 
-      <!-- Campo Senha -->
       <div class="input-group">
-        <input 
-          type="password" 
-          id="password" 
+        <input
+          type="password"
+          id="password"
           formControlName="password"
           class="form-input"
           [class.error]="password?.invalid && password?.touched"
           placeholder="Senha"
+          autocomplete="current-password"
           required
-        >
+        />
         <label for="password" class="form-label">Senha</label>
         @if (password?.invalid && password?.touched) {
           <div class="error-message">
@@ -53,19 +55,13 @@
         }
       </div>
 
-      <!-- Mensagem de Erro Geral -->
       @if (errorMessage) {
         <div class="alert-error">
           {{ errorMessage }}
         </div>
       }
 
-      <!-- Botão de Login -->
-      <button 
-        type="submit" 
-        class="login-button"
-        [disabled]="loginForm.invalid || isLoading"
-      >
+      <button type="submit" class="login-button" [disabled]="loginForm.invalid || isLoading">
         @if (!isLoading) {
           <span class="button-text">Entrar</span>
         }
@@ -77,6 +73,7 @@
         }
       </button>
 
+      <a routerLink="/redefinir-senha" class="forgot-link">Esqueci minha senha</a>
     </form>
   </div>
 </div>

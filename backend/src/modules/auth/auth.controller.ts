@@ -21,11 +21,47 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { Usuario } from '../usuarios/entities/usuario.entity';
+import { PasswordResetService } from './password-reset.service';
+import { PasswordResetRequestDto } from './dto/password-reset-request.dto';
+import { PasswordResetConfirmDto } from './dto/password-reset-confirm.dto';
+import { PasswordResetMessageDto } from './dto/password-reset-message.dto';
 
 @ApiTags('Autenticação')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly passwordResetService: PasswordResetService,
+  ) {}
+
+  @Post('password-reset/request')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Solicitar código (OTP) por e-mail para redefinir senha' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Resposta genérica (não indica se o e-mail está cadastrado). Pode retornar 429 em excesso de tentativas.',
+    type: PasswordResetMessageDto,
+  })
+  @ApiResponse({ status: HttpStatus.TOO_MANY_REQUESTS, description: 'Muitas tentativas' })
+  async requestPasswordReset(
+    @Body() body: PasswordResetRequestDto,
+  ): Promise<PasswordResetMessageDto> {
+    return this.passwordResetService.requestPasswordReset(body.email);
+  }
+
+  @Post('password-reset/confirm')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Confirmar código e definir nova senha' })
+  @ApiResponse({ status: HttpStatus.OK, type: PasswordResetMessageDto })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos ou código incorreto' })
+  @ApiResponse({ status: HttpStatus.TOO_MANY_REQUESTS, description: 'Código expirou ou muitas tentativas' })
+  async confirmPasswordReset(
+    @Body() body: PasswordResetConfirmDto,
+    @Request() req,
+  ): Promise<PasswordResetMessageDto> {
+    return this.passwordResetService.confirmPasswordReset(body, req);
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)

@@ -11,16 +11,29 @@
           <input
             type="email"
             id="email"
+            name="username"
             formControlName="email"
             class="form-input"
             [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
             placeholder="Email"
-            required>
-          <label for="email" class="form-label">Email</label>
-          <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-            <span *ngIf="loginForm.get('email')?.errors?.['required']">Email é obrigatório</span>
-            <span *ngIf="loginForm.get('email')?.errors?.['email']">Email inválido</span>
-          </div>
+            autocomplete="username"
+            inputmode="email"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            required
+          />
+          <label for="email" class="form-label">E-mail</label>
+          @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+            <div class="error-message">
+              @if (loginForm.get('email')?.errors?.['required']) {
+                <span>Email é obrigatório</span>
+              }
+              @if (loginForm.get('email')?.errors?.['email']) {
+                <span>Email inválido</span>
+              }
+            </div>
+          }
         </div>
 
         <div class="input-group">
@@ -31,44 +44,57 @@
             class="form-input"
             [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
             placeholder="Senha"
-            required>
+            autocomplete="current-password"
+            required
+          />
           <label for="password" class="form-label">Senha</label>
-          <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-            <span *ngIf="loginForm.get('password')?.errors?.['required']">Senha é obrigatória</span>
-            <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Senha muito curta</span>
-          </div>
+          @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+            <div class="error-message">
+              @if (loginForm.get('password')?.errors?.['required']) {
+                <span>Senha é obrigatória</span>
+              }
+              @if (loginForm.get('password')?.errors?.['minlength']) {
+                <span>Senha deve ter no mínimo 6 caracteres</span>
+              }
+            </div>
+          }
         </div>
 
-        <div class="alert-error" *ngIf="errorMessage">
-          {{ errorMessage }}
-        </div>
+        @if (errorMessage) {
+          <div class="alert-error">{{ errorMessage }}</div>
+        }
 
-        <button
-          type="submit"
-          class="login-button"
-          [disabled]="loginForm.invalid || isLoading">
-          <span class="button-text" *ngIf="!isLoading">Entrar</span>
-          <span class="button-text" *ngIf="isLoading">
-            <ion-spinner name="crescent"></ion-spinner>
-            Entrando...
-          </span>
+        <button type="submit" class="login-button" [disabled]="loginForm.invalid || isLoading">
+          @if (!isLoading) {
+            <span class="button-text">Entrar</span>
+          }
+          @if (isLoading) {
+            <span class="button-text">
+              <ion-spinner name="crescent"></ion-spinner>
+              Entrando...
+            </span>
+          }
         </button>
 
-        <button
-          *ngIf="biometricAvailable && biometricEnabled"
-          type="button"
-          class="biometric-button"
-          [disabled]="isBiometricLoading || isLoading"
-          (click)="onBiometricLogin()">
-          <span class="button-text" *ngIf="!isBiometricLoading">
-            <ion-icon name="finger-print-outline"></ion-icon>
-            Entrar com digital
-          </span>
-          <span class="button-text" *ngIf="isBiometricLoading">
-            <ion-spinner name="crescent"></ion-spinner>
-            Verificando...
-          </span>
-        </button>
+        @if (biometricAvailable) {
+          <button
+            type="button"
+            class="biometric-button"
+            (click)="onBiometricLogin()"
+            [disabled]="isLoading || isBiometricLoading"
+          >
+            @if (!isBiometricLoading) {
+              <ion-icon name="finger-print-outline" aria-hidden="true"></ion-icon>
+              <span>Entrar com digital</span>
+            }
+            @if (isBiometricLoading) {
+              <ion-spinner name="crescent"></ion-spinner>
+              <span>Autenticando...</span>
+            }
+          </button>
+        }
+
+        <a routerLink="/redefinir-senha" class="forgot-link">Esqueci minha senha</a>
       </form>
     </div>
   </div>

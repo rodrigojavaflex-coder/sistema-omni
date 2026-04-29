@@ -1,13 +1,13 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { 
-  IonContent, 
+import { Router, RouterLink } from '@angular/router';
+import {
+  IonContent,
   IonSpinner,
   IonIcon,
   ToastController,
-  AlertController
+  AlertController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { fingerPrintOutline } from 'ionicons/icons';
@@ -25,8 +25,9 @@ import { ErrorMessageService } from '../../services/error-message.service';
     ReactiveFormsModule,
     IonContent,
     IonSpinner,
-    IonIcon
-  ]
+    IonIcon,
+    RouterLink,
+  ],
 })
 export class LoginPage implements OnInit {
   private formBuilder = inject(FormBuilder);
@@ -44,9 +45,10 @@ export class LoginPage implements OnInit {
   biometricEnabled = false;
 
   constructor() {
+    const pwdValidators = [Validators.required, Validators.minLength(6)];
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', pwdValidators],
     });
 
     addIcons({ fingerPrintOutline });
@@ -56,11 +58,12 @@ export class LoginPage implements OnInit {
     await this.refreshBiometricState();
   }
 
-  ionViewWillEnter(): void {
+  async ionViewWillEnter(): Promise<void> {
     this.loginForm.reset({ email: '', password: '' });
     this.errorMessage = '';
     this.isLoading = false;
     this.isBiometricLoading = false;
+    await this.refreshBiometricState();
   }
 
   async onSubmit() {
@@ -70,12 +73,11 @@ export class LoginPage implements OnInit {
 
     this.isLoading = true;
     this.errorMessage = '';
-    
-    // Desabilitar controles durante o loading
     this.loginForm.disable();
 
     try {
-      const { email, password } = this.loginForm.value;
+      const email = this.loginForm.get('email')!.value.trim();
+      const password = this.loginForm.get('password')!.value;
       await this.authService.login(email, password, { navigate: false });
       await this.maybeEnableBiometrics(email, password);
       this.router.navigate(['/home']);
@@ -88,12 +90,11 @@ export class LoginPage implements OnInit {
         message: this.errorMessage,
         duration: 3000,
         color: 'danger',
-        position: 'top'
+        position: 'top',
       });
       await toast.present();
     } finally {
       this.isLoading = false;
-      // Reabilitar controles após o loading
       this.loginForm.enable();
     }
   }
@@ -114,11 +115,12 @@ export class LoginPage implements OnInit {
         error,
         'Erro ao autenticar com biometria. Tente novamente.',
       );
+      await this.refreshBiometricState();
       const toast = await this.toastController.create({
         message: this.errorMessage,
         duration: 3000,
         color: 'danger',
-        position: 'top'
+        position: 'top',
       });
       await toast.present();
     } finally {
@@ -143,13 +145,13 @@ export class LoginPage implements OnInit {
       buttons: [
         {
           text: 'Agora não',
-          role: 'cancel'
+          role: 'cancel',
         },
         {
           text: 'Ativar',
-          role: 'confirm'
-        }
-      ]
+          role: 'confirm',
+        },
+      ],
     });
 
     await alert.present();

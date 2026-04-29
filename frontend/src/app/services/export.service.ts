@@ -231,8 +231,16 @@ export class ExportService {
   }
 
   private async loadImageAsDataUrl(url: string): Promise<{ dataUrl: string; format: string } | null> {
-    if (!url || !url.startsWith('http')) return null;
-    const res = await fetch(url, { mode: 'cors' });
+    if (!url) return null;
+    let fetchUrl: string;
+    if (/^https?:\/\//i.test(url)) {
+      fetchUrl = url;
+    } else if (typeof window !== 'undefined') {
+      fetchUrl = new URL(url.startsWith('/') ? url : `/${url}`, window.location.origin).href;
+    } else {
+      return null;
+    }
+    const res = await fetch(fetchUrl, { mode: 'cors' });
     if (!res.ok) return null;
     const blob = await res.blob();
     const mime = blob.type || 'image/png';

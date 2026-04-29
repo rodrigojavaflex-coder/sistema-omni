@@ -168,6 +168,30 @@
   box-shadow: none;
 }
 
+.forgot-link {
+  display: block;
+  text-align: center;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: #2563eb;
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+  align-self: center;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+.forgot-link:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
 .button-text {
   display: flex;
   align-items: center;
@@ -346,5 +370,9 @@
   .login-button:hover:not(:disabled) {
     background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+
+  .forgot-link {
+    color: #60a5fa;
   }
 }

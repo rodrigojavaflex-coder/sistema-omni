@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login';
+import { PasswordRedefinirComponent } from './components/password-redefinir/password-redefinir';
 import { UserListComponent } from './components/user-list/user-list';
 import { UserFormComponent } from './components/user-form/user-form';
 import { AuditoriaComponent } from './components/auditoria/auditoria';
@@ -33,6 +34,10 @@ export const routes: Routes = [
   {
     path: 'login',
     component: LoginComponent
+  },
+  {
+    path: 'redefinir-senha',
+    component: PasswordRedefinirComponent
   },
   
   // Rotas protegidas

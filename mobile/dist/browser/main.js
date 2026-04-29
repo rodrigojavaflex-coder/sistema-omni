@@ -1,6 +1,6 @@
 import {
   VistoriaFlowService
-} from "./chunk-E32UKBIK.js";
+} from "./chunk-H4N3HFGI.js";
 import {
   addIcons,
   clipboardOutline,
@@ -11,8 +11,8 @@ import {
 } from "./chunk-C5VNYMLZ.js";
 import {
   AuthService
-} from "./chunk-SUV23HSM.js";
-import "./chunk-3HI66MTA.js";
+} from "./chunk-T6CYOBCK.js";
+import "./chunk-P3DEM65Q.js";
 import {
   AlertController,
   CUSTOM_ELEMENTS_SCHEMA,
@@ -60,7 +60,7 @@ import {
   ɵɵtext,
   ɵɵtextInterpolate,
   ɵɵtextInterpolate1
-} from "./chunk-37Y5E3Q6.js";
+} from "./chunk-IS355SV5.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import {
@@ -128,56 +128,60 @@ var routes = [
   },
   {
     path: "login",
-    loadComponent: () => import("./chunk-CHQDUJSO.js").then((m) => m.LoginPage)
+    loadComponent: () => import("./chunk-QR4JNINX.js").then((m) => m.LoginPage)
+  },
+  {
+    path: "redefinir-senha",
+    loadComponent: () => import("./chunk-KAPSGUVE.js").then((m) => m.RedefinirSenhaPage)
   },
   {
     path: "home",
-    loadComponent: () => import("./chunk-KMMELWE3.js").then((m) => m.HomePage),
+    loadComponent: () => import("./chunk-LRZ5ULJM.js").then((m) => m.HomePage),
     canActivate: [authGuard]
   },
   {
     path: "configuracoes",
-    loadComponent: () => import("./chunk-TNURA5ZM.js").then((m) => m.ConfiguracoesPage),
+    loadComponent: () => import("./chunk-EZ5UZ4JN.js").then((m) => m.ConfiguracoesPage),
     canActivate: [authGuard]
   },
   {
     path: "sobre",
-    loadComponent: () => import("./chunk-PLJWLVKG.js").then((m) => m.SobrePage),
+    loadComponent: () => import("./chunk-Z4XSYOK5.js").then((m) => m.SobrePage),
     canActivate: [authGuard]
   },
   {
     path: "vistoria/inicio",
-    loadComponent: () => import("./chunk-JSPO5AOC.js").then((m) => m.VistoriaInicioPage),
+    loadComponent: () => import("./chunk-YXFNEAVW.js").then((m) => m.VistoriaInicioPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas",
-    loadComponent: () => import("./chunk-D3QHE6KS.js").then((m) => m.VistoriaAreasPage),
+    loadComponent: () => import("./chunk-ECAQF7T5.js").then((m) => m.VistoriaAreasPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId",
-    loadComponent: () => import("./chunk-IVEGCFLW.js").then((m) => m.VistoriaComponentesPage),
+    loadComponent: () => import("./chunk-7OBVHA2G.js").then((m) => m.VistoriaComponentesPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId/componentes/:componenteId",
-    loadComponent: () => import("./chunk-VP53DUKW.js").then((m) => m.VistoriaIrregularidadePage),
+    loadComponent: () => import("./chunk-Y6MPN2SS.js").then((m) => m.VistoriaIrregularidadePage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/finalizar",
-    loadComponent: () => import("./chunk-MXDHNRM2.js").then((m) => m.VistoriaFinalizarPage),
+    loadComponent: () => import("./chunk-J3YHWSAI.js").then((m) => m.VistoriaFinalizarPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/pendencias-veiculo",
-    loadComponent: () => import("./chunk-3JHWZYWV.js").then((m) => m.VistoriaHistoricoVeiculoPage),
+    loadComponent: () => import("./chunk-6K55KBXH.js").then((m) => m.VistoriaHistoricoVeiculoPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_web_historico_veiculo:read"] }
   },
