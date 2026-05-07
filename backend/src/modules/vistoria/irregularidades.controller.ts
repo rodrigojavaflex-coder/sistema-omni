@@ -15,7 +15,13 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
@@ -51,6 +57,13 @@ export class IrregularidadesController {
 
   @Get()
   @ApiOperation({ summary: 'Listar irregularidades por status' })
+  @ApiQuery({
+    name: 'ordemServico',
+    required: false,
+    type: String,
+    description:
+      'Trecho do número da O.S. (numeroIrregularidade): busca parcial nos dígitos, ex.: 2026 corresponde a 202601, 202619, etc.',
+  })
   @ApiResponse({ status: 200, type: [IrregularidadeResumoDto] })
   @Permissions(
     Permission.IRREGULARIDADE_TRATAMENTO_READ,
@@ -68,6 +81,8 @@ export class IrregularidadesController {
     @Query('gravidade') gravidade?: string,
     @Query('dataInicio') dataInicio?: string,
     @Query('dataFim') dataFim?: string,
+    @Query('referenciaPeriodo') referenciaPeriodo?: string,
+    @Query('ordemServico') ordemServico?: string,
     @Req() req?: Request & { user?: { idEmpresa?: string } },
   ): Promise<IrregularidadeResumoDto[]> {
     const statuses = (status ?? '')
@@ -79,21 +94,54 @@ export class IrregularidadesController {
       .map((s) => s.trim())
       .filter(Boolean) as GravidadeCriticidade[];
 
+    const refPeriodo =
+      referenciaPeriodo === 'ENTRADA_STATUS'
+        ? ('ENTRADA_STATUS' as const)
+        : ('CRIADO_EM' as const);
+
+    const ordemServicoDigits = this.parseOrdemServicoQuery(ordemServico);
+    const filtrosLista = {
+      idVeiculo,
+      gravidade: gravidades,
+      dataInicio,
+      dataFim,
+      referenciaPeriodo: refPeriodo,
+      ordemServico: ordemServicoDigits,
+    };
+
     if (statuses.length === 0) {
       return this.irregularidadeService.listByStatus(
         [StatusIrregularidade.REGISTRADA],
         { idEmpresa: req?.user?.idEmpresa, scopeByEmpresa: false },
-        { idVeiculo, gravidade: gravidades, dataInicio, dataFim },
+        filtrosLista,
       );
     }
 
     const requiresScope = statuses.some((s) =>
-      [StatusIrregularidade.EM_MANUTENCAO, StatusIrregularidade.NAO_PROCEDE].includes(s),
+      [
+        StatusIrregularidade.EM_MANUTENCAO,
+        StatusIrregularidade.NAO_PROCEDE,
+      ].includes(s),
     );
-    return this.irregularidadeService.listByStatus(statuses, {
-      idEmpresa: req?.user?.idEmpresa,
-      scopeByEmpresa: requiresScope,
-    }, { idVeiculo, gravidade: gravidades, dataInicio, dataFim });
+    return this.irregularidadeService.listByStatus(
+      statuses,
+      {
+        idEmpresa: req?.user?.idEmpresa,
+        scopeByEmpresa: requiresScope,
+      },
+      filtrosLista,
+    );
+  }
+
+  /**
+   * Extrai apenas dígitos da query para busca parcial na O.S. (substring em numero_irregularidade).
+   */
+  private parseOrdemServicoQuery(raw?: string): string | undefined {
+    if (raw === undefined || raw === null) {
+      return undefined;
+    }
+    const digits = String(raw).replace(/\D/g, '');
+    return digits.length > 0 ? digits : undefined;
   }
 
   @Get(':id/historico')
@@ -116,25 +164,36 @@ export class IrregularidadesController {
   }
 
   @Post('lote/iniciar-manutencao/preview')
-  @ApiOperation({ summary: 'Gerar preview do relatório de envio para manutenção' })
+  @ApiOperation({
+    summary: 'Gerar preview do relatório de envio para manutenção',
+  })
   @ApiResponse({ status: 200, type: RelatorioManutencaoPreviewDto })
   @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_START)
   previewIniciarManutencaoLote(
     @Body() dto: IniciarManutencaoLoteDto,
     @Req() req: Request & { user?: { nome?: string } },
   ): Promise<RelatorioManutencaoPreviewDto> {
-    return this.irregularidadeService.previewIniciarManutencaoLote(dto, req.user);
+    return this.irregularidadeService.previewIniciarManutencaoLote(
+      dto,
+      req.user,
+    );
   }
 
   @Post('lote/iniciar-manutencao/preview-pdf')
-  @ApiOperation({ summary: 'Gerar preview em PDF do relatório de envio para manutenção' })
+  @ApiOperation({
+    summary: 'Gerar preview em PDF do relatório de envio para manutenção',
+  })
   @ApiResponse({ status: 200, description: 'Arquivo PDF' })
   @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_START)
   async previewPdfIniciarManutencaoLote(
     @Body() dto: IniciarManutencaoLoteDto,
     @Req() req: Request & { user?: { nome?: string } },
   ): Promise<StreamableFile> {
-    const pdf = await this.irregularidadeService.previewPdfIniciarManutencaoLote(dto, req.user);
+    const pdf =
+      await this.irregularidadeService.previewPdfIniciarManutencaoLote(
+        dto,
+        req.user,
+      );
     return new StreamableFile(pdf, {
       type: 'application/pdf',
       disposition: 'inline; filename="preview-relatorio-manutencao.pdf"',
@@ -150,7 +209,10 @@ export class IrregularidadesController {
   @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_START)
   iniciarManutencaoLote(
     @Body() dto: IniciarManutencaoLoteDto,
-    @Req() req: Request & { user?: { id?: string; idEmpresa?: string; nome?: string } },
+    @Req()
+    req: Request & {
+      user?: { id?: string; idEmpresa?: string; nome?: string };
+    },
   ): Promise<RelatorioManutencaoExecucaoDto> {
     return this.irregularidadeService.iniciarManutencaoLote(dto, req.user);
   }
@@ -158,6 +220,10 @@ export class IrregularidadesController {
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar irregularidade' })
   @ApiResponse({ status: 200, type: Irregularidade })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos (ex.: descrição do problema obrigatória)',
+  })
   @Permissions(Permission.VISTORIA_UPDATE)
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -239,7 +305,9 @@ export class IrregularidadesController {
   }
 
   @Post(':id/reprovar-final')
-  @ApiOperation({ summary: 'Reprovar validação final e retornar para manutenção' })
+  @ApiOperation({
+    summary: 'Reprovar validação final e retornar para manutenção',
+  })
   @ApiResponse({ status: 200, type: Irregularidade })
   @Permissions(Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE)
   reprovarFinal(
@@ -267,7 +335,9 @@ export class IrregularidadesController {
   }
 
   @Post(':id/audio')
-  @ApiOperation({ summary: 'Enviar áudio da irregularidade (pode enviar múltiplos)' })
+  @ApiOperation({
+    summary: 'Enviar áudio da irregularidade (pode enviar múltiplos)',
+  })
   @ApiResponse({ status: 201, type: IrregularidadeMidia })
   @Permissions(Permission.VISTORIA_UPDATE)
   @UseInterceptors(

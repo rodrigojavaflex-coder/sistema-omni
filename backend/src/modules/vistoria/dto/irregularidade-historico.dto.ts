@@ -24,17 +24,24 @@ export class IrregularidadeHistoricoDto {
   @ApiProperty({ description: 'Data/hora do evento' })
   dataEvento: string;
 
-  @ApiProperty({ description: 'ID do usuário que executou a ação', required: false })
+  @ApiProperty({
+    description: 'ID do usuário que executou a ação',
+    required: false,
+  })
   idUsuario?: string;
 
-  @ApiProperty({ description: 'Nome do usuário que executou a ação', required: false })
+  @ApiProperty({
+    description: 'Nome do usuário que executou a ação',
+    required: false,
+  })
   usuarioNome?: string;
 
   @ApiProperty({ description: 'Observação do evento', required: false })
   observacao?: string;
 
   @ApiProperty({
-    description: 'Tempo em milissegundos que a irregularidade permaneceu nesta etapa',
+    description:
+      'Tempo em milissegundos que a irregularidade permaneceu nesta etapa',
     required: false,
   })
   tempoEtapaMs?: number;

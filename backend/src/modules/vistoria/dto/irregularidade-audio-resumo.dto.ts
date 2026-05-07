@@ -10,7 +10,9 @@ export class IrregularidadeAudioResumoItemDto {
   @ApiProperty({ description: 'Mime type do áudio' })
   mimeType: string;
 
-  @ApiProperty({ description: 'Conteúdo em base64 (para reprodução no cliente)' })
+  @ApiProperty({
+    description: 'Conteúdo em base64 (para reprodução no cliente)',
+  })
   dadosBase64: string;
 
   @ApiProperty({ description: 'Duração em ms', required: false })
@@ -21,6 +23,9 @@ export class IrregularidadeAudioResumoDto {
   @ApiProperty({ description: 'ID da irregularidade', format: 'uuid' })
   idirregularidade: string;
 
-  @ApiProperty({ description: 'Áudios da irregularidade', type: [IrregularidadeAudioResumoItemDto] })
+  @ApiProperty({
+    description: 'Áudios da irregularidade',
+    type: [IrregularidadeAudioResumoItemDto],
+  })
   audios: IrregularidadeAudioResumoItemDto[];
 }

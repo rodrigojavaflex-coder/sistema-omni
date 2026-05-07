@@ -17,4 +17,3 @@ export class NaoProcedeIrregularidadeDto {
   @IsString()
   observacao?: string;
 }
-

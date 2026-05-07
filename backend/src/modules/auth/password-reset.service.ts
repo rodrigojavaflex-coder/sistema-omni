@@ -15,7 +15,10 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { PasswordResetOtp } from './entities/password-reset-otp.entity';
 import { PasswordResetThrottle } from './entities/password-reset-throttle.entity';
 import { PasswordResetConfirmDto } from './dto/password-reset-confirm.dto';
-import { Configuracao, EmailEnvioConfig } from '../configuracao/entities/configuracao.entity';
+import {
+  Configuracao,
+  EmailEnvioConfig,
+} from '../configuracao/entities/configuracao.entity';
 import { AuditoriaService } from '../../common/services/auditoria.service';
 import { AuditAction } from '../../common/enums/auditoria.enum';
 
@@ -56,7 +59,8 @@ export class PasswordResetService {
 
   private get cooldownSec(): number {
     return parseInt(
-      this.configService.get<string>('PASSWORD_RESET_REQUEST_COOLDOWN_SEC') || '60',
+      this.configService.get<string>('PASSWORD_RESET_REQUEST_COOLDOWN_SEC') ||
+        '60',
       10,
     );
   }
@@ -77,7 +81,9 @@ export class PasswordResetService {
 
   private emailFingerprint(email: string): string {
     const norm = email.trim().toLowerCase();
-    return createHmac('sha256', this.hmacSecret).update(`fp:${norm}`).digest('hex');
+    return createHmac('sha256', this.hmacSecret)
+      .update(`fp:${norm}`)
+      .digest('hex');
   }
 
   private hashOtpCode(userId: string, code: string): string {
@@ -86,10 +92,17 @@ export class PasswordResetService {
       .digest('hex');
   }
 
-  private safeCompareCode(expectedHex: string, userId: string, code: string): boolean {
+  private safeCompareCode(
+    expectedHex: string,
+    userId: string,
+    code: string,
+  ): boolean {
     const actual = this.hashOtpCode(userId, code);
     try {
-      return timingSafeEqual(Buffer.from(expectedHex, 'utf8'), Buffer.from(actual, 'utf8'));
+      return timingSafeEqual(
+        Buffer.from(expectedHex, 'utf8'),
+        Buffer.from(actual, 'utf8'),
+      );
     } catch {
       return false;
     }
@@ -112,11 +125,14 @@ export class PasswordResetService {
     return config;
   }
 
-  private buildTransport(
-    emailConfig: EmailEnvioConfig,
-  ): { transport: Transporter; from: string } {
+  private buildTransport(emailConfig: EmailEnvioConfig): {
+    transport: Transporter;
+    from: string;
+  } {
     if (!emailConfig?.ativo) {
-      throw new Error('Envio de e-mail não está habilitado nas configurações do sistema.');
+      throw new Error(
+        'Envio de e-mail não está habilitado nas configurações do sistema.',
+      );
     }
     if (!emailConfig.host || !emailConfig.porta) {
       throw new Error('Configuração de e-mail inválida: host/porta.');
@@ -143,9 +159,7 @@ export class PasswordResetService {
     return { transport, from };
   }
 
-  async requestPasswordReset(
-    emailRaw: string,
-  ): Promise<{ message: string }> {
+  async requestPasswordReset(emailRaw: string): Promise<{ message: string }> {
     const email = emailRaw.trim().toLowerCase();
     const fingerprint = this.emailFingerprint(email);
 
@@ -248,10 +262,7 @@ export class PasswordResetService {
       .replace(/"/g, '&quot;');
   }
 
-  private async upsertThrottle(
-    fingerprint: string,
-    when: Date,
-  ): Promise<void> {
+  private async upsertThrottle(fingerprint: string, when: Date): Promise<void> {
     await this.throttleRepository.upsert(
       { emailFingerprint: fingerprint, ultimaSolicitacao: when },
       ['emailFingerprint'],
@@ -269,7 +280,9 @@ export class PasswordResetService {
     const email = dto.email.trim().toLowerCase();
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user || !user.ativo) {
-      throw new BadRequestException('Código inválido ou expirado. Solicite um novo código.');
+      throw new BadRequestException(
+        'Código inválido ou expirado. Solicite um novo código.',
+      );
     }
 
     const otp = await this.otpRepository.findOne({
@@ -282,7 +295,9 @@ export class PasswordResetService {
     });
 
     if (!otp) {
-      throw new BadRequestException('Código inválido ou expirado. Solicite um novo código.');
+      throw new BadRequestException(
+        'Código inválido ou expirado. Solicite um novo código.',
+      );
     }
 
     if (otp.tentativasFalha >= this.maxOtpAttempts) {
@@ -301,7 +316,9 @@ export class PasswordResetService {
           HttpStatus.TOO_MANY_REQUESTS,
         );
       }
-      throw new BadRequestException('Código inválido ou expirado. Solicite um novo código.');
+      throw new BadRequestException(
+        'Código inválido ou expirado. Solicite um novo código.',
+      );
     }
 
     const saltRounds = 10;
@@ -318,7 +335,8 @@ export class PasswordResetService {
       await this.auditoriaService.createLog({
         acao: AuditAction.CHANGE_PASSWORD,
         usuarioId: user.id,
-        descricao: 'Senha redefinida via código enviado por e-mail (recuperação de acesso).',
+        descricao:
+          'Senha redefinida via código enviado por e-mail (recuperação de acesso).',
         request: request,
       });
     }

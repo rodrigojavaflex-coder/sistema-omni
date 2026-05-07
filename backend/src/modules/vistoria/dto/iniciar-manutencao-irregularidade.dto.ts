@@ -9,4 +9,3 @@ export class IniciarManutencaoIrregularidadeDto {
   @IsUUID('4')
   idEmpresaManutencao: string;
 }
-

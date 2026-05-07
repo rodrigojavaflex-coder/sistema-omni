@@ -10,7 +10,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
@@ -39,7 +44,9 @@ export class MatrizCriticidadeController {
   @ApiOperation({ summary: 'Listar matriz de criticidade' })
   @ApiResponse({ status: 200, type: [MatrizCriticidade] })
   @Permissions(Permission.MATRIZCRITICIDADE_READ, Permission.VISTORIA_READ)
-  findAll(@Query('idcomponente') idcomponente?: string): Promise<MatrizCriticidade[]> {
+  findAll(
+    @Query('idcomponente') idcomponente?: string,
+  ): Promise<MatrizCriticidade[]> {
     return this.matrizService.findAll(idcomponente);
   }
 
@@ -47,7 +54,9 @@ export class MatrizCriticidadeController {
   @ApiOperation({ summary: 'Buscar matriz por id' })
   @ApiResponse({ status: 200, type: MatrizCriticidade })
   @Permissions(Permission.MATRIZCRITICIDADE_READ)
-  findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<MatrizCriticidade> {
+  findOne(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<MatrizCriticidade> {
     return this.matrizService.findOne(id);
   }
 

@@ -1,12 +1,12 @@
 import {
   MatrizCriticidadeService
-} from "./chunk-NXBYP5UA.js";
+} from "./chunk-PZ2CWJ4P.js";
 import {
   VistoriaBootstrapService
-} from "./chunk-S63KDIUX.js";
+} from "./chunk-5PBB4XQE.js";
 import {
   VistoriaService
-} from "./chunk-FMHQP3QV.js";
+} from "./chunk-OKT6YVXA.js";
 import {
   CameraResultType,
   CameraSource
@@ -22,10 +22,10 @@ import {
 } from "./chunk-C5VNYMLZ.js";
 import {
   AuthService
-} from "./chunk-T6CYOBCK.js";
+} from "./chunk-VNJJWUVL.js";
 import {
   ErrorMessageService
-} from "./chunk-P3DEM65Q.js";
+} from "./chunk-544SG6Z7.js";
 import {
   ActivatedRoute,
   AlertController,
@@ -318,21 +318,33 @@ function VistoriaIrregularidadePage_div_21_ion_text_1_Template(rf, ctx) {
     \u0275\u0275elementEnd()();
   }
 }
-function VistoriaIrregularidadePage_div_21_ion_list_13_ion_item_1_Template(rf, ctx) {
+function VistoriaIrregularidadePage_div_21_ion_text_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "ion-text", 54)(1, "p", 55);
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r1.observacaoFieldError);
+  }
+}
+function VistoriaIrregularidadePage_div_21_ion_list_16_ion_item_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r7 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "ion-item");
-    \u0275\u0275element(1, "img", 52);
+    \u0275\u0275element(1, "img", 57);
     \u0275\u0275elementStart(2, "ion-label")(3, "p");
     \u0275\u0275text(4);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(5, "ion-button", 53);
-    \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_21_ion_list_13_ion_item_1_Template_ion_button_click_5_listener() {
+    \u0275\u0275elementStart(5, "ion-button", 58);
+    \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_21_ion_list_16_ion_item_1_Template_ion_button_click_5_listener() {
       const i_r8 = \u0275\u0275restoreView(_r7).index;
       const ctx_r1 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r1.removerFoto(i_r8));
     });
-    \u0275\u0275element(6, "ion-icon", 54);
+    \u0275\u0275element(6, "ion-icon", 59);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -343,10 +355,10 @@ function VistoriaIrregularidadePage_div_21_ion_list_13_ion_item_1_Template(rf, c
     \u0275\u0275textInterpolate(foto_r9.nomeArquivo);
   }
 }
-function VistoriaIrregularidadePage_div_21_ion_list_13_Template(rf, ctx) {
+function VistoriaIrregularidadePage_div_21_ion_list_16_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-list");
-    \u0275\u0275template(1, VistoriaIrregularidadePage_div_21_ion_list_13_ion_item_1_Template, 7, 2, "ion-item", 51);
+    \u0275\u0275template(1, VistoriaIrregularidadePage_div_21_ion_list_16_ion_item_1_Template, 7, 2, "ion-item", 56);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -355,7 +367,7 @@ function VistoriaIrregularidadePage_div_21_ion_list_13_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", ctx_r1.fotos);
   }
 }
-function VistoriaIrregularidadePage_div_21_ion_item_14_p_3_Template(rf, ctx) {
+function VistoriaIrregularidadePage_div_21_ion_item_17_p_3_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "p");
     \u0275\u0275text(1);
@@ -367,15 +379,15 @@ function VistoriaIrregularidadePage_div_21_ion_item_14_p_3_Template(rf, ctx) {
     \u0275\u0275textInterpolate1("J\xE1 salvos: ", ctx_r1.audiosExistentesCount);
   }
 }
-function VistoriaIrregularidadePage_div_21_ion_item_14_Template(rf, ctx) {
+function VistoriaIrregularidadePage_div_21_ion_item_17_Template(rf, ctx) {
   if (rf & 1) {
     const _r10 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "ion-item", 47)(1, "ion-label");
+    \u0275\u0275elementStart(0, "ion-item", 50)(1, "ion-label");
     \u0275\u0275text(2);
-    \u0275\u0275template(3, VistoriaIrregularidadePage_div_21_ion_item_14_p_3_Template, 2, 1, "p", 17);
+    \u0275\u0275template(3, VistoriaIrregularidadePage_div_21_ion_item_17_p_3_Template, 2, 1, "p", 17);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "ion-button", 55);
-    \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_21_ion_item_14_Template_ion_button_click_4_listener() {
+    \u0275\u0275elementStart(4, "ion-button", 60);
+    \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_21_ion_item_17_Template_ion_button_click_4_listener() {
       \u0275\u0275restoreView(_r10);
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.abrirGravacaoAudio());
@@ -393,21 +405,21 @@ function VistoriaIrregularidadePage_div_21_ion_item_14_Template(rf, ctx) {
     \u0275\u0275property("disabled", ctx_r1.gravandoAudio || ctx_r1.gravacaoPreparando || !ctx_r1.podeGravarAudio);
   }
 }
-function VistoriaIrregularidadePage_div_21_ion_list_15_ion_item_1_Template(rf, ctx) {
+function VistoriaIrregularidadePage_div_21_ion_list_18_ion_item_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r11 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "ion-item")(1, "ion-label")(2, "p");
     \u0275\u0275text(3);
     \u0275\u0275elementEnd();
-    \u0275\u0275element(4, "audio", 56);
+    \u0275\u0275element(4, "audio", 61);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "ion-button", 53);
-    \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_21_ion_list_15_ion_item_1_Template_ion_button_click_5_listener() {
+    \u0275\u0275elementStart(5, "ion-button", 58);
+    \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_21_ion_list_18_ion_item_1_Template_ion_button_click_5_listener() {
       const i_r12 = \u0275\u0275restoreView(_r11).index;
       const ctx_r1 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r1.removerAudio(i_r12));
     });
-    \u0275\u0275element(6, "ion-icon", 54);
+    \u0275\u0275element(6, "ion-icon", 59);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -418,10 +430,10 @@ function VistoriaIrregularidadePage_div_21_ion_list_15_ion_item_1_Template(rf, c
     \u0275\u0275property("src", a_r13.previewUrl, \u0275\u0275sanitizeUrl);
   }
 }
-function VistoriaIrregularidadePage_div_21_ion_list_15_Template(rf, ctx) {
+function VistoriaIrregularidadePage_div_21_ion_list_18_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-list");
-    \u0275\u0275template(1, VistoriaIrregularidadePage_div_21_ion_list_15_ion_item_1_Template, 7, 2, "ion-item", 51);
+    \u0275\u0275template(1, VistoriaIrregularidadePage_div_21_ion_list_18_ion_item_1_Template, 7, 2, "ion-item", 56);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -430,7 +442,7 @@ function VistoriaIrregularidadePage_div_21_ion_list_15_Template(rf, ctx) {
     \u0275\u0275property("ngForOf", ctx_r1.audios);
   }
 }
-function VistoriaIrregularidadePage_div_21_ion_text_16_Template(rf, ctx) {
+function VistoriaIrregularidadePage_div_21_ion_text_19_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "ion-text", 31)(1, "p", 32);
     \u0275\u0275text(2, "Dispositivo n\xE3o suporta grava\xE7\xE3o de \xE1udio.");
@@ -442,38 +454,46 @@ function VistoriaIrregularidadePage_div_21_Template(rf, ctx) {
     const _r6 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "div", 29);
     \u0275\u0275template(1, VistoriaIrregularidadePage_div_21_ion_text_1_Template, 3, 0, "ion-text", 44);
-    \u0275\u0275elementStart(2, "ion-item")(3, "ion-label", 45);
-    \u0275\u0275text(4, "Descreva o Problema");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "ion-textarea", 46, 0);
-    \u0275\u0275listener("ionInput", function VistoriaIrregularidadePage_div_21_Template_ion_textarea_ionInput_5_listener($event) {
+    \u0275\u0275elementStart(2, "ion-item", 45)(3, "ion-label", 46);
+    \u0275\u0275text(4, " Descreva o problema ");
+    \u0275\u0275elementStart(5, "span", 47);
+    \u0275\u0275text(6, "(obrigat\xF3rio)");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(7, "ion-textarea", 48, 0);
+    \u0275\u0275listener("ionInput", function VistoriaIrregularidadePage_div_21_Template_ion_textarea_ionInput_7_listener($event) {
       \u0275\u0275restoreView(_r6);
       const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.observacao = $event.detail.value ?? "");
+      return \u0275\u0275resetView(ctx_r1.onObservacaoInput($event.detail.value ?? ""));
     });
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(7, "ion-item", 47)(8, "ion-label");
-    \u0275\u0275text(9);
+    \u0275\u0275template(9, VistoriaIrregularidadePage_div_21_ion_text_9_Template, 3, 1, "ion-text", 49);
+    \u0275\u0275elementStart(10, "ion-item", 50)(11, "ion-label");
+    \u0275\u0275text(12);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "ion-button", 48);
-    \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_21_Template_ion_button_click_10_listener() {
+    \u0275\u0275elementStart(13, "ion-button", 51);
+    \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_21_Template_ion_button_click_13_listener() {
       \u0275\u0275restoreView(_r6);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.adicionarFoto());
     });
-    \u0275\u0275element(11, "ion-icon", 49);
-    \u0275\u0275text(12, " Adicionar ");
+    \u0275\u0275element(14, "ion-icon", 52);
+    \u0275\u0275text(15, " Adicionar ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(13, VistoriaIrregularidadePage_div_21_ion_list_13_Template, 2, 1, "ion-list", 17)(14, VistoriaIrregularidadePage_div_21_ion_item_14_Template, 6, 3, "ion-item", 50)(15, VistoriaIrregularidadePage_div_21_ion_list_15_Template, 2, 1, "ion-list", 17)(16, VistoriaIrregularidadePage_div_21_ion_text_16_Template, 3, 0, "ion-text", 15);
+    \u0275\u0275template(16, VistoriaIrregularidadePage_div_21_ion_list_16_Template, 2, 1, "ion-list", 17)(17, VistoriaIrregularidadePage_div_21_ion_item_17_Template, 6, 3, "ion-item", 53)(18, VistoriaIrregularidadePage_div_21_ion_list_18_Template, 2, 1, "ion-list", 17)(19, VistoriaIrregularidadePage_div_21_ion_text_19_Template, 3, 0, "ion-text", 15);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.irregularidadeEmEdicaoId);
-    \u0275\u0275advance(4);
+    \u0275\u0275advance();
+    \u0275\u0275classProp("item-descricao-problema--erro", ctx_r1.observacaoFieldError);
+    \u0275\u0275advance(5);
     \u0275\u0275property("value", ctx_r1.observacao);
-    \u0275\u0275advance(4);
+    \u0275\u0275attribute("aria-required", true)("aria-invalid", ctx_r1.observacaoFieldError ? "true" : null)("aria-describedby", ctx_r1.observacaoFieldError ? "erro-desc-problema" : null);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", ctx_r1.observacaoFieldError);
+    \u0275\u0275advance(3);
     \u0275\u0275textInterpolate1("Fotos (", ctx_r1.fotos.length, ")");
     \u0275\u0275advance(4);
     \u0275\u0275property("ngIf", ctx_r1.fotos.length > 0);
@@ -500,21 +520,21 @@ function VistoriaIrregularidadePage_ion_footer_22_span_5_Template(rf, ctx) {
 function VistoriaIrregularidadePage_ion_footer_22_Template(rf, ctx) {
   if (rf & 1) {
     const _r14 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "ion-footer")(1, "ion-toolbar")(2, "div", 57)(3, "ion-button", 58);
+    \u0275\u0275elementStart(0, "ion-footer")(1, "ion-toolbar")(2, "div", 62)(3, "ion-button", 63);
     \u0275\u0275listener("click", function VistoriaIrregularidadePage_ion_footer_22_Template_ion_button_click_3_listener() {
       \u0275\u0275restoreView(_r14);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.salvarIrregularidade());
     });
-    \u0275\u0275template(4, VistoriaIrregularidadePage_ion_footer_22_ion_spinner_4_Template, 1, 0, "ion-spinner", 59)(5, VistoriaIrregularidadePage_ion_footer_22_span_5_Template, 2, 0, "span", 17);
+    \u0275\u0275template(4, VistoriaIrregularidadePage_ion_footer_22_ion_spinner_4_Template, 1, 0, "ion-spinner", 64)(5, VistoriaIrregularidadePage_ion_footer_22_span_5_Template, 2, 0, "span", 17);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "ion-button", 60);
+    \u0275\u0275elementStart(6, "ion-button", 65);
     \u0275\u0275listener("click", function VistoriaIrregularidadePage_ion_footer_22_Template_ion_button_click_6_listener() {
       \u0275\u0275restoreView(_r14);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.voltar());
     });
-    \u0275\u0275element(7, "ion-icon", 61);
+    \u0275\u0275element(7, "ion-icon", 66);
     \u0275\u0275text(8, " Voltar ");
     \u0275\u0275elementEnd()()()();
   }
@@ -540,7 +560,7 @@ function VistoriaIrregularidadePage_div_23_p_32_Template(rf, ctx) {
 function VistoriaIrregularidadePage_div_23_div_33_div_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r16 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 69)(1, "img", 70);
+    \u0275\u0275elementStart(0, "div", 74)(1, "img", 75);
     \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_23_div_33_div_1_Template_img_click_1_listener() {
       const foto_r17 = \u0275\u0275restoreView(_r16).$implicit;
       const ctx_r1 = \u0275\u0275nextContext(3);
@@ -561,8 +581,8 @@ function VistoriaIrregularidadePage_div_23_div_33_div_1_Template(rf, ctx) {
 }
 function VistoriaIrregularidadePage_div_23_div_33_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 67);
-    \u0275\u0275template(1, VistoriaIrregularidadePage_div_23_div_33_div_1_Template, 4, 3, "div", 68);
+    \u0275\u0275elementStart(0, "div", 72);
+    \u0275\u0275template(1, VistoriaIrregularidadePage_div_23_div_33_div_1_Template, 4, 3, "div", 73);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -580,10 +600,10 @@ function VistoriaIrregularidadePage_div_23_p_38_Template(rf, ctx) {
 }
 function VistoriaIrregularidadePage_div_23_div_39_div_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 72)(1, "p");
+    \u0275\u0275elementStart(0, "div", 77)(1, "p");
     \u0275\u0275text(2);
     \u0275\u0275elementEnd();
-    \u0275\u0275element(3, "audio", 73);
+    \u0275\u0275element(3, "audio", 78);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -597,7 +617,7 @@ function VistoriaIrregularidadePage_div_23_div_39_div_1_Template(rf, ctx) {
 function VistoriaIrregularidadePage_div_23_div_39_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div");
-    \u0275\u0275template(1, VistoriaIrregularidadePage_div_23_div_39_div_1_Template, 4, 2, "div", 71);
+    \u0275\u0275template(1, VistoriaIrregularidadePage_div_23_div_39_div_1_Template, 4, 2, "div", 76);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -609,7 +629,7 @@ function VistoriaIrregularidadePage_div_23_div_39_Template(rf, ctx) {
 function VistoriaIrregularidadePage_div_23_Template(rf, ctx) {
   if (rf & 1) {
     const _r15 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 62)(1, "div", 63)(2, "h2");
+    \u0275\u0275elementStart(0, "div", 67)(1, "div", 68)(2, "h2");
     \u0275\u0275text(3);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(4, "p")(5, "strong");
@@ -642,17 +662,17 @@ function VistoriaIrregularidadePage_div_23_Template(rf, ctx) {
     \u0275\u0275elementEnd();
     \u0275\u0275text(27);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(28, "div", 64)(29, "p")(30, "strong");
+    \u0275\u0275elementStart(28, "div", 69)(29, "p")(30, "strong");
     \u0275\u0275text(31);
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(32, VistoriaIrregularidadePage_div_23_p_32_Template, 2, 0, "p", 17)(33, VistoriaIrregularidadePage_div_23_div_33_Template, 2, 1, "div", 65);
+    \u0275\u0275template(32, VistoriaIrregularidadePage_div_23_p_32_Template, 2, 0, "p", 17)(33, VistoriaIrregularidadePage_div_23_div_33_Template, 2, 1, "div", 70);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(34, "div", 64)(35, "p")(36, "strong");
+    \u0275\u0275elementStart(34, "div", 69)(35, "p")(36, "strong");
     \u0275\u0275text(37);
     \u0275\u0275elementEnd()();
     \u0275\u0275template(38, VistoriaIrregularidadePage_div_23_p_38_Template, 2, 0, "p", 17)(39, VistoriaIrregularidadePage_div_23_div_39_Template, 2, 1, "div", 17);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(40, "ion-button", 66);
+    \u0275\u0275elementStart(40, "ion-button", 71);
     \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_23_Template_ion_button_click_40_listener() {
       \u0275\u0275restoreView(_r15);
       const ctx_r1 = \u0275\u0275nextContext();
@@ -694,10 +714,10 @@ function VistoriaIrregularidadePage_div_23_Template(rf, ctx) {
 function VistoriaIrregularidadePage_div_24_Template(rf, ctx) {
   if (rf & 1) {
     const _r19 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 74)(1, "div", 75)(2, "p", 76);
+    \u0275\u0275elementStart(0, "div", 79)(1, "div", 80)(2, "p", 81);
     \u0275\u0275text(3);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "ion-button", 77);
+    \u0275\u0275elementStart(4, "ion-button", 82);
     \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_24_Template_ion_button_click_4_listener() {
       \u0275\u0275restoreView(_r19);
       const ctx_r1 = \u0275\u0275nextContext();
@@ -705,13 +725,13 @@ function VistoriaIrregularidadePage_div_24_Template(rf, ctx) {
     });
     \u0275\u0275text(5, "Fechar");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(6, "div", 78);
+    \u0275\u0275elementStart(6, "div", 83);
     \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_24_Template_div_click_6_listener() {
       \u0275\u0275restoreView(_r19);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.fecharPreviewImagemRegistro());
     });
-    \u0275\u0275elementStart(7, "img", 79);
+    \u0275\u0275elementStart(7, "img", 84);
     \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_24_Template_img_click_7_listener($event) {
       \u0275\u0275restoreView(_r19);
       return \u0275\u0275resetView($event.stopPropagation());
@@ -729,13 +749,13 @@ function VistoriaIrregularidadePage_div_24_Template(rf, ctx) {
 function VistoriaIrregularidadePage_div_25_ng_container_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "h1", 82);
+    \u0275\u0275elementStart(1, "h1", 87);
     \u0275\u0275text(2, "Preparando grava\xE7\xE3o");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "p", 83);
+    \u0275\u0275elementStart(3, "p", 88);
     \u0275\u0275text(4, "Aguarde enquanto o microfone \xE9 ativado.");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(5, "ion-spinner", 84);
+    \u0275\u0275element(5, "ion-spinner", 89);
     \u0275\u0275elementContainerEnd();
   }
 }
@@ -743,22 +763,22 @@ function VistoriaIrregularidadePage_div_25_ng_container_3_Template(rf, ctx) {
   if (rf & 1) {
     const _r20 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "h1", 82);
+    \u0275\u0275elementStart(1, "h1", 87);
     \u0275\u0275text(2, "Gravando \xE1udio");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "p", 83);
+    \u0275\u0275elementStart(3, "p", 88);
     \u0275\u0275text(4, "Fale pr\xF3ximo ao microfone. Toque em finalizar para salvar na lista.");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "div", 85);
-    \u0275\u0275element(6, "span", 86);
+    \u0275\u0275elementStart(5, "div", 90);
+    \u0275\u0275element(6, "span", 91);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "p", 87);
+    \u0275\u0275elementStart(7, "p", 92);
     \u0275\u0275text(8);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "p", 88);
+    \u0275\u0275elementStart(9, "p", 93);
     \u0275\u0275text(10, "Dura\xE7\xE3o");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(11, "div", 89)(12, "ion-button", 90);
+    \u0275\u0275elementStart(11, "div", 94)(12, "ion-button", 95);
     \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_25_ng_container_3_Template_ion_button_click_12_listener() {
       \u0275\u0275restoreView(_r20);
       const ctx_r1 = \u0275\u0275nextContext(2);
@@ -766,7 +786,7 @@ function VistoriaIrregularidadePage_div_25_ng_container_3_Template(rf, ctx) {
     });
     \u0275\u0275text(13, " Parar e salvar \xE1udio ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "ion-button", 91);
+    \u0275\u0275elementStart(14, "ion-button", 96);
     \u0275\u0275listener("click", function VistoriaIrregularidadePage_div_25_ng_container_3_Template_ion_button_click_14_listener() {
       \u0275\u0275restoreView(_r20);
       const ctx_r1 = \u0275\u0275nextContext(2);
@@ -784,7 +804,7 @@ function VistoriaIrregularidadePage_div_25_ng_container_3_Template(rf, ctx) {
 }
 function VistoriaIrregularidadePage_div_25_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 80)(1, "div", 81);
+    \u0275\u0275elementStart(0, "div", 85)(1, "div", 86);
     \u0275\u0275template(2, VistoriaIrregularidadePage_div_25_ng_container_2_Template, 6, 0, "ng-container", 17)(3, VistoriaIrregularidadePage_div_25_ng_container_3_Template, 16, 1, "ng-container", 17);
     \u0275\u0275elementEnd()();
   }
@@ -842,6 +862,8 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
   loading = false;
   saving = false;
   errorMessage = "";
+  /** Mensagem de validação contextual para o texto «Descreva o problema» (acesso: aria-describedby). */
+  observacaoFieldError = "";
   isNative = Capacitor.getPlatform() !== "web";
   /** Número da vistoria para exibição abaixo da barra */
   get vistoriaNrDisplay() {
@@ -1361,13 +1383,29 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
       return result.role === "confirm";
     });
   }
+  onObservacaoInput(value) {
+    this.observacao = value ?? "";
+    if (this.observacaoFieldError) {
+      this.observacaoFieldError = "";
+    }
+    this.errorMessage = "";
+  }
   salvarIrregularidade() {
     return __async(this, null, function* () {
       const vistoriaId = this.flowService.getVistoriaId();
       if (!vistoriaId || !this.selectedMatriz) {
+        this.observacaoFieldError = "";
         this.errorMessage = "Selecione um sintoma.";
         return;
       }
+      const observacaoTrim = this.observacao.trim();
+      if (!observacaoTrim) {
+        this.observacaoFieldError = "Descreva o problema com texto objetivo antes de salvar \u2014 o campo n\xE3o pode ficar em branco ou s\xF3 com espa\xE7os.";
+        yield this.agendarReflowUI();
+        yield this.observacaoInput?.setFocus();
+        return;
+      }
+      this.observacaoFieldError = "";
       if (this.selectedMatriz.exigeFoto && this.fotos.length === 0) {
         this.errorMessage = "Foto obrigat\xF3ria para este sintoma.";
         return;
@@ -1382,14 +1420,14 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
         let numeroIrregularidade = this.irregularidadeEmEdicaoNumero;
         if (irregularidadeId) {
           yield this.vistoriaService.atualizarIrregularidade(irregularidadeId, {
-            observacao: this.observacao?.trim() ?? ""
+            observacao: observacaoTrim
           });
         } else {
           const irregularidade = yield this.vistoriaService.criarIrregularidade(vistoriaId, {
             idarea: this.areaId,
             idcomponente: this.componenteId,
             idsintoma: this.selectedMatriz.idSintoma,
-            observacao: this.observacao?.trim() || void 0
+            observacao: observacaoTrim
           });
           irregularidadeId = irregularidade.id;
           numeroIrregularidade = irregularidade.numeroIrregularidade ?? null;
@@ -1650,7 +1688,7 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
       let _t;
       \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.observacaoInput = _t.first);
     }
-  }, decls: 26, vars: 13, consts: [["observacaoInput", ""], [3, "translucent"], ["slot", "start"], ["slot", "end"], ["class", "resumo-btn", "fill", "solid", "color", "medium", "aria-label", "Pendencias de outras vistorias", 3, "click", 4, "ngIf"], ["fill", "solid", "color", "medium", "aria-label", "Resumo da vistoria", 1, "resumo-btn", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "18", "height", "18", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true"], ["d", "m3 17 2 2 4-4"], ["d", "m3 7 2 2 4-4"], ["d", "M13 6h8"], ["d", "M13 12h8"], ["d", "M13 18h8"], [3, "fullscreen"], ["class", "selected-context", 4, "ngIf"], ["class", "content", 4, "ngIf"], ["color", "danger", 4, "ngIf"], ["class", "content sheet-context", 4, "ngIf"], [4, "ngIf"], ["class", "registro-overlay", 4, "ngIf"], ["class", "preview-imagem-overlay", 4, "ngIf"], ["class", "gravacao-audio-overlay", "role", "dialog", "aria-modal", "true", "aria-labelledby", "gravacao-audio-titulo-el", 4, "ngIf"], ["fill", "solid", "color", "medium", "aria-label", "Pendencias de outras vistorias", 1, "resumo-btn", 3, "click"], ["x", "8", "y", "2", "width", "8", "height", "4", "rx", "1"], ["d", "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"], ["d", "M9 12h6"], ["d", "M9 16h6"], [1, "selected-context"], [1, "context-card"], ["class", "context-card", 4, "ngIf"], [1, "content"], ["name", "crescent"], ["color", "danger"], [1, "error-message"], [1, "content", "sheet-context"], [1, "cards-selection-title"], [1, "cards-container"], [3, "level-card", "level-card--selected", "click", 4, "ngFor", "ngForOf"], [3, "click"], ["class", "pendencia-anterior-info", 4, "ngIf"], ["size", "small", "fill", "outline", "color", "primary", 3, "click", 4, "ngIf"], ["color", "primary"], [1, "pendencia-anterior-info"], ["color", "warning"], ["size", "small", "fill", "outline", "color", "primary", 3, "click"], ["color", "primary", 4, "ngIf"], ["position", "stacked"], ["placeholder", "Descreva o problema", 3, "ionInput", "value"], ["lines", "none"], ["fill", "outline", 3, "click"], ["slot", "start", "name", "camera-outline"], ["lines", "none", 4, "ngIf"], [4, "ngFor", "ngForOf"], ["alt", "Foto", 3, "src"], ["slot", "end", "fill", "clear", "color", "danger", 3, "click"], ["slot", "icon-only", "name", "trash-outline"], ["slot", "end", "fill", "outline", 3, "click", "disabled"], ["controls", "", "preload", "none", 1, "audio-player", 3, "src"], [1, "footer-actions"], [1, "btn-main", 3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], ["fill", "outline", "color", "medium", 1, "btn-voltar", 3, "click", "disabled"], ["slot", "start", "src", "/icons/corner-up-left.svg", "aria-hidden", "true"], [1, "registro-overlay"], [1, "registro-card"], [1, "registro-midias-bloco"], ["class", "registro-fotos-grid", 4, "ngIf"], ["expand", "block", 3, "click"], [1, "registro-fotos-grid"], ["class", "registro-foto-item", 4, "ngFor", "ngForOf"], [1, "registro-foto-item"], [1, "registro-foto-preview", 3, "click", "src", "alt"], ["class", "registro-audio-item", 4, "ngFor", "ngForOf"], [1, "registro-audio-item"], ["controls", "", "preload", "none", 3, "src"], [1, "preview-imagem-overlay"], [1, "preview-imagem-topbar"], [1, "preview-imagem-nome"], ["size", "small", 3, "click"], [1, "preview-imagem-body", 3, "click"], ["alt", "Preview da imagem", 1, "preview-imagem-full", 3, "click", "src"], ["role", "dialog", "aria-modal", "true", "aria-labelledby", "gravacao-audio-titulo-el", 1, "gravacao-audio-overlay"], [1, "gravacao-audio-panel"], ["id", "gravacao-audio-titulo-el", 1, "gravacao-audio-titulo"], [1, "gravacao-audio-sub"], ["name", "crescent", 1, "gravacao-audio-spinner"], ["aria-hidden", "true", 1, "gravacao-audio-pulse-wrap"], [1, "gravacao-audio-pulse"], ["aria-live", "polite", 1, "gravacao-audio-timer"], [1, "gravacao-audio-legenda"], [1, "gravacao-audio-botoes"], ["expand", "block", "color", "danger", 3, "click"], ["expand", "block", "fill", "outline", "color", "medium", 3, "click"]], template: function VistoriaIrregularidadePage_Template(rf, ctx) {
+  }, decls: 26, vars: 13, consts: [["observacaoInput", ""], [3, "translucent"], ["slot", "start"], ["slot", "end"], ["class", "resumo-btn", "fill", "solid", "color", "medium", "aria-label", "Pendencias de outras vistorias", 3, "click", 4, "ngIf"], ["fill", "solid", "color", "medium", "aria-label", "Resumo da vistoria", 1, "resumo-btn", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "18", "height", "18", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true"], ["d", "m3 17 2 2 4-4"], ["d", "m3 7 2 2 4-4"], ["d", "M13 6h8"], ["d", "M13 12h8"], ["d", "M13 18h8"], [3, "fullscreen"], ["class", "selected-context", 4, "ngIf"], ["class", "content", 4, "ngIf"], ["color", "danger", 4, "ngIf"], ["class", "content sheet-context", 4, "ngIf"], [4, "ngIf"], ["class", "registro-overlay", 4, "ngIf"], ["class", "preview-imagem-overlay", 4, "ngIf"], ["class", "gravacao-audio-overlay", "role", "dialog", "aria-modal", "true", "aria-labelledby", "gravacao-audio-titulo-el", 4, "ngIf"], ["fill", "solid", "color", "medium", "aria-label", "Pendencias de outras vistorias", 1, "resumo-btn", 3, "click"], ["x", "8", "y", "2", "width", "8", "height", "4", "rx", "1"], ["d", "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"], ["d", "M9 12h6"], ["d", "M9 16h6"], [1, "selected-context"], [1, "context-card"], ["class", "context-card", 4, "ngIf"], [1, "content"], ["name", "crescent"], ["color", "danger"], [1, "error-message"], [1, "content", "sheet-context"], [1, "cards-selection-title"], [1, "cards-container"], [3, "level-card", "level-card--selected", "click", 4, "ngFor", "ngForOf"], [3, "click"], ["class", "pendencia-anterior-info", 4, "ngIf"], ["size", "small", "fill", "outline", "color", "primary", 3, "click", 4, "ngIf"], ["color", "primary"], [1, "pendencia-anterior-info"], ["color", "warning"], ["size", "small", "fill", "outline", "color", "primary", 3, "click"], ["color", "primary", 4, "ngIf"], ["lines", "full", 1, "item-descricao-problema"], ["position", "stacked"], [1, "label-required"], ["placeholder", "Descreva o problema", "inputmode", "text", 3, "ionInput", "value"], ["role", "alert", "color", "danger", "id", "erro-desc-problema", 4, "ngIf"], ["lines", "none"], ["fill", "outline", 3, "click"], ["slot", "start", "name", "camera-outline"], ["lines", "none", 4, "ngIf"], ["role", "alert", "color", "danger", "id", "erro-desc-problema"], [1, "campo-descricao-erro"], [4, "ngFor", "ngForOf"], ["alt", "Foto", 3, "src"], ["slot", "end", "fill", "clear", "color", "danger", 3, "click"], ["slot", "icon-only", "name", "trash-outline"], ["slot", "end", "fill", "outline", 3, "click", "disabled"], ["controls", "", "preload", "none", 1, "audio-player", 3, "src"], [1, "footer-actions"], [1, "btn-main", 3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], ["fill", "outline", "color", "medium", 1, "btn-voltar", 3, "click", "disabled"], ["slot", "start", "src", "/icons/corner-up-left.svg", "aria-hidden", "true"], [1, "registro-overlay"], [1, "registro-card"], [1, "registro-midias-bloco"], ["class", "registro-fotos-grid", 4, "ngIf"], ["expand", "block", 3, "click"], [1, "registro-fotos-grid"], ["class", "registro-foto-item", 4, "ngFor", "ngForOf"], [1, "registro-foto-item"], [1, "registro-foto-preview", 3, "click", "src", "alt"], ["class", "registro-audio-item", 4, "ngFor", "ngForOf"], [1, "registro-audio-item"], ["controls", "", "preload", "none", 3, "src"], [1, "preview-imagem-overlay"], [1, "preview-imagem-topbar"], [1, "preview-imagem-nome"], ["size", "small", 3, "click"], [1, "preview-imagem-body", 3, "click"], ["alt", "Preview da imagem", 1, "preview-imagem-full", 3, "click", "src"], ["role", "dialog", "aria-modal", "true", "aria-labelledby", "gravacao-audio-titulo-el", 1, "gravacao-audio-overlay"], [1, "gravacao-audio-panel"], ["id", "gravacao-audio-titulo-el", 1, "gravacao-audio-titulo"], [1, "gravacao-audio-sub"], ["name", "crescent", 1, "gravacao-audio-spinner"], ["aria-hidden", "true", 1, "gravacao-audio-pulse-wrap"], [1, "gravacao-audio-pulse"], ["aria-live", "polite", 1, "gravacao-audio-timer"], [1, "gravacao-audio-legenda"], [1, "gravacao-audio-botoes"], ["expand", "block", "color", "danger", 3, "click"], ["expand", "block", "fill", "outline", "color", "medium", 3, "click"]], template: function VistoriaIrregularidadePage_Template(rf, ctx) {
     if (rf & 1) {
       \u0275\u0275elementStart(0, "ion-header", 1)(1, "ion-toolbar")(2, "ion-buttons", 2);
       \u0275\u0275element(3, "ion-menu-button");
@@ -1670,7 +1708,7 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
       \u0275\u0275elementEnd()()()()();
       \u0275\u0275namespaceHTML();
       \u0275\u0275elementStart(15, "ion-content", 12);
-      \u0275\u0275template(16, VistoriaIrregularidadePage_div_16_Template, 22, 5, "div", 13)(17, VistoriaIrregularidadePage_div_17_Template, 4, 0, "div", 14)(18, VistoriaIrregularidadePage_ion_text_18_Template, 3, 1, "ion-text", 15)(19, VistoriaIrregularidadePage_div_19_Template, 5, 1, "div", 16)(20, VistoriaIrregularidadePage_div_20_Template, 3, 0, "div", 14)(21, VistoriaIrregularidadePage_div_21_Template, 17, 7, "div", 14);
+      \u0275\u0275template(16, VistoriaIrregularidadePage_div_16_Template, 22, 5, "div", 13)(17, VistoriaIrregularidadePage_div_17_Template, 4, 0, "div", 14)(18, VistoriaIrregularidadePage_ion_text_18_Template, 3, 1, "ion-text", 15)(19, VistoriaIrregularidadePage_div_19_Template, 5, 1, "div", 16)(20, VistoriaIrregularidadePage_div_20_Template, 3, 0, "div", 14)(21, VistoriaIrregularidadePage_div_21_Template, 20, 13, "div", 14);
       \u0275\u0275elementEnd();
       \u0275\u0275template(22, VistoriaIrregularidadePage_ion_footer_22_Template, 9, 4, "ion-footer", 17)(23, VistoriaIrregularidadePage_div_23_Template, 42, 13, "div", 18)(24, VistoriaIrregularidadePage_div_24_Template, 8, 2, "div", 19)(25, VistoriaIrregularidadePage_div_25_Template, 4, 2, "div", 20);
     }
@@ -1724,7 +1762,7 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
     IonText,
     IonTextarea,
     IonSpinner
-  ], styles: ["\n\nion-content[_ngcontent-%COMP%] {\n  --padding-bottom: 108px;\n}\nion-footer[_ngcontent-%COMP%] {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer[_ngcontent-%COMP%]   ion-toolbar[_ngcontent-%COMP%] {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-voltar[_ngcontent-%COMP%] {\n  flex: 0 0 30%;\n  min-width: 0;\n}\n.btn-main[_ngcontent-%COMP%] {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  padding: 16px;\n}\n.content.sheet-context[_ngcontent-%COMP%] {\n  align-items: stretch;\n}\n.cards-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  width: 100%;\n}\n.level-card[_ngcontent-%COMP%] {\n  margin: 0;\n  cursor: pointer;\n  --background:\n    linear-gradient(\n      180deg,\n      #f8fbff 0%,\n      #eef4ff 100%);\n  border: 1px solid #d7e3ff;\n  box-shadow: 0 2px 8px rgba(25, 88, 191, 0.08);\n  transition:\n    transform 120ms ease,\n    box-shadow 120ms ease,\n    filter 120ms ease;\n}\n.level-card[_ngcontent-%COMP%]:active {\n  transform: scale(0.99);\n  box-shadow: 0 1px 4px rgba(25, 88, 191, 0.16);\n  filter: brightness(0.98);\n}\n.level-card[_ngcontent-%COMP%]:focus-visible {\n  outline: 2px solid #1d4ed8;\n  outline-offset: 2px;\n}\n.level-card--selected[_ngcontent-%COMP%] {\n  --background: #e7f2ff;\n  border: 1px solid var(--ion-color-primary);\n}\n.level-card[_ngcontent-%COMP%]   ion-card-header[_ngcontent-%COMP%] {\n  padding: 16px 18px;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-title[_ngcontent-%COMP%] {\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: #1d4ed8;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-content[_ngcontent-%COMP%] {\n  padding-top: 0;\n  padding-bottom: 16px;\n  padding-inline: 18px;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-content[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 1rem;\n}\n.cards-selection-title[_ngcontent-%COMP%] {\n  margin: 0;\n  font-weight: 700;\n  color: #1d4ed8;\n}\n.pendencia-anterior-info[_ngcontent-%COMP%] {\n  margin-bottom: 6px !important;\n  font-weight: 600;\n}\n.vistoria-nr-bar[_ngcontent-%COMP%] {\n  --min-height: 36px;\n  --background: var(--ion-color-light);\n}\n.selected-context[_ngcontent-%COMP%] {\n  margin: 12px 12px 8px;\n  width: calc(100% - 24px);\n  display: grid;\n  grid-template-columns: 1fr;\n  gap: 8px;\n}\n.context-card[_ngcontent-%COMP%] {\n  padding: 10px 12px;\n  border-radius: 12px;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);\n  cursor: default;\n}\n.context-card[_ngcontent-%COMP%]   strong[_ngcontent-%COMP%] {\n  color: #0f172a;\n  font-weight: 700;\n  margin-right: 4px;\n}\n.context-card[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: #334155;\n  word-break: break-word;\n}\n.error-message[_ngcontent-%COMP%] {\n  padding: 12px 16px;\n}\nion-item.is-selected[_ngcontent-%COMP%] {\n  --background: #e7f2ff;\n}\nimg[_ngcontent-%COMP%] {\n  width: 64px;\n  height: 64px;\n  object-fit: cover;\n  border-radius: 8px;\n  margin-right: 12px;\n}\n.audio-actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.audio-player[_ngcontent-%COMP%] {\n  width: 100%;\n  margin-top: 6px;\n}\n.registro-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483645;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n  background: rgba(2, 6, 23, 0.82);\n}\n.registro-card[_ngcontent-%COMP%] {\n  width: min(720px, 100%);\n  max-height: 90vh;\n  overflow: auto;\n  padding: 18px;\n  border-radius: 12px;\n  background: #ffffff;\n  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35);\n}\n.registro-card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin: 0 0 12px;\n  font-size: 1.15rem;\n}\n.registro-card[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0 0 6px;\n}\n.registro-midias-bloco[_ngcontent-%COMP%] {\n  margin: 12px 0;\n}\n.registro-fotos-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));\n  gap: 10px;\n}\n.registro-foto-item[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin-top: 4px;\n  font-size: 0.8rem;\n  word-break: break-word;\n}\n.registro-foto-preview[_ngcontent-%COMP%] {\n  width: 100%;\n  height: 92px;\n  object-fit: cover;\n  border-radius: 8px;\n  border: 1px solid #e2e8f0;\n  margin-right: 0;\n}\n.registro-audio-item[_ngcontent-%COMP%] {\n  margin-bottom: 10px;\n  padding: 8px 10px;\n  border-radius: 8px;\n  border: 1px solid #e2e8f0;\n  background: #f8fafc;\n}\n.registro-audio-item[_ngcontent-%COMP%]   audio[_ngcontent-%COMP%] {\n  width: 100%;\n}\n.preview-imagem-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483646;\n  display: flex;\n  flex-direction: column;\n  background: #020617;\n}\n.preview-imagem-topbar[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n  padding: calc(10px + env(safe-area-inset-top)) 12px 10px;\n  border-bottom: 1px solid rgba(148, 163, 184, 0.25);\n}\n.preview-imagem-topbar[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin: 0;\n}\n.preview-imagem-nome[_ngcontent-%COMP%] {\n  margin: 0;\n  color: #e2e8f0;\n  font-size: 0.9rem;\n  font-weight: 600;\n  word-break: break-word;\n}\n.preview-imagem-body[_ngcontent-%COMP%] {\n  flex: 1;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 14px;\n}\n.preview-imagem-full[_ngcontent-%COMP%] {\n  width: auto;\n  height: auto;\n  max-width: 100%;\n  max-height: calc(100vh - 84px - env(safe-area-inset-top));\n  object-fit: contain;\n  border-radius: 8px;\n  margin-right: 0;\n}\n.gravacao-audio-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483646;\n  box-sizing: border-box;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));\n  background: #0f172a;\n  pointer-events: auto;\n  touch-action: none;\n  overflow: hidden;\n}\n.gravacao-audio-panel[_ngcontent-%COMP%] {\n  width: 100%;\n  max-width: 400px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  padding: 16px 12px;\n  text-align: center;\n  color: #f8fafc;\n}\n.gravacao-audio-titulo[_ngcontent-%COMP%] {\n  margin: 0 0 8px;\n  font-size: 1.35rem;\n  font-weight: 700;\n  letter-spacing: -0.02em;\n}\n.gravacao-audio-sub[_ngcontent-%COMP%] {\n  margin: 0 0 28px;\n  font-size: 0.95rem;\n  line-height: 1.45;\n  color: #94a3b8;\n  max-width: 320px;\n}\n.gravacao-audio-pulse-wrap[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n}\n.gravacao-audio-pulse[_ngcontent-%COMP%] {\n  display: inline-block;\n  width: 18px;\n  height: 18px;\n  border-radius: 50%;\n  background: #ef4444;\n  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55);\n  animation: _ngcontent-%COMP%_gravacao-pulse 1.4s ease-out infinite;\n}\n@keyframes _ngcontent-%COMP%_gravacao-pulse {\n  0% {\n    transform: scale(1);\n    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);\n  }\n  70% {\n    transform: scale(1.08);\n    box-shadow: 0 0 0 16px rgba(239, 68, 68, 0);\n  }\n  100% {\n    transform: scale(1);\n    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);\n  }\n}\n.gravacao-audio-timer[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 3.25rem;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  letter-spacing: 0.06em;\n  color: #ffffff;\n}\n.gravacao-audio-legenda[_ngcontent-%COMP%] {\n  margin: 4px 0 32px;\n  font-size: 0.8rem;\n  text-transform: uppercase;\n  letter-spacing: 0.12em;\n  color: #64748b;\n}\n.gravacao-audio-botoes[_ngcontent-%COMP%] {\n  width: 100%;\n  max-width: 340px;\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n.gravacao-audio-spinner[_ngcontent-%COMP%] {\n  width: 48px;\n  height: 48px;\n  margin: 12px auto 0;\n  color: #93c5fd;\n}\n/*# sourceMappingURL=vistoria-irregularidade.page.css.map */"] });
+  ], styles: ["\n\nion-content[_ngcontent-%COMP%] {\n  --padding-bottom: 108px;\n}\nion-footer[_ngcontent-%COMP%] {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer[_ngcontent-%COMP%]   ion-toolbar[_ngcontent-%COMP%] {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-voltar[_ngcontent-%COMP%] {\n  flex: 0 0 30%;\n  min-width: 0;\n}\n.btn-main[_ngcontent-%COMP%] {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  padding: 16px;\n}\n.content.sheet-context[_ngcontent-%COMP%] {\n  align-items: stretch;\n}\n.cards-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  width: 100%;\n}\n.level-card[_ngcontent-%COMP%] {\n  margin: 0;\n  cursor: pointer;\n  --background:\n    linear-gradient(\n      180deg,\n      #f8fbff 0%,\n      #eef4ff 100%);\n  border: 1px solid #d7e3ff;\n  box-shadow: 0 2px 8px rgba(25, 88, 191, 0.08);\n  transition:\n    transform 120ms ease,\n    box-shadow 120ms ease,\n    filter 120ms ease;\n}\n.level-card[_ngcontent-%COMP%]:active {\n  transform: scale(0.99);\n  box-shadow: 0 1px 4px rgba(25, 88, 191, 0.16);\n  filter: brightness(0.98);\n}\n.level-card[_ngcontent-%COMP%]:focus-visible {\n  outline: 2px solid #1d4ed8;\n  outline-offset: 2px;\n}\n.level-card--selected[_ngcontent-%COMP%] {\n  --background: #e7f2ff;\n  border: 1px solid var(--ion-color-primary);\n}\n.level-card[_ngcontent-%COMP%]   ion-card-header[_ngcontent-%COMP%] {\n  padding: 16px 18px;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-title[_ngcontent-%COMP%] {\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: #1d4ed8;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-content[_ngcontent-%COMP%] {\n  padding-top: 0;\n  padding-bottom: 16px;\n  padding-inline: 18px;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-content[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 1rem;\n}\n.cards-selection-title[_ngcontent-%COMP%] {\n  margin: 0;\n  font-weight: 700;\n  color: #1d4ed8;\n}\n.pendencia-anterior-info[_ngcontent-%COMP%] {\n  margin-bottom: 6px !important;\n  font-weight: 600;\n}\n.vistoria-nr-bar[_ngcontent-%COMP%] {\n  --min-height: 36px;\n  --background: var(--ion-color-light);\n}\n.selected-context[_ngcontent-%COMP%] {\n  margin: 12px 12px 8px;\n  width: calc(100% - 24px);\n  display: grid;\n  grid-template-columns: 1fr;\n  gap: 8px;\n}\n.context-card[_ngcontent-%COMP%] {\n  padding: 10px 12px;\n  border-radius: 12px;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);\n  cursor: default;\n}\n.context-card[_ngcontent-%COMP%]   strong[_ngcontent-%COMP%] {\n  color: #0f172a;\n  font-weight: 700;\n  margin-right: 4px;\n}\n.context-card[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: #334155;\n  word-break: break-word;\n}\n.error-message[_ngcontent-%COMP%] {\n  padding: 12px 16px;\n}\n.item-descricao-problema[_ngcontent-%COMP%] {\n  --highlight-color-focused: var(--ion-color-primary);\n}\n.item-descricao-problema--erro[_ngcontent-%COMP%] {\n  --border-color: var(--ion-color-danger);\n  --highlight-color-invalid: var(--ion-color-danger);\n}\n.item-descricao-problema[_ngcontent-%COMP%]   ion-label[_ngcontent-%COMP%]   .label-required[_ngcontent-%COMP%] {\n  color: var(--ion-color-medium);\n  font-weight: 500;\n  font-size: 0.85em;\n}\n.campo-descricao-erro[_ngcontent-%COMP%] {\n  margin: 0 16px 8px;\n  font-size: 0.875rem;\n  line-height: 1.35;\n  color: var(--ion-color-danger);\n}\nion-item.is-selected[_ngcontent-%COMP%] {\n  --background: #e7f2ff;\n}\nimg[_ngcontent-%COMP%] {\n  width: 64px;\n  height: 64px;\n  object-fit: cover;\n  border-radius: 8px;\n  margin-right: 12px;\n}\n.audio-actions[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.audio-player[_ngcontent-%COMP%] {\n  width: 100%;\n  margin-top: 6px;\n}\n.registro-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483645;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n  background: rgba(2, 6, 23, 0.82);\n}\n.registro-card[_ngcontent-%COMP%] {\n  width: min(720px, 100%);\n  max-height: 90vh;\n  overflow: auto;\n  padding: 18px;\n  border-radius: 12px;\n  background: #ffffff;\n  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35);\n}\n.registro-card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin: 0 0 12px;\n  font-size: 1.15rem;\n}\n.registro-card[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0 0 6px;\n}\n.registro-midias-bloco[_ngcontent-%COMP%] {\n  margin: 12px 0;\n}\n.registro-fotos-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));\n  gap: 10px;\n}\n.registro-foto-item[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin-top: 4px;\n  font-size: 0.8rem;\n  word-break: break-word;\n}\n.registro-foto-preview[_ngcontent-%COMP%] {\n  width: 100%;\n  height: 92px;\n  object-fit: cover;\n  border-radius: 8px;\n  border: 1px solid #e2e8f0;\n  margin-right: 0;\n}\n.registro-audio-item[_ngcontent-%COMP%] {\n  margin-bottom: 10px;\n  padding: 8px 10px;\n  border-radius: 8px;\n  border: 1px solid #e2e8f0;\n  background: #f8fafc;\n}\n.registro-audio-item[_ngcontent-%COMP%]   audio[_ngcontent-%COMP%] {\n  width: 100%;\n}\n.preview-imagem-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483646;\n  display: flex;\n  flex-direction: column;\n  background: #020617;\n}\n.preview-imagem-topbar[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n  padding: calc(10px + env(safe-area-inset-top)) 12px 10px;\n  border-bottom: 1px solid rgba(148, 163, 184, 0.25);\n}\n.preview-imagem-topbar[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin: 0;\n}\n.preview-imagem-nome[_ngcontent-%COMP%] {\n  margin: 0;\n  color: #e2e8f0;\n  font-size: 0.9rem;\n  font-weight: 600;\n  word-break: break-word;\n}\n.preview-imagem-body[_ngcontent-%COMP%] {\n  flex: 1;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 14px;\n}\n.preview-imagem-full[_ngcontent-%COMP%] {\n  width: auto;\n  height: auto;\n  max-width: 100%;\n  max-height: calc(100vh - 84px - env(safe-area-inset-top));\n  object-fit: contain;\n  border-radius: 8px;\n  margin-right: 0;\n}\n.gravacao-audio-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483646;\n  box-sizing: border-box;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));\n  background: #0f172a;\n  pointer-events: auto;\n  touch-action: none;\n  overflow: hidden;\n}\n.gravacao-audio-panel[_ngcontent-%COMP%] {\n  width: 100%;\n  max-width: 400px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  padding: 16px 12px;\n  text-align: center;\n  color: #f8fafc;\n}\n.gravacao-audio-titulo[_ngcontent-%COMP%] {\n  margin: 0 0 8px;\n  font-size: 1.35rem;\n  font-weight: 700;\n  letter-spacing: -0.02em;\n}\n.gravacao-audio-sub[_ngcontent-%COMP%] {\n  margin: 0 0 28px;\n  font-size: 0.95rem;\n  line-height: 1.45;\n  color: #94a3b8;\n  max-width: 320px;\n}\n.gravacao-audio-pulse-wrap[_ngcontent-%COMP%] {\n  margin-bottom: 20px;\n}\n.gravacao-audio-pulse[_ngcontent-%COMP%] {\n  display: inline-block;\n  width: 18px;\n  height: 18px;\n  border-radius: 50%;\n  background: #ef4444;\n  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55);\n  animation: _ngcontent-%COMP%_gravacao-pulse 1.4s ease-out infinite;\n}\n@keyframes _ngcontent-%COMP%_gravacao-pulse {\n  0% {\n    transform: scale(1);\n    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);\n  }\n  70% {\n    transform: scale(1.08);\n    box-shadow: 0 0 0 16px rgba(239, 68, 68, 0);\n  }\n  100% {\n    transform: scale(1);\n    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);\n  }\n}\n.gravacao-audio-timer[_ngcontent-%COMP%] {\n  margin: 0;\n  font-size: 3.25rem;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  letter-spacing: 0.06em;\n  color: #ffffff;\n}\n.gravacao-audio-legenda[_ngcontent-%COMP%] {\n  margin: 4px 0 32px;\n  font-size: 0.8rem;\n  text-transform: uppercase;\n  letter-spacing: 0.12em;\n  color: #64748b;\n}\n.gravacao-audio-botoes[_ngcontent-%COMP%] {\n  width: 100%;\n  max-width: 340px;\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n.gravacao-audio-spinner[_ngcontent-%COMP%] {\n  width: 48px;\n  height: 48px;\n  margin: 12px auto 0;\n  color: #93c5fd;\n}\n/*# sourceMappingURL=vistoria-irregularidade.page.css.map */"] });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(VistoriaIrregularidadePage, [{
@@ -1887,15 +1925,34 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
       <p class="error-message">Irregularidade j\xE1 registrada nesta vistoria. Voc\xEA pode editar a observa\xE7\xE3o e adicionar novas m\xEDdias.</p>
     </ion-text>
 
-    <ion-item>
-      <ion-label position="stacked">Descreva o Problema</ion-label>
+    <ion-item
+      class="item-descricao-problema"
+      [class.item-descricao-problema--erro]="observacaoFieldError"
+      lines="full"
+    >
+      <ion-label position="stacked">
+        Descreva o problema
+        <span class="label-required">(obrigat\xF3rio)</span>
+      </ion-label>
       <ion-textarea
         #observacaoInput
         [value]="observacao"
         placeholder="Descreva o problema"
-        (ionInput)="observacao = $event.detail.value ?? ''"
+        inputmode="text"
+        [attr.aria-required]="true"
+        [attr.aria-invalid]="observacaoFieldError ? 'true' : null"
+        [attr.aria-describedby]="observacaoFieldError ? 'erro-desc-problema' : null"
+        (ionInput)="onObservacaoInput($event.detail.value ?? '')"
       ></ion-textarea>
     </ion-item>
+    <ion-text
+      *ngIf="observacaoFieldError"
+      role="alert"
+      color="danger"
+      id="erro-desc-problema"
+    >
+      <p class="campo-descricao-erro">{{ observacaoFieldError }}</p>
+    </ion-text>
 
     <ion-item lines="none">
       <ion-label>Fotos ({{ fotos.length }})</ion-label>
@@ -2067,7 +2124,7 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
   </div>
 </div>
 
-`, styles: ["/* src/app/pages/vistoria/vistoria-irregularidade.page.scss */\nion-content {\n  --padding-bottom: 108px;\n}\nion-footer {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer ion-toolbar {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer ion-button {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-voltar {\n  flex: 0 0 30%;\n  min-width: 0;\n}\n.btn-main {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  padding: 16px;\n}\n.content.sheet-context {\n  align-items: stretch;\n}\n.cards-container {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  width: 100%;\n}\n.level-card {\n  margin: 0;\n  cursor: pointer;\n  --background:\n    linear-gradient(\n      180deg,\n      #f8fbff 0%,\n      #eef4ff 100%);\n  border: 1px solid #d7e3ff;\n  box-shadow: 0 2px 8px rgba(25, 88, 191, 0.08);\n  transition:\n    transform 120ms ease,\n    box-shadow 120ms ease,\n    filter 120ms ease;\n}\n.level-card:active {\n  transform: scale(0.99);\n  box-shadow: 0 1px 4px rgba(25, 88, 191, 0.16);\n  filter: brightness(0.98);\n}\n.level-card:focus-visible {\n  outline: 2px solid #1d4ed8;\n  outline-offset: 2px;\n}\n.level-card--selected {\n  --background: #e7f2ff;\n  border: 1px solid var(--ion-color-primary);\n}\n.level-card ion-card-header {\n  padding: 16px 18px;\n}\n.level-card ion-card-title {\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: #1d4ed8;\n}\n.level-card ion-card-content {\n  padding-top: 0;\n  padding-bottom: 16px;\n  padding-inline: 18px;\n}\n.level-card ion-card-content p {\n  margin: 0;\n  font-size: 1rem;\n}\n.cards-selection-title {\n  margin: 0;\n  font-weight: 700;\n  color: #1d4ed8;\n}\n.pendencia-anterior-info {\n  margin-bottom: 6px !important;\n  font-weight: 600;\n}\n.vistoria-nr-bar {\n  --min-height: 36px;\n  --background: var(--ion-color-light);\n}\n.selected-context {\n  margin: 12px 12px 8px;\n  width: calc(100% - 24px);\n  display: grid;\n  grid-template-columns: 1fr;\n  gap: 8px;\n}\n.context-card {\n  padding: 10px 12px;\n  border-radius: 12px;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);\n  cursor: default;\n}\n.context-card strong {\n  color: #0f172a;\n  font-weight: 700;\n  margin-right: 4px;\n}\n.context-card span {\n  color: #334155;\n  word-break: break-word;\n}\n.error-message {\n  padding: 12px 16px;\n}\nion-item.is-selected {\n  --background: #e7f2ff;\n}\nimg {\n  width: 64px;\n  height: 64px;\n  object-fit: cover;\n  border-radius: 8px;\n  margin-right: 12px;\n}\n.audio-actions {\n  display: flex;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.audio-player {\n  width: 100%;\n  margin-top: 6px;\n}\n.registro-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483645;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n  background: rgba(2, 6, 23, 0.82);\n}\n.registro-card {\n  width: min(720px, 100%);\n  max-height: 90vh;\n  overflow: auto;\n  padding: 18px;\n  border-radius: 12px;\n  background: #ffffff;\n  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35);\n}\n.registro-card h2 {\n  margin: 0 0 12px;\n  font-size: 1.15rem;\n}\n.registro-card p {\n  margin: 0 0 6px;\n}\n.registro-midias-bloco {\n  margin: 12px 0;\n}\n.registro-fotos-grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));\n  gap: 10px;\n}\n.registro-foto-item p {\n  margin-top: 4px;\n  font-size: 0.8rem;\n  word-break: break-word;\n}\n.registro-foto-preview {\n  width: 100%;\n  height: 92px;\n  object-fit: cover;\n  border-radius: 8px;\n  border: 1px solid #e2e8f0;\n  margin-right: 0;\n}\n.registro-audio-item {\n  margin-bottom: 10px;\n  padding: 8px 10px;\n  border-radius: 8px;\n  border: 1px solid #e2e8f0;\n  background: #f8fafc;\n}\n.registro-audio-item audio {\n  width: 100%;\n}\n.preview-imagem-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483646;\n  display: flex;\n  flex-direction: column;\n  background: #020617;\n}\n.preview-imagem-topbar {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n  padding: calc(10px + env(safe-area-inset-top)) 12px 10px;\n  border-bottom: 1px solid rgba(148, 163, 184, 0.25);\n}\n.preview-imagem-topbar ion-button {\n  margin: 0;\n}\n.preview-imagem-nome {\n  margin: 0;\n  color: #e2e8f0;\n  font-size: 0.9rem;\n  font-weight: 600;\n  word-break: break-word;\n}\n.preview-imagem-body {\n  flex: 1;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 14px;\n}\n.preview-imagem-full {\n  width: auto;\n  height: auto;\n  max-width: 100%;\n  max-height: calc(100vh - 84px - env(safe-area-inset-top));\n  object-fit: contain;\n  border-radius: 8px;\n  margin-right: 0;\n}\n.gravacao-audio-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483646;\n  box-sizing: border-box;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));\n  background: #0f172a;\n  pointer-events: auto;\n  touch-action: none;\n  overflow: hidden;\n}\n.gravacao-audio-panel {\n  width: 100%;\n  max-width: 400px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  padding: 16px 12px;\n  text-align: center;\n  color: #f8fafc;\n}\n.gravacao-audio-titulo {\n  margin: 0 0 8px;\n  font-size: 1.35rem;\n  font-weight: 700;\n  letter-spacing: -0.02em;\n}\n.gravacao-audio-sub {\n  margin: 0 0 28px;\n  font-size: 0.95rem;\n  line-height: 1.45;\n  color: #94a3b8;\n  max-width: 320px;\n}\n.gravacao-audio-pulse-wrap {\n  margin-bottom: 20px;\n}\n.gravacao-audio-pulse {\n  display: inline-block;\n  width: 18px;\n  height: 18px;\n  border-radius: 50%;\n  background: #ef4444;\n  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55);\n  animation: gravacao-pulse 1.4s ease-out infinite;\n}\n@keyframes gravacao-pulse {\n  0% {\n    transform: scale(1);\n    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);\n  }\n  70% {\n    transform: scale(1.08);\n    box-shadow: 0 0 0 16px rgba(239, 68, 68, 0);\n  }\n  100% {\n    transform: scale(1);\n    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);\n  }\n}\n.gravacao-audio-timer {\n  margin: 0;\n  font-size: 3.25rem;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  letter-spacing: 0.06em;\n  color: #ffffff;\n}\n.gravacao-audio-legenda {\n  margin: 4px 0 32px;\n  font-size: 0.8rem;\n  text-transform: uppercase;\n  letter-spacing: 0.12em;\n  color: #64748b;\n}\n.gravacao-audio-botoes {\n  width: 100%;\n  max-width: 340px;\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n.gravacao-audio-spinner {\n  width: 48px;\n  height: 48px;\n  margin: 12px auto 0;\n  color: #93c5fd;\n}\n/*# sourceMappingURL=vistoria-irregularidade.page.css.map */\n"] }]
+`, styles: ["/* src/app/pages/vistoria/vistoria-irregularidade.page.scss */\nion-content {\n  --padding-bottom: 108px;\n}\nion-footer {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer ion-toolbar {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer ion-button {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-voltar {\n  flex: 0 0 30%;\n  min-width: 0;\n}\n.btn-main {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  padding: 16px;\n}\n.content.sheet-context {\n  align-items: stretch;\n}\n.cards-container {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  width: 100%;\n}\n.level-card {\n  margin: 0;\n  cursor: pointer;\n  --background:\n    linear-gradient(\n      180deg,\n      #f8fbff 0%,\n      #eef4ff 100%);\n  border: 1px solid #d7e3ff;\n  box-shadow: 0 2px 8px rgba(25, 88, 191, 0.08);\n  transition:\n    transform 120ms ease,\n    box-shadow 120ms ease,\n    filter 120ms ease;\n}\n.level-card:active {\n  transform: scale(0.99);\n  box-shadow: 0 1px 4px rgba(25, 88, 191, 0.16);\n  filter: brightness(0.98);\n}\n.level-card:focus-visible {\n  outline: 2px solid #1d4ed8;\n  outline-offset: 2px;\n}\n.level-card--selected {\n  --background: #e7f2ff;\n  border: 1px solid var(--ion-color-primary);\n}\n.level-card ion-card-header {\n  padding: 16px 18px;\n}\n.level-card ion-card-title {\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: #1d4ed8;\n}\n.level-card ion-card-content {\n  padding-top: 0;\n  padding-bottom: 16px;\n  padding-inline: 18px;\n}\n.level-card ion-card-content p {\n  margin: 0;\n  font-size: 1rem;\n}\n.cards-selection-title {\n  margin: 0;\n  font-weight: 700;\n  color: #1d4ed8;\n}\n.pendencia-anterior-info {\n  margin-bottom: 6px !important;\n  font-weight: 600;\n}\n.vistoria-nr-bar {\n  --min-height: 36px;\n  --background: var(--ion-color-light);\n}\n.selected-context {\n  margin: 12px 12px 8px;\n  width: calc(100% - 24px);\n  display: grid;\n  grid-template-columns: 1fr;\n  gap: 8px;\n}\n.context-card {\n  padding: 10px 12px;\n  border-radius: 12px;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);\n  cursor: default;\n}\n.context-card strong {\n  color: #0f172a;\n  font-weight: 700;\n  margin-right: 4px;\n}\n.context-card span {\n  color: #334155;\n  word-break: break-word;\n}\n.error-message {\n  padding: 12px 16px;\n}\n.item-descricao-problema {\n  --highlight-color-focused: var(--ion-color-primary);\n}\n.item-descricao-problema--erro {\n  --border-color: var(--ion-color-danger);\n  --highlight-color-invalid: var(--ion-color-danger);\n}\n.item-descricao-problema ion-label .label-required {\n  color: var(--ion-color-medium);\n  font-weight: 500;\n  font-size: 0.85em;\n}\n.campo-descricao-erro {\n  margin: 0 16px 8px;\n  font-size: 0.875rem;\n  line-height: 1.35;\n  color: var(--ion-color-danger);\n}\nion-item.is-selected {\n  --background: #e7f2ff;\n}\nimg {\n  width: 64px;\n  height: 64px;\n  object-fit: cover;\n  border-radius: 8px;\n  margin-right: 12px;\n}\n.audio-actions {\n  display: flex;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.audio-player {\n  width: 100%;\n  margin-top: 6px;\n}\n.registro-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483645;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n  background: rgba(2, 6, 23, 0.82);\n}\n.registro-card {\n  width: min(720px, 100%);\n  max-height: 90vh;\n  overflow: auto;\n  padding: 18px;\n  border-radius: 12px;\n  background: #ffffff;\n  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35);\n}\n.registro-card h2 {\n  margin: 0 0 12px;\n  font-size: 1.15rem;\n}\n.registro-card p {\n  margin: 0 0 6px;\n}\n.registro-midias-bloco {\n  margin: 12px 0;\n}\n.registro-fotos-grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));\n  gap: 10px;\n}\n.registro-foto-item p {\n  margin-top: 4px;\n  font-size: 0.8rem;\n  word-break: break-word;\n}\n.registro-foto-preview {\n  width: 100%;\n  height: 92px;\n  object-fit: cover;\n  border-radius: 8px;\n  border: 1px solid #e2e8f0;\n  margin-right: 0;\n}\n.registro-audio-item {\n  margin-bottom: 10px;\n  padding: 8px 10px;\n  border-radius: 8px;\n  border: 1px solid #e2e8f0;\n  background: #f8fafc;\n}\n.registro-audio-item audio {\n  width: 100%;\n}\n.preview-imagem-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483646;\n  display: flex;\n  flex-direction: column;\n  background: #020617;\n}\n.preview-imagem-topbar {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n  padding: calc(10px + env(safe-area-inset-top)) 12px 10px;\n  border-bottom: 1px solid rgba(148, 163, 184, 0.25);\n}\n.preview-imagem-topbar ion-button {\n  margin: 0;\n}\n.preview-imagem-nome {\n  margin: 0;\n  color: #e2e8f0;\n  font-size: 0.9rem;\n  font-weight: 600;\n  word-break: break-word;\n}\n.preview-imagem-body {\n  flex: 1;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 14px;\n}\n.preview-imagem-full {\n  width: auto;\n  height: auto;\n  max-width: 100%;\n  max-height: calc(100vh - 84px - env(safe-area-inset-top));\n  object-fit: contain;\n  border-radius: 8px;\n  margin-right: 0;\n}\n.gravacao-audio-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483646;\n  box-sizing: border-box;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));\n  background: #0f172a;\n  pointer-events: auto;\n  touch-action: none;\n  overflow: hidden;\n}\n.gravacao-audio-panel {\n  width: 100%;\n  max-width: 400px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  padding: 16px 12px;\n  text-align: center;\n  color: #f8fafc;\n}\n.gravacao-audio-titulo {\n  margin: 0 0 8px;\n  font-size: 1.35rem;\n  font-weight: 700;\n  letter-spacing: -0.02em;\n}\n.gravacao-audio-sub {\n  margin: 0 0 28px;\n  font-size: 0.95rem;\n  line-height: 1.45;\n  color: #94a3b8;\n  max-width: 320px;\n}\n.gravacao-audio-pulse-wrap {\n  margin-bottom: 20px;\n}\n.gravacao-audio-pulse {\n  display: inline-block;\n  width: 18px;\n  height: 18px;\n  border-radius: 50%;\n  background: #ef4444;\n  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55);\n  animation: gravacao-pulse 1.4s ease-out infinite;\n}\n@keyframes gravacao-pulse {\n  0% {\n    transform: scale(1);\n    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);\n  }\n  70% {\n    transform: scale(1.08);\n    box-shadow: 0 0 0 16px rgba(239, 68, 68, 0);\n  }\n  100% {\n    transform: scale(1);\n    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);\n  }\n}\n.gravacao-audio-timer {\n  margin: 0;\n  font-size: 3.25rem;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  letter-spacing: 0.06em;\n  color: #ffffff;\n}\n.gravacao-audio-legenda {\n  margin: 4px 0 32px;\n  font-size: 0.8rem;\n  text-transform: uppercase;\n  letter-spacing: 0.12em;\n  color: #64748b;\n}\n.gravacao-audio-botoes {\n  width: 100%;\n  max-width: 340px;\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n.gravacao-audio-spinner {\n  width: 48px;\n  height: 48px;\n  margin: 12px auto 0;\n  color: #93c5fd;\n}\n/*# sourceMappingURL=vistoria-irregularidade.page.css.map */\n"] }]
   }], () => [], { observacaoInput: [{
     type: ViewChild,
     args: ["observacaoInput", { read: IonTextarea }]
@@ -2079,4 +2136,4 @@ var VistoriaIrregularidadePage = class _VistoriaIrregularidadePage {
 export {
   VistoriaIrregularidadePage
 };
-//# sourceMappingURL=chunk-Y6MPN2SS.js.map
+//# sourceMappingURL=chunk-RDEO2WVL.js.map

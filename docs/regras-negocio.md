@@ -53,6 +53,7 @@ Copie o bloco abaixo para cada regra nova.
 ### 1. Vistoria
 #### Regras
 - [ ] RN-VIS-001 - Placeholder
+- [ ] RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
 
 #### Exemplo (preencher e substituir)
 ### RN-VIS-001 - Reclassificar irregularidade por cascata
@@ -73,6 +74,29 @@ Copie o bloco abaixo para cada regra nova.
 - **Cenarios de excecao:** Area sem componentes vinculados.
 - **Origem da regra:** <ticket/decisao>.
 - **Status:** Aprovada.
+
+### RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
+- **Modulo:** Vistoria
+- **Fluxo:** Registrar ou editar irregularidade durante inspecao no aplicativo (campo «Descreva o problema», armazenado como `observacao`).
+- **Descricao:** Toda gravacao dessa irregularidade deve incluir texto explicito da anomalia informada pelo vistoriador. Valores vazios ou compostos apenas de espacos em branco nao sao aceites.
+- **Condicoes de entrada:** Fluxo em que se seleciona sintoma/componente/area na vistoria aberta e o utilizador solicita gravar irregularidade.
+- **Validacoes:**
+  - O campo de descricao deve existir texto apos `trim`;
+  - A API deve rejeitar `observacao` ausente ou vazia (`trim`) com resposta HTTP 4xx coerente.
+- **Acoes do sistema:** Persistir apenas descricoes validas; servico registra historia com status REGISTRADA como hoje.
+- **Mensagens ao utilizador:**
+  - Antes de persistir (app): impedir gravacao com mensagem acessivel associada ao campo;
+  - API: mensagens funcionais claras (class-validator `message`), sem dados sensiveis.
+- **Permissoes envolvidas:** `VISTORIA_UPDATE` nos endpoints utilizados pela vistoria; sem alteracao de matriz de permissoes.
+- **Dados impactados:** `irregularidades.observacao`
+- **Rastreabilidade:** Historico de irregularidade mantem entrada de registro; descricao faz parte da propria irregularidade.
+- **Criterios de aceite:**
+  - [ ] Com descricao em branco ou so espacos, nao ha gravacao bem-sucedida.
+  - [ ] Com texto valido apos `trim`, comportamento igual ao atual (incluido anexacao de midias quando aplicavel).
+  - [ ] Resposta da API inconsistente (`observacao` invalida) e tratada pelo cliente com mensagem visivel ao utilizador.
+- **Cenarios de excecao:** Cliente offline nao comunica erro de validacao servidor ate haver ligacao — validacao client-side continua obrigatoria.
+- **Origem da regra:** Requisito de produto — descricao obrigatoria da irregularidade, 2026-05-06
+- **Status:** Implementada
 
 ### 2. Ocorrencias
 #### Regras
@@ -104,5 +128,6 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-05-06: RN-VIS-002 Descricao obrigatoria ao registrar/editar irregularidade na vistoria (app mobile + API `observacao`), com validacao trim e UX acessivel.
 - 2026-04-27: RN-AUTH-001 Recuperacao de senha por OTP (e-mail), web e mobile.
 - 2026-04-22: Criacao do template inicial.

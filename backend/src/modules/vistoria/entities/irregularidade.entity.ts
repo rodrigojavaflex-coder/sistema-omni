@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Index } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Vistoria } from './vistoria.entity';
@@ -122,7 +129,11 @@ export class Irregularidade extends BaseEntity {
     description: 'Data/hora de conclusão da manutenção',
     required: false,
   })
-  @Column({ name: 'concluida_manutencao_em', type: 'timestamp', nullable: true })
+  @Column({
+    name: 'concluida_manutencao_em',
+    type: 'timestamp',
+    nullable: true,
+  })
   concluidaManutencaoEm?: Date;
 
   @ApiProperty({
@@ -132,7 +143,10 @@ export class Irregularidade extends BaseEntity {
   @Column({ name: 'validada_em', type: 'timestamp', nullable: true })
   validadaEm?: Date;
 
-  @ApiProperty({ description: 'Mídias vinculadas (imagens e áudios)', type: () => [IrregularidadeMidia] })
+  @ApiProperty({
+    description: 'Mídias vinculadas (imagens e áudios)',
+    type: () => [IrregularidadeMidia],
+  })
   @OneToMany(() => IrregularidadeMidia, (midia) => midia.irregularidade, {
     cascade: true,
   })

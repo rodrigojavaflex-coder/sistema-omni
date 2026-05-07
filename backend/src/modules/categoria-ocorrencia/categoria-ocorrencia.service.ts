@@ -18,7 +18,9 @@ export class CategoriaOcorrenciaService {
     private readonly origemService: OrigemOcorrenciaService,
   ) {}
 
-  async create(dto: CreateCategoriaOcorrenciaDto): Promise<CategoriaOcorrencia> {
+  async create(
+    dto: CreateCategoriaOcorrenciaDto,
+  ): Promise<CategoriaOcorrencia> {
     await this.origemService.findOne(dto.idOrigem);
     const entidade = this.repository.create({
       descricao: dto.descricao.trim(),

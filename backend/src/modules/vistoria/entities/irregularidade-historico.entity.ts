@@ -43,4 +43,3 @@ export class IrregularidadeHistorico extends BaseEntity {
   @Column({ type: 'varchar', length: 120, nullable: true })
   correlationId?: string;
 }
-

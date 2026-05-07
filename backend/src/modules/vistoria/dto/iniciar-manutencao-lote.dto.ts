@@ -19,4 +19,3 @@ export class IniciarManutencaoLoteDto {
   @IsUUID('4')
   idEmpresaManutencao: string;
 }
-

@@ -42,7 +42,10 @@ export class AreaComponenteService {
     await this.areaComponenteRepository.manager.transaction(async (manager) => {
       const repo = manager.getRepository(AreaComponente);
       for (const item of dto.componentes) {
-        await repo.delete({ idComponente: item.idcomponente, idArea: Not(areaId) });
+        await repo.delete({
+          idComponente: item.idcomponente,
+          idArea: Not(areaId),
+        });
       }
       await repo.delete({ idArea: areaId });
 

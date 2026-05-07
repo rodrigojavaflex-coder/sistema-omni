@@ -59,7 +59,9 @@ export class RelatorioManutencaoResumoDto {
   @ApiProperty({ description: 'Total de veículos' })
   totalVeiculos: number;
 
-  @ApiProperty({ description: 'Total de anexos de imagem incluídos no relatório' })
+  @ApiProperty({
+    description: 'Total de anexos de imagem incluídos no relatório',
+  })
   totalAnexos: number;
 
   @ApiProperty({
@@ -92,4 +94,3 @@ export class RelatorioManutencaoExecucaoDto extends RelatorioManutencaoPreviewDt
   })
   emailEnviado: boolean;
 }
-

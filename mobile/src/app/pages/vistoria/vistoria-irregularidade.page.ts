@@ -159,6 +159,8 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
   loading = false;
   saving = false;
   errorMessage = '';
+  /** Mensagem de validação contextual para o texto «Descreva o problema» (acesso: aria-describedby). */
+  observacaoFieldError = '';
   isNative = Capacitor.getPlatform() !== 'web';
 
   /** Número da vistoria para exibição abaixo da barra */
@@ -763,12 +765,31 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
     return result.role === 'confirm';
   }
 
+  onObservacaoInput(value: string | null | undefined): void {
+    this.observacao = value ?? '';
+    if (this.observacaoFieldError) {
+      this.observacaoFieldError = '';
+    }
+    this.errorMessage = '';
+  }
+
   async salvarIrregularidade(): Promise<void> {
     const vistoriaId = this.flowService.getVistoriaId();
     if (!vistoriaId || !this.selectedMatriz) {
+      this.observacaoFieldError = '';
       this.errorMessage = 'Selecione um sintoma.';
       return;
     }
+
+    const observacaoTrim = this.observacao.trim();
+    if (!observacaoTrim) {
+      this.observacaoFieldError =
+        'Descreva o problema com texto objetivo antes de salvar — o campo não pode ficar em branco ou só com espaços.';
+      await this.agendarReflowUI();
+      await this.observacaoInput?.setFocus();
+      return;
+    }
+    this.observacaoFieldError = '';
 
     if (this.selectedMatriz.exigeFoto && this.fotos.length === 0) {
       this.errorMessage = 'Foto obrigatória para este sintoma.';
@@ -786,14 +807,14 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
       let numeroIrregularidade = this.irregularidadeEmEdicaoNumero;
       if (irregularidadeId) {
         await this.vistoriaService.atualizarIrregularidade(irregularidadeId, {
-          observacao: this.observacao?.trim() ?? '',
+          observacao: observacaoTrim,
         });
       } else {
         const irregularidade = await this.vistoriaService.criarIrregularidade(vistoriaId, {
           idarea: this.areaId,
           idcomponente: this.componenteId,
           idsintoma: this.selectedMatriz.idSintoma,
-          observacao: this.observacao?.trim() || undefined,
+          observacao: observacaoTrim,
         });
         irregularidadeId = irregularidade.id;
         numeroIrregularidade = irregularidade.numeroIrregularidade ?? null;

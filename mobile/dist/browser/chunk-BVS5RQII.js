@@ -1,6 +1,6 @@
 import {
   environment
-} from "./chunk-P3DEM65Q.js";
+} from "./chunk-544SG6Z7.js";
 import {
   HttpClient,
   Injectable,
@@ -53,4 +53,4 @@ var VeiculoService = class _VeiculoService {
 export {
   VeiculoService
 };
-//# sourceMappingURL=chunk-WKRXQXWF.js.map
+//# sourceMappingURL=chunk-BVS5RQII.js.map

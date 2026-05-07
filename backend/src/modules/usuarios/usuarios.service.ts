@@ -57,14 +57,16 @@ export class UsuariosService {
         saltRounds,
       );
 
-      const perfilIds = Array.from(new Set(createUsuarioDto.perfilIds || [])).filter(
-        Boolean,
-      );
+      const perfilIds = Array.from(
+        new Set(createUsuarioDto.perfilIds || []),
+      ).filter(Boolean);
       const perfis = await this.perfilRepository.find({
         where: { id: In(perfilIds) },
       });
       if (!perfis.length || perfis.length !== perfilIds.length) {
-        throw new NotFoundException('Um ou mais perfis informados não foram encontrados');
+        throw new NotFoundException(
+          'Um ou mais perfis informados não foram encontrados',
+        );
       }
       // Montar dados do usuário
       let empresa: EmpresaTerceira | undefined;
@@ -257,14 +259,16 @@ export class UsuariosService {
     if (updateUsuarioDto.ativo !== undefined)
       user.ativo = updateUsuarioDto.ativo;
     if (updateUsuarioDto.perfilIds !== undefined) {
-      const perfilIds = Array.from(new Set(updateUsuarioDto.perfilIds || [])).filter(
-        Boolean,
-      );
+      const perfilIds = Array.from(
+        new Set(updateUsuarioDto.perfilIds || []),
+      ).filter(Boolean);
       const perfis = await this.perfilRepository.find({
         where: { id: In(perfilIds) },
       });
       if (!perfis.length || perfis.length !== perfilIds.length) {
-        throw new NotFoundException('Um ou mais perfis informados não foram encontrados');
+        throw new NotFoundException(
+          'Um ou mais perfis informados não foram encontrados',
+        );
       }
       user.perfis = perfis;
     }

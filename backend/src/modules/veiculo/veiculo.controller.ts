@@ -51,7 +51,12 @@ export class VeiculoController {
 
   @Get()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(Permission.VEICULO_READ, Permission.VISTORIA_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
+  @Permissions(
+    Permission.VEICULO_READ,
+    Permission.VISTORIA_READ,
+    Permission.OCORRENCIA_READ,
+    Permission.OCORRENCIA_CREATE,
+  )
   @ApiOperation({ summary: 'Listar veículos com paginação e filtros' })
   @ApiResponse({
     status: HttpStatus.OK,

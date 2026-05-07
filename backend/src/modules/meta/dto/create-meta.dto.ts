@@ -83,8 +83,7 @@ export class CreateMetaDto {
   @IsNumber(
     { maxDecimalPlaces: 2 },
     {
-      message:
-        'valorMetaMensal deve ser um número com até duas casas decimais',
+      message: 'valorMetaMensal deve ser um número com até duas casas decimais',
     },
   )
   @IsOptional()

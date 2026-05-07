@@ -1,0 +1,188 @@
+<div class="periodo-fluxo-host">
+  <div class="periodo-fluxo-root">
+    <div class="periodo-toolbar">
+      <button
+        type="button"
+        class="periodo-nav-btn"
+        [disabled]="!podeNavegar"
+        (click)="shift(-1, $event)"
+        aria-label="Período anterior"
+      >
+        <svg class="periodo-chevron" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M15 18l-6-6 6-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.35"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+
+      <div class="periodo-label periodo-label--slot" [ngSwitch]="granularidade">
+        <ng-container *ngSwitchCase="'diario'">
+          <div class="periodo-label-pick-wrap periodo-label-pick-wrap--dia">
+            <span class="periodo-label-visible">{{ textoDiario }}</span>
+            <input
+              #pickDia
+              type="date"
+              class="periodo-picker-sr-only"
+              [value]="valorIsoDiaAnchor"
+              (change)="onPickDia($event)"
+              tabindex="-1"
+            />
+            <button
+              type="button"
+              class="periodo-label-hit"
+              (click)="abrirPickerNativo($event, pickDia)"
+              aria-label="Escolher data"
+              title="Escolher data"
+            ></button>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'semanal'">
+          <div class="periodo-label-static periodo-label-pick-wrap--semana">
+            <span class="periodo-label-visible periodo-label-visible--interactive-off">{{ textoSemanal }}</span>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'mensal'">
+          <div class="periodo-label-pick-wrap periodo-label-pick-wrap--mes">
+            <span class="periodo-label-visible">{{ textoMensal }}</span>
+            <input
+              #pickMes
+              type="month"
+              class="periodo-picker-sr-only"
+              [value]="valorMesAnoAnchor"
+              (change)="onPickMes($event)"
+              tabindex="-1"
+            />
+            <button
+              type="button"
+              class="periodo-label-hit"
+              (click)="abrirPickerNativo($event, pickMes)"
+              aria-label="Escolher mês"
+              title="Escolher mês"
+            ></button>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'anual'">
+          <select
+            class="periodo-year-inline"
+            [(ngModel)]="anoSelecaoControl"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="onPickAnoModel($event)"
+            (click)="$event.stopPropagation()"
+            title="Escolher ano"
+            aria-label="Escolher ano"
+          >
+            <option *ngFor="let y of anosSelect; trackBy: trackAnoOption" [ngValue]="y">
+              {{ y }}
+            </option>
+          </select>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'personalizar'">
+          <ng-container *ngIf="personalizadoTemIntervalo; else labelPersonalizadoFallback">
+            <span class="periodo-label-personal">
+              <span class="periodo-label-chunk periodo-label-pick-wrap periodo-label-pick-wrap--ini">
+                <span class="periodo-label-visible">{{ textoPersonalizadoInicio }}</span>
+                <input
+                  #pickPIni
+                  type="date"
+                  class="periodo-picker-sr-only"
+                  [value]="customInicioIsoParaPicker()"
+                  (change)="onPickPersonalizadoInicio($event)"
+                  tabindex="-1"
+                />
+                <button
+                  type="button"
+                  class="periodo-label-hit"
+                  (click)="abrirPickerNativo($event, pickPIni)"
+                  aria-label="Alterar data inicial"
+                  title="Alterar data inicial"
+                ></button>
+              </span>
+              <span class="periodo-label-sep"> – </span>
+              <span class="periodo-label-chunk periodo-label-pick-wrap periodo-label-pick-wrap--fim">
+                <span class="periodo-label-visible">{{ textoPersonalizadoFim }}</span>
+                <input
+                  #pickPFim
+                  type="date"
+                  class="periodo-picker-sr-only"
+                  [value]="customFimIsoParaPicker()"
+                  (change)="onPickPersonalizadoFim($event)"
+                  tabindex="-1"
+                />
+                <button
+                  type="button"
+                  class="periodo-label-hit"
+                  (click)="abrirPickerNativo($event, pickPFim)"
+                  aria-label="Alterar data final"
+                  title="Alterar data final"
+                ></button>
+              </span>
+            </span>
+          </ng-container>
+          <ng-template #labelPersonalizadoFallback>
+            <span class="periodo-label-visible">{{ labelCentral }}</span>
+          </ng-template>
+        </ng-container>
+
+        <ng-container *ngSwitchDefault>
+          <span class="periodo-label-visible">{{ labelCentral }}</span>
+        </ng-container>
+      </div>
+
+      <button
+        type="button"
+        class="periodo-nav-btn"
+        [disabled]="!podeNavegar"
+        (click)="shift(1, $event)"
+        aria-label="Período seguinte"
+      >
+        <svg class="periodo-chevron" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M9 18l6-6-6-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.35"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+
+      <button
+        type="button"
+        class="periodo-cal-btn"
+        (click)="alternarMenu($event)"
+        aria-label="Opções de período"
+        title="Opções de período"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="periodo-dropdown" *ngIf="menuAberto" role="menu">
+      <button
+        type="button"
+        class="periodo-dropdown-item"
+        *ngFor="let op of opcoesMenu"
+        [class.periodo-dropdown-item--active]="granularidade === op.key"
+        (click)="selecionarGranularidade(op.key, $event)"
+        role="menuitem"
+      >
+        {{ op.label }}
+      </button>
+    </div>
+  </div>
+</div>

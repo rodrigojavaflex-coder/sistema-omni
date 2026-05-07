@@ -64,8 +64,13 @@ export class VistoriaService {
       throw new BadRequestException('Veículo inativo');
     }
     if (veiculo.combustivel === Combustivel.ELETRICO) {
-      if (dto.porcentagembateria === null || dto.porcentagembateria === undefined) {
-        throw new BadRequestException('Percentual de bateria é obrigatório para veículo elétrico');
+      if (
+        dto.porcentagembateria === null ||
+        dto.porcentagembateria === undefined
+      ) {
+        throw new BadRequestException(
+          'Percentual de bateria é obrigatório para veículo elétrico',
+        );
       }
     }
 
@@ -113,7 +118,9 @@ export class VistoriaService {
   async update(id: string, dto: UpdateVistoriaDto): Promise<Vistoria> {
     const vistoria = await this.findOne(id);
     if (vistoria.status !== StatusVistoria.EM_ANDAMENTO) {
-      throw new BadRequestException('Somente vistorias em andamento podem ser atualizadas');
+      throw new BadRequestException(
+        'Somente vistorias em andamento podem ser atualizadas',
+      );
     }
 
     const veiculoId = dto.idveiculo ?? vistoria.idVeiculo;
@@ -145,7 +152,9 @@ export class VistoriaService {
         : vistoria.porcentagembateria;
     if (veiculo.combustivel === Combustivel.ELETRICO) {
       if (bateriaAtual === null || bateriaAtual === undefined) {
-        throw new BadRequestException('Percentual de bateria é obrigatório para veículo elétrico');
+        throw new BadRequestException(
+          'Percentual de bateria é obrigatório para veículo elétrico',
+        );
       }
     }
 
@@ -161,7 +170,9 @@ export class VistoriaService {
       idMotorista: dto.idmotorista ?? vistoria.idMotorista,
       odometro: dto.odometro ?? vistoria.odometro,
       porcentagembateria: bateriaFinal,
-      datavistoria: dto.datavistoria ? new Date(dto.datavistoria) : vistoria.datavistoria,
+      datavistoria: dto.datavistoria
+        ? new Date(dto.datavistoria)
+        : vistoria.datavistoria,
     });
 
     return this.vistoriaRepository.save(updated);
@@ -183,7 +194,9 @@ export class VistoriaService {
       .orderBy('vistoria.datavistoria', 'DESC');
 
     if (ignorarVistoriaId) {
-      query.andWhere('vistoria.id != :ignorarVistoriaId', { ignorarVistoriaId });
+      query.andWhere('vistoria.id != :ignorarVistoriaId', {
+        ignorarVistoriaId,
+      });
     }
 
     const ultima = await query.getOne();
@@ -197,7 +210,6 @@ export class VistoriaService {
         : new Date().toISOString(),
     };
   }
-
 
   async finalize(
     vistoriaId: string,
@@ -272,22 +284,26 @@ export class VistoriaService {
     const areas = await this.listAreasAtivasPorModelo(modeloId);
     const areaIds = areas.map((a) => a.id);
 
-    const areaComponentes = areaIds.length > 0
-      ? await this.areaComponenteRepository.find({
-          where: { idArea: In(areaIds) },
-          relations: ['componente'],
-          order: { ordemVisual: 'ASC' },
-        })
-      : [];
+    const areaComponentes =
+      areaIds.length > 0
+        ? await this.areaComponenteRepository.find({
+            where: { idArea: In(areaIds) },
+            relations: ['componente'],
+            order: { ordemVisual: 'ASC' },
+          })
+        : [];
 
-    const componenteIds = [...new Set(areaComponentes.map((ac) => ac.idComponente))];
-    const matriz = componenteIds.length > 0
-      ? await this.matrizRepository.find({
-          where: { idComponente: In(componenteIds) },
-          relations: ['sintoma'],
-          order: { criadoEm: 'DESC' },
-        })
-      : [];
+    const componenteIds = [
+      ...new Set(areaComponentes.map((ac) => ac.idComponente)),
+    ];
+    const matriz =
+      componenteIds.length > 0
+        ? await this.matrizRepository.find({
+            where: { idComponente: In(componenteIds) },
+            relations: ['sintoma'],
+            order: { criadoEm: 'DESC' },
+          })
+        : [];
 
     const irregularidadesVistoria = await this.irregularidadeRepository.find({
       where: { idVistoria: vistoriaId },
@@ -306,7 +322,10 @@ export class VistoriaService {
         statusVistoriaFinalizada: StatusVistoria.FINALIZADA,
       })
       .andWhere('i.statusAtual NOT IN (:...statusFinal)', {
-        statusFinal: [StatusIrregularidade.CANCELADA, StatusIrregularidade.VALIDADA],
+        statusFinal: [
+          StatusIrregularidade.CANCELADA,
+          StatusIrregularidade.VALIDADA,
+        ],
       })
       .orderBy('i.atualizadoEm', 'DESC')
       .getMany();
@@ -333,7 +352,8 @@ export class VistoriaService {
         datavistoria: vistoria.datavistoria?.toISOString(),
         odometro: Number(vistoria.odometro),
         porcentagembateria:
-          vistoria.porcentagembateria === null || vistoria.porcentagembateria === undefined
+          vistoria.porcentagembateria === null ||
+          vistoria.porcentagembateria === undefined
             ? null
             : Number(vistoria.porcentagembateria),
         status: vistoria.status,
@@ -366,7 +386,9 @@ export class VistoriaService {
     };
   }
 
-  private mapIrregularidadeResumo(item: Irregularidade): Record<string, unknown> {
+  private mapIrregularidadeResumo(
+    item: Irregularidade,
+  ): Record<string, unknown> {
     return {
       id: item.id,
       numeroIrregularidade: item.numeroIrregularidade,
@@ -383,7 +405,9 @@ export class VistoriaService {
     };
   }
 
-  private async listAreasAtivasPorModelo(idmodelo?: string | null): Promise<AreaVistoriada[]> {
+  private async listAreasAtivasPorModelo(
+    idmodelo?: string | null,
+  ): Promise<AreaVistoriada[]> {
     const modeloFiltro = idmodelo?.trim();
     if (!modeloFiltro) {
       return this.areaRepository.find({
@@ -408,5 +432,4 @@ export class VistoriaService {
       .orderBy('area.ordemVisual', 'ASC')
       .getMany();
   }
-
 }

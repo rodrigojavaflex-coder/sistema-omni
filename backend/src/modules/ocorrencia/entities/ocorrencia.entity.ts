@@ -1,4 +1,11 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
+  OneToMany,
+} from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { TipoOcorrencia } from '../../../common/enums/tipo-ocorrencia.enum';
 import { StatusOcorrencia } from '../../../common/enums/status-ocorrencia.enum';

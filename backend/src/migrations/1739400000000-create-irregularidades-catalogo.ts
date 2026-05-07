@@ -6,9 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class CreateIrregularidadesCatalogo1739400000000
-  implements MigrationInterface
-{
+export class CreateIrregularidadesCatalogo1739400000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     if (await queryRunner.hasTable('imagensvistoria')) {
       await queryRunner.dropTable('imagensvistoria');
@@ -507,7 +505,9 @@ export class CreateIrregularidadesCatalogo1739400000000
     if (await queryRunner.hasTable('matriz_criticidade')) {
       await queryRunner.dropTable('matriz_criticidade');
     }
-    await queryRunner.query('DROP TYPE IF EXISTS "matriz_criticidade_gravidade_enum"');
+    await queryRunner.query(
+      'DROP TYPE IF EXISTS "matriz_criticidade_gravidade_enum"',
+    );
     if (await queryRunner.hasTable('sintomas')) {
       await queryRunner.dropTable('sintomas');
     }

@@ -10,7 +10,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
@@ -54,6 +59,10 @@ export class VistoriaController {
     status: 201,
     description: 'Irregularidade registrada',
   })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos (ex.: descrição do problema obrigatória)',
+  })
   addIrregularidade(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: CreateIrregularidadeDto,
@@ -95,7 +104,10 @@ export class VistoriaController {
   @Get(':id/irregularidades/audios')
   @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
   @ApiOperation({ summary: 'Listar áudios das irregularidades da vistoria' })
-  @ApiResponse({ status: 200, description: 'Lista de áudios por irregularidade' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de áudios por irregularidade',
+  })
   listIrregularidadesAudios(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Query('irregularidadeId', new ParseUUIDPipe({ optional: true }))
@@ -107,7 +119,11 @@ export class VistoriaController {
   @Post(':id/finalizar')
   @Permissions(Permission.VISTORIA_UPDATE)
   @ApiOperation({ summary: 'Finalizar vistoria' })
-  @ApiResponse({ status: 200, description: 'Vistoria finalizada', type: Vistoria })
+  @ApiResponse({
+    status: 200,
+    description: 'Vistoria finalizada',
+    type: Vistoria,
+  })
   finalize(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: FinalizeVistoriaDto,
@@ -118,7 +134,11 @@ export class VistoriaController {
   @Patch(':id')
   @Permissions(Permission.VISTORIA_UPDATE)
   @ApiOperation({ summary: 'Atualizar dados iniciais da vistoria' })
-  @ApiResponse({ status: 200, description: 'Vistoria atualizada', type: Vistoria })
+  @ApiResponse({
+    status: 200,
+    description: 'Vistoria atualizada',
+    type: Vistoria,
+  })
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateVistoriaDto,
@@ -140,7 +160,11 @@ export class VistoriaController {
   @Get('veiculo/:id/irregularidades-pendentes')
   @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
   @ApiOperation({ summary: 'Listar irregularidades não resolvidas do veículo' })
-  @ApiResponse({ status: 200, description: 'Lista de irregularidades pendentes', type: [IrregularidadeResumoDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de irregularidades pendentes',
+    type: [IrregularidadeResumoDto],
+  })
   listIrregularidadesPendentes(
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<IrregularidadeResumoDto[]> {
@@ -150,7 +174,8 @@ export class VistoriaController {
   @Get('veiculo/:id/historico-irregularidades-nao-resolvidas')
   @Permissions(Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ)
   @ApiOperation({
-    summary: 'Histórico de irregularidades não resolvidas do veículo (com mídias)',
+    summary:
+      'Histórico de irregularidades não resolvidas do veículo (com mídias)',
   })
   @ApiResponse({
     status: 200,
@@ -172,23 +197,35 @@ export class VistoriaController {
   @Get(':id')
   @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
   @ApiOperation({ summary: 'Buscar vistoria por id' })
-  @ApiResponse({ status: 200, description: 'Vistoria encontrada', type: Vistoria })
+  @ApiResponse({
+    status: 200,
+    description: 'Vistoria encontrada',
+    type: Vistoria,
+  })
   findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Vistoria> {
     return this.vistoriaService.findOne(id);
   }
 
   @Get(':id/bootstrap')
   @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
-  @ApiOperation({ summary: 'Carregar bootstrap da vistoria para navegação mobile' })
+  @ApiOperation({
+    summary: 'Carregar bootstrap da vistoria para navegação mobile',
+  })
   @ApiResponse({ status: 200, description: 'Bootstrap da vistoria carregado' })
-  findBootstrap(@Param('id', new ParseUUIDPipe()) id: string): Promise<Record<string, unknown>> {
+  findBootstrap(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<Record<string, unknown>> {
     return this.vistoriaService.getBootstrap(id);
   }
 
   @Get()
   @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
   @ApiOperation({ summary: 'Listar vistorias (com filtro de status)' })
-  @ApiResponse({ status: 200, description: 'Lista de vistorias', type: [Vistoria] })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de vistorias',
+    type: [Vistoria],
+  })
   findAll(
     @Query('status') status?: StatusVistoria,
     @Query('idusuario') idusuario?: string,
@@ -200,7 +237,11 @@ export class VistoriaController {
   @Post(':id/cancelar')
   @Permissions(Permission.VISTORIA_UPDATE)
   @ApiOperation({ summary: 'Cancelar vistoria' })
-  @ApiResponse({ status: 200, description: 'Vistoria cancelada', type: Vistoria })
+  @ApiResponse({
+    status: 200,
+    description: 'Vistoria cancelada',
+    type: Vistoria,
+  })
   cancel(@Param('id', new ParseUUIDPipe()) id: string): Promise<Vistoria> {
     return this.vistoriaService.cancel(id);
   }
@@ -208,7 +249,11 @@ export class VistoriaController {
   @Post(':id/retomar')
   @Permissions(Permission.VISTORIA_UPDATE)
   @ApiOperation({ summary: 'Retomar vistoria' })
-  @ApiResponse({ status: 200, description: 'Vistoria retomada', type: Vistoria })
+  @ApiResponse({
+    status: 200,
+    description: 'Vistoria retomada',
+    type: Vistoria,
+  })
   retomar(@Param('id', new ParseUUIDPipe()) id: string): Promise<Vistoria> {
     return this.vistoriaService.retomar(id);
   }

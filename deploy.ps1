@@ -79,6 +79,13 @@ if (Test-Path "dist") {
 if (Test-Path "node_modules\.cache") {
     Remove-Item "node_modules\.cache" -Recurse -Force
 }
+# Evita tsc/nest omitir emissao para dist quando .tsbuildinfo fica inconsistente com pasta dist apagada
+foreach ($tsi in @("tsconfig.build.tsbuildinfo", "tsconfig.migrations.tsbuildinfo")) {
+    if (Test-Path $tsi) {
+        Remove-Item $tsi -Force
+        Write-Host "   Removido cache TS: $tsi" -ForegroundColor Gray
+    }
+}
 Write-Host "   OK: Cache e builds anteriores removidos" -ForegroundColor Green
 
 npm install --silent
@@ -343,7 +350,7 @@ Write-Host ""
 Write-Host "LIMPEZA REALIZADA:" -ForegroundColor Cyan
 Write-Host "  ✓ Cache do frontend (.angular, node_modules\.cache)" -ForegroundColor Green
 Write-Host "  ✓ Build anterior do frontend (dist)" -ForegroundColor Green
-Write-Host "  ✓ Cache do backend (node_modules\.cache)" -ForegroundColor Green
+Write-Host "  ✓ Cache do backend (node_modules\.cache, tsconfig.*.tsbuildinfo)" -ForegroundColor Green
 Write-Host "  ✓ Build anterior do backend (dist)" -ForegroundColor Green
 Write-Host ""
 Write-Host "ESTRUTURA CRIADA:" -ForegroundColor Cyan

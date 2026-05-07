@@ -14,10 +14,18 @@ export class ErrorMessageService {
       return 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.';
     }
 
+    const backendDetail = this.tryExtractBackendMessage(anyError);
+
     if (hasHttpStatus) {
       switch (status) {
         case 400:
-          return 'Solicitação inválida. Revise os dados e tente novamente.';
+        case 422:
+          if (backendDetail) {
+            return this.normalizePtBrMessage(backendDetail);
+          }
+          return status === 422
+            ? 'Alguns dados informados são inválidos.'
+            : 'Solicitação inválida. Revise os dados e tente novamente.';
         case 401:
           return 'E-mail ou senha inválidos.';
         case 403:
@@ -28,8 +36,6 @@ export class ErrorMessageService {
           return 'Tempo de conexão esgotado. Tente novamente.';
         case 409:
           return 'Conflito de dados. Atualize a tela e tente novamente.';
-        case 422:
-          return 'Alguns dados informados são inválidos.';
         case 429:
           return 'Muitas tentativas em sequência. Aguarde alguns instantes.';
         case 500:
@@ -42,9 +48,28 @@ export class ErrorMessageService {
       }
     }
 
-    const raw = anyError?.error?.message ?? anyError?.message;
-    if (!raw) {
+    if (!backendDetail) {
       return fallback;
+    }
+
+    const lowered = backendDetail.toLowerCase();
+    if (
+      lowered.includes('network error') ||
+      lowered.includes('failed to fetch') ||
+      lowered.includes('timeout') ||
+      lowered.includes('timed out')
+    ) {
+      return 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.';
+    }
+
+    return this.normalizePtBrMessage(backendDetail || fallback);
+  }
+
+  /** Extrai texto útil enviado pelo backend (Nest `message` pode ser string ou string[]). */
+  private tryExtractBackendMessage(anyError: any): string | null {
+    const raw = anyError?.error?.message ?? anyError?.message;
+    if (raw === undefined || raw === null || raw === '') {
+      return null;
     }
 
     const normalized = Array.isArray(raw) ? raw.join(' ') : String(raw);
@@ -56,17 +81,7 @@ export class ErrorMessageService {
       .replace(/\s+/g, ' ')
       .trim();
 
-    const lowered = sanitized.toLowerCase();
-    if (
-      lowered.includes('network error') ||
-      lowered.includes('failed to fetch') ||
-      lowered.includes('timeout') ||
-      lowered.includes('timed out')
-    ) {
-      return 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.';
-    }
-
-    return this.normalizePtBrMessage(sanitized || fallback);
+    return sanitized || null;
   }
 
   private normalizePtBrMessage(message: string): string {

@@ -10,7 +10,11 @@ import { ModeloVeiculoService } from './modelo-veiculo.service';
 import { ModeloVeiculoController } from './modelo-veiculo.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Veiculo, ModeloVeiculo]), JwtModule, ConfigModule],
+  imports: [
+    TypeOrmModule.forFeature([Veiculo, ModeloVeiculo]),
+    JwtModule,
+    ConfigModule,
+  ],
   providers: [VeiculoService, ModeloVeiculoService],
   controllers: [VeiculoController, ModeloVeiculoController],
   exports: [VeiculoService, ModeloVeiculoService],

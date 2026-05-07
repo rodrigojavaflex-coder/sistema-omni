@@ -36,7 +36,10 @@ export class ModeloVeiculoService {
     return modelo;
   }
 
-  async update(id: string, dto: UpdateModeloVeiculoDto): Promise<ModeloVeiculo> {
+  async update(
+    id: string,
+    dto: UpdateModeloVeiculoDto,
+  ): Promise<ModeloVeiculo> {
     const modelo = await this.findOne(id);
     const updated = this.modeloRepository.merge(modelo, {
       nome: dto.nome ?? modelo.nome,

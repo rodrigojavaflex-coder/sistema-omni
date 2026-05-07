@@ -32,11 +32,17 @@ export class IrregularidadeMidia extends BaseEntity {
   @Column({ name: 'dados_bytea', type: 'bytea' })
   dadosBytea: Buffer;
 
-  @ApiProperty({ description: 'Duração em ms (apenas para áudio)', required: false })
+  @ApiProperty({
+    description: 'Duração em ms (apenas para áudio)',
+    required: false,
+  })
   @Column({ name: 'duracao_ms', type: 'integer', nullable: true })
   duracaoMs?: number | null;
 
-  @ApiProperty({ description: 'Irregularidade vinculada', type: () => Irregularidade })
+  @ApiProperty({
+    description: 'Irregularidade vinculada',
+    type: () => Irregularidade,
+  })
   @ManyToOne(() => Irregularidade, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'idirregularidade' })
   irregularidade: Irregularidade;

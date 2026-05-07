@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Brackets } from 'typeorm';
 import { AreaVistoriada } from './entities/area-vistoriada.entity';
@@ -93,7 +97,10 @@ export class AreaVistoriadaService {
     return area;
   }
 
-  async update(id: string, dto: UpdateAreaVistoriadaDto): Promise<AreaVistoriada> {
+  async update(
+    id: string,
+    dto: UpdateAreaVistoriadaDto,
+  ): Promise<AreaVistoriada> {
     return this.areaRepository.manager.transaction(async (manager) => {
       const repo = manager.getRepository(AreaVistoriada);
       const area = await repo.findOne({ where: { id } });
@@ -128,7 +135,9 @@ export class AreaVistoriadaService {
 
   async remove(id: string): Promise<void> {
     const area = await this.findOne(id);
-    const countComponentes = await this.areaComponenteRepository.count({ where: { idArea: id } });
+    const countComponentes = await this.areaComponenteRepository.count({
+      where: { idArea: id },
+    });
     if (countComponentes > 0) {
       throw new BadRequestException(
         'Não é possível excluir a área pois existem componentes vinculados. Remova os componentes da área antes de excluir.',
@@ -140,9 +149,13 @@ export class AreaVistoriadaService {
   }
 
   private async ensureModelos(ids: string[]): Promise<void> {
-    const modelos = await this.modeloRepository.find({ where: { id: In(ids) } });
+    const modelos = await this.modeloRepository.find({
+      where: { id: In(ids) },
+    });
     if (modelos.length !== ids.length) {
-      throw new NotFoundException('Um ou mais modelos de veículo não encontrados');
+      throw new NotFoundException(
+        'Um ou mais modelos de veículo não encontrados',
+      );
     }
   }
 }

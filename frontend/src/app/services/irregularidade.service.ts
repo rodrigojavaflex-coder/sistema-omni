@@ -31,6 +31,9 @@ export class IrregularidadeService {
     filtros?: ListarIrregularidadeFiltros,
   ): Observable<IrregularidadeFluxoItem[]> {
     let params = new HttpParams().set('status', status.join(','));
+    if (filtros?.ordemServico) {
+      params = params.set('ordemServico', filtros.ordemServico);
+    }
     if (filtros?.idVeiculo) {
       params = params.set('idVeiculo', filtros.idVeiculo);
     }
@@ -42,6 +45,9 @@ export class IrregularidadeService {
     }
     if (filtros?.dataFim) {
       params = params.set('dataFim', filtros.dataFim);
+    }
+    if (filtros?.referenciaPeriodo) {
+      params = params.set('referenciaPeriodo', filtros.referenciaPeriodo);
     }
     return this.http.get<IrregularidadeFluxoItem[]>(this.apiUrl, { params });
   }

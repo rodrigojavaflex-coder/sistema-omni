@@ -99,13 +99,10 @@ export class VeiculoService {
       .leftJoinAndSelect('v.modeloVeiculo', 'modeloVeiculo');
 
     if (descricao && placa) {
-      query.andWhere(
-        '(v.descricao ILIKE :descricao OR v.placa ILIKE :placa)',
-        {
-          descricao: `%${descricao}%`,
-          placa: `%${placa}%`,
-        },
-      );
+      query.andWhere('(v.descricao ILIKE :descricao OR v.placa ILIKE :placa)', {
+        descricao: `%${descricao}%`,
+        placa: `%${placa}%`,
+      });
     } else if (descricao) {
       query.andWhere('v.descricao ILIKE :descricao', {
         descricao: `%${descricao}%`,

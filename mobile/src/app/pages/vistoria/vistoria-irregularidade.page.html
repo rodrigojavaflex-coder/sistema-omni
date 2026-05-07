@@ -133,15 +133,34 @@
       <p class="error-message">Irregularidade já registrada nesta vistoria. Você pode editar a observação e adicionar novas mídias.</p>
     </ion-text>
 
-    <ion-item>
-      <ion-label position="stacked">Descreva o Problema</ion-label>
+    <ion-item
+      class="item-descricao-problema"
+      [class.item-descricao-problema--erro]="observacaoFieldError"
+      lines="full"
+    >
+      <ion-label position="stacked">
+        Descreva o problema
+        <span class="label-required">(obrigatório)</span>
+      </ion-label>
       <ion-textarea
         #observacaoInput
         [value]="observacao"
         placeholder="Descreva o problema"
-        (ionInput)="observacao = $event.detail.value ?? ''"
+        inputmode="text"
+        [attr.aria-required]="true"
+        [attr.aria-invalid]="observacaoFieldError ? 'true' : null"
+        [attr.aria-describedby]="observacaoFieldError ? 'erro-desc-problema' : null"
+        (ionInput)="onObservacaoInput($event.detail.value ?? '')"
       ></ion-textarea>
     </ion-item>
+    <ion-text
+      *ngIf="observacaoFieldError"
+      role="alert"
+      color="danger"
+      id="erro-desc-problema"
+    >
+      <p class="campo-descricao-erro">{{ observacaoFieldError }}</p>
+    </ion-text>
 
     <ion-item lines="none">
       <ion-label>Fotos ({{ fotos.length }})</ion-label>

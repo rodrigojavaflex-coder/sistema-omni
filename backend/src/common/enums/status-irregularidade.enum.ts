@@ -6,4 +6,3 @@ export enum StatusIrregularidade {
   CONCLUIDA = 'CONCLUIDA',
   VALIDADA = 'VALIDADA',
 }
-

@@ -1,4 +1,10 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateEmpresaTerceiraDto {
   @IsString()
@@ -8,10 +14,14 @@ export class CreateEmpresaTerceiraDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(2000, { message: 'Emails para relatório não pode ter mais de 2000 caracteres' })
+  @MaxLength(2000, {
+    message: 'Emails para relatório não pode ter mais de 2000 caracteres',
+  })
   emailsRelatorio?: string;
 
   @IsOptional()
-  @IsBoolean({ message: 'Campo empresa de manutenção deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'Campo empresa de manutenção deve ser verdadeiro ou falso',
+  })
   ehEmpresaManutencao?: boolean;
 }

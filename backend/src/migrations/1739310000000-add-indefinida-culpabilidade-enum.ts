@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddIndefinidaCulpabilidadeEnum1739310000000
-  implements MigrationInterface
-{
+export class AddIndefinidaCulpabilidadeEnum1739310000000 implements MigrationInterface {
   name = 'AddIndefinidaCulpabilidadeEnum1739310000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

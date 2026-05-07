@@ -1,4 +1,9 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from 'typeorm';
 
 export class IrregularidadesMidias1739510000000 implements MigrationInterface {
   name = 'IrregularidadesMidias1739510000000';
@@ -9,9 +14,22 @@ export class IrregularidadesMidias1739510000000 implements MigrationInterface {
         new Table({
           name: 'irregularidades_midias',
           columns: [
-            { name: 'id', type: 'uuid', isPrimary: true, default: 'uuid_generate_v4()' },
-            { name: 'criadoEm', type: 'timestamp', default: 'CURRENT_TIMESTAMP(6)' },
-            { name: 'atualizadoEm', type: 'timestamp', default: 'CURRENT_TIMESTAMP(6)' },
+            {
+              name: 'id',
+              type: 'uuid',
+              isPrimary: true,
+              default: 'uuid_generate_v4()',
+            },
+            {
+              name: 'criadoEm',
+              type: 'timestamp',
+              default: 'CURRENT_TIMESTAMP(6)',
+            },
+            {
+              name: 'atualizadoEm',
+              type: 'timestamp',
+              default: 'CURRENT_TIMESTAMP(6)',
+            },
             { name: 'tipo', type: 'varchar', length: '20' },
             { name: 'nome_arquivo', type: 'varchar', length: '255' },
             { name: 'mime_type', type: 'varchar', length: '100' },
@@ -42,10 +60,18 @@ export class IrregularidadesMidias1739510000000 implements MigrationInterface {
 
     const irregularidades = await queryRunner.getTable('irregularidades');
     if (irregularidades) {
-      const cols = ['audio_nome_arquivo', 'audio_mime_type', 'audio_tamanho', 'audio_duracao_ms', 'audio_dados_bytea'];
+      const cols = [
+        'audio_nome_arquivo',
+        'audio_mime_type',
+        'audio_tamanho',
+        'audio_duracao_ms',
+        'audio_dados_bytea',
+      ];
       for (const col of cols) {
         if (irregularidades.findColumnByName(col)) {
-          await queryRunner.query(`ALTER TABLE "irregularidades" DROP COLUMN IF EXISTS "${col}"`);
+          await queryRunner.query(
+            `ALTER TABLE "irregularidades" DROP COLUMN IF EXISTS "${col}"`,
+          );
         }
       }
     }
@@ -80,9 +106,22 @@ export class IrregularidadesMidias1739510000000 implements MigrationInterface {
         new Table({
           name: 'irregularidades_imagens',
           columns: [
-            { name: 'id', type: 'uuid', isPrimary: true, default: 'uuid_generate_v4()' },
-            { name: 'criadoEm', type: 'timestamp', default: 'CURRENT_TIMESTAMP(6)' },
-            { name: 'atualizadoEm', type: 'timestamp', default: 'CURRENT_TIMESTAMP(6)' },
+            {
+              name: 'id',
+              type: 'uuid',
+              isPrimary: true,
+              default: 'uuid_generate_v4()',
+            },
+            {
+              name: 'criadoEm',
+              type: 'timestamp',
+              default: 'CURRENT_TIMESTAMP(6)',
+            },
+            {
+              name: 'atualizadoEm',
+              type: 'timestamp',
+              default: 'CURRENT_TIMESTAMP(6)',
+            },
             { name: 'nome_arquivo', type: 'varchar', length: '255' },
             { name: 'tamanho', type: 'bigint' },
             { name: 'dados_bytea', type: 'bytea' },

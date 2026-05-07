@@ -36,14 +36,19 @@ export class AuthController {
 
   @Post('password-reset/request')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Solicitar código (OTP) por e-mail para redefinir senha' })
+  @ApiOperation({
+    summary: 'Solicitar código (OTP) por e-mail para redefinir senha',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description:
       'Resposta genérica (não indica se o e-mail está cadastrado). Pode retornar 429 em excesso de tentativas.',
     type: PasswordResetMessageDto,
   })
-  @ApiResponse({ status: HttpStatus.TOO_MANY_REQUESTS, description: 'Muitas tentativas' })
+  @ApiResponse({
+    status: HttpStatus.TOO_MANY_REQUESTS,
+    description: 'Muitas tentativas',
+  })
   async requestPasswordReset(
     @Body() body: PasswordResetRequestDto,
   ): Promise<PasswordResetMessageDto> {
@@ -54,8 +59,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Confirmar código e definir nova senha' })
   @ApiResponse({ status: HttpStatus.OK, type: PasswordResetMessageDto })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos ou código incorreto' })
-  @ApiResponse({ status: HttpStatus.TOO_MANY_REQUESTS, description: 'Código expirou ou muitas tentativas' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos ou código incorreto',
+  })
+  @ApiResponse({
+    status: HttpStatus.TOO_MANY_REQUESTS,
+    description: 'Código expirou ou muitas tentativas',
+  })
   async confirmPasswordReset(
     @Body() body: PasswordResetConfirmDto,
     @Request() req,

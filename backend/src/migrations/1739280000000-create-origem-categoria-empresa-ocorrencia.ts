@@ -6,9 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class CreateOrigemCategoriaEmpresaOcorrencia1739280000000
-  implements MigrationInterface
-{
+export class CreateOrigemCategoriaEmpresaOcorrencia1739280000000 implements MigrationInterface {
   name = 'CreateOrigemCategoriaEmpresaOcorrencia1739280000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -246,7 +244,9 @@ export class CreateOrigemCategoriaEmpresaOcorrencia1739280000000
       );
       if (fkMotoristas)
         await queryRunner.dropForeignKey('motoristas', fkMotoristas);
-      await queryRunner.query(`ALTER TABLE "motoristas" DROP COLUMN "idEmpresa"`);
+      await queryRunner.query(
+        `ALTER TABLE "motoristas" DROP COLUMN "idEmpresa"`,
+      );
     }
 
     const tabelaOcorrencias = await queryRunner.getTable('ocorrencias');
@@ -265,11 +265,7 @@ export class CreateOrigemCategoriaEmpresaOcorrencia1739280000000
           if (fk) await queryRunner.dropForeignKey('ocorrencias', fk);
         }
       }
-      for (const col of [
-        ...colsComFk,
-        'numeroOrcamento',
-        'processoSei',
-      ]) {
+      for (const col of [...colsComFk, 'numeroOrcamento', 'processoSei']) {
         if (tabelaOcorrencias.findColumnByName(col)) {
           await queryRunner.query(
             `ALTER TABLE "ocorrencias" DROP COLUMN "${col}"`,

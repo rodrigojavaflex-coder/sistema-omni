@@ -241,7 +241,9 @@ export class OcorrenciaService {
 
     // Filtro por categoria - suporta múltiplos valores
     if (idCategoria) {
-      const categorias = Array.isArray(idCategoria) ? idCategoria : [idCategoria];
+      const categorias = Array.isArray(idCategoria)
+        ? idCategoria
+        : [idCategoria];
       if (categorias.length > 0) {
         conditions.push('ocorrencia.idCategoria IN (:...categorias)');
         parameters.categorias = categorias;
@@ -286,7 +288,7 @@ export class OcorrenciaService {
         .groupBy('h.idOcorrencia')
         .getRawMany<{ idOcorrencia: string; dataConclusao: Date }>();
       const mapConclusao = new Map(
-        conclusoes.map((c) => [c.idOcorrencia, c.dataConclusao])
+        conclusoes.map((c) => [c.idOcorrencia, c.dataConclusao]),
       );
       data.forEach((o) => {
         const dt = mapConclusao.get(o.id);
@@ -670,7 +672,9 @@ export class OcorrenciaService {
     concluida: number;
     tempoMedioConclusaoDias: number | null;
   }> {
-    const hasTerceirizadoFilter = terceirizado && (Array.isArray(terceirizado) ? terceirizado.length > 0 : !!terceirizado);
+    const hasTerceirizadoFilter =
+      terceirizado &&
+      (Array.isArray(terceirizado) ? terceirizado.length > 0 : !!terceirizado);
 
     let query = this.ocorrenciaRepository
       .createQueryBuilder('ocorrencia')
@@ -780,7 +784,9 @@ export class OcorrenciaService {
     }
 
     if (houveVitimas) {
-      const vitimas = Array.isArray(houveVitimas) ? houveVitimas : [houveVitimas];
+      const vitimas = Array.isArray(houveVitimas)
+        ? houveVitimas
+        : [houveVitimas];
       if (vitimas.length > 0) {
         conditions.push('ocorrencia.houveVitimas IN (:...vitimas)');
         parameters.vitimas = vitimas;
@@ -840,9 +846,7 @@ export class OcorrenciaService {
     }
     if (conditions.length > 0) {
       const condStats = hasTerceirizadoFilter
-        ? conditions
-            .join(' AND ')
-            .replace(/motorista\./g, 'motoristaStats.')
+        ? conditions.join(' AND ').replace(/motorista\./g, 'motoristaStats.')
         : conditions.join(' AND ');
       ocorrenciasConcluidasQuery = ocorrenciasConcluidasQuery.andWhere(
         condStats,

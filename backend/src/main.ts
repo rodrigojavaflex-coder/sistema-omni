@@ -23,13 +23,24 @@ async function bootstrap() {
     next();
   });
 
-  // Middleware para HEAD /
+  // Raiz sem prefixo `api`: evita 404 em GET / (navegador, health check) e mantém HEAD / para probes
   app.use((req: Request, res: Response, next) => {
-    if (req.method === 'HEAD' && req.path === '/') {
-      res.status(200).end();
-    } else {
-      next();
+    if (req.path !== '/') {
+      return next();
     }
+    if (req.method === 'HEAD') {
+      res.status(200).end();
+      return;
+    }
+    if (req.method === 'GET') {
+      res.status(200).type('application/json').send({
+        service: 'OMNI API',
+        api: '/api',
+        docs: '/api/docs',
+      });
+      return;
+    }
+    next();
   });
 
   const configService = app.get(ConfigService);

@@ -15,6 +15,9 @@ export class IrregularidadeImagemResumoDto {
   @ApiProperty({ description: 'ID da irregularidade', format: 'uuid' })
   idirregularidade: string;
 
-  @ApiProperty({ description: 'Imagens da irregularidade', type: [IrregularidadeImagemResumoItemDto] })
+  @ApiProperty({
+    description: 'Imagens da irregularidade',
+    type: [IrregularidadeImagemResumoItemDto],
+  })
   imagens: IrregularidadeImagemResumoItemDto[];
 }

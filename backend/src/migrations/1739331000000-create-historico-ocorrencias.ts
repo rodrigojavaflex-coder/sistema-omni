@@ -6,9 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class CreateHistoricoOcorrencias1739331000000
-  implements MigrationInterface
-{
+export class CreateHistoricoOcorrencias1739331000000 implements MigrationInterface {
   name = 'CreateHistoricoOcorrencias1739331000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

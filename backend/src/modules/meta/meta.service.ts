@@ -189,9 +189,9 @@ export class MetaService {
       const mediaExecucaoMesAtivo =
         monthlyInfo.months > 0 ? monthlyInfo.sum / monthlyInfo.months : 0;
       const mesesSemExecucao = Math.max(mesesIntervalo - monthlyInfo.months, 0);
-      
+
       let statusAtualMeta: number;
-      
+
       // Tratamento específico para PROGRESSO
       if (indicador === IndicadorMeta.PROGRESSO) {
         // Para progresso, usa o último lançamento
@@ -215,7 +215,7 @@ export class MetaService {
           totalExecutado + mesesSemExecucao * valorPlanejado;
         statusAtualMeta = totalProjetado / mesesIntervalo;
       }
-      
+
       // Determina a referência para cálculo do progresso
       let referencia: number;
       if (indicador === IndicadorMeta.PROGRESSO) {
@@ -228,7 +228,7 @@ export class MetaService {
         // Mantém lógica original do RESULTADO_ACUMULADO
         referencia = totalExecutado;
       }
-      
+
       // Cálculo do progresso percentual
       const progressoPercentual =
         totalExecucoesNum === 0

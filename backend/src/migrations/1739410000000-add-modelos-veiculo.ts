@@ -95,7 +95,9 @@ export class AddModelosVeiculo1739410000000 implements MigrationInterface {
 
     if (await queryRunner.hasColumn('areas_modelos', 'modelo')) {
       if (!(await queryRunner.hasColumn('areas_modelos', 'idmodelo'))) {
-        await queryRunner.query('ALTER TABLE areas_modelos ADD COLUMN idmodelo uuid');
+        await queryRunner.query(
+          'ALTER TABLE areas_modelos ADD COLUMN idmodelo uuid',
+        );
       }
       await queryRunner.query(`
         UPDATE areas_modelos am

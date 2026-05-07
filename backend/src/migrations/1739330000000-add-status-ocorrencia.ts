@@ -18,9 +18,7 @@ export class AddStatusOcorrencia1739330000000 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('ocorrencias');
     if (table?.findColumnByName('status')) {
-      await queryRunner.query(
-        `DROP INDEX IF EXISTS "IDX_OCORRENCIAS_STATUS"`,
-      );
+      await queryRunner.query(`DROP INDEX IF EXISTS "IDX_OCORRENCIAS_STATUS"`);
       await queryRunner.query(`ALTER TABLE "ocorrencias" DROP COLUMN "status"`);
     }
   }

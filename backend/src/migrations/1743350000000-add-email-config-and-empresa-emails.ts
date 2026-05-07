@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddEmailConfigAndEmpresaEmails1743350000000
-  implements MigrationInterface
-{
+export class AddEmailConfigAndEmpresaEmails1743350000000 implements MigrationInterface {
   name = 'AddEmailConfigAndEmpresaEmails1743350000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -29,4 +27,3 @@ export class AddEmailConfigAndEmpresaEmails1743350000000
     `);
   }
 }
-

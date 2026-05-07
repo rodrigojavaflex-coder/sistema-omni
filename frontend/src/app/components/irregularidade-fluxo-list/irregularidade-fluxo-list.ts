@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -14,12 +14,14 @@ import {
   IrregularidadeFluxoItem,
   RelatorioManutencaoPreview,
   StatusIrregularidade,
+  ReferenciaPeriodoIrregularidade,
 } from '../../models/irregularidade-fluxo.model';
 import { GravidadeCriticidade } from '../../models/matriz-criticidade.model';
 import { EmpresaTerceira } from '../../models/empresa-terceira.model';
 import { AuthService } from '../../services/auth.service';
 import { Permission } from '../../models/usuario.model';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
+import { PeriodoFluxoFilterComponent, PeriodoIntervaloPayload } from '../periodo-fluxo-filter/periodo-fluxo-filter.component';
 import { Veiculo } from '../../models/veiculo.model';
 import { ConfiguracaoService } from '../../services/configuracao.service';
 import { TempoFaixaConfig, TempoFluxoConfig } from '../../models/configuracao.model';
@@ -43,11 +45,16 @@ type ModalAcao =
 @Component({
   selector: 'app-irregularidade-fluxo-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, VeiculoAutocompleteComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    VeiculoAutocompleteComponent,
+    PeriodoFluxoFilterComponent,
+  ],
   templateUrl: './irregularidade-fluxo-list.html',
   styleUrls: ['./irregularidade-fluxo-list.css'],
 })
-export class IrregularidadeFluxoListComponent implements OnInit {
+export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   readonly StatusIrregularidade = StatusIrregularidade;
 
   private readonly irregularidadeService = inject(IrregularidadeService);
@@ -70,6 +77,9 @@ export class IrregularidadeFluxoListComponent implements OnInit {
   descricao = '';
   statusFiltro: StatusIrregularidade[] = [];
   selectedIds = new Set<string>();
+  /** Filtro por número da Ordem de Serviço (numeroIrregularidade); texto livre, aplicado com debounce. */
+  filtroOrdemServico = '';
+  private ordemServicoFiltroDebounce?: ReturnType<typeof setTimeout>;
   filtroVeiculoId = '';
   filtroVeiculoDescricao = '';
   filtroDataInicio = '';
@@ -113,6 +123,7 @@ export class IrregularidadeFluxoListComponent implements OnInit {
   historicoError = '';
   historicoSelecionado: IrregularidadeFluxoItem | null = null;
   historicoEventos: IrregularidadeHistoricoItem[] = [];
+  filtroPeriodoClearSeq = 0;
 
   canTratamentoUpdate = this.authService.hasPermission(
     Permission.IRREGULARIDADE_TRATAMENTO_UPDATE,
@@ -132,13 +143,17 @@ export class IrregularidadeFluxoListComponent implements OnInit {
 
   ngOnInit(): void {
     this.modo = (this.route.snapshot.data['modo'] as FluxoModo) ?? 'tratamento';
-    this.setDefaultPeriodoAtual();
     this.configureModo();
     this.loadTempoFaixas();
     if (this.modo === 'tratamento') {
       this.loadEmpresas();
     }
-    this.loadItems();
+  }
+
+  ngOnDestroy(): void {
+    if (this.ordemServicoFiltroDebounce) {
+      clearTimeout(this.ordemServicoFiltroDebounce);
+    }
   }
 
   private loadTempoFaixas(): void {
@@ -181,14 +196,12 @@ export class IrregularidadeFluxoListComponent implements OnInit {
     }
     if (this.modo === 'manutencao') {
       this.titulo = 'Manutenção';
-      this.descricao =
-        'Itens em manutenção da empresa logada, com ações de conclusão e não procede.';
+      this.descricao = '';
       this.statusFiltro = [StatusIrregularidade.EM_MANUTENCAO];
       return;
     }
     this.titulo = 'Validação Final';
-    this.descricao =
-      'Itens concluídos ou não procede aguardando validação final ou retorno para manutenção.';
+    this.descricao = '';
     this.statusFiltro = [StatusIrregularidade.CONCLUIDA, StatusIrregularidade.NAO_PROCEDE];
   }
 
@@ -209,19 +222,21 @@ export class IrregularidadeFluxoListComponent implements OnInit {
     this.info = '';
     this.irregularidadeService
       .listarPorStatus(this.resolveStatusFiltro(), {
+        ordemServico: this.ordemServicoParaApi(),
         idVeiculo: this.filtroVeiculoId,
         gravidade: this.filtroGravidade
           ? [this.filtroGravidade as GravidadeCriticidade]
           : undefined,
         dataInicio: this.filtroDataInicio || undefined,
         dataFim: this.filtroDataFim || undefined,
+        referenciaPeriodo: this.referenciaPeriodoParaListagem(),
       })
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (items) => {
           this.items = (items ?? []).slice().sort((a, b) => {
-            const aTime = new Date(a.criadoEm).getTime();
-            const bTime = new Date(b.criadoEm).getTime();
+            const aTime = new Date(this.getDataRegistradoFluxo(a)).getTime();
+            const bTime = new Date(this.getDataRegistradoFluxo(b)).getTime();
             if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0;
             if (Number.isNaN(aTime)) return 1;
             if (Number.isNaN(bTime)) return -1;
@@ -240,6 +255,36 @@ export class IrregularidadeFluxoListComponent implements OnInit {
       });
   }
 
+  /**
+   * Deve espelhar a data usada na coluna "Registrado" (getDataRegistradoFluxo) no filtro HTTP.
+   */
+  onPeriodoAplicado(intervalo: PeriodoIntervaloPayload): void {
+    this.filtroDataInicio = intervalo.dataInicio;
+    this.filtroDataFim = intervalo.dataFim;
+    this.loadItems();
+  }
+
+  /** Debounce para não disparar listagem a cada dígito no filtro de O.S. */
+  onOrdemServicoFiltroChange(): void {
+    if (this.ordemServicoFiltroDebounce) {
+      clearTimeout(this.ordemServicoFiltroDebounce);
+    }
+    this.ordemServicoFiltroDebounce = setTimeout(() => {
+      this.ordemServicoFiltroDebounce = undefined;
+      this.loadItems();
+    }, 400);
+  }
+
+  /** Trecho da O.S.: apenas dígitos são enviados; busca parcial no servidor. */
+  private ordemServicoParaApi(): string | undefined {
+    const digits = (this.filtroOrdemServico ?? '').replace(/\D/g, '');
+    return digits.length > 0 ? digits : undefined;
+  }
+
+  private referenciaPeriodoParaListagem(): ReferenciaPeriodoIrregularidade {
+    return this.modo === 'tratamento' ? 'CRIADO_EM' : 'ENTRADA_STATUS';
+  }
+
   onVeiculoSelected(veiculo: Veiculo): void {
     this.filtroVeiculoId = veiculo.id;
     this.filtroVeiculoDescricao = veiculo.descricao;
@@ -249,7 +294,8 @@ export class IrregularidadeFluxoListComponent implements OnInit {
   clearFilters(): void {
     this.filtroVeiculoId = '';
     this.filtroVeiculoDescricao = '';
-    this.setDefaultPeriodoAtual();
+    this.filtroOrdemServico = '';
+    this.filtroPeriodoClearSeq += 1;
     this.filtroGravidade = '';
     if (this.modo === 'tratamento') {
       this.filtroStatus = StatusIrregularidade.REGISTRADA;
@@ -257,7 +303,6 @@ export class IrregularidadeFluxoListComponent implements OnInit {
     this.selectedIds.clear();
     this.error = '';
     this.info = '';
-    this.loadItems();
   }
 
   onComboFilterChange(): void {
@@ -278,14 +323,6 @@ export class IrregularidadeFluxoListComponent implements OnInit {
 
   openNaoProcedeModal(item: IrregularidadeFluxoItem): void {
     this.openActionModal(item, 'nao-procede', [item.id]);
-  }
-
-  openValidarFinalModal(item: IrregularidadeFluxoItem): void {
-    this.openActionModal(item, 'validar-final', [item.id]);
-  }
-
-  openReprovarFinalModal(item: IrregularidadeFluxoItem): void {
-    this.openActionModal(item, 'reprovar-final', [item.id]);
   }
 
   openBulkActionModal(acao: ModalAcao): void {
@@ -1098,11 +1135,23 @@ export class IrregularidadeFluxoListComponent implements OnInit {
     return `${minutos}min`;
   }
 
-  getTempoReferencia(item: IrregularidadeFluxoItem): string {
-    if (item.statusAtual === StatusIrregularidade.EM_MANUTENCAO && item.entradaStatusEm) {
-      return item.entradaStatusEm;
+  /**
+   * Data na coluna "Registrado": em tratamento = criação da irregularidade;
+   * em manutenção / validação final = entrada no status atual (envio à etapa).
+   * O filtro HTTP usa o mesmo critério (`referenciaPeriodo` + intervalo em loadItems).
+   */
+  getDataRegistradoFluxo(item: IrregularidadeFluxoItem): string {
+    if (this.modo === 'tratamento') {
+      return item.criadoEm;
     }
-    return item.criadoEm;
+    return item.entradaStatusEm ?? item.criadoEm;
+  }
+
+  getTempoReferencia(item: IrregularidadeFluxoItem): string {
+    if (this.modo === 'tratamento') {
+      return item.criadoEm;
+    }
+    return item.entradaStatusEm ?? item.criadoEm;
   }
 
   getTempoDesdeRegistro(criadoEm: string): string {
@@ -1169,21 +1218,6 @@ export class IrregularidadeFluxoListComponent implements OnInit {
       borderColor: meta.corHex || '#cbd5e1',
       backgroundColor: `${meta.corHex || '#64748b'}1a`,
     };
-  }
-
-  private setDefaultPeriodoAtual(): void {
-    const now = new Date();
-    const first = new Date(now.getFullYear(), now.getMonth(), 1);
-    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    this.filtroDataInicio = this.toInputDate(first);
-    this.filtroDataFim = this.toInputDate(last);
-  }
-
-  private toInputDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
   }
 
   private resolveStatusFiltro(): StatusIrregularidade[] {

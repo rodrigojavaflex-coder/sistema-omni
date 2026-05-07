@@ -6,9 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class AddIrregularidadeFluxoStatusHistorico1742000000000
-  implements MigrationInterface
-{
+export class AddIrregularidadeFluxoStatusHistorico1742000000000 implements MigrationInterface {
   name = 'AddIrregularidadeFluxoStatusHistorico1742000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -230,9 +228,7 @@ export class AddIrregularidadeFluxoStatusHistorico1742000000000
     await queryRunner.query(
       `DROP INDEX IF EXISTS "IDX_IRREGULARIDADE_EMPRESA_MANUT"`,
     );
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS "IDX_IRREGULARIDADE_STATUS"`,
-    );
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_IRREGULARIDADE_STATUS"`);
     await queryRunner.query(`
       ALTER TABLE "irregularidades"
       DROP COLUMN IF EXISTS "validada_em"
@@ -263,4 +259,3 @@ export class AddIrregularidadeFluxoStatusHistorico1742000000000
     `);
   }
 }
-

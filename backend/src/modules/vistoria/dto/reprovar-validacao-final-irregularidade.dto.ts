@@ -9,4 +9,3 @@ export class ReprovarValidacaoFinalIrregularidadeDto {
   @IsNotEmpty()
   observacao: string;
 }
-

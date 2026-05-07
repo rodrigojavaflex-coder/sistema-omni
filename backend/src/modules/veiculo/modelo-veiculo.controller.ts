@@ -10,7 +10,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
@@ -49,7 +54,9 @@ export class ModeloVeiculoController {
   @ApiOperation({ summary: 'Buscar modelo por id' })
   @ApiResponse({ status: 200, type: ModeloVeiculo })
   @Permissions(Permission.MODELOVEICULO_READ)
-  findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<ModeloVeiculo> {
+  findOne(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<ModeloVeiculo> {
     return this.modeloService.findOne(id);
   }
 

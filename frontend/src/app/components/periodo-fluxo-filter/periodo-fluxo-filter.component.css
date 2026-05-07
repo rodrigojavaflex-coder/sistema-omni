@@ -1,0 +1,313 @@
+/* Alinhado ao painel de filtros do fluxo: variáveis herdadas de .form-control / tema */
+.periodo-fluxo-host {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.periodo-fluxo-root {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+
+.periodo-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--color-surface, #fff);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.periodo-label--slot {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text, #0f172a);
+  white-space: nowrap;
+}
+
+.periodo-label-pick-wrap {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+}
+
+.periodo-label-pick-wrap--dia,
+.periodo-label-pick-wrap--mes {
+  min-width: 10rem;
+}
+
+.periodo-label-pick-wrap--semana {
+  min-width: 11.5rem;
+}
+
+.periodo-label-pick-wrap--ini,
+.periodo-label-pick-wrap--fim {
+  min-width: 4.9rem;
+  min-height: 2rem;
+}
+
+.periodo-label-personal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.periodo-label-chunk.periodo-label-pick-wrap {
+  padding: 0 0.1rem;
+}
+
+.periodo-label-sep {
+  color: var(--color-text-muted, #64748b);
+  pointer-events: none;
+  user-select: none;
+}
+
+.periodo-label-static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  min-width: 11.5rem;
+  padding: 0 0.35rem;
+  box-sizing: border-box;
+}
+
+.periodo-label-visible--interactive-off {
+  pointer-events: none;
+  cursor: default;
+  user-select: none;
+}
+
+.periodo-label-visible {
+  position: relative;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.periodo-picker-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  left: 0;
+  top: 0;
+}
+
+.periodo-label-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.periodo-label-hit:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #2563eb);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.periodo-year-inline {
+  min-width: 6.5rem;
+  min-height: 2.35rem;
+  margin: 0;
+  padding: 0 0.35rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: center;
+  text-align-last: center;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+}
+
+.periodo-year-inline::-ms-expand {
+  display: none;
+}
+
+.periodo-year-inline:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #2563eb);
+  outline-offset: 2px;
+}
+
+.periodo-nav-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-muted, #64748b);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.periodo-chevron {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+}
+
+.periodo-nav-btn:hover:not(:disabled) {
+  background: var(--color-surface-hover, #f1f5f9);
+  color: var(--color-text, #0f172a);
+}
+
+.periodo-nav-btn:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #2563eb);
+  outline-offset: 2px;
+}
+
+.periodo-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.periodo-cal-btn {
+  width: 2.45rem;
+  height: 2.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-muted, #64748b);
+  cursor: pointer;
+  margin-left: 0.15rem;
+}
+
+.periodo-cal-btn:hover {
+  background: var(--color-surface-hover, #f1f5f9);
+  color: var(--color-accent, #0d9488);
+}
+
+.periodo-cal-btn:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #2563eb);
+  outline-offset: 2px;
+}
+
+.periodo-cal-btn svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.periodo-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  min-width: 11rem;
+  margin-top: 0.25rem;
+  padding: 0.35rem 0;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--color-surface, #fff);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.periodo-dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.85rem;
+  border: none;
+  background: transparent;
+  font-size: 0.88rem;
+  color: var(--color-text, #334155);
+  cursor: pointer;
+}
+
+.periodo-dropdown-item:hover {
+  background: var(--color-surface-hover, #f8fafc);
+}
+
+.periodo-dropdown-item--active {
+  background: var(--color-accent-soft, #ecfdf5);
+  color: var(--color-accent, #0d9488);
+  font-weight: 600;
+}
+
+.periodo-dropdown-item:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #2563eb);
+  outline-offset: -2px;
+}
+
+:host-context(body.theme-dark) .periodo-toolbar,
+:host-context(body.theme-dark) .periodo-dropdown {
+  background: var(--color-surface, #1e293b);
+  border-color: var(--color-border, #334155);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+:host-context(body.theme-dark) .periodo-label-visible--interactive-off {
+  color: var(--color-text, #f1f5f9);
+}
+
+:host-context(body.theme-dark) .periodo-label--slot,
+:host-context(body.theme-dark) .periodo-label-visible,
+:host-context(body.theme-dark) .periodo-year-inline {
+  color: var(--color-text, #f1f5f9);
+}
+
+:host-context(body.theme-dark) .periodo-year-inline option {
+  color: var(--color-text, #0f172a);
+  background: var(--color-surface, #fff);
+}
+
+:host-context(body.theme-dark) .periodo-label-sep {
+  color: var(--color-text-muted, #94a3b8);
+}
+
+:host-context(body.theme-dark) .periodo-nav-btn:hover:not(:disabled),
+:host-context(body.theme-dark) .periodo-cal-btn:hover,
+:host-context(body.theme-dark) .periodo-dropdown-item:hover {
+  background: var(--color-surface-hover, #334155);
+}
+
+:host-context(body.theme-dark) .periodo-dropdown-item {
+  color: #e2e8f0;
+}
+
+:host-context(body.theme-dark) .periodo-dropdown-item--active {
+  background: rgba(13, 148, 136, 0.2);
+  color: #5eead4;
+}

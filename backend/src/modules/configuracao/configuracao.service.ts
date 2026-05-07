@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Configuracao } from './entities/configuracao.entity';
@@ -58,13 +62,18 @@ export class ConfiguracaoService {
     };
   }
 
-  private normalizeTempoFluxoConfig(input?: unknown): TempoFluxoConfig | undefined {
+  private normalizeTempoFluxoConfig(
+    input?: unknown,
+  ): TempoFluxoConfig | undefined {
     if (!input) {
       return undefined;
     }
     const source = input as Partial<TempoFluxoConfig>;
 
-    const normalizeFaixas = (faixas: unknown, tela: string): TempoFaixaConfig[] => {
+    const normalizeFaixas = (
+      faixas: unknown,
+      tela: string,
+    ): TempoFaixaConfig[] => {
       if (!Array.isArray(faixas)) {
         return [];
       }
@@ -74,14 +83,19 @@ export class ConfiguracaoService {
         const minHoras = Number(faixa.minHoras);
         const maxHorasRaw = faixa.maxHoras;
         const maxHoras =
-          maxHorasRaw === null || maxHorasRaw === undefined ? null : Number(maxHorasRaw);
+          maxHorasRaw === null || maxHorasRaw === undefined
+            ? null
+            : Number(maxHorasRaw);
 
         if (!Number.isFinite(minHoras) || minHoras < 0) {
           throw new BadRequestException(
             `Faixa inválida em ${tela}[${index}]: minHoras deve ser número >= 0`,
           );
         }
-        if (maxHoras !== null && (!Number.isFinite(maxHoras) || maxHoras <= minHoras)) {
+        if (
+          maxHoras !== null &&
+          (!Number.isFinite(maxHoras) || maxHoras <= minHoras)
+        ) {
           throw new BadRequestException(
             `Faixa inválida em ${tela}[${index}]: maxHoras deve ser maior que minHoras`,
           );
@@ -105,7 +119,9 @@ export class ConfiguracaoService {
         };
       });
 
-      const ativos = normalized.filter((f) => f.ativo).sort((a, b) => a.minHoras - b.minHoras);
+      const ativos = normalized
+        .filter((f) => f.ativo)
+        .sort((a, b) => a.minHoras - b.minHoras);
       for (let i = 1; i < ativos.length; i++) {
         const prev = ativos[i - 1];
         const curr = ativos[i];
@@ -126,7 +142,9 @@ export class ConfiguracaoService {
     };
   }
 
-  private normalizeEmailEnvioConfig(input?: unknown): EmailEnvioConfig | undefined {
+  private normalizeEmailEnvioConfig(
+    input?: unknown,
+  ): EmailEnvioConfig | undefined {
     if (!input) {
       return undefined;
     }
@@ -143,7 +161,9 @@ export class ConfiguracaoService {
 
     if (ativo) {
       if (!host) {
-        throw new BadRequestException('Host SMTP é obrigatório quando envio de e-mail está ativo.');
+        throw new BadRequestException(
+          'Host SMTP é obrigatório quando envio de e-mail está ativo.',
+        );
       }
       if (!Number.isFinite(porta) || porta <= 0) {
         throw new BadRequestException('Porta SMTP inválida.');
@@ -176,7 +196,8 @@ export class ConfiguracaoService {
     const normalizedDto: CreateConfiguracaoDto = {
       ...dto,
       tempoFluxoConfig:
-        this.normalizeTempoFluxoConfig(dto.tempoFluxoConfig) ?? defaultTempoFluxo,
+        this.normalizeTempoFluxoConfig(dto.tempoFluxoConfig) ??
+        defaultTempoFluxo,
       emailEnvioConfig: this.normalizeEmailEnvioConfig(dto.emailEnvioConfig),
     };
 
@@ -245,7 +266,7 @@ export class ConfiguracaoService {
       config.tempoFluxoConfig = this.buildDefaultTempoFluxoConfig();
       await this.configuracaoRepository.save(config);
     }
-    return config.tempoFluxoConfig as TempoFluxoConfig;
+    return config.tempoFluxoConfig;
   }
 
   async updateTempoFluxoConfig(

@@ -103,7 +103,7 @@ export class VistoriaService {
 
   async criarIrregularidade(
     vistoriaId: string,
-    payload: { idarea: string; idcomponente: string; idsintoma: string; observacao?: string },
+    payload: { idarea: string; idcomponente: string; idsintoma: string; observacao: string },
   ): Promise<CriarIrregularidadeResponse> {
     return firstValueFrom(
       this.http.post<CriarIrregularidadeResponse>(
@@ -115,7 +115,7 @@ export class VistoriaService {
 
   async atualizarIrregularidade(
     irregularidadeId: string,
-    payload: { observacao?: string; resolvido?: boolean },
+    payload: { observacao: string; resolvido?: boolean },
   ): Promise<{ id: string }> {
     return firstValueFrom(
       this.http.patch<{ id: string }>(

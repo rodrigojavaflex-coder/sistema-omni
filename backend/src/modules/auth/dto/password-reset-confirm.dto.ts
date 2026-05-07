@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength, MaxLength, Matches, IsEmail } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  MaxLength,
+  Matches,
+  IsEmail,
+} from 'class-validator';
 
 export class PasswordResetConfirmDto {
   @ApiProperty({ description: 'E-mail utilizado na solicitação' })
@@ -8,7 +14,10 @@ export class PasswordResetConfirmDto {
   @MaxLength(100)
   email: string;
 
-  @ApiProperty({ description: 'Código de 6 dígitos recebido por e-mail', example: '123456' })
+  @ApiProperty({
+    description: 'Código de 6 dígitos recebido por e-mail',
+    example: '123456',
+  })
   @IsString()
   @Matches(/^\d{6}$/, { message: 'O código deve ter 6 dígitos' })
   code: string;

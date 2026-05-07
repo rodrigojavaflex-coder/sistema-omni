@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -29,9 +33,9 @@ export class PerfilService {
 
   private async sanitizePermissions(input: string[]): Promise<string[]> {
     const allowed = await this.resolveAllowedPermissionKeys();
-    const normalized = Array.from(new Set((input || []).map((item) => item?.trim()))).filter(
-      (item): item is string => !!item,
-    );
+    const normalized = Array.from(
+      new Set((input || []).map((item) => item?.trim())),
+    ).filter((item): item is string => !!item);
     const invalid = normalized.filter((item) => !allowed.has(item));
     if (invalid.length) {
       throw new BadRequestException(
@@ -101,7 +105,9 @@ export class PerfilService {
     const perfil = await this.findOne(id);
     const dataToUpdate: UpdatePerfilDto = { ...updateDto };
     if (updateDto.permissoes) {
-      dataToUpdate.permissoes = await this.sanitizePermissions(updateDto.permissoes);
+      dataToUpdate.permissoes = await this.sanitizePermissions(
+        updateDto.permissoes,
+      );
     }
     Object.assign(perfil, dataToUpdate);
     return this.perfilRepository.save(perfil);

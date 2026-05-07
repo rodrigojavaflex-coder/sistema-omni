@@ -35,9 +35,7 @@ export class AddNumeroIrregularidade1743150000000 implements MigrationInterface 
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX "public"."UQ_IRREGULARIDADE_NUMERO"`,
-    );
+    await queryRunner.query(`DROP INDEX "public"."UQ_IRREGULARIDADE_NUMERO"`);
     await queryRunner.query(
       `ALTER TABLE "irregularidades" DROP COLUMN "numero_irregularidade"`,
     );

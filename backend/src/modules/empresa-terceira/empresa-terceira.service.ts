@@ -89,7 +89,9 @@ export class EmpresaTerceiraService {
       entidade.descricao = descricaoNorm;
     }
     if (dto.emailsRelatorio !== undefined) {
-      entidade.emailsRelatorio = this.normalizeEmailsRelatorio(dto.emailsRelatorio);
+      entidade.emailsRelatorio = this.normalizeEmailsRelatorio(
+        dto.emailsRelatorio,
+      );
     }
     if (dto.ehEmpresaManutencao !== undefined) {
       entidade.ehEmpresaManutencao = !!dto.ehEmpresaManutencao;

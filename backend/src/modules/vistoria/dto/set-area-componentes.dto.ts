@@ -22,7 +22,10 @@ export class AreaComponenteItemDto {
 }
 
 export class SetAreaComponentesDto {
-  @ApiProperty({ description: 'Componentes vinculados', type: [AreaComponenteItemDto] })
+  @ApiProperty({
+    description: 'Componentes vinculados',
+    type: [AreaComponenteItemDto],
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => AreaComponenteItemDto)

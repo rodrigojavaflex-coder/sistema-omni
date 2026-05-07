@@ -58,7 +58,9 @@ export class BiAcessoService {
 
   private isHostAllowed(hostname: string, allowedDomains: string[]): boolean {
     const host = hostname.toLowerCase();
-    return allowedDomains.some((domain) => host === domain || host.endsWith(`.${domain}`));
+    return allowedDomains.some(
+      (domain) => host === domain || host.endsWith(`.${domain}`),
+    );
   }
 
   private validateBiUrl(rawUrl: string): void {
@@ -179,8 +181,10 @@ export class BiAcessoService {
     });
 
     const permissions = Array.from(
-      new Set((user?.perfis || []).flatMap((perfil) => perfil.permissoes || [])),
-    ) as string[];
+      new Set(
+        (user?.perfis || []).flatMap((perfil) => perfil.permissoes || []),
+      ),
+    );
     return this.getMenuForPermissions(permissions);
   }
 
@@ -204,7 +208,7 @@ export class BiAcessoService {
     const permissionKey = this.buildPermissionKey(linkId);
     const permissions = Array.from(
       new Set((user.perfis || []).flatMap((perfil) => perfil.permissoes || [])),
-    ) as string[];
+    );
     if (!permissions.includes(permissionKey)) {
       throw new ForbiddenException('Usuário sem permissão para esse link BI');
     }

@@ -11,7 +11,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
@@ -56,11 +61,22 @@ export class AreasVistoriadasController {
   }
 
   @Get('componentes-com-vinculo')
-  @ApiOperation({ summary: 'Listar componentes com área vinculada (para modal vincular)' })
+  @ApiOperation({
+    summary: 'Listar componentes com área vinculada (para modal vincular)',
+  })
   @ApiResponse({ status: 200 })
-  @Permissions(Permission.AREAVISTORIADA_READ, Permission.AREAVISTORIADA_VINCULAR_COMPONENTE)
+  @Permissions(
+    Permission.AREAVISTORIADA_READ,
+    Permission.AREAVISTORIADA_VINCULAR_COMPONENTE,
+  )
   getComponentesWithArea(): Promise<
-    Array<{ id: string; nome: string; ativo: boolean; idArea: string | null; nomeArea: string | null }>
+    Array<{
+      id: string;
+      nome: string;
+      ativo: boolean;
+      idArea: string | null;
+      nomeArea: string | null;
+    }>
   > {
     return this.areaComponenteService.listComponentesWithArea();
   }
@@ -69,7 +85,9 @@ export class AreasVistoriadasController {
   @ApiOperation({ summary: 'Buscar área por id' })
   @ApiResponse({ status: 200, type: AreaVistoriada })
   @Permissions(Permission.AREAVISTORIADA_READ)
-  findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<AreaVistoriada> {
+  findOne(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<AreaVistoriada> {
     return this.areaService.findOne(id);
   }
 
@@ -96,14 +114,20 @@ export class AreasVistoriadasController {
   @ApiOperation({ summary: 'Listar componentes da área' })
   @ApiResponse({ status: 200, type: [AreaComponente] })
   @Permissions(Permission.AREAVISTORIADA_READ, Permission.VISTORIA_READ)
-  listComponentes(@Param('id', new ParseUUIDPipe()) id: string): Promise<AreaComponente[]> {
+  listComponentes(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<AreaComponente[]> {
     return this.areaComponenteService.listByArea(id);
   }
 
   @Put(':id/componentes')
   @ApiOperation({ summary: 'Definir componentes da área' })
   @ApiResponse({ status: 204 })
-  @Permissions(Permission.AREAVISTORIADA_UPDATE, Permission.AREAVISTORIADA_REMOVER_COMPONENTE, Permission.AREAVISTORIADA_VINCULAR_COMPONENTE)
+  @Permissions(
+    Permission.AREAVISTORIADA_UPDATE,
+    Permission.AREAVISTORIADA_REMOVER_COMPONENTE,
+    Permission.AREAVISTORIADA_VINCULAR_COMPONENTE,
+  )
   async setComponentes(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: SetAreaComponentesDto,

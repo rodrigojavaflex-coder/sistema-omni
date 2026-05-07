@@ -1,10 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsBoolean,
-  IsEnum,
-  IsOptional,
-  IsUUID,
-} from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { GravidadeCriticidade } from '../../../common/enums/gravidade-criticidade.enum';
 
 export class CreateMatrizCriticidadeDto {
@@ -25,7 +20,11 @@ export class CreateMatrizCriticidadeDto {
   @IsBoolean()
   exige_foto?: boolean;
 
-  @ApiProperty({ description: 'Permite áudio', required: false, default: false })
+  @ApiProperty({
+    description: 'Permite áudio',
+    required: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   permite_audio?: boolean;

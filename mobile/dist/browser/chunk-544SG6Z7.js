@@ -13,10 +13,15 @@ var ErrorMessageService = class _ErrorMessageService {
     if (hasHttpStatus && status === 0) {
       return "N\xE3o foi poss\xEDvel conectar ao servidor. Verifique sua internet e tente novamente.";
     }
+    const backendDetail = this.tryExtractBackendMessage(anyError);
     if (hasHttpStatus) {
       switch (status) {
         case 400:
-          return "Solicita\xE7\xE3o inv\xE1lida. Revise os dados e tente novamente.";
+        case 422:
+          if (backendDetail) {
+            return this.normalizePtBrMessage(backendDetail);
+          }
+          return status === 422 ? "Alguns dados informados s\xE3o inv\xE1lidos." : "Solicita\xE7\xE3o inv\xE1lida. Revise os dados e tente novamente.";
         case 401:
           return "E-mail ou senha inv\xE1lidos.";
         case 403:
@@ -27,8 +32,6 @@ var ErrorMessageService = class _ErrorMessageService {
           return "Tempo de conex\xE3o esgotado. Tente novamente.";
         case 409:
           return "Conflito de dados. Atualize a tela e tente novamente.";
-        case 422:
-          return "Alguns dados informados s\xE3o inv\xE1lidos.";
         case 429:
           return "Muitas tentativas em sequ\xEAncia. Aguarde alguns instantes.";
         case 500:
@@ -40,17 +43,24 @@ var ErrorMessageService = class _ErrorMessageService {
           break;
       }
     }
-    const raw = anyError?.error?.message ?? anyError?.message;
-    if (!raw) {
+    if (!backendDetail) {
       return fallback;
     }
-    const normalized = Array.isArray(raw) ? raw.join(" ") : String(raw);
-    const sanitized = normalized.replace(/https?:\/\/\S+/gi, "").replace(/Http failure response for/gi, "").replace(/Unknown Error/gi, "").replace(/HttpErrorResponse/gi, "").replace(/\s+/g, " ").trim();
-    const lowered = sanitized.toLowerCase();
+    const lowered = backendDetail.toLowerCase();
     if (lowered.includes("network error") || lowered.includes("failed to fetch") || lowered.includes("timeout") || lowered.includes("timed out")) {
       return "N\xE3o foi poss\xEDvel conectar ao servidor. Verifique sua internet e tente novamente.";
     }
-    return this.normalizePtBrMessage(sanitized || fallback);
+    return this.normalizePtBrMessage(backendDetail || fallback);
+  }
+  /** Extrai texto útil enviado pelo backend (Nest `message` pode ser string ou string[]). */
+  tryExtractBackendMessage(anyError) {
+    const raw = anyError?.error?.message ?? anyError?.message;
+    if (raw === void 0 || raw === null || raw === "") {
+      return null;
+    }
+    const normalized = Array.isArray(raw) ? raw.join(" ") : String(raw);
+    const sanitized = normalized.replace(/https?:\/\/\S+/gi, "").replace(/Http failure response for/gi, "").replace(/Unknown Error/gi, "").replace(/HttpErrorResponse/gi, "").replace(/\s+/g, " ").trim();
+    return sanitized || null;
   }
   normalizePtBrMessage(message) {
     return message.replace(/\b[Nn]ao\b/g, (value) => value[0] === "N" ? "N\xE3o" : "n\xE3o").replace(/\b[Pp]ossivel\b/g, (value) => value[0] === "P" ? "Poss\xEDvel" : "poss\xEDvel").replace(/\b[Ss]ervico\b/g, (value) => value[0] === "S" ? "Servi\xE7o" : "servi\xE7o").replace(/\b[Ii]nvalidos\b/g, (value) => value[0] === "I" ? "Inv\xE1lidos" : "inv\xE1lidos").replace(/\b[Mm]idias\b/g, (value) => value[0] === "M" ? "M\xEDdias" : "m\xEDdias").replace(/\b[Vv]eiculo\b/g, (value) => value[0] === "V" ? "Ve\xEDculo" : "ve\xEDculo");
@@ -78,4 +88,4 @@ export {
   environment,
   ErrorMessageService
 };
-//# sourceMappingURL=chunk-P3DEM65Q.js.map
+//# sourceMappingURL=chunk-544SG6Z7.js.map

@@ -1,6 +1,6 @@
 import {
   environment
-} from "./chunk-P3DEM65Q.js";
+} from "./chunk-544SG6Z7.js";
 import {
   HttpClient,
   Injectable,
@@ -58,4 +58,4 @@ var AreaVistoriadaService = class _AreaVistoriadaService {
 export {
   AreaVistoriadaService
 };
-//# sourceMappingURL=chunk-WJ62VNTM.js.map
+//# sourceMappingURL=chunk-INVPJNYQ.js.map

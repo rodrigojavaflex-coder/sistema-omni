@@ -12,7 +12,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Permission } from '../../common/enums/permission.enum';
@@ -60,12 +65,10 @@ export class BiAcessoController {
   @Get(':id/acesso')
   @UseGuards(AuthGuard('jwt'))
   @ApiOperation({
-    summary: 'Buscar URL de BI para visualização interna com validação de acesso',
+    summary:
+      'Buscar URL de BI para visualização interna com validação de acesso',
   })
-  getAccessibleLink(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: any,
-  ) {
+  getAccessibleLink(@Param('id', ParseUUIDPipe) id: string, @Req() req: any) {
     return this.biAcessoService.getAccessibleLinkForUser(id, req?.user?.id);
   }
 

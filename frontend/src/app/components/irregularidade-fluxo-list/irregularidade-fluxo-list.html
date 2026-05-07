@@ -6,6 +6,16 @@
 
   <div class="filters-panel">
     <div class="filters-row">
+      <input
+        type="text"
+        inputmode="numeric"
+        class="form-input filter-ordem-servico"
+        [(ngModel)]="filtroOrdemServico"
+        (ngModelChange)="onOrdemServicoFiltroChange()"
+        aria-label="Ordem de Serviço (número)"
+        placeholder="Buscar O.S. (ex.: 2026)"
+        autocomplete="off"
+      />
       <app-veiculo-autocomplete
         class="filter-veiculo"
         (veiculoSelected)="onVeiculoSelected($event)"
@@ -31,9 +41,11 @@
           {{ getStatusLabel(status) }}
         </option>
       </select>
-      <input type="date" class="form-control" [(ngModel)]="filtroDataInicio" />
-      <input type="date" class="form-control" [(ngModel)]="filtroDataFim" />
-      <button class="btn btn-primary" (click)="loadItems()">Filtrar</button>
+      <app-periodo-fluxo-filter
+        class="filter-periodo"
+        [clearSeq]="filtroPeriodoClearSeq"
+        (periodoAplicado)="onPeriodoAplicado($event)"
+      ></app-periodo-fluxo-filter>
       <button class="btn btn-secondary" (click)="clearFilters()">Limpar</button>
     </div>
   </div>
@@ -87,7 +99,32 @@
       >
         Não procede
       </button>
-      <span class="buttons-row-summary" *ngIf="modo === 'tratamento'">
+      <button
+        class="btn btn-success"
+        *ngIf="modo === 'validacao-final' && canValidacaoFinalUpdate"
+        [disabled]="!hasSelectedItems"
+        (click)="openBulkActionModal('validar-final')"
+      >
+        <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        Validar final
+      </button>
+      <button
+        class="btn btn-danger"
+        *ngIf="modo === 'validacao-final' && canValidacaoFinalUpdate"
+        [disabled]="!hasSelectedItems"
+        (click)="openBulkActionModal('reprovar-final')"
+      >
+        <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        Reprovar
+      </button>
+      <span class="buttons-row-summary" *ngIf="modo === 'tratamento' || modo === 'validacao-final'">
         {{ items.length }} irregularidade(s) | {{ getSelectedIds().length }} irregularidade(s) selecionada(s)
       </span>
     </div>
@@ -111,7 +148,7 @@
       <div
         class="irregularidade-list-header"
         [class.irregularidade-list-header--tratamento]="modo === 'tratamento'"
-        [class.irregularidade-list-header--com-codigo]="modo === 'manutencao'"
+        [class.irregularidade-list-header--com-codigo]="modo === 'manutencao' || modo === 'validacao-final'"
       >
         <span class="col-select form-check">
           <input
@@ -123,7 +160,7 @@
           />
         </span>
         <span>Veículo</span>
-        <span *ngIf="modo === 'tratamento' || modo === 'manutencao'">Ordem de Serviço</span>
+        <span *ngIf="modo === 'tratamento' || modo === 'manutencao' || modo === 'validacao-final'">Ordem de Serviço</span>
         <span>Irregularidade</span>
         <span>Gravidade</span>
         <span>Registrado</span>
@@ -141,7 +178,7 @@
         <div
           class="irregularidade-row-grid"
           [class.irregularidade-row-grid--tratamento]="modo === 'tratamento'"
-          [class.irregularidade-row-grid--com-codigo]="modo === 'manutencao'"
+          [class.irregularidade-row-grid--com-codigo]="modo === 'manutencao' || modo === 'validacao-final'"
         >
           <div class="col-select form-check">
             <input
@@ -163,7 +200,7 @@
               }}
             </div>
           </div>
-          <div class="col-codigo" *ngIf="modo === 'tratamento' || modo === 'manutencao'">
+          <div class="col-codigo" *ngIf="modo === 'tratamento' || modo === 'manutencao' || modo === 'validacao-final'">
             {{ item.numeroIrregularidade || '-' }}
           </div>
           <div class="col-irregularidade">
@@ -176,7 +213,7 @@
               {{ item.gravidade || '-' }}
             </span>
           </div>
-          <div class="col-data">{{ item.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</div>
+          <div class="col-data">{{ getDataRegistradoFluxo(item) | date: 'dd/MM/yyyy HH:mm' }}</div>
           <div class="col-tempo">
             <div class="tempo-cell" [ngStyle]="getTempoStyle(getTempoReferencia(item))">
               <span>{{ getTempoDesdeRegistro(getTempoReferencia(item)) }}</span>
@@ -276,25 +313,6 @@
               <ng-template #semAudios>
                 <div class="media-empty">Sem áudios</div>
               </ng-template>
-            </div>
-          </div>
-
-          <div class="table-actions" *ngIf="modo !== 'tratamento'">
-            <div class="table-actions" *ngIf="modo === 'validacao-final'">
-              <button
-                class="btn btn-small btn-success"
-                *ngIf="canValidacaoFinalUpdate"
-                (click)="$event.stopPropagation(); openValidarFinalModal(item)"
-              >
-                Validar final
-              </button>
-              <button
-                class="btn btn-small btn-danger"
-                *ngIf="canValidacaoFinalUpdate"
-                (click)="$event.stopPropagation(); openReprovarFinalModal(item)"
-              >
-                Reprovar
-              </button>
             </div>
           </div>
         </div>
@@ -545,11 +563,15 @@
       <div class="form-group" *ngIf="modalAcao !== 'cancelar' && modalAcao !== 'iniciar-manutencao'">
         <label>
           {{
-            modalAcao === 'concluir'
-              ? 'O que foi Executado/tratado: *'
-              : modalAcao === 'nao-procede'
-                ? 'Observação:'
-                : 'Descrição do Problema' + (modalAcao === 'reprovar-final' ? ' *' : '')
+            modalAcao === 'validar-final'
+              ? 'Observação (opcional):'
+              : modalAcao === 'concluir'
+                ? 'O que foi Executado/tratado: *'
+                : modalAcao === 'nao-procede'
+                  ? 'Observação:'
+                  : modalAcao === 'reprovar-final'
+                    ? 'Motivo da reprovação *'
+                    : 'Descrição do Problema'
           }}
         </label>
         <textarea

@@ -19,7 +19,10 @@ export class Componente extends BaseEntity {
   @Column({ name: 'ativo', type: 'boolean', default: true })
   ativo: boolean;
 
-  @OneToMany(() => AreaComponente, (areaComponente) => areaComponente.componente)
+  @OneToMany(
+    () => AreaComponente,
+    (areaComponente) => areaComponente.componente,
+  )
   areas?: AreaComponente[];
 
   @OneToMany(() => MatrizCriticidade, (matriz) => matriz.componente)

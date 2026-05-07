@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class BackfillStatusOcorrencia1739332000000
-  implements MigrationInterface
-{
+export class BackfillStatusOcorrencia1739332000000 implements MigrationInterface {
   name = 'BackfillStatusOcorrencia1739332000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

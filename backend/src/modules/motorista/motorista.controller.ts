@@ -32,7 +32,12 @@ export class MotoristaController {
   }
 
   @Get()
-  @Permissions(Permission.MOTORISTA_READ, Permission.VISTORIA_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
+  @Permissions(
+    Permission.MOTORISTA_READ,
+    Permission.VISTORIA_READ,
+    Permission.OCORRENCIA_READ,
+    Permission.OCORRENCIA_CREATE,
+  )
   findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -54,7 +59,11 @@ export class MotoristaController {
   }
 
   @Get(':id')
-  @Permissions(Permission.MOTORISTA_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
+  @Permissions(
+    Permission.MOTORISTA_READ,
+    Permission.OCORRENCIA_READ,
+    Permission.OCORRENCIA_CREATE,
+  )
   findOne(@Param('id') id: string) {
     return this.motoristaService.findOne(id);
   }

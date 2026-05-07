@@ -61,7 +61,10 @@ export class MatrizCriticidadeService {
     return matriz;
   }
 
-  async update(id: string, dto: UpdateMatrizCriticidadeDto): Promise<MatrizCriticidade> {
+  async update(
+    id: string,
+    dto: UpdateMatrizCriticidadeDto,
+  ): Promise<MatrizCriticidade> {
     const matriz = await this.findOne(id);
 
     if (dto.idcomponente) {
@@ -87,7 +90,9 @@ export class MatrizCriticidadeService {
   }
 
   private async ensureComponente(id: string): Promise<void> {
-    const componente = await this.componenteRepository.findOne({ where: { id } });
+    const componente = await this.componenteRepository.findOne({
+      where: { id },
+    });
     if (!componente) {
       throw new NotFoundException('Componente não encontrado');
     }

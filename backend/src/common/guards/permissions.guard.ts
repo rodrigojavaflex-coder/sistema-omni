@@ -70,7 +70,9 @@ export class PermissionsGuard implements CanActivate {
 
       // União de permissões de todos os perfis vinculados ao usuário
       const userPermissions = Array.from(
-        new Set((user.perfis || []).flatMap((perfil) => perfil.permissoes || [])),
+        new Set(
+          (user.perfis || []).flatMap((perfil) => perfil.permissoes || []),
+        ),
       );
 
       const hasPermission = requiredPermissions.some((permission) =>

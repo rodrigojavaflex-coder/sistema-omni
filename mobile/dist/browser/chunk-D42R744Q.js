@@ -1,7 +1,7 @@
 import {
   AuthService
-} from "./chunk-T6CYOBCK.js";
-import "./chunk-P3DEM65Q.js";
+} from "./chunk-VNJJWUVL.js";
+import "./chunk-544SG6Z7.js";
 import {
   AlertController,
   CommonModule,
@@ -229,4 +229,4 @@ var ConfiguracoesPage = class _ConfiguracoesPage {
 export {
   ConfiguracoesPage
 };
-//# sourceMappingURL=chunk-EZ5UZ4JN.js.map
+//# sourceMappingURL=chunk-D42R744Q.js.map

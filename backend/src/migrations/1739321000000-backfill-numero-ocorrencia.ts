@@ -18,8 +18,7 @@ export class BackfillNumeroOcorrencia1739321000000 implements MigrationInterface
       const year = new Date(row.dataHora).getFullYear();
       if (!(year in seqByYear)) seqByYear[year] = 0;
       seqByYear[year] += 1;
-      const numero =
-        String(year) + String(seqByYear[year]).padStart(6, '0');
+      const numero = String(year) + String(seqByYear[year]).padStart(6, '0');
       await queryRunner.query(
         `UPDATE ocorrencias SET numero = $1 WHERE id = $2`,
         [numero, row.id],

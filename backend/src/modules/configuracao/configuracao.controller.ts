@@ -120,7 +120,10 @@ export class ConfiguracaoController {
     Permission.CONFIGURACAO_TEMPO_FLUXO_DELETE,
   )
   @ApiOperation({ summary: 'Atualizar configuração de tempo do fluxo' })
-  async updateTempoFluxo(@Body() body: { tempoFluxoConfig?: unknown }, @Req() req?: any) {
+  async updateTempoFluxo(
+    @Body() body: { tempoFluxoConfig?: unknown },
+    @Req() req?: any,
+  ) {
     return this.configuracaoService.updateTempoFluxoConfig(
       body?.tempoFluxoConfig,
       req?.user?.id,

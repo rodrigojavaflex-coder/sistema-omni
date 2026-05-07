@@ -62,12 +62,12 @@ export class MetaExecucaoService {
     const dateOnly = dateStr.split('T')[0].split(' ')[0];
     const parts = dateOnly.split('-');
     if (parts.length !== 3) return dateStr;
-    
+
     // Valida e retorna no formato YYYY-MM-DD
     const year = parts[0];
     const month = parts[1].padStart(2, '0');
     const day = parts[2].padStart(2, '0');
-    
+
     return `${year}-${month}-${day}`;
   }
 
@@ -114,7 +114,7 @@ export class MetaExecucaoService {
 
   async findAll(userId: string, metaId: string): Promise<MetaExecucao[]> {
     await this.ensureMetaAccess(userId, metaId);
-    
+
     // Usa query raw para retornar a data como string (YYYY-MM-DD) sem conversão de timezone
     const execucoesRaw = await this.metaExecucaoRepository.query(
       `SELECT 
@@ -130,13 +130,13 @@ export class MetaExecucaoService {
        ORDER BY "dataRealizado" DESC, "criadoEm" DESC`,
       [metaId],
     );
-    
+
     // Busca as execuções completas com TypeORM para ter as relações
     const execucoes = await this.metaExecucaoRepository.find({
       where: { metaId },
       order: { dataRealizado: 'DESC', criadoEm: 'DESC' },
     });
-    
+
     // Mapeia as datas corretas das execuções raw para as execuções completas
     const execucoesMap = new Map<string, string>(
       execucoesRaw.map((e: any) => [e.id, e.dataRealizado]),
@@ -147,7 +147,7 @@ export class MetaExecucaoService {
         execucao.dataRealizado = dataCorreta;
       }
     });
-    
+
     return execucoes;
   }
 
@@ -158,21 +158,26 @@ export class MetaExecucaoService {
   ): Promise<MetaExecucao> {
     const meta = await this.ensureMetaAccess(userId, metaId);
     this.assertDataDentroDoPeriodo(meta, dto.dataRealizado);
-    
+
     // Normaliza a data para garantir que seja tratada como data local (sem timezone)
     const dataNormalizada = this.normalizeDateString(dto.dataRealizado);
-    
+
     // Usa query SQL raw para inserir a data diretamente como DATE literal
     // Usa camelCase conforme definido na entidade (@JoinColumn({ name: 'metaId' }))
-    const queryParams = [metaId, dataNormalizada, dto.valorRealizado, dto.justificativa || null];
-    
+    const queryParams = [
+      metaId,
+      dataNormalizada,
+      dto.valorRealizado,
+      dto.justificativa || null,
+    ];
+
     // Insere sem RETURNING para evitar conversão de timezone
     await this.metaExecucaoRepository.query(
       `INSERT INTO meta_execucoes ("metaId", "dataRealizado", "valorRealizado", "justificativa", "id", "criadoEm", "atualizadoEm")
        VALUES ($1, $2::date, $3, $4, gen_random_uuid(), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       queryParams,
     );
-    
+
     // Busca a execução criada usando query raw que retorna a data como texto (YYYY-MM-DD)
     const result = await this.metaExecucaoRepository.query(
       `SELECT 
@@ -191,11 +196,11 @@ export class MetaExecucaoService {
        LIMIT 1`,
       [metaId, dataNormalizada, dto.valorRealizado],
     );
-    
+
     if (!result || result.length === 0) {
       throw new Error('Erro ao criar execução da meta');
     }
-    
+
     // Busca a execução criada com a relação meta usando o ID encontrado
     // Mas força a data a ser preservada como string usando query raw
     const execucaoRaw = await this.metaExecucaoRepository.query(
@@ -206,24 +211,24 @@ export class MetaExecucaoService {
        WHERE e.id = $1`,
       [result[0].id],
     );
-    
+
     if (!execucaoRaw || execucaoRaw.length === 0) {
       throw new Error('Erro ao criar execução da meta');
     }
-    
+
     // Busca a entidade completa com relação
     const execucao = await this.metaExecucaoRepository.findOne({
       where: { id: result[0].id },
       relations: ['meta'],
     });
-    
+
     if (!execucao) {
       throw new Error('Erro ao criar execução da meta');
     }
-    
+
     // Força a data a ser a string correta (YYYY-MM-DD) sem conversão de timezone
     execucao.dataRealizado = execucaoRaw[0].dataRealizadoStr || dataNormalizada;
-    
+
     return execucao;
   }
 
@@ -238,44 +243,44 @@ export class MetaExecucaoService {
     if (dto.dataRealizado) {
       this.assertDataDentroDoPeriodo(meta, dto.dataRealizado);
     }
-    
+
     // Normaliza a data se fornecida
-    const dataNormalizada = dto.dataRealizado 
+    const dataNormalizada = dto.dataRealizado
       ? this.normalizeDateString(dto.dataRealizado)
       : execucao.dataRealizado;
-    
+
     // Constrói a query de atualização dinamicamente
     const updates: string[] = [];
     const params: any[] = [];
     let paramIndex = 1;
-    
+
     if (dto.dataRealizado !== undefined) {
       updates.push(`"dataRealizado" = $${paramIndex}::date`);
       params.push(dataNormalizada);
       paramIndex++;
     }
-    
+
     if (dto.valorRealizado !== undefined) {
       updates.push(`"valorRealizado" = $${paramIndex}`);
       params.push(dto.valorRealizado);
       paramIndex++;
     }
-    
+
     if (dto.justificativa !== undefined) {
       updates.push(`"justificativa" = $${paramIndex}`);
       params.push(dto.justificativa || null);
       paramIndex++;
     }
-    
+
     // Se não há nada para atualizar, retorna a execução atual
     if (updates.length === 0) {
       return execucao;
     }
-    
+
     // Adiciona atualização de timestamp e ID para WHERE
     updates.push(`"atualizadoEm" = CURRENT_TIMESTAMP`);
     params.push(execucaoId);
-    
+
     // Usa query SQL raw para atualizar a data diretamente
     await this.metaExecucaoRepository.query(
       `UPDATE meta_execucoes 
@@ -283,17 +288,17 @@ export class MetaExecucaoService {
        WHERE "id" = $${paramIndex}`,
       params,
     );
-    
+
     // Busca a execução atualizada com a relação meta
     const updated = await this.metaExecucaoRepository.findOne({
       where: { id: execucaoId },
       relations: ['meta'],
     });
-    
+
     if (!updated) {
       throw new Error('Erro ao atualizar execução da meta');
     }
-    
+
     return updated;
   }
 

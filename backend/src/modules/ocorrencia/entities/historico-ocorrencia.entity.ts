@@ -27,7 +27,11 @@ export class HistoricoOcorrencia extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   observacao?: string;
 
-  @ManyToOne(() => Usuario, { nullable: true, eager: false, onDelete: 'SET NULL' })
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    eager: false,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'idUsuario' })
   usuario?: Usuario;
 

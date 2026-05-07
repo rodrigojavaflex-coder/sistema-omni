@@ -10,4 +10,3 @@ export class ValidacaoFinalIrregularidadeDto {
   @IsString()
   observacao?: string;
 }
-

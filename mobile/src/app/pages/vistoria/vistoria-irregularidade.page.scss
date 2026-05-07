@@ -159,6 +159,28 @@ ion-footer ion-button {
   padding: 12px 16px;
 }
 
+.item-descricao-problema {
+  --highlight-color-focused: var(--ion-color-primary);
+}
+
+.item-descricao-problema--erro {
+  --border-color: var(--ion-color-danger);
+  --highlight-color-invalid: var(--ion-color-danger);
+}
+
+.item-descricao-problema ion-label .label-required {
+  color: var(--ion-color-medium);
+  font-weight: 500;
+  font-size: 0.85em;
+}
+
+.campo-descricao-erro {
+  margin: 0 16px 8px;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--ion-color-danger);
+}
+
 ion-item.is-selected {
   --background: #e7f2ff;
 }

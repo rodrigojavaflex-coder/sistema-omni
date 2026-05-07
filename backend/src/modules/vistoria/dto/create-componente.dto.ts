@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateComponenteDto {
   @ApiProperty({ description: 'Nome do componente', maxLength: 100 })
@@ -8,7 +14,11 @@ export class CreateComponenteDto {
   @MaxLength(100)
   nome: string;
 
-  @ApiProperty({ description: 'Componente ativo', required: false, default: true })
+  @ApiProperty({
+    description: 'Componente ativo',
+    required: false,
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   ativo?: boolean;

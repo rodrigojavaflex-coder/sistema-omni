@@ -10,4 +10,3 @@ export class CancelarIrregularidadeDto {
   @IsNotEmpty()
   motivo: string;
 }
-

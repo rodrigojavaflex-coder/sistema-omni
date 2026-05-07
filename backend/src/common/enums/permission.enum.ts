@@ -202,9 +202,18 @@ export const PERMISSION_GROUPS = {
   ],
   'Modelos de Veículo': [
     { key: Permission.MODELOVEICULO_CREATE, label: 'Criar modelos de veículo' },
-    { key: Permission.MODELOVEICULO_READ, label: 'Visualizar modelos de veículo' },
-    { key: Permission.MODELOVEICULO_UPDATE, label: 'Editar modelos de veículo' },
-    { key: Permission.MODELOVEICULO_DELETE, label: 'Excluir modelos de veículo' },
+    {
+      key: Permission.MODELOVEICULO_READ,
+      label: 'Visualizar modelos de veículo',
+    },
+    {
+      key: Permission.MODELOVEICULO_UPDATE,
+      label: 'Editar modelos de veículo',
+    },
+    {
+      key: Permission.MODELOVEICULO_DELETE,
+      label: 'Excluir modelos de veículo',
+    },
   ],
   Motoristas: [
     { key: Permission.MOTORISTA_CREATE, label: 'Criar motoristas' },
@@ -223,7 +232,10 @@ export const PERMISSION_GROUPS = {
     },
     { key: Permission.OCORRENCIA_DELETE, label: 'Excluir ocorrências' },
     { key: Permission.OCORRENCIA_AUDIT, label: 'Auditar ocorrências' },
-    { key: Permission.OCORRENCIA_PAINEL_VIEW, label: 'Acessar painel de ocorrências' },
+    {
+      key: Permission.OCORRENCIA_PAINEL_VIEW,
+      label: 'Acessar painel de ocorrências',
+    },
   ],
   'Origem da Ocorrência': [
     { key: Permission.ORIGEMOCORRENCIA_CREATE, label: 'Criar origens' },
@@ -233,7 +245,10 @@ export const PERMISSION_GROUPS = {
   ],
   'Categoria da Ocorrência': [
     { key: Permission.CATEGORIAOCORRENCIA_CREATE, label: 'Criar categorias' },
-    { key: Permission.CATEGORIAOCORRENCIA_READ, label: 'Visualizar categorias' },
+    {
+      key: Permission.CATEGORIAOCORRENCIA_READ,
+      label: 'Visualizar categorias',
+    },
     { key: Permission.CATEGORIAOCORRENCIA_UPDATE, label: 'Editar categorias' },
     { key: Permission.CATEGORIAOCORRENCIA_DELETE, label: 'Excluir categorias' },
   ],
@@ -331,11 +346,26 @@ export const PERMISSION_GROUPS = {
   ],
   'Áreas Vistoriadas': [
     { key: Permission.AREAVISTORIADA_CREATE, label: 'Criar áreas vistoriadas' },
-    { key: Permission.AREAVISTORIADA_READ, label: 'Visualizar áreas vistoriadas' },
-    { key: Permission.AREAVISTORIADA_UPDATE, label: 'Editar áreas vistoriadas' },
-    { key: Permission.AREAVISTORIADA_DELETE, label: 'Excluir áreas vistoriadas' },
-    { key: Permission.AREAVISTORIADA_REMOVER_COMPONENTE, label: 'Remover componente da área' },
-    { key: Permission.AREAVISTORIADA_VINCULAR_COMPONENTE, label: 'Vincular componente à área' },
+    {
+      key: Permission.AREAVISTORIADA_READ,
+      label: 'Visualizar áreas vistoriadas',
+    },
+    {
+      key: Permission.AREAVISTORIADA_UPDATE,
+      label: 'Editar áreas vistoriadas',
+    },
+    {
+      key: Permission.AREAVISTORIADA_DELETE,
+      label: 'Excluir áreas vistoriadas',
+    },
+    {
+      key: Permission.AREAVISTORIADA_REMOVER_COMPONENTE,
+      label: 'Remover componente da área',
+    },
+    {
+      key: Permission.AREAVISTORIADA_VINCULAR_COMPONENTE,
+      label: 'Vincular componente à área',
+    },
   ],
   Componentes: [
     { key: Permission.COMPONENTE_CREATE, label: 'Criar componentes' },
@@ -350,10 +380,22 @@ export const PERMISSION_GROUPS = {
     { key: Permission.SINTOMA_DELETE, label: 'Excluir sintomas' },
   ],
   'Matriz de Criticidade': [
-    { key: Permission.MATRIZCRITICIDADE_CREATE, label: 'Criar matriz de criticidade' },
-    { key: Permission.MATRIZCRITICIDADE_READ, label: 'Visualizar matriz de criticidade' },
-    { key: Permission.MATRIZCRITICIDADE_UPDATE, label: 'Editar matriz de criticidade' },
-    { key: Permission.MATRIZCRITICIDADE_DELETE, label: 'Excluir matriz de criticidade' },
+    {
+      key: Permission.MATRIZCRITICIDADE_CREATE,
+      label: 'Criar matriz de criticidade',
+    },
+    {
+      key: Permission.MATRIZCRITICIDADE_READ,
+      label: 'Visualizar matriz de criticidade',
+    },
+    {
+      key: Permission.MATRIZCRITICIDADE_UPDATE,
+      label: 'Editar matriz de criticidade',
+    },
+    {
+      key: Permission.MATRIZCRITICIDADE_DELETE,
+      label: 'Excluir matriz de criticidade',
+    },
   ],
 };
 

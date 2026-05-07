@@ -33,13 +33,21 @@ export class CategoriaOcorrenciaController {
   }
 
   @Get()
-  @Permissions(Permission.CATEGORIAOCORRENCIA_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
+  @Permissions(
+    Permission.CATEGORIAOCORRENCIA_READ,
+    Permission.OCORRENCIA_READ,
+    Permission.OCORRENCIA_CREATE,
+  )
   findAll(@Query('origem') origem?: string) {
     return this.service.findAll(origem);
   }
 
   @Get(':id')
-  @Permissions(Permission.CATEGORIAOCORRENCIA_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
+  @Permissions(
+    Permission.CATEGORIAOCORRENCIA_READ,
+    Permission.OCORRENCIA_READ,
+    Permission.OCORRENCIA_CREATE,
+  )
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.service.findOne(id);
   }

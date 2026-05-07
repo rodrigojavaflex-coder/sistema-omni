@@ -7,6 +7,8 @@ export class UpdateStatusOcorrenciaDto {
   status: StatusOcorrencia;
 
   @IsOptional()
-  @MaxLength(1000, { message: 'Observação não pode ter mais de 1000 caracteres' })
+  @MaxLength(1000, {
+    message: 'Observação não pode ter mais de 1000 caracteres',
+  })
   observacao?: string;
 }

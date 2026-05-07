@@ -33,7 +33,11 @@ export class EmpresaTerceiraController {
   }
 
   @Get()
-  @Permissions(Permission.EMPRESATERCIRA_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
+  @Permissions(
+    Permission.EMPRESATERCIRA_READ,
+    Permission.OCORRENCIA_READ,
+    Permission.OCORRENCIA_CREATE,
+  )
   findAll(@Query('manutencao') manutencao?: string) {
     const onlyManutencao = ['true', '1', 'sim', 'yes'].includes(
       (manutencao ?? '').toLowerCase(),
@@ -42,7 +46,11 @@ export class EmpresaTerceiraController {
   }
 
   @Get(':id')
-  @Permissions(Permission.EMPRESATERCIRA_READ, Permission.OCORRENCIA_READ, Permission.OCORRENCIA_CREATE)
+  @Permissions(
+    Permission.EMPRESATERCIRA_READ,
+    Permission.OCORRENCIA_READ,
+    Permission.OCORRENCIA_CREATE,
+  )
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.service.findOne(id);
   }

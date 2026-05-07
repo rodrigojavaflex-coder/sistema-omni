@@ -92,55 +92,62 @@ export class IrregularidadeService {
     await this.ensureComponenteNaArea(dto.idarea, dto.idcomponente);
     await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
 
-    return this.irregularidadeRepository.manager.transaction(async (manager) => {
-      let saved: Irregularidade | null = null;
-      let lastError: unknown;
+    return this.irregularidadeRepository.manager.transaction(
+      async (manager) => {
+        let saved: Irregularidade | null = null;
+        let lastError: unknown;
 
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        const numeroIrregularidade = await this.generateNumeroIrregularidade(manager);
-        const irregularidade = manager.getRepository(Irregularidade).create({
-          idVistoria: vistoria.id,
-          numeroIrregularidade,
-          idArea: dto.idarea,
-          idComponente: dto.idcomponente,
-          idSintoma: dto.idsintoma,
-          observacao: dto.observacao,
-          resolvido: false,
-          statusAtual: StatusIrregularidade.REGISTRADA,
-        });
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          const numeroIrregularidade =
+            await this.generateNumeroIrregularidade(manager);
+          const irregularidade = manager.getRepository(Irregularidade).create({
+            idVistoria: vistoria.id,
+            numeroIrregularidade,
+            idArea: dto.idarea,
+            idComponente: dto.idcomponente,
+            idSintoma: dto.idsintoma,
+            observacao: dto.observacao,
+            resolvido: false,
+            statusAtual: StatusIrregularidade.REGISTRADA,
+          });
 
-        try {
-          saved = await manager.getRepository(Irregularidade).save(irregularidade);
-          break;
-        } catch (error) {
-          lastError = error;
-          if (!this.isNumeroIrregularidadeUniqueViolation(error)) {
-            throw error;
+          try {
+            saved = await manager
+              .getRepository(Irregularidade)
+              .save(irregularidade);
+            break;
+          } catch (error) {
+            lastError = error;
+            if (!this.isNumeroIrregularidadeUniqueViolation(error)) {
+              throw error;
+            }
           }
         }
-      }
 
-      if (!saved) {
-        throw lastError;
-      }
+        if (!saved) {
+          throw lastError;
+        }
 
-      await this.registrarHistoricoTransicao(
-        manager.getRepository(IrregularidadeHistorico),
-        {
-          idIrregularidade: saved.id,
-          statusOrigem: undefined,
-          statusDestino: StatusIrregularidade.REGISTRADA,
-          acao: 'registrar',
-          idUsuario: idUsuarioEvento,
-          idEmpresaEvento: actor?.idEmpresa,
-          observacao: 'Irregularidade registrada pelo aplicativo',
-        },
-      );
-      return saved;
-    });
+        await this.registrarHistoricoTransicao(
+          manager.getRepository(IrregularidadeHistorico),
+          {
+            idIrregularidade: saved.id,
+            statusOrigem: undefined,
+            statusDestino: StatusIrregularidade.REGISTRADA,
+            acao: 'registrar',
+            idUsuario: idUsuarioEvento,
+            idEmpresaEvento: actor?.idEmpresa,
+            observacao: 'Irregularidade registrada pelo aplicativo',
+          },
+        );
+        return saved;
+      },
+    );
   }
 
-  async listPendentesByVeiculo(idVeiculo: string): Promise<IrregularidadeResumoDto[]> {
+  async listPendentesByVeiculo(
+    idVeiculo: string,
+  ): Promise<IrregularidadeResumoDto[]> {
     const itens = await this.irregularidadeRepository
       .createQueryBuilder('i')
       .innerJoinAndSelect('i.vistoria', 'v')
@@ -153,7 +160,10 @@ export class IrregularidadeService {
         statusVistoriaFinalizada: StatusVistoria.FINALIZADA,
       })
       .andWhere('i.statusAtual NOT IN (:...statusFinal)', {
-        statusFinal: [StatusIrregularidade.VALIDADA, StatusIrregularidade.CANCELADA],
+        statusFinal: [
+          StatusIrregularidade.VALIDADA,
+          StatusIrregularidade.CANCELADA,
+        ],
       })
       .orderBy('i.atualizadoEm', 'DESC')
       .getMany();
@@ -248,7 +258,10 @@ export class IrregularidadeService {
         statusFinalizada: StatusVistoria.FINALIZADA,
       })
       .andWhere('i.statusAtual NOT IN (:...statusFinal)', {
-        statusFinal: [StatusIrregularidade.VALIDADA, StatusIrregularidade.CANCELADA],
+        statusFinal: [
+          StatusIrregularidade.VALIDADA,
+          StatusIrregularidade.CANCELADA,
+        ],
       });
 
     if (areaId) {
@@ -260,7 +273,10 @@ export class IrregularidadeService {
 
     const itens = await qb.orderBy('i.atualizadoEm', 'DESC').getMany();
     const idsIrregularidade = itens.map((item) => item.id);
-    const midiasPorIrregularidade = new Map<string, IrregularidadeHistoricoVeiculoItemDto['midias']>();
+    const midiasPorIrregularidade = new Map<
+      string,
+      IrregularidadeHistoricoVeiculoItemDto['midias']
+    >();
 
     if (idsIrregularidade.length > 0) {
       const midiasRows = await this.midiaRepository
@@ -299,24 +315,26 @@ export class IrregularidadeService {
       }
     }
 
-    const mapped: IrregularidadeHistoricoVeiculoItemDto[] = itens.map((item) => ({
-      id: item.id,
-      idvistoria: item.idVistoria,
-      numeroVistoria: item.vistoria?.numeroVistoria,
-      datavistoria: item.vistoria?.datavistoria?.toISOString?.() ?? '',
-      statusVistoria: item.vistoria?.status,
-      idarea: item.idArea,
-      nomeArea: item.area?.nome,
-      idcomponente: item.idComponente,
-      nomeComponente: item.componente?.nome,
-      idsintoma: item.idSintoma,
-      descricaoSintoma: item.sintoma?.descricao,
-      observacao: item.observacao ?? undefined,
-      resolvido: item.resolvido,
-      statusAtual: item.statusAtual,
-      atualizadoEm: item.atualizadoEm.toISOString(),
-      midias: midiasPorIrregularidade.get(item.id) ?? [],
-    }));
+    const mapped: IrregularidadeHistoricoVeiculoItemDto[] = itens.map(
+      (item) => ({
+        id: item.id,
+        idvistoria: item.idVistoria,
+        numeroVistoria: item.vistoria?.numeroVistoria,
+        datavistoria: item.vistoria?.datavistoria?.toISOString?.() ?? '',
+        statusVistoria: item.vistoria?.status,
+        idarea: item.idArea,
+        nomeArea: item.area?.nome,
+        idcomponente: item.idComponente,
+        nomeComponente: item.componente?.nome,
+        idsintoma: item.idSintoma,
+        descricaoSintoma: item.sintoma?.descricao,
+        observacao: item.observacao ?? undefined,
+        resolvido: item.resolvido,
+        statusAtual: item.statusAtual,
+        atualizadoEm: item.atualizadoEm.toISOString(),
+        midias: midiasPorIrregularidade.get(item.id) ?? [],
+      }),
+    );
 
     return {
       idveiculo: idVeiculo,
@@ -326,7 +344,10 @@ export class IrregularidadeService {
     };
   }
 
-  async update(id: string, dto: UpdateIrregularidadeDto): Promise<Irregularidade> {
+  async update(
+    id: string,
+    dto: UpdateIrregularidadeDto,
+  ): Promise<Irregularidade> {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     await this.ensureVistoriaAberta(irregularidade.idVistoria);
 
@@ -344,6 +365,10 @@ export class IrregularidadeService {
       gravidade?: GravidadeCriticidade[];
       dataInicio?: string;
       dataFim?: string;
+      /** Trecho numérico da O.S.: busca parcial (ILIKE) em `numeroIrregularidade` (apenas dígitos). */
+      ordemServico?: string;
+      /** Alinha o filtro de datas à coluna "Registrado" por etapa (front: getDataRegistradoFluxo). */
+      referenciaPeriodo?: 'CRIADO_EM' | 'ENTRADA_STATUS';
     },
   ): Promise<IrregularidadeResumoDto[]> {
     let qb = this.irregularidadeRepository
@@ -375,7 +400,10 @@ export class IrregularidadeService {
       StatusIrregularidade.EM_MANUTENCAO,
       StatusIrregularidade.NAO_PROCEDE,
     ];
-    if (context.scopeByEmpresa && status.some((s) => statusEmpresa.includes(s))) {
+    if (
+      context.scopeByEmpresa &&
+      status.some((s) => statusEmpresa.includes(s))
+    ) {
       if (!context.idEmpresa) {
         throw new ForbiddenException(
           'Usuário sem empresa vinculada para acessar fila de manutenção',
@@ -387,26 +415,58 @@ export class IrregularidadeService {
     }
 
     if (filters?.idVeiculo) {
-      qb = qb.andWhere('v.idVeiculo = :idVeiculo', { idVeiculo: filters.idVeiculo });
+      qb = qb.andWhere('v.idVeiculo = :idVeiculo', {
+        idVeiculo: filters.idVeiculo,
+      });
+    }
+    if (filters?.ordemServico) {
+      const pat = `%${filters.ordemServico}%`;
+      qb = qb.andWhere(
+        'CAST(i.numeroIrregularidade AS TEXT) ILIKE :ordemServicoPat',
+        {
+          ordemServicoPat: pat,
+        },
+      );
     }
     if (filters?.gravidade?.length) {
       qb = qb.andWhere('matriz.gravidade IN (:...gravidade)', {
         gravidade: filters.gravidade,
       });
     }
-    if (filters?.dataInicio) {
-      const dataInicio = this.parseLocalDate(filters.dataInicio, false);
-      qb = qb.andWhere('i.criadoEm >= :dataInicio', { dataInicio });
-    }
-    if (filters?.dataFim) {
-      const dataFim = this.parseLocalDate(filters.dataFim, true);
-      qb = qb.andWhere('i.criadoEm <= :dataFim', { dataFim });
+    if (filters?.dataInicio || filters?.dataFim) {
+      const useEntradaStatus = filters.referenciaPeriodo === 'ENTRADA_STATUS';
+      /**
+       * ENTRADA_STATUS: instante da última transição para o status atual no histórico,
+       * com fallback em criadoEm (igual ao cálculo de entradaStatusEm no retorno desta lista).
+       * CRIADO_EM: data de criação do registro (fila de tratamento).
+       */
+      const dataRefSql = useEntradaStatus
+        ? `COALESCE((
+            SELECT MAX(hist."dataEvento")
+            FROM "irregularidade_historico" hist
+            WHERE hist."idIrregularidade" = "i"."id"
+              AND hist."statusDestino" = "i"."status_atual"
+          ), "i"."criadoEm")`
+        : 'i.criadoEm';
+      if (filters.dataInicio) {
+        const dataInicio = this.parseLocalDate(filters.dataInicio, false);
+        qb = qb.andWhere(`${dataRefSql} >= :dataInicio`, { dataInicio });
+      }
+      if (filters.dataFim) {
+        const dataFim = this.parseLocalDate(filters.dataFim, true);
+        qb = qb.andWhere(`${dataRefSql} <= :dataFim`, { dataFim });
+      }
     }
 
-    const result = await qb.orderBy('i.atualizadoEm', 'DESC').getRawAndEntities();
+    const result = await qb
+      .orderBy('i.atualizadoEm', 'DESC')
+      .getRawAndEntities();
     const ids = result.entities.map((i) => i.id);
 
-    const countsByIrregularidade = new Map<string, { foto: number; audio: number }>();
+    const countsByIrregularidade = new Map<
+      string,
+      { foto: number; audio: number }
+    >();
     const midiasByIrregularidade = new Map<
       string,
       {
@@ -433,7 +493,11 @@ export class IrregularidadeService {
         .where('m.idIrregularidade IN (:...ids)', { ids })
         .groupBy('m.idIrregularidade')
         .addGroupBy('m.tipo')
-        .getRawMany<{ idIrregularidade: string; tipo: 'imagem' | 'audio'; total: string }>();
+        .getRawMany<{
+          idIrregularidade: string;
+          tipo: 'imagem' | 'audio';
+          total: string;
+        }>();
 
       for (const row of rows) {
         const current = countsByIrregularidade.get(row.idIrregularidade) ?? {
@@ -469,7 +533,9 @@ export class IrregularidadeService {
       }
     }
 
-    const vistoriaIds = Array.from(new Set(result.entities.map((i) => i.idVistoria)));
+    const vistoriaIds = Array.from(
+      new Set(result.entities.map((i) => i.idVistoria)),
+    );
     const vistoriaInfoById = new Map<
       string,
       {
@@ -531,7 +597,8 @@ export class IrregularidadeService {
         }>();
 
       for (const row of entradas) {
-        if (!row.idIrregularidade || !row.statusDestino || !row.entradaStatusEm) continue;
+        if (!row.idIrregularidade || !row.statusDestino || !row.entradaStatusEm)
+          continue;
         entradaStatusByKey.set(
           `${row.idIrregularidade}|${row.statusDestino}`,
           row.entradaStatusEm,
@@ -552,7 +619,9 @@ export class IrregularidadeService {
       const counts = countsByIrregularidade.get(item.id);
       const midias = midiasByIrregularidade.get(item.id);
       const vistoriaInfo = vistoriaInfoById.get(item.idVistoria);
-      const entradaStatusEm = entradaStatusByKey.get(`${item.id}|${item.statusAtual}`);
+      const entradaStatusEm = entradaStatusByKey.get(
+        `${item.id}|${item.statusAtual}`,
+      );
       return this.toResumo(
         item,
         raw?.matriz_gravidade,
@@ -588,26 +657,30 @@ export class IrregularidadeService {
     await this.ensureComponenteNaArea(dto.idarea, dto.idcomponente);
     await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
 
-    return this.irregularidadeRepository.manager.transaction(async (manager) => {
-      irregularidade.idArea = dto.idarea;
-      irregularidade.idComponente = dto.idcomponente;
-      irregularidade.idSintoma = dto.idsintoma;
-      irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
-      const saved = await manager.getRepository(Irregularidade).save(irregularidade);
-      await this.registrarHistoricoTransicao(
-        manager.getRepository(IrregularidadeHistorico),
-        {
-          idIrregularidade: saved.id,
-          statusOrigem: StatusIrregularidade.REGISTRADA,
-          statusDestino: StatusIrregularidade.REGISTRADA,
-          acao: 'reclassificar',
-          idUsuario: actor?.id,
-          idEmpresaEvento: actor?.idEmpresa,
-          observacao: dto.observacao,
-        },
-      );
-      return saved;
-    });
+    return this.irregularidadeRepository.manager.transaction(
+      async (manager) => {
+        irregularidade.idArea = dto.idarea;
+        irregularidade.idComponente = dto.idcomponente;
+        irregularidade.idSintoma = dto.idsintoma;
+        irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
+        const saved = await manager
+          .getRepository(Irregularidade)
+          .save(irregularidade);
+        await this.registrarHistoricoTransicao(
+          manager.getRepository(IrregularidadeHistorico),
+          {
+            idIrregularidade: saved.id,
+            statusOrigem: StatusIrregularidade.REGISTRADA,
+            statusDestino: StatusIrregularidade.REGISTRADA,
+            acao: 'reclassificar',
+            idUsuario: actor?.id,
+            idEmpresaEvento: actor?.idEmpresa,
+            observacao: dto.observacao,
+          },
+        );
+        return saved;
+      },
+    );
   }
 
   async cancelar(
@@ -621,25 +694,29 @@ export class IrregularidadeService {
       [StatusIrregularidade.REGISTRADA],
       'Somente irregularidades registradas podem ser canceladas',
     );
-    return this.irregularidadeRepository.manager.transaction(async (manager) => {
-      irregularidade.statusAtual = StatusIrregularidade.CANCELADA;
-      irregularidade.resolvido = true;
-      irregularidade.motivoCancelamento = dto.motivo;
-      const saved = await manager.getRepository(Irregularidade).save(irregularidade);
-      await this.registrarHistoricoTransicao(
-        manager.getRepository(IrregularidadeHistorico),
-        {
-          idIrregularidade: saved.id,
-          statusOrigem: StatusIrregularidade.REGISTRADA,
-          statusDestino: StatusIrregularidade.CANCELADA,
-          acao: 'cancelar',
-          idUsuario: actor?.id,
-          idEmpresaEvento: actor?.idEmpresa,
-          observacao: dto.motivo,
-        },
-      );
-      return saved;
-    });
+    return this.irregularidadeRepository.manager.transaction(
+      async (manager) => {
+        irregularidade.statusAtual = StatusIrregularidade.CANCELADA;
+        irregularidade.resolvido = true;
+        irregularidade.motivoCancelamento = dto.motivo;
+        const saved = await manager
+          .getRepository(Irregularidade)
+          .save(irregularidade);
+        await this.registrarHistoricoTransicao(
+          manager.getRepository(IrregularidadeHistorico),
+          {
+            idIrregularidade: saved.id,
+            statusOrigem: StatusIrregularidade.REGISTRADA,
+            statusDestino: StatusIrregularidade.CANCELADA,
+            acao: 'cancelar',
+            idUsuario: actor?.id,
+            idEmpresaEvento: actor?.idEmpresa,
+            observacao: dto.motivo,
+          },
+        );
+        return saved;
+      },
+    );
   }
 
   async iniciarManutencao(
@@ -655,32 +732,37 @@ export class IrregularidadeService {
     );
     await this.ensureEmpresa(dto.idEmpresaManutencao);
 
-    return this.irregularidadeRepository.manager.transaction(async (manager) => {
-      irregularidade.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
-      irregularidade.idEmpresaManutencao = dto.idEmpresaManutencao;
-      irregularidade.iniciadaManutencaoEm = new Date();
-      irregularidade.resolvido = false;
-      const saved = await manager.getRepository(Irregularidade).save(irregularidade);
-      await this.registrarHistoricoTransicao(
-        manager.getRepository(IrregularidadeHistorico),
-        {
-          idIrregularidade: saved.id,
-          statusOrigem: StatusIrregularidade.REGISTRADA,
-          statusDestino: StatusIrregularidade.EM_MANUTENCAO,
-          acao: 'iniciar_manutencao',
-          idUsuario: actor?.id,
-          idEmpresaEvento: dto.idEmpresaManutencao,
-        },
-      );
-      return saved;
-    });
+    return this.irregularidadeRepository.manager.transaction(
+      async (manager) => {
+        irregularidade.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
+        irregularidade.idEmpresaManutencao = dto.idEmpresaManutencao;
+        irregularidade.iniciadaManutencaoEm = new Date();
+        irregularidade.resolvido = false;
+        const saved = await manager
+          .getRepository(Irregularidade)
+          .save(irregularidade);
+        await this.registrarHistoricoTransicao(
+          manager.getRepository(IrregularidadeHistorico),
+          {
+            idIrregularidade: saved.id,
+            statusOrigem: StatusIrregularidade.REGISTRADA,
+            statusDestino: StatusIrregularidade.EM_MANUTENCAO,
+            acao: 'iniciar_manutencao',
+            idUsuario: actor?.id,
+            idEmpresaEvento: dto.idEmpresaManutencao,
+          },
+        );
+        return saved;
+      },
+    );
   }
 
   async previewIniciarManutencaoLote(
     dto: IniciarManutencaoLoteDto,
     actor?: { nome?: string },
   ): Promise<RelatorioManutencaoPreviewDto> {
-    const { empresa, irregularidades } = await this.loadIrregularidadesLoteParaManutencao(dto);
+    const { empresa, irregularidades } =
+      await this.loadIrregularidadesLoteParaManutencao(dto);
     const emitidoEm = new Date();
     const resumo = this.buildResumoRelatorioManutencao(
       empresa,
@@ -696,7 +778,8 @@ export class IrregularidadeService {
     dto: IniciarManutencaoLoteDto,
     actor?: { nome?: string },
   ): Promise<Buffer> {
-    const { empresa, irregularidades } = await this.loadIrregularidadesLoteParaManutencao(dto);
+    const { empresa, irregularidades } =
+      await this.loadIrregularidadesLoteParaManutencao(dto);
     const emitidoEm = new Date();
     const resumo = this.buildResumoRelatorioManutencao(
       empresa,
@@ -712,7 +795,8 @@ export class IrregularidadeService {
     dto: IniciarManutencaoLoteDto,
     actor?: { id?: string; idEmpresa?: string; nome?: string },
   ): Promise<RelatorioManutencaoExecucaoDto> {
-    const { empresa, irregularidades } = await this.loadIrregularidadesLoteParaManutencao(dto);
+    const { empresa, irregularidades } =
+      await this.loadIrregularidadesLoteParaManutencao(dto);
     const emitidoEm = new Date();
     const resumo = this.buildResumoRelatorioManutencao(
       empresa,
@@ -739,7 +823,9 @@ export class IrregularidadeService {
         irregularidade.iniciadaManutencaoEm = new Date();
         irregularidade.resolvido = false;
 
-        const saved = await manager.getRepository(Irregularidade).save(irregularidade);
+        const saved = await manager
+          .getRepository(Irregularidade)
+          .save(irregularidade);
         await this.registrarHistoricoTransicao(
           manager.getRepository(IrregularidadeHistorico),
           {
@@ -774,26 +860,30 @@ export class IrregularidadeService {
       'Somente irregularidades em manutenção podem ser concluídas',
     );
     this.assertEmpresaEscopo(irregularidade, actor?.idEmpresa);
-    return this.irregularidadeRepository.manager.transaction(async (manager) => {
-      irregularidade.statusAtual = StatusIrregularidade.CONCLUIDA;
-      irregularidade.concluidaManutencaoEm = new Date();
-      irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
-      irregularidade.resolvido = false;
-      const saved = await manager.getRepository(Irregularidade).save(irregularidade);
-      await this.registrarHistoricoTransicao(
-        manager.getRepository(IrregularidadeHistorico),
-        {
-          idIrregularidade: saved.id,
-          statusOrigem: StatusIrregularidade.EM_MANUTENCAO,
-          statusDestino: StatusIrregularidade.CONCLUIDA,
-          acao: 'concluir_manutencao',
-          idUsuario: actor?.id,
-          idEmpresaEvento: actor?.idEmpresa,
-          observacao: dto.observacao,
-        },
-      );
-      return saved;
-    });
+    return this.irregularidadeRepository.manager.transaction(
+      async (manager) => {
+        irregularidade.statusAtual = StatusIrregularidade.CONCLUIDA;
+        irregularidade.concluidaManutencaoEm = new Date();
+        irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
+        irregularidade.resolvido = false;
+        const saved = await manager
+          .getRepository(Irregularidade)
+          .save(irregularidade);
+        await this.registrarHistoricoTransicao(
+          manager.getRepository(IrregularidadeHistorico),
+          {
+            idIrregularidade: saved.id,
+            statusOrigem: StatusIrregularidade.EM_MANUTENCAO,
+            statusDestino: StatusIrregularidade.CONCLUIDA,
+            acao: 'concluir_manutencao',
+            idUsuario: actor?.id,
+            idEmpresaEvento: actor?.idEmpresa,
+            observacao: dto.observacao,
+          },
+        );
+        return saved;
+      },
+    );
   }
 
   async marcarNaoProcede(
@@ -808,26 +898,30 @@ export class IrregularidadeService {
       'Somente irregularidades em manutenção podem ser marcadas como não procede',
     );
     this.assertEmpresaEscopo(irregularidade, actor?.idEmpresa);
-    return this.irregularidadeRepository.manager.transaction(async (manager) => {
-      irregularidade.statusAtual = StatusIrregularidade.NAO_PROCEDE;
-      irregularidade.motivoNaoProcede = dto.motivoNaoProcede;
-      irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
-      irregularidade.resolvido = false;
-      const saved = await manager.getRepository(Irregularidade).save(irregularidade);
-      await this.registrarHistoricoTransicao(
-        manager.getRepository(IrregularidadeHistorico),
-        {
-          idIrregularidade: saved.id,
-          statusOrigem: StatusIrregularidade.EM_MANUTENCAO,
-          statusDestino: StatusIrregularidade.NAO_PROCEDE,
-          acao: 'marcar_nao_procede',
-          idUsuario: actor?.id,
-          idEmpresaEvento: actor?.idEmpresa,
-          observacao: dto.motivoNaoProcede,
-        },
-      );
-      return saved;
-    });
+    return this.irregularidadeRepository.manager.transaction(
+      async (manager) => {
+        irregularidade.statusAtual = StatusIrregularidade.NAO_PROCEDE;
+        irregularidade.motivoNaoProcede = dto.motivoNaoProcede;
+        irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
+        irregularidade.resolvido = false;
+        const saved = await manager
+          .getRepository(Irregularidade)
+          .save(irregularidade);
+        await this.registrarHistoricoTransicao(
+          manager.getRepository(IrregularidadeHistorico),
+          {
+            idIrregularidade: saved.id,
+            statusOrigem: StatusIrregularidade.EM_MANUTENCAO,
+            statusDestino: StatusIrregularidade.NAO_PROCEDE,
+            acao: 'marcar_nao_procede',
+            idUsuario: actor?.id,
+            idEmpresaEvento: actor?.idEmpresa,
+            observacao: dto.motivoNaoProcede,
+          },
+        );
+        return saved;
+      },
+    );
   }
 
   async validarFinal(
@@ -841,27 +935,31 @@ export class IrregularidadeService {
       [StatusIrregularidade.CONCLUIDA, StatusIrregularidade.NAO_PROCEDE],
       'Somente irregularidades concluídas ou não procede podem ser validadas',
     );
-    return this.irregularidadeRepository.manager.transaction(async (manager) => {
-      const origem = irregularidade.statusAtual;
-      irregularidade.statusAtual = StatusIrregularidade.VALIDADA;
-      irregularidade.validadaEm = new Date();
-      irregularidade.resolvido = true;
-      irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
-      const saved = await manager.getRepository(Irregularidade).save(irregularidade);
-      await this.registrarHistoricoTransicao(
-        manager.getRepository(IrregularidadeHistorico),
-        {
-          idIrregularidade: saved.id,
-          statusOrigem: origem,
-          statusDestino: StatusIrregularidade.VALIDADA,
-          acao: 'validar_final',
-          idUsuario: actor?.id,
-          idEmpresaEvento: actor?.idEmpresa,
-          observacao: dto.observacao,
-        },
-      );
-      return saved;
-    });
+    return this.irregularidadeRepository.manager.transaction(
+      async (manager) => {
+        const origem = irregularidade.statusAtual;
+        irregularidade.statusAtual = StatusIrregularidade.VALIDADA;
+        irregularidade.validadaEm = new Date();
+        irregularidade.resolvido = true;
+        irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
+        const saved = await manager
+          .getRepository(Irregularidade)
+          .save(irregularidade);
+        await this.registrarHistoricoTransicao(
+          manager.getRepository(IrregularidadeHistorico),
+          {
+            idIrregularidade: saved.id,
+            statusOrigem: origem,
+            statusDestino: StatusIrregularidade.VALIDADA,
+            acao: 'validar_final',
+            idUsuario: actor?.id,
+            idEmpresaEvento: actor?.idEmpresa,
+            observacao: dto.observacao,
+          },
+        );
+        return saved;
+      },
+    );
   }
 
   async reprovarValidacaoFinal(
@@ -875,26 +973,30 @@ export class IrregularidadeService {
       [StatusIrregularidade.CONCLUIDA, StatusIrregularidade.NAO_PROCEDE],
       'Somente irregularidades concluídas ou não procede podem ser reprovadas',
     );
-    return this.irregularidadeRepository.manager.transaction(async (manager) => {
-      const origem = irregularidade.statusAtual;
-      irregularidade.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
-      irregularidade.resolvido = false;
-      irregularidade.observacao = dto.observacao;
-      const saved = await manager.getRepository(Irregularidade).save(irregularidade);
-      await this.registrarHistoricoTransicao(
-        manager.getRepository(IrregularidadeHistorico),
-        {
-          idIrregularidade: saved.id,
-          statusOrigem: origem,
-          statusDestino: StatusIrregularidade.EM_MANUTENCAO,
-          acao: 'reprovar_validacao_final',
-          idUsuario: actor?.id,
-          idEmpresaEvento: actor?.idEmpresa,
-          observacao: dto.observacao,
-        },
-      );
-      return saved;
-    });
+    return this.irregularidadeRepository.manager.transaction(
+      async (manager) => {
+        const origem = irregularidade.statusAtual;
+        irregularidade.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
+        irregularidade.resolvido = false;
+        irregularidade.observacao = dto.observacao;
+        const saved = await manager
+          .getRepository(Irregularidade)
+          .save(irregularidade);
+        await this.registrarHistoricoTransicao(
+          manager.getRepository(IrregularidadeHistorico),
+          {
+            idIrregularidade: saved.id,
+            statusOrigem: origem,
+            statusDestino: StatusIrregularidade.EM_MANUTENCAO,
+            acao: 'reprovar_validacao_final',
+            idUsuario: actor?.id,
+            idEmpresaEvento: actor?.idEmpresa,
+            observacao: dto.observacao,
+          },
+        );
+        return saved;
+      },
+    );
   }
 
   async listImages(
@@ -964,38 +1066,42 @@ export class IrregularidadeService {
       throw new BadRequestException('Foto obrigatória para a irregularidade');
     }
 
-    return this.irregularidadeRepository.manager.transaction(async (manager) => {
-      await manager
-        .getRepository(IrregularidadeMidia)
-        .delete({ idIrregularidade: irregularidadeId, tipo: 'imagem' });
+    return this.irregularidadeRepository.manager.transaction(
+      async (manager) => {
+        await manager
+          .getRepository(IrregularidadeMidia)
+          .delete({ idIrregularidade: irregularidadeId, tipo: 'imagem' });
 
-      const midias = await Promise.all((files ?? []).map(async (file) => {
-        const nomePadrao = this.buildMidiaFilename(
-          irregularidade.numeroIrregularidade,
-          'imagem',
-          file.originalname,
+        const midias = await Promise.all(
+          (files ?? []).map(async (file) => {
+            const nomePadrao = this.buildMidiaFilename(
+              irregularidade.numeroIrregularidade,
+              'imagem',
+              file.originalname,
+            );
+            const otimizada = await this.otimizarImagemParaArmazenamento(
+              file.buffer,
+              file.mimetype,
+              nomePadrao,
+            );
+            return manager.getRepository(IrregularidadeMidia).create({
+              idIrregularidade: irregularidadeId,
+              tipo: 'imagem' as const,
+              nomeArquivo: otimizada.nomeArquivo,
+              mimeType: otimizada.mimeType,
+              tamanho: otimizada.buffer.length,
+              dadosBytea: otimizada.buffer,
+            });
+          }),
         );
-        const otimizada = await this.otimizarImagemParaArmazenamento(
-          file.buffer,
-          file.mimetype,
-          nomePadrao,
-        );
-        return manager.getRepository(IrregularidadeMidia).create({
-          idIrregularidade: irregularidadeId,
-          tipo: 'imagem' as const,
-          nomeArquivo: otimizada.nomeArquivo,
-          mimeType: otimizada.mimeType,
-          tamanho: otimizada.buffer.length,
-          dadosBytea: otimizada.buffer,
-        });
-      }));
 
-      if (midias.length === 0) {
-        return [];
-      }
+        if (midias.length === 0) {
+          return [];
+        }
 
-      return manager.getRepository(IrregularidadeMidia).save(midias);
-    });
+        return manager.getRepository(IrregularidadeMidia).save(midias);
+      },
+    );
   }
 
   async uploadAudio(
@@ -1015,7 +1121,9 @@ export class IrregularidadeService {
       irregularidade.idSintoma,
     );
     if (!matriz.permiteAudio) {
-      throw new BadRequestException('Áudio não permitido para esta irregularidade');
+      throw new BadRequestException(
+        'Áudio não permitido para esta irregularidade',
+      );
     }
 
     const midia = this.midiaRepository.create({
@@ -1037,11 +1145,16 @@ export class IrregularidadeService {
   async removeAudio(irregularidadeId: string): Promise<void> {
     const irregularidade = await this.getIrregularidadeOrFail(irregularidadeId);
     await this.ensureVistoriaAberta(irregularidade.idVistoria);
-    await this.midiaRepository.delete({ idIrregularidade: irregularidadeId, tipo: 'audio' });
+    await this.midiaRepository.delete({
+      idIrregularidade: irregularidadeId,
+      tipo: 'audio',
+    });
   }
 
   async removeMidia(midiaId: string): Promise<void> {
-    const midia = await this.midiaRepository.findOne({ where: { id: midiaId } });
+    const midia = await this.midiaRepository.findOne({
+      where: { id: midiaId },
+    });
     if (!midia) {
       throw new NotFoundException('Mídia não encontrada');
     }
@@ -1062,8 +1175,12 @@ export class IrregularidadeService {
   }
 
   private buildRelatorioAttachmentFilename(empresa: string): string {
-    const empresaSanitizada = this.sanitizeForFilename(empresa).slice(0, 40) || 'empresa';
-    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+    const empresaSanitizada =
+      this.sanitizeForFilename(empresa).slice(0, 40) || 'empresa';
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[-:.TZ]/g, '')
+      .slice(0, 14);
     return `relatorio-manutencao_${empresaSanitizada}_${timestamp}.pdf`;
   }
 
@@ -1072,9 +1189,16 @@ export class IrregularidadeService {
     tipo: 'imagem' | 'audio',
     originalName: string,
   ): string {
-    const numero = Number.isFinite(numeroIrregularidade) ? String(numeroIrregularidade) : 'sem-os';
-    const ext = this.extractFileExtension(originalName) || (tipo === 'audio' ? 'mp3' : 'jpg');
-    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+    const numero = Number.isFinite(numeroIrregularidade)
+      ? String(numeroIrregularidade)
+      : 'sem-os';
+    const ext =
+      this.extractFileExtension(originalName) ||
+      (tipo === 'audio' ? 'mp3' : 'jpg');
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[-:.TZ]/g, '')
+      .slice(0, 14);
     const baseTipo = tipo === 'audio' ? 'audio' : 'img';
     return `OS-${numero}_${baseTipo}_${timestamp}.${ext}`;
   }
@@ -1099,7 +1223,9 @@ export class IrregularidadeService {
       .toLowerCase();
   }
 
-  private async loadIrregularidadesLoteParaManutencao(dto: IniciarManutencaoLoteDto): Promise<{
+  private async loadIrregularidadesLoteParaManutencao(
+    dto: IniciarManutencaoLoteDto,
+  ): Promise<{
     empresa: EmpresaTerceira;
     irregularidades: Irregularidade[];
   }> {
@@ -1154,7 +1280,10 @@ export class IrregularidadeService {
     emitidoEm: Date,
     emitidoPor?: string | null,
   ): RelatorioManutencaoResumoDto {
-    const porVeiculoMap = new Map<string, RelatorioManutencaoResumoDto['porVeiculo'][number]>();
+    const porVeiculoMap = new Map<
+      string,
+      RelatorioManutencaoResumoDto['porVeiculo'][number]
+    >();
     for (const item of irregularidades) {
       const veiculo = item.vistoria?.veiculo?.descricao ?? 'Não informado';
       const chave = veiculo.toUpperCase();
@@ -1173,7 +1302,8 @@ export class IrregularidadeService {
           item.sintoma?.descricao ?? '-'
         }`,
         observacao: item.observacao ?? undefined,
-        totalImagens: (item.midias ?? []).filter((m) => m.tipo === 'imagem').length,
+        totalImagens: (item.midias ?? []).filter((m) => m.tipo === 'imagem')
+          .length,
       });
     }
 
@@ -1185,7 +1315,9 @@ export class IrregularidadeService {
     }
 
     const totalAnexos = porVeiculo.reduce(
-      (acc, grupo) => acc + grupo.itens.reduce((sum, item) => sum + (item.totalImagens || 0), 0),
+      (acc, grupo) =>
+        acc +
+        grupo.itens.reduce((sum, item) => sum + (item.totalImagens || 0), 0),
       0,
     );
 
@@ -1211,8 +1343,12 @@ export class IrregularidadeService {
       .map((grupo) => {
         const cards = grupo.itens
           .map((itemResumo) => {
-            const irregularidade = irregularidades.find((i) => i.id === itemResumo.id);
-            const imagens = (irregularidade?.midias ?? []).filter((m) => m.tipo === 'imagem');
+            const irregularidade = irregularidades.find(
+              (i) => i.id === itemResumo.id,
+            );
+            const imagens = (irregularidade?.midias ?? []).filter(
+              (m) => m.tipo === 'imagem',
+            );
             const imagensHtml =
               imagens.length === 0
                 ? '<p class="muted">Sem imagens anexadas.</p>'
@@ -1247,7 +1383,9 @@ export class IrregularidadeService {
           })
           .join('');
 
-        const veiculoMeta = [grupo.placa ?? '', grupo.modelo ?? ''].filter(Boolean).join(' ');
+        const veiculoMeta = [grupo.placa ?? '', grupo.modelo ?? '']
+          .filter(Boolean)
+          .join(' ');
         return `
           <section class="veiculo-section">
             <h2 class="veiculo-titulo">Veículo: ${grupo.veiculo}${veiculoMeta ? ` ${veiculoMeta}` : ''}</h2>
@@ -1302,7 +1440,9 @@ export class IrregularidadeService {
     `;
   }
 
-  private resolveLogoRelatorioPath(logoRelatorio?: string | null): string | null {
+  private resolveLogoRelatorioPath(
+    logoRelatorio?: string | null,
+  ): string | null {
     if (!logoRelatorio?.trim()) {
       return null;
     }
@@ -1418,7 +1558,9 @@ export class IrregularidadeService {
 
       const getImageGridLayout = (count: number, contentWidth: number) => {
         const rows = Math.ceil(count / IMG_GRID_COLS);
-        const cellW = Math.floor((contentWidth - IMG_GRID_GAP_X * (IMG_GRID_COLS - 1)) / IMG_GRID_COLS);
+        const cellW = Math.floor(
+          (contentWidth - IMG_GRID_GAP_X * (IMG_GRID_COLS - 1)) / IMG_GRID_COLS,
+        );
         const gridH =
           rows > 0 ? rows * IMG_GRID_CELL_H + (rows - 1) * IMG_GRID_GAP_Y : 0;
         return { rows, cellW, gridH };
@@ -1433,7 +1575,9 @@ export class IrregularidadeService {
 
       if (logoPath) {
         try {
-          doc.image(logoPath, marginX, headerRowTop, { fit: [logoBoxW, logoBoxH] });
+          doc.image(logoPath, marginX, headerRowTop, {
+            fit: [logoBoxW, logoBoxH],
+          });
         } catch {
           // Ignora falha de logo
         }
@@ -1455,10 +1599,15 @@ export class IrregularidadeService {
         .font('Helvetica')
         .fontSize(11)
         .fillColor('#475569')
-        .text(`Empresa de manutenção: ${resumo.empresa}`, marginX, doc.y + gapSubtitulo, {
-          width: innerW,
-          align: 'center',
-        });
+        .text(
+          `Empresa de manutenção: ${resumo.empresa}`,
+          marginX,
+          doc.y + gapSubtitulo,
+          {
+            width: innerW,
+            align: 'center',
+          },
+        );
       doc
         .font('Helvetica')
         .fontSize(10)
@@ -1474,8 +1623,14 @@ export class IrregularidadeService {
       doc.x = marginX;
       doc.y = Math.max(headerTextosFimY + 16, logoFimY + 12);
 
-      const buildVeiculoHeader = (grupo: RelatorioManutencaoResumoDto['porVeiculo'][number]) => {
-        const dadosVeiculo = [grupo.veiculo, grupo.placa ?? '', grupo.modelo ?? '']
+      const buildVeiculoHeader = (
+        grupo: RelatorioManutencaoResumoDto['porVeiculo'][number],
+      ) => {
+        const dadosVeiculo = [
+          grupo.veiculo,
+          grupo.placa ?? '',
+          grupo.modelo ?? '',
+        ]
           .filter(Boolean)
           .join(' ');
         return `Veículo: ${dadosVeiculo}`;
@@ -1496,8 +1651,12 @@ export class IrregularidadeService {
         ensureTextBlock(56);
 
         for (const itemResumo of grupo.itens) {
-          const irregularidade = irregularidades.find((i) => i.id === itemResumo.id);
-          const imagens = (irregularidade?.midias ?? []).filter((m) => m.tipo === 'imagem');
+          const irregularidade = irregularidades.find(
+            (i) => i.id === itemResumo.id,
+          );
+          const imagens = (irregularidade?.midias ?? []).filter(
+            (m) => m.tipo === 'imagem',
+          );
           const obsTxt = itemResumo.observacao?.trim() || 'Não informada.';
 
           const cardPadX = 12;
@@ -1506,7 +1665,12 @@ export class IrregularidadeService {
           const imageLayout = getImageGridLayout(imagens.length, cardInnerW);
           const imagemLinhaFallback = 'Sem imagens anexadas.';
 
-          const hVeiculoCard = measureTextHeight(veiculoHeader, 'Helvetica-Bold', 10, cardInnerW);
+          const hVeiculoCard = measureTextHeight(
+            veiculoHeader,
+            'Helvetica-Bold',
+            10,
+            cardInnerW,
+          );
           const hOs = measureTextHeight(
             `Ordem de Serviço #${itemResumo.ordemServico}`,
             'Helvetica-Bold',
@@ -1528,7 +1692,12 @@ export class IrregularidadeService {
           const hImgs =
             imagens.length > 0
               ? imageLayout.gridH
-              : measureTextHeight(imagemLinhaFallback, 'Helvetica', 9, cardInnerW);
+              : measureTextHeight(
+                  imagemLinhaFallback,
+                  'Helvetica',
+                  9,
+                  cardInnerW,
+                );
           const cardContentH =
             hOs + 6 + hVeiculoCard + 5 + hIrreg + 5 + hObsLine + 8 + hImgs;
           const requiredCardH = cardPadY * 2 + cardContentH + 6;
@@ -1548,7 +1717,9 @@ export class IrregularidadeService {
             .font('Helvetica-Bold')
             .fontSize(11)
             .fillColor('#1d4ed8')
-            .text(`Ordem de Serviço #${itemResumo.ordemServico}`, { width: cardInnerW });
+            .text(`Ordem de Serviço #${itemResumo.ordemServico}`, {
+              width: cardInnerW,
+            });
           doc.moveDown(0.3);
           doc
             .font('Helvetica-Bold')
@@ -1560,7 +1731,9 @@ export class IrregularidadeService {
             .font('Helvetica-Bold')
             .fontSize(9)
             .fillColor('#64748b')
-            .text(`IRREGULARIDADE: ${itemResumo.irregularidade}`, { width: cardInnerW });
+            .text(`IRREGULARIDADE: ${itemResumo.irregularidade}`, {
+              width: cardInnerW,
+            });
           doc.moveDown(0.25);
           const obsLine = `DESCRIÇÃO DO PROBLEMA: ${obsTxt}`;
           doc
@@ -1571,9 +1744,13 @@ export class IrregularidadeService {
           doc.moveDown(0.35);
 
           if (imagens.length === 0) {
-            doc.font('Helvetica').fontSize(9).fillColor('#6b7280').text(imagemLinhaFallback, {
-              width: cardInnerW,
-            });
+            doc
+              .font('Helvetica')
+              .fontSize(9)
+              .fillColor('#6b7280')
+              .text(imagemLinhaFallback, {
+                width: cardInnerW,
+              });
           } else {
             const gridStartY = doc.y;
             for (let idx = 0; idx < imagens.length; idx += 1) {
@@ -1591,9 +1768,14 @@ export class IrregularidadeService {
                 doc
                   .fontSize(9)
                   .fillColor('#b91c1c')
-                  .text('Não foi possível renderizar uma das imagens anexadas.', cardTextX, y, {
-                    width: cardInnerW,
-                  });
+                  .text(
+                    'Não foi possível renderizar uma das imagens anexadas.',
+                    cardTextX,
+                    y,
+                    {
+                      width: cardInnerW,
+                    },
+                  );
               }
             }
             doc.y = gridStartY + imageLayout.gridH;
@@ -1657,10 +1839,16 @@ export class IrregularidadeService {
         const pageStrW = doc.widthOfString(pageStr);
         const gapCentral = 20;
         const leftMaxW = Math.max(60, larguraPagina - pageStrW - gapCentral);
-        const leftDraw = this.truncatePdfTextToWidth(doc, textoRodapeEsquerda, leftMaxW);
+        const leftDraw = this.truncatePdfTextToWidth(
+          doc,
+          textoRodapeEsquerda,
+          leftMaxW,
+        );
         /** Sem `width`: não usa LineWrapper; y na margem inferior não dispara quebra de página. */
         doc.text(leftDraw, marginX, footerY, { lineBreak: false });
-        doc.text(pageStr, width - marginX - pageStrW, footerY, { lineBreak: false });
+        doc.text(pageStr, width - marginX - pageStrW, footerY, {
+          lineBreak: false,
+        });
         doc
           .moveTo(marginX, footerY - 8)
           .lineTo(width - marginX, footerY - 8)
@@ -1716,7 +1904,9 @@ export class IrregularidadeService {
     }
 
     if (!emailConfig.host || !emailConfig.porta) {
-      throw new BadRequestException('Configuração de e-mail inválida: host/porta obrigatórios.');
+      throw new BadRequestException(
+        'Configuração de e-mail inválida: host/porta obrigatórios.',
+      );
     }
 
     const destinatarios = (empresa.emailsRelatorio ?? '')
@@ -1748,12 +1938,18 @@ export class IrregularidadeService {
     });
 
     const assuntoBase =
-      emailConfig.assuntoPadrao?.trim() || 'Relatório de Serviço(s) - Irregularidades';
-    const assuntoData = this.formatDateTimeBr(resumo.emitidoEm).replace(',', '');
+      emailConfig.assuntoPadrao?.trim() ||
+      'Relatório de Serviço(s) - Irregularidades';
+    const assuntoData = this.formatDateTimeBr(resumo.emitidoEm).replace(
+      ',',
+      '',
+    );
     const assunto = `${assuntoBase} (${assuntoData})`;
     const fromAddress = emailConfig.remetenteEmail?.trim();
     if (!fromAddress) {
-      throw new BadRequestException('Configuração de e-mail inválida: remetente não informado.');
+      throw new BadRequestException(
+        'Configuração de e-mail inválida: remetente não informado.',
+      );
     }
     const fromName = emailConfig.remetenteNome?.trim();
     const from = fromName ? `"${fromName}" <${fromAddress}>` : fromAddress;
@@ -1784,7 +1980,9 @@ export class IrregularidadeService {
       return { enviado: true };
     } catch (err) {
       const detalhe = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`Falha SMTP ao enviar relatório de manutenção: ${detalhe}`);
+      this.logger.warn(
+        `Falha SMTP ao enviar relatório de manutenção: ${detalhe}`,
+      );
       throw new BadRequestException(
         `Não foi possível enviar o relatório por e-mail. As irregularidades não foram encaminhadas para manutenção. Verifique SMTP e credenciais. Detalhe: ${detalhe}`,
       );
@@ -1839,9 +2037,11 @@ export class IrregularidadeService {
       atualizadoEm: item.atualizadoEm.toISOString(),
       idVeiculo: item.vistoria?.idVeiculo,
       gravidade,
-      veiculoDescricao: veiculoDescricaoRaw ?? item.vistoria?.veiculo?.descricao,
+      veiculoDescricao:
+        veiculoDescricaoRaw ?? item.vistoria?.veiculo?.descricao,
       veiculoPlaca: veiculoPlacaRaw ?? item.vistoria?.veiculo?.placa,
-      veiculoModelo: veiculoModeloRaw ?? item.vistoria?.veiculo?.modeloVeiculo?.nome,
+      veiculoModelo:
+        veiculoModeloRaw ?? item.vistoria?.veiculo?.modeloVeiculo?.nome,
       vistoriadorNome: vistoriadorNomeRaw ?? item.vistoria?.usuario?.nome,
       motoristaNome: motoristaNomeRaw ?? item.vistoria?.motorista?.nome,
       quantidadeFotos,
@@ -1924,7 +2124,9 @@ export class IrregularidadeService {
   }
 
   private async ensureComponente(id: string): Promise<void> {
-    const componente = await this.componenteRepository.findOne({ where: { id } });
+    const componente = await this.componenteRepository.findOne({
+      where: { id },
+    });
     if (!componente) {
       throw new NotFoundException('Componente não encontrado');
     }
@@ -1937,7 +2139,10 @@ export class IrregularidadeService {
     }
   }
 
-  private async ensureComponenteNaArea(idArea: string, idComponente: string): Promise<void> {
+  private async ensureComponenteNaArea(
+    idArea: string,
+    idComponente: string,
+  ): Promise<void> {
     const found = await this.areaComponenteRepository.findOne({
       where: { idArea, idComponente },
     });
@@ -1946,7 +2151,10 @@ export class IrregularidadeService {
     }
   }
 
-  private async ensureMatriz(idComponente: string, idSintoma: string): Promise<MatrizCriticidade> {
+  private async ensureMatriz(
+    idComponente: string,
+    idSintoma: string,
+  ): Promise<MatrizCriticidade> {
     const matriz = await this.matrizRepository.findOne({
       where: { idComponente, idSintoma },
     });
@@ -1988,10 +2196,14 @@ export class IrregularidadeService {
     return irregularidade;
   }
 
-  private async generateNumeroIrregularidade(manager: EntityManager): Promise<number> {
+  private async generateNumeroIrregularidade(
+    manager: EntityManager,
+  ): Promise<number> {
     const anoAtual = new Date().getFullYear();
     const lockKey = `irregularidade_numero_${anoAtual}`;
-    await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [lockKey]);
+    await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+      lockKey,
+    ]);
 
     const prefixoAno = `${anoAtual}`;
     const rows = await manager.query(
@@ -2006,7 +2218,8 @@ export class IrregularidadeService {
     );
 
     const maxNumRaw = rows?.[0]?.max_num;
-    const maxNum = maxNumRaw === null || maxNumRaw === undefined ? 0 : Number(maxNumRaw);
+    const maxNum =
+      maxNumRaw === null || maxNumRaw === undefined ? 0 : Number(maxNumRaw);
     const maxNumTexto = maxNum > 0 ? String(maxNum) : '';
     const maxSeq = maxNumTexto.startsWith(prefixoAno)
       ? Number(maxNumTexto.slice(prefixoAno.length) || '0')
@@ -2020,9 +2233,11 @@ export class IrregularidadeService {
     if (!(error instanceof QueryFailedError)) {
       return false;
     }
-    const driverError = (error as QueryFailedError & {
-      driverError?: { code?: string; constraint?: string };
-    }).driverError;
+    const driverError = (
+      error as QueryFailedError & {
+        driverError?: { code?: string; constraint?: string };
+      }
+    ).driverError;
     return (
       driverError?.code === '23505' &&
       driverError?.constraint === 'UQ_IRREGULARIDADE_NUMERO'
@@ -2052,5 +2267,4 @@ export class IrregularidadeService {
 
     return date;
   }
-
 }

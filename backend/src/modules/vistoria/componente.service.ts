@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Componente } from './entities/componente.entity';
@@ -35,7 +39,9 @@ export class ComponenteService {
   }
 
   async findOne(id: string): Promise<Componente> {
-    const componente = await this.componenteRepository.findOne({ where: { id } });
+    const componente = await this.componenteRepository.findOne({
+      where: { id },
+    });
     if (!componente) {
       throw new NotFoundException('Componente não encontrado');
     }

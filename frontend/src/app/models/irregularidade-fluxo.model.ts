@@ -56,11 +56,17 @@ export interface IrregularidadeHistoricoItem {
   tempoEtapaMs?: number;
 }
 
+/** Campo temporal usado com dataInicio/dataFim na listagem por status (espelha a coluna "Registrado"). */
+export type ReferenciaPeriodoIrregularidade = 'CRIADO_EM' | 'ENTRADA_STATUS';
+
 export interface ListarIrregularidadeFiltros {
   idVeiculo?: string;
+  /** Trecho numérico da O.S. para busca parcial no backend (ex.: `2026`). */
+  ordemServico?: string;
   gravidade?: GravidadeCriticidade[];
   dataInicio?: string;
   dataFim?: string;
+  referenciaPeriodo?: ReferenciaPeriodoIrregularidade;
 }
 
 export interface IniciarManutencaoPayload {

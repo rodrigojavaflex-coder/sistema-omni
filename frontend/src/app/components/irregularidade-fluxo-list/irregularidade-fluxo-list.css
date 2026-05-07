@@ -25,10 +25,14 @@
 
 .filters-row {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
   margin-bottom: 0.5rem;
+}
+
+.filter-periodo {
+  flex-shrink: 0;
 }
 
 .buttons-row {
@@ -47,6 +51,12 @@
 .filter-veiculo {
   flex: 1 1 auto;
   min-width: 360px;
+}
+
+.filter-ordem-servico {
+  flex: 0 1 11rem;
+  min-width: 9rem;
+  max-width: 14rem;
 }
 
 .form-select {

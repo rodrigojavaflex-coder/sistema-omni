@@ -1,6 +1,6 @@
 import {
   environment
-} from "./chunk-P3DEM65Q.js";
+} from "./chunk-544SG6Z7.js";
 import {
   HttpClient,
   Injectable,
@@ -107,4 +107,4 @@ var VistoriaBootstrapService = class _VistoriaBootstrapService {
 export {
   VistoriaBootstrapService
 };
-//# sourceMappingURL=chunk-S63KDIUX.js.map
+//# sourceMappingURL=chunk-5PBB4XQE.js.map
