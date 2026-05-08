@@ -1,7 +1,4 @@
 import {
-  VistoriaFlowService
-} from "./chunk-H4N3HFGI.js";
-import {
   addIcons,
   clipboardOutline,
   informationCircleOutline,
@@ -10,9 +7,12 @@ import {
   settingsOutline
 } from "./chunk-C5VNYMLZ.js";
 import {
+  VistoriaFlowService
+} from "./chunk-PD3K74FU.js";
+import {
   AuthService
-} from "./chunk-VNJJWUVL.js";
-import "./chunk-544SG6Z7.js";
+} from "./chunk-6FCRN7IU.js";
+import "./chunk-PIJXL63R.js";
 import {
   AlertController,
   CUSTOM_ELEMENTS_SCHEMA,
@@ -60,13 +60,14 @@ import {
   ɵɵtext,
   ɵɵtextInterpolate,
   ɵɵtextInterpolate1
-} from "./chunk-IS355SV5.js";
+} from "./chunk-RD4URZID.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
+import "./chunk-JCEFQURH.js";
+import "./chunk-PFHNU3CN.js";
 import {
   Capacitor
-} from "./chunk-5JG7MXFI.js";
-import "./chunk-Y5RNAJMB.js";
+} from "./chunk-XS4INNGU.js";
 import "./chunk-AIZDI3X7.js";
 import "./chunk-NZVQSZKT.js";
 import "./chunk-CBDAGKSH.js";
@@ -128,60 +129,60 @@ var routes = [
   },
   {
     path: "login",
-    loadComponent: () => import("./chunk-WNL3OAKE.js").then((m) => m.LoginPage)
+    loadComponent: () => import("./chunk-YRQ4TPMV.js").then((m) => m.LoginPage)
   },
   {
     path: "redefinir-senha",
-    loadComponent: () => import("./chunk-6VUNMASI.js").then((m) => m.RedefinirSenhaPage)
+    loadComponent: () => import("./chunk-QYDTOMXM.js").then((m) => m.RedefinirSenhaPage)
   },
   {
     path: "home",
-    loadComponent: () => import("./chunk-OMQ2OXMZ.js").then((m) => m.HomePage),
+    loadComponent: () => import("./chunk-FDYO6LBM.js").then((m) => m.HomePage),
     canActivate: [authGuard]
   },
   {
     path: "configuracoes",
-    loadComponent: () => import("./chunk-D42R744Q.js").then((m) => m.ConfiguracoesPage),
+    loadComponent: () => import("./chunk-FG5EX6BD.js").then((m) => m.ConfiguracoesPage),
     canActivate: [authGuard]
   },
   {
     path: "sobre",
-    loadComponent: () => import("./chunk-Z4XSYOK5.js").then((m) => m.SobrePage),
+    loadComponent: () => import("./chunk-KCQARDUW.js").then((m) => m.SobrePage),
     canActivate: [authGuard]
   },
   {
     path: "vistoria/inicio",
-    loadComponent: () => import("./chunk-7ZEYX7F2.js").then((m) => m.VistoriaInicioPage),
+    loadComponent: () => import("./chunk-JRVEKZ3D.js").then((m) => m.VistoriaInicioPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas",
-    loadComponent: () => import("./chunk-ZL3DI4BX.js").then((m) => m.VistoriaAreasPage),
+    loadComponent: () => import("./chunk-LKW7QOLZ.js").then((m) => m.VistoriaAreasPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId",
-    loadComponent: () => import("./chunk-5BUXB4BJ.js").then((m) => m.VistoriaComponentesPage),
+    loadComponent: () => import("./chunk-XXEPJAKN.js").then((m) => m.VistoriaComponentesPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId/componentes/:componenteId",
-    loadComponent: () => import("./chunk-RDEO2WVL.js").then((m) => m.VistoriaIrregularidadePage),
+    loadComponent: () => import("./chunk-KSSYZQDL.js").then((m) => m.VistoriaIrregularidadePage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/finalizar",
-    loadComponent: () => import("./chunk-RJQPTOGU.js").then((m) => m.VistoriaFinalizarPage),
+    loadComponent: () => import("./chunk-COIBYBZL.js").then((m) => m.VistoriaFinalizarPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/pendencias-veiculo",
-    loadComponent: () => import("./chunk-3YTVJ3H7.js").then((m) => m.VistoriaHistoricoVeiculoPage),
+    loadComponent: () => import("./chunk-H3GTMWDF.js").then((m) => m.VistoriaHistoricoVeiculoPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_web_historico_veiculo:read"] }
   },

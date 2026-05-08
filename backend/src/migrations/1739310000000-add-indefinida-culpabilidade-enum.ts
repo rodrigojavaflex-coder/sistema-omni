@@ -9,8 +9,10 @@ export class AddIndefinidaCulpabilidadeEnum1739310000000 implements MigrationInt
     );
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
+  public down(queryRunner: QueryRunner): Promise<void> {
+    void queryRunner;
     // PostgreSQL não permite remover valor de enum diretamente; seria necessário
     // recriar o tipo e a coluna. Deixamos o down como no-op.
+    return Promise.resolve();
   }
 }

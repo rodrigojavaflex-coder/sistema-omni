@@ -1072,28 +1072,26 @@ export class IrregularidadeService {
           .getRepository(IrregularidadeMidia)
           .delete({ idIrregularidade: irregularidadeId, tipo: 'imagem' });
 
-        const midias = await Promise.all(
-          (files ?? []).map(async (file) => {
-            const nomePadrao = this.buildMidiaFilename(
-              irregularidade.numeroIrregularidade,
-              'imagem',
-              file.originalname,
-            );
-            const otimizada = await this.otimizarImagemParaArmazenamento(
-              file.buffer,
-              file.mimetype,
-              nomePadrao,
-            );
-            return manager.getRepository(IrregularidadeMidia).create({
-              idIrregularidade: irregularidadeId,
-              tipo: 'imagem' as const,
-              nomeArquivo: otimizada.nomeArquivo,
-              mimeType: otimizada.mimeType,
-              tamanho: otimizada.buffer.length,
-              dadosBytea: otimizada.buffer,
-            });
-          }),
-        );
+        const midias = (files ?? []).map((file) => {
+          const nomePadrao = this.buildMidiaFilename(
+            irregularidade.numeroIrregularidade,
+            'imagem',
+            file.originalname,
+          );
+          const otimizada = this.otimizarImagemParaArmazenamento(
+            file.buffer,
+            file.mimetype,
+            nomePadrao,
+          );
+          return manager.getRepository(IrregularidadeMidia).create({
+            idIrregularidade: irregularidadeId,
+            tipo: 'imagem' as const,
+            nomeArquivo: otimizada.nomeArquivo,
+            mimeType: otimizada.mimeType,
+            tamanho: otimizada.buffer.length,
+            dadosBytea: otimizada.buffer,
+          });
+        });
 
         if (midias.length === 0) {
           return [];
@@ -1162,11 +1160,11 @@ export class IrregularidadeService {
     await this.midiaRepository.remove(midia);
   }
 
-  private async otimizarImagemParaArmazenamento(
+  private otimizarImagemParaArmazenamento(
     buffer: Buffer,
     mimeType: string,
     nomeArquivo: string,
-  ): Promise<{ buffer: Buffer; mimeType: string; nomeArquivo: string }> {
+  ): { buffer: Buffer; mimeType: string; nomeArquivo: string } {
     return { buffer, mimeType, nomeArquivo };
   }
 

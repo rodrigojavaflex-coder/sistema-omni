@@ -6,11 +6,20 @@
     "build": "cd backend && npm install && npm run build",
     "start": "cd backend && npm run start:prod",
     "install-all": "cd backend && npm install && cd ../frontend && npm install",
+    "deps:check": "node scripts/verify-stack-deps.mjs",
+    "deps:full": "node scripts/verify-stack-deps.mjs --full",
+    "deps:full:quick": "node scripts/verify-stack-deps.mjs --full --skip-install",
+    "deps:full:no-lint": "node scripts/verify-stack-deps.mjs --full --skip-eslint",
+    "deps:restore": "node scripts/verify-stack-deps.mjs --restore-backup",
+    "deps:audit-fix:full": "node scripts/verify-stack-deps.mjs --audit-fix --full",
+    "deps:audit-fix:full:no-lint": "node scripts/verify-stack-deps.mjs --audit-fix --full --skip-eslint",
+    "deps:audit-fix:force:full": "node scripts/verify-stack-deps.mjs --audit-fix-force --full",
+    "deps:audit-fix:backend": "cd backend && npm audit fix",
     "build-frontend": "cd frontend && npm run build -- --configuration production",
     "build-backend": "cd backend && npm run build"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "author": "Rodrigo Teixeira",
   "license": "MIT",

@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
 import { SecureStoragePlugin } from 'capacitor-secure-storage-plugin';
-import { NativeBiometric } from 'capacitor-native-biometric';
+import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Usuario, Perfil, AuthResponse } from '../models/usuario.model';
@@ -303,8 +303,8 @@ export class AuthService {
       return false;
     }
     try {
-      const { isAvailable } = await NativeBiometric.isAvailable({ useFallback: true });
-      return isAvailable;
+      const info = await BiometricAuth.checkBiometry();
+      return info.isAvailable || info.deviceIsSecure;
     } catch {
       return false;
     }
@@ -336,14 +336,13 @@ export class AuthService {
     }
 
     try {
-      await NativeBiometric.verifyIdentity({
-        reason: 'Confirme sua identidade para ativar o login por digital',
-        title: 'Ativar login por digital',
-        subtitle: 'Use sua biometria para acessar mais rápido',
-        description: 'Sua biometria será usada para liberar o login rapidamente.',
-        negativeButtonText: 'Agora não',
-        useFallback: true,
-        maxAttempts: 3
+      await BiometricAuth.authenticate({
+        reason: 'Sua biometria será usada para liberar o login rapidamente.',
+        cancelTitle: 'Agora não',
+        allowDeviceCredential: true,
+        iosFallbackTitle: 'Usar senha do dispositivo',
+        androidTitle: 'Ativar login por digital',
+        androidSubtitle: 'Use sua biometria para acessar mais rápido',
       });
     } catch {
       return false;
@@ -400,14 +399,13 @@ export class AuthService {
     }
 
     try {
-      await NativeBiometric.verifyIdentity({
-        reason: 'Confirme sua identidade para entrar',
-        title: 'Login por digital',
-        subtitle: 'Use sua biometria para acessar',
-        description: 'Sua biometria será usada para validar o acesso.',
-        negativeButtonText: 'Cancelar',
-        useFallback: true,
-        maxAttempts: 3
+      await BiometricAuth.authenticate({
+        reason: 'Sua biometria será usada para validar o acesso.',
+        cancelTitle: 'Cancelar',
+        allowDeviceCredential: true,
+        iosFallbackTitle: 'Usar senha do dispositivo',
+        androidTitle: 'Login por digital',
+        androidSubtitle: 'Use sua biometria para acessar',
       });
       this.biometricSessionVerified = true;
       return true;

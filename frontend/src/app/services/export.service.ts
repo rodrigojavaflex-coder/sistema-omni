@@ -18,7 +18,7 @@ export class ExportService {
   private authService = inject(AuthService);
 
   /**
-   * Exporta dados para Excel usando XLSX (já é ESM)
+   * Exporta dados para Excel (.xlsx) via ExcelJS (evita advisories do pacote `xlsx`).
    */
   exportToExcel(data: ExportData, fileName: string): Observable<void> {
     return from(this.performExcelExport(data, fileName));
@@ -33,7 +33,6 @@ export class ExportService {
 
   private async performExcelExport(data: ExportData, fileName: string): Promise<void> {
     try {
-      // Validação de entrada para mitigar vulnerabilidades do xlsx
       if (!data || !Array.isArray(data.headers) || !Array.isArray(data.data)) {
         throw new Error('Dados inválidos para exportação');
       }
@@ -65,34 +64,34 @@ export class ExportService {
         });
       });
 
-      // XLSX já é ESM, pode ser importado normalmente
-      const XLSX = await import('xlsx');
+      const ExcelJSMod = await import('exceljs');
+      const ExcelJS = ExcelJSMod.default ?? ExcelJSMod;
+      const workbook = new ExcelJS.Workbook();
+      const ws = workbook.addWorksheet('Dados');
 
-      // Criar worksheet com cabeçalhos e dados sanitizados
-      const ws = XLSX.utils.aoa_to_sheet([
-        sanitizedHeaders,
-        ...sanitizedData
-      ]);
+      ws.addRow(sanitizedHeaders);
+      for (const row of sanitizedData) {
+        ws.addRow(row);
+      }
 
-      // Auto-ajustar largura das colunas
-      const colWidths = sanitizedHeaders.map((header, i) => {
-        const maxLength = Math.max(
-          header.length,
-          ...sanitizedData.map(row => String(row[i] || '').length)
-        );
-        return { wch: Math.min(maxLength + 2, 50) };
+      sanitizedHeaders.forEach((_h, colIndex) => {
+        const colNum = colIndex + 1;
+        let maxLen = String(sanitizedHeaders[colIndex] ?? '').length;
+        for (const row of sanitizedData) {
+          maxLen = Math.max(maxLen, String(row[colIndex] ?? '').length);
+        }
+        ws.getColumn(colNum).width = Math.min(maxLen + 2, 50);
       });
-      ws['!cols'] = colWidths;
 
-      // Criar workbook e adicionar worksheet
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Dados');
-
-      // Validar e sanitizar nome do arquivo
       const sanitizedFileName = fileName.replace(/[<>:"/\\|?*]/g, '').slice(0, 100) || 'export';
 
-      // Salvar arquivo
-      XLSX.writeFile(wb, `${sanitizedFileName}.xlsx`);
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      const { saveAs } = await import('file-saver');
+      saveAs(blob, `${sanitizedFileName}.xlsx`);
     } catch (error) {
       console.error('Erro ao exportar para Excel:', error);
       throw new Error('Erro ao exportar para Excel');

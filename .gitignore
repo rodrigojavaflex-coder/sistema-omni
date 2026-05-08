@@ -2,6 +2,9 @@
 node_modules/
 */node_modules/
 
+# Backup automático do script verify-stack-deps (package.json / locks)
+.omni-deps-backup/
+
 # Backend
 backend/dist/
 backend/.env

@@ -26,8 +26,10 @@ export class BackfillNumeroOcorrencia1739321000000 implements MigrationInterface
     }
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
+  public down(queryRunner: QueryRunner): Promise<void> {
+    void queryRunner;
     // Opcional: limpar numero nas que foram preenchidas por esta migration
     // não é trivial saber quais eram null; deixamos no-op
+    return Promise.resolve();
   }
 }

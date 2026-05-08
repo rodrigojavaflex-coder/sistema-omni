@@ -813,20 +813,20 @@ export class OcorrenciaService {
 
     const registrada =
       parseInt(
-        stats.find((s) => s.status === StatusOcorrencia.REGISTRADA)?.total ||
-          '0',
+        stats.find((s) => s.status === (StatusOcorrencia.REGISTRADA as string))
+          ?.total || '0',
         10,
       ) || 0;
     const emAnalise =
       parseInt(
-        stats.find((s) => s.status === StatusOcorrencia.EM_ANALISE)?.total ||
-          '0',
+        stats.find((s) => s.status === (StatusOcorrencia.EM_ANALISE as string))
+          ?.total || '0',
         10,
       ) || 0;
     const concluida =
       parseInt(
-        stats.find((s) => s.status === StatusOcorrencia.CONCLUIDA)?.total ||
-          '0',
+        stats.find((s) => s.status === (StatusOcorrencia.CONCLUIDA as string))
+          ?.total || '0',
         10,
       ) || 0;
 
