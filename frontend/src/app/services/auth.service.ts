@@ -141,10 +141,16 @@ export class AuthService {
     if (!user) return false;
 
     const userPermissions = Array.from(
-      new Set((user.perfis || []).flatMap((perfil) => perfil.permissoes || [])),
+      new Set(
+        (user.perfis || [])
+          .flatMap((perfil) => perfil.permissoes || [])
+          .map((item) => this.normalizePermission(item))
+          .filter((item): item is string => Boolean(item)),
+      ),
     );
+    const normalizedPermission = this.normalizePermission(permission);
 
-    return userPermissions.includes(permission) || false;
+    return userPermissions.includes(normalizedPermission) || false;
   }
 
   /**
@@ -324,6 +330,10 @@ export class AuthService {
     } catch (error) {
       return null;
     }
+  }
+
+  private normalizePermission(permission?: string): string {
+    return (permission || '').trim().toLowerCase();
   }
 
   private persistUserSnapshot(user: Usuario): void {

@@ -139,12 +139,14 @@ export const routes: Routes = [
   {
     path: 'ocorrencia/new',
     loadComponent: () => import('./components/ocorrencia-form/ocorrencia-form').then(m => m.OcorrenciaFormComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.OCORRENCIA_CREATE] },
   },
   {
     path: 'ocorrencia/edit/:id',
     loadComponent: () => import('./components/ocorrencia-form/ocorrencia-form').then(m => m.OcorrenciaFormComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.OCORRENCIA_UPDATE] },
   },
   // Rotas de origem da ocorrência
   {
@@ -318,17 +320,20 @@ export const routes: Routes = [
   {
     path: 'perfil/new',
     component: PerfilFormComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.PROFILE_CREATE] }
   },
   {
     path: 'perfil/edit/:id',
     component: PerfilFormComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.PROFILE_UPDATE] }
   },
   {
     path: 'perfil',
     component: PerfilListComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.PROFILE_READ] },
     pathMatch: 'full'
   },
   // Rotas de departamento

@@ -71,17 +71,23 @@ export class PermissionsGuard implements CanActivate {
       // União de permissões de todos os perfis vinculados ao usuário
       const userPermissions = Array.from(
         new Set(
-          (user.perfis || []).flatMap((perfil) => perfil.permissoes || []),
+          (user.perfis || [])
+            .flatMap((perfil) => perfil.permissoes || [])
+            .map((permission) => this.normalizePermission(permission))
+            .filter((permission): permission is string => Boolean(permission)),
         ),
       );
+      const normalizedRequiredPermissions = requiredPermissions
+        .map((permission) => this.normalizePermission(permission))
+        .filter((permission): permission is string => Boolean(permission));
 
-      const hasPermission = requiredPermissions.some((permission) =>
+      const hasPermission = normalizedRequiredPermissions.some((permission) =>
         userPermissions.includes(permission),
       );
 
       if (!hasPermission) {
         throw new ForbiddenException(
-          `Acesso negado. Permissões necessárias: ${requiredPermissions.join(', ')}`,
+          `Acesso negado. Permissões necessárias: ${normalizedRequiredPermissions.join(', ')}`,
         );
       }
 
@@ -101,5 +107,9 @@ export class PermissionsGuard implements CanActivate {
   private extractTokenFromHeader(request: any): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
+  }
+
+  private normalizePermission(permission?: string): string {
+    return (permission || '').trim().toLowerCase();
   }
 }

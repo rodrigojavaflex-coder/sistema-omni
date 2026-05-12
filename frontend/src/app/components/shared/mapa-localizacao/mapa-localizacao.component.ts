@@ -291,13 +291,19 @@ export class MapaLocalizacaoComponent implements OnInit, AfterViewInit, OnChange
                   </div>`
       });
 
-      // Adicionar listener de clique
-      this.marcador.addListener('click', () => {
-        infoWindow.open(this.mapa, this.marcador);
+      // AdvancedMarkerElement: usar gmp-click (API Maps); 'click' gera aviso deprecado
+      this.marcador.addListener('gmp-click', () => {
+        infoWindow.open({
+          map: this.mapa,
+          anchor: this.marcador,
+        });
       });
 
       // Abrir InfoWindow automaticamente
-      infoWindow.open(this.mapa, this.marcador);
+      infoWindow.open({
+        map: this.mapa,
+        anchor: this.marcador,
+      });
 
       // Centralizar mapa no marcador
       this.mapa.setCenter(posicao);
