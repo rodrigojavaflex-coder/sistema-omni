@@ -157,6 +157,8 @@ export interface Usuario {
   criadoEm: Date;
   atualizadoEm: Date;
   tema?: string; // Tema preferido do usuário (Claro ou Escuro)
+  /** IDs dos atalhos da tela inicial (`null` = usar padrão do sistema). */
+  atalhosHome?: string[] | null;
   departamentos?: { id: string; nomeDepartamento: string }[];
   idEmpresa?: string;
   empresa?: { id: string; descricao: string };
@@ -176,7 +178,7 @@ export interface CreateUsuarioDto {
   tema?: string; // Tema preferido (Claro ou Escuro)
   perfilIds: string[]; // IDs dos perfis do usuário
   departamentoIds?: string[];
-  idEmpresa?: string;
+  idEmpresa?: string | null;
 }
 
 export interface UpdateUsuarioDto {
@@ -187,7 +189,7 @@ export interface UpdateUsuarioDto {
   tema?: string; // Permitir atualizar tema do usuário (Claro ou Escuro)
   perfilIds?: string[]; // Atualizar perfis do usuário
   departamentoIds?: string[];
-  idEmpresa?: string;
+  idEmpresa?: string | null;
 }
 
 export interface FindUsuariosDto {

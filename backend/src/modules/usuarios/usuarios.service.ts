@@ -19,6 +19,13 @@ import {
   PaginatedResponseDto,
   PaginationMetaDto,
 } from '../../common/dto/paginated-response.dto';
+import {
+  HOME_SHORTCUT_ID_SET,
+  HOME_SHORTCUTS_MAX,
+  isBiHomeShortcutId,
+  extractBiLinkIdFromShortcutId,
+} from '../../common/constants/home-shortcut-ids';
+import { BiAcessoService } from '../bi-acesso/bi-acesso.service';
 
 @Injectable()
 export class UsuariosService {
@@ -35,6 +42,7 @@ export class UsuariosService {
     private readonly departamentoUsuarioRepository: Repository<DepartamentoUsuario>,
     @InjectRepository(EmpresaTerceira)
     private readonly empresaTerceiraRepository: Repository<EmpresaTerceira>,
+    private readonly biAcessoService: BiAcessoService,
   ) {}
 
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
@@ -274,8 +282,8 @@ export class UsuariosService {
     }
     if (updateUsuarioDto.idEmpresa !== undefined) {
       if (!updateUsuarioDto.idEmpresa) {
-        user.empresa = undefined;
-        user.idEmpresa = undefined;
+        user.empresa = null;
+        user.idEmpresa = null;
       } else {
         const empresa = await this.empresaTerceiraRepository.findOne({
           where: { id: updateUsuarioDto.idEmpresa },
@@ -325,6 +333,49 @@ export class UsuariosService {
           'Já existe um usuário cadastrado com este email',
         );
       }
+      throw error;
+    }
+  }
+
+  async sanitizeAtalhosHomeIds(
+    atalhosHome: string[],
+    userId: string,
+  ): Promise<string[]> {
+    const allowedBiLinkIds = new Set(
+      (await this.biAcessoService.getMenuForUser(userId)).map((item) => item.id),
+    );
+
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const id of atalhosHome) {
+      if (typeof id !== 'string') continue;
+      const trimmed = id.trim();
+      if (!trimmed || seen.has(trimmed)) continue;
+
+      if (HOME_SHORTCUT_ID_SET.has(trimmed)) {
+        seen.add(trimmed);
+        result.push(trimmed);
+      } else if (isBiHomeShortcutId(trimmed)) {
+        const linkId = extractBiLinkIdFromShortcutId(trimmed);
+        if (linkId && allowedBiLinkIds.has(linkId)) {
+          seen.add(trimmed);
+          result.push(trimmed);
+        }
+      }
+
+      if (result.length >= HOME_SHORTCUTS_MAX) break;
+    }
+    return result;
+  }
+
+  async updateAtalhosHome(id: string, atalhosHome: string[]): Promise<Usuario> {
+    const user = await this.findOne(id);
+    user.atalhosHome = await this.sanitizeAtalhosHomeIds(atalhosHome, id);
+
+    try {
+      return await this.usuarioRepository.save(user);
+    } catch (error) {
+      this.logger.error('Erro ao atualizar atalhos da home:', error);
       throw error;
     }
   }

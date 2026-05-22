@@ -4,7 +4,7 @@
     
     <!-- Botões ao lado do título -->
     <div class="form-actions form-actions-header">
-      <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+      <button type="submit" form="ocorrenciaForm" class="btn btn-primary" [disabled]="loading || isSaving">
         <span *ngIf="loading" class="spinner"></span>
         {{ loading ? 'Salvando...' : getSubmitButtonText() }}
       </button>
@@ -12,7 +12,7 @@
     </div>
   </div>
 
-  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <form id="ocorrenciaForm" [formGroup]="form" (ngSubmit)="onSubmit($event)">
     
     <!-- Dados Básicos -->
     <div class="form-section">
@@ -351,7 +351,7 @@
 
     <!-- Botões do rodapé -->
     <div class="form-actions form-actions-bottom">
-      <button type="submit" class="btn btn-primary" [disabled]="loading">
+      <button type="submit" class="btn btn-primary" [disabled]="loading || isSaving">
         <span *ngIf="loading" class="spinner"></span>
         {{ loading ? 'Salvando...' : getSubmitButtonText() }}
       </button>

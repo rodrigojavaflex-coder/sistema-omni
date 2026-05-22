@@ -47,6 +47,13 @@ import {
   RelatorioManutencaoExecucaoDto,
   RelatorioManutencaoPreviewDto,
 } from './dto/relatorio-manutencao.dto';
+import {
+  assertUserHasAllPermissions,
+  collectUserPermissions,
+  getRequiredReadPermissionsForStatuses,
+  IRREGULARIDADE_FLUXO_READ_PERMISSIONS,
+} from '../../common/utils/irregularidade-permissions.util';
+import { Usuario } from '../usuarios/entities/usuario.entity';
 
 @ApiTags('irregularidades')
 @ApiBearerAuth()
@@ -65,16 +72,11 @@ export class IrregularidadesController {
       'Trecho do número da O.S. (numeroIrregularidade): busca parcial nos dígitos, ex.: 2026 corresponde a 202601, 202619, etc.',
   })
   @ApiResponse({ status: 200, type: [IrregularidadeResumoDto] })
-  @Permissions(
-    Permission.IRREGULARIDADE_TRATAMENTO_READ,
-    Permission.IRREGULARIDADE_TRATAMENTO_UPDATE,
-    Permission.IRREGULARIDADE_MANUTENCAO_READ,
-    Permission.IRREGULARIDADE_MANUTENCAO_START,
-    Permission.IRREGULARIDADE_MANUTENCAO_FINISH,
-    Permission.IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING,
-    Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
-    Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
-  )
+  @ApiResponse({
+    status: 403,
+    description: 'Sem permissão de leitura para a etapa consultada',
+  })
+  @Permissions(...IRREGULARIDADE_FLUXO_READ_PERMISSIONS)
   findByStatus(
     @Query('status') status?: string,
     @Query('idVeiculo') idVeiculo?: string,
@@ -83,12 +85,18 @@ export class IrregularidadesController {
     @Query('dataFim') dataFim?: string,
     @Query('referenciaPeriodo') referenciaPeriodo?: string,
     @Query('ordemServico') ordemServico?: string,
-    @Req() req?: Request & { user?: { idEmpresa?: string } },
+    @Req() req?: Request & { user?: Usuario },
   ): Promise<IrregularidadeResumoDto[]> {
     const statuses = (status ?? '')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean) as StatusIrregularidade[];
+
+    const requiredReads = getRequiredReadPermissionsForStatuses(statuses);
+    assertUserHasAllPermissions(
+      collectUserPermissions(req?.user?.perfis),
+      requiredReads,
+    );
     const gravidades = (gravidade ?? '')
       .split(',')
       .map((s) => s.trim())
@@ -112,7 +120,7 @@ export class IrregularidadesController {
     if (statuses.length === 0) {
       return this.irregularidadeService.listByStatus(
         [StatusIrregularidade.REGISTRADA],
-        { idEmpresa: req?.user?.idEmpresa, scopeByEmpresa: false },
+        { idEmpresa: req?.user?.idEmpresa ?? undefined, scopeByEmpresa: false },
         filtrosLista,
       );
     }
@@ -126,7 +134,7 @@ export class IrregularidadesController {
     return this.irregularidadeService.listByStatus(
       statuses,
       {
-        idEmpresa: req?.user?.idEmpresa,
+        idEmpresa: req?.user?.idEmpresa ?? undefined,
         scopeByEmpresa: requiresScope,
       },
       filtrosLista,
@@ -147,16 +155,7 @@ export class IrregularidadesController {
   @Get(':id/historico')
   @ApiOperation({ summary: 'Listar histórico da irregularidade' })
   @ApiResponse({ status: 200, type: [IrregularidadeHistoricoDto] })
-  @Permissions(
-    Permission.IRREGULARIDADE_TRATAMENTO_READ,
-    Permission.IRREGULARIDADE_TRATAMENTO_UPDATE,
-    Permission.IRREGULARIDADE_MANUTENCAO_READ,
-    Permission.IRREGULARIDADE_MANUTENCAO_START,
-    Permission.IRREGULARIDADE_MANUTENCAO_FINISH,
-    Permission.IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING,
-    Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
-    Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
-  )
+  @Permissions(...IRREGULARIDADE_FLUXO_READ_PERMISSIONS)
   listHistorico(
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<IrregularidadeHistoricoDto[]> {

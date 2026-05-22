@@ -64,8 +64,8 @@
         <div class="form-group">
           <label class="form-label">Empresa (manutenção)</label>
           <select formControlName="idEmpresa" class="form-select">
-            <option value="">Sem vínculo</option>
-            <option *ngFor="let empresa of availableEmpresas" [value]="empresa.id">
+            <option [ngValue]="null">Sem empresa</option>
+            <option *ngFor="let empresa of availableEmpresas" [ngValue]="empresa.id">
               {{ empresa.descricao }}
             </option>
           </select>

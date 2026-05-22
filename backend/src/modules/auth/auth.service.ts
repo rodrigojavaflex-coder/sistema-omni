@@ -230,6 +230,7 @@ export class AuthService {
       ativo: user.ativo,
       perfis: user.perfis,
       tema: user.tema || 'Claro',
+      atalhosHome: user.atalhosHome ?? null,
       criadoEm: user.criadoEm,
       atualizadoEm: user.atualizadoEm,
       departamentos: departamentosUsuario.map((du) => du.departamento),

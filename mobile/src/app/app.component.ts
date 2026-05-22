@@ -11,7 +11,9 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
+  IonLabel,
   IonList,
+  IonMenu,
   IonRouterOutlet,
   IonTitle,
   IonToolbar,
@@ -46,6 +48,8 @@ import { VistoriaFlowService } from './services/vistoria-flow.service';
     IonContent,
     IonList,
     IonItem,
+    IonLabel,
+    IonMenu,
     IonButton,
     IonIcon
   ]
@@ -108,7 +112,9 @@ export class AppComponent {
       this.user = user;
     });
 
-    this.authService.isAuthenticated$.subscribe(isAuthenticated => {
+    this.isAuthenticated = this.authService.isAuthenticated();
+
+    this.authService.isAuthenticated$.subscribe((isAuthenticated) => {
       this.isAuthenticated = isAuthenticated;
     });
   }

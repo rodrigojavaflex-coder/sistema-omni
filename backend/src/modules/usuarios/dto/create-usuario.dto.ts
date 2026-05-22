@@ -11,6 +11,7 @@ import {
   IsIn,
   IsUUID,
   ArrayNotEmpty,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateUsuarioDto {
@@ -84,11 +85,13 @@ export class CreateUsuarioDto {
   departamentoIds?: string[];
 
   @ApiProperty({
-    description: 'ID da empresa vinculada ao usuário',
+    description: 'ID da empresa vinculada ao usuário (null para remover vínculo)',
     example: '550e8400-e29b-41d4-a716-446655440000',
     required: false,
+    nullable: true,
   })
   @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== '')
   @IsUUID('4', { message: 'idEmpresa deve ser um UUID válido' })
-  idEmpresa?: string;
+  idEmpresa?: string | null;
 }

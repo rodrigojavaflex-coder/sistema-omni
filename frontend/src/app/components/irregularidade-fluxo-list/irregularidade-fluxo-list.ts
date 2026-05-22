@@ -140,6 +140,15 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   canValidacaoFinalUpdate = this.authService.hasPermission(
     Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
   );
+  canTratamentoRead = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_TRATAMENTO_READ,
+  );
+  canManutencaoRead = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_MANUTENCAO_READ,
+  );
+  canValidacaoFinalRead = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
+  );
 
   ngOnInit(): void {
     this.modo = (this.route.snapshot.data['modo'] as FluxoModo) ?? 'tratamento';
@@ -191,7 +200,11 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       this.titulo = 'Tratamento de Irregularidades';
       this.descricao = '';
       this.statusFiltro = [StatusIrregularidade.REGISTRADA];
-      this.filtroStatus = StatusIrregularidade.REGISTRADA;
+      this.statusOptions = this.buildTratamentoStatusPorPermissao();
+      this.sanitizeFiltroStatusTratamento();
+      if (!this.filtroStatus) {
+        this.filtroStatus = StatusIrregularidade.REGISTRADA;
+      }
       return;
     }
     if (this.modo === 'manutencao') {
@@ -1224,10 +1237,50 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (this.modo !== 'tratamento') {
       return this.statusFiltro;
     }
+    const permitidos = this.buildTratamentoStatusPorPermissao();
     if (!this.filtroStatus) {
-      return this.statusOptions;
+      return permitidos;
+    }
+    if (!permitidos.includes(this.filtroStatus)) {
+      return [StatusIrregularidade.REGISTRADA];
     }
     return [this.filtroStatus];
+  }
+
+  /**
+   * Status disponíveis na tela Tratamento conforme permissões :read do usuário.
+   * tratamento:read → REGISTRADA, CANCELADA
+   * manutencao:read → EM_MANUTENCAO
+   * validacao_final:read → CONCLUIDA, NAO_PROCEDE, VALIDADA
+   */
+  private buildTratamentoStatusPorPermissao(): StatusIrregularidade[] {
+    const statuses: StatusIrregularidade[] = [];
+    if (this.canTratamentoRead) {
+      statuses.push(
+        StatusIrregularidade.REGISTRADA,
+        StatusIrregularidade.CANCELADA,
+      );
+    }
+    if (this.canManutencaoRead) {
+      statuses.push(StatusIrregularidade.EM_MANUTENCAO);
+    }
+    if (this.canValidacaoFinalRead) {
+      statuses.push(
+        StatusIrregularidade.CONCLUIDA,
+        StatusIrregularidade.NAO_PROCEDE,
+        StatusIrregularidade.VALIDADA,
+      );
+    }
+    return statuses;
+  }
+
+  private sanitizeFiltroStatusTratamento(): void {
+    if (this.modo !== 'tratamento' || !this.filtroStatus) {
+      return;
+    }
+    if (!this.statusOptions.includes(this.filtroStatus)) {
+      this.filtroStatus = StatusIrregularidade.REGISTRADA;
+    }
   }
 
   private buildMensagemSucessoManutencao(res: RelatorioManutencaoExecucao): string {

@@ -1,10 +1,14 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { OcorrenciaService } from '../../services/ocorrencia.service';
+import {
+  OcorrenciaListFilterState,
+  OcorrenciaListFilterStateService,
+} from '../../services/ocorrencia-list-filter-state.service';
 import { VeiculoService } from '../../services/veiculo.service';
 import { MotoristaService } from '../../services/motorista.service';
 import { OrigemOcorrenciaService } from '../../services/origem-ocorrencia.service';
@@ -32,6 +36,12 @@ import { MultiSelectComponent } from '../shared/multi-select/multi-select.compon
 import { BaseListComponent } from '../base-list.component';
 import { ExportDataTransformer } from './export-data-transformer';
 
+export interface ActiveFilterChip {
+  key: string;
+  label: string;
+  value: string;
+}
+
 @Component({
   selector: 'app-ocorrencia-list',
   standalone: true,
@@ -47,12 +57,13 @@ import { ExportDataTransformer } from './export-data-transformer';
   templateUrl: './ocorrencia-list.html',
   styleUrls: ['./ocorrencia-list.css']
 })
-export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> implements OnInit {
+export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> implements OnInit, OnDestroy {
   private ocorrenciaService = inject(OcorrenciaService);
   private veiculoService = inject(VeiculoService);
   private motoristaService = inject(MotoristaService);
   private origemService = inject(OrigemOcorrenciaService);
   private categoriaService = inject(CategoriaOcorrenciaService);
+  private filterStateService = inject(OcorrenciaListFilterStateService);
   private router = inject(Router);
 
   currentPage = 1;
@@ -72,6 +83,8 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   dataFimFilter = '';
   veiculoFilter = '';
   motoristaFilter = '';
+  veiculoFilterLabel = '';
+  motoristaFilterLabel = '';
 
   // Filtros avançados
   arcoFilter: string[] = [];
@@ -124,7 +137,7 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   private categoriasList: CategoriaOcorrencia[] = [];
 
   override ngOnInit(): void {
-    super.ngOnInit();
+    this.restoreFilterState();
     this.origemService.getAll().subscribe((list) => {
       this.origensList = list;
       this.origemOptions = list.map((o) => o.descricao);
@@ -133,6 +146,239 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
       this.categoriasList = list;
       this.classificacaoOptions = list.map((c) => c.descricao);
     });
+    this.loadItems();
+  }
+
+  ngOnDestroy(): void {
+    this.saveFilterState();
+    if (this.filterTimeout) {
+      clearTimeout(this.filterTimeout);
+    }
+  }
+
+  private collectFilterState(): OcorrenciaListFilterState {
+    return {
+      currentPage: this.currentPage,
+      itemsPerPage: this.itemsPerPage,
+      showAdvancedFilters: this.showAdvancedFilters,
+      numeroOcorrenciaFilter: this.numeroOcorrenciaFilter,
+      statusFilter: [...this.statusFilter],
+      tipoFilter: [...this.tipoFilter],
+      linhaFilter: [...this.linhaFilter],
+      dataInicioFilter: this.dataInicioFilter,
+      dataFimFilter: this.dataFimFilter,
+      veiculoFilter: this.veiculoFilter,
+      motoristaFilter: this.motoristaFilter,
+      arcoFilter: [...this.arcoFilter],
+      sentidoViaFilter: [...this.sentidoViaFilter],
+      tipoLocalFilter: [...this.tipoLocalFilter],
+      culpabilidadeFilter: [...this.culpabilidadeFilter],
+      houveVitimasFilter: [...this.houveVitimasFilter],
+      terceirizadoFilter: [...this.terceirizadoFilter],
+      origemFilter: [...this.origemFilter],
+      classificacaoFilter: [...this.classificacaoFilter],
+    };
+  }
+
+  private applyFilterState(state: OcorrenciaListFilterState): void {
+    this.currentPage = state.currentPage ?? 1;
+    this.itemsPerPage = state.itemsPerPage ?? 10;
+    this.showAdvancedFilters = state.showAdvancedFilters ?? false;
+    this.numeroOcorrenciaFilter = state.numeroOcorrenciaFilter ?? '';
+    this.statusFilter = state.statusFilter ?? [];
+    this.tipoFilter = state.tipoFilter ?? [];
+    this.linhaFilter = state.linhaFilter ?? [];
+    this.dataInicioFilter = state.dataInicioFilter ?? '';
+    this.dataFimFilter = state.dataFimFilter ?? '';
+    this.veiculoFilter = state.veiculoFilter ?? '';
+    this.motoristaFilter = state.motoristaFilter ?? '';
+    this.arcoFilter = state.arcoFilter ?? [];
+    this.sentidoViaFilter = state.sentidoViaFilter ?? [];
+    this.tipoLocalFilter = state.tipoLocalFilter ?? [];
+    this.culpabilidadeFilter = state.culpabilidadeFilter ?? [];
+    this.houveVitimasFilter = state.houveVitimasFilter ?? [];
+    this.terceirizadoFilter = state.terceirizadoFilter ?? [];
+    this.origemFilter = state.origemFilter ?? [];
+    this.classificacaoFilter = state.classificacaoFilter ?? [];
+  }
+
+  private saveFilterState(): void {
+    this.filterStateService.save(this.collectFilterState());
+  }
+
+  private restoreFilterState(): void {
+    const state = this.filterStateService.load();
+    if (state) {
+      this.applyFilterState(state);
+      this.loadFilterLabels();
+    }
+  }
+
+  private loadFilterLabels(): void {
+    if (this.veiculoFilter) {
+      this.veiculoService.getById(this.veiculoFilter).subscribe({
+        next: (v) => {
+          this.veiculoFilterLabel = v.placa ? `${v.descricao} (${v.placa})` : v.descricao;
+        },
+        error: () => {
+          this.veiculoFilterLabel = 'Veículo selecionado';
+        },
+      });
+    }
+    if (this.motoristaFilter) {
+      this.motoristaService.getById(this.motoristaFilter).subscribe({
+        next: (m) => {
+          this.motoristaFilterLabel = m.nome;
+        },
+        error: () => {
+          this.motoristaFilterLabel = 'Motorista selecionado';
+        },
+      });
+    }
+  }
+
+  hasActiveFilters(): boolean {
+    return this.getActiveFilterChips().length > 0;
+  }
+
+  getActiveFilterChips(): ActiveFilterChip[] {
+    const chips: ActiveFilterChip[] = [];
+
+    if (this.numeroOcorrenciaFilter?.trim()) {
+      chips.push({
+        key: 'numero',
+        label: 'Nº',
+        value: this.numeroOcorrenciaFilter.trim(),
+      });
+    }
+
+    this.statusFilter.forEach((v) =>
+      chips.push({ key: `status::${v}`, label: 'Status', value: v }),
+    );
+
+    if (this.dataInicioFilter || this.dataFimFilter) {
+      const inicio = this.formatChipDate(this.dataInicioFilter);
+      const fim = this.formatChipDate(this.dataFimFilter);
+      let periodo = '';
+      if (inicio && fim) {
+        periodo = `${inicio} – ${fim}`;
+      } else if (inicio) {
+        periodo = `a partir de ${inicio}`;
+      } else if (fim) {
+        periodo = `até ${fim}`;
+      }
+      chips.push({ key: 'periodo', label: 'Período', value: periodo });
+    }
+
+    if (this.veiculoFilter) {
+      chips.push({
+        key: 'veiculo',
+        label: 'Veículo',
+        value: this.veiculoFilterLabel || 'Selecionado',
+      });
+    }
+
+    if (this.motoristaFilter) {
+      chips.push({
+        key: 'motorista',
+        label: 'Motorista',
+        value: this.motoristaFilterLabel || 'Selecionado',
+      });
+    }
+
+    this.tipoFilter.forEach((v) =>
+      chips.push({ key: `tipo::${v}`, label: 'Classificação', value: v }),
+    );
+    this.linhaFilter.forEach((v) =>
+      chips.push({ key: `linha::${v}`, label: 'Linha', value: v }),
+    );
+    this.arcoFilter.forEach((v) =>
+      chips.push({ key: `arco::${v}`, label: 'Extensão', value: v }),
+    );
+    this.sentidoViaFilter.forEach((v) =>
+      chips.push({ key: `sentidoVia::${v}`, label: 'Sentido', value: v }),
+    );
+    this.tipoLocalFilter.forEach((v) =>
+      chips.push({ key: `tipoLocal::${v}`, label: 'Tipo local', value: v }),
+    );
+    this.culpabilidadeFilter.forEach((v) =>
+      chips.push({ key: `culpabilidade::${v}`, label: 'Culpabilidade', value: v }),
+    );
+    this.houveVitimasFilter.forEach((v) =>
+      chips.push({ key: `houveVitimas::${v}`, label: 'Vítimas', value: v }),
+    );
+    this.terceirizadoFilter.forEach((v) =>
+      chips.push({ key: `terceirizado::${v}`, label: 'Terceirizado', value: v }),
+    );
+    this.origemFilter.forEach((v) =>
+      chips.push({ key: `origem::${v}`, label: 'Origem', value: v }),
+    );
+    this.classificacaoFilter.forEach((v) =>
+      chips.push({ key: `classificacao::${v}`, label: 'Categoria', value: v }),
+    );
+
+    return chips;
+  }
+
+  removeFilter(key: string): void {
+    if (key === 'numero') {
+      this.numeroOcorrenciaFilter = '';
+    } else if (key === 'periodo') {
+      this.dataInicioFilter = '';
+      this.dataFimFilter = '';
+    } else if (key === 'veiculo') {
+      this.veiculoFilter = '';
+      this.veiculoFilterLabel = '';
+    } else if (key === 'motorista') {
+      this.motoristaFilter = '';
+      this.motoristaFilterLabel = '';
+    } else if (key.includes('::')) {
+      const [prefix, value] = key.split('::');
+      switch (prefix) {
+        case 'status':
+          this.statusFilter = this.statusFilter.filter((v) => v !== value);
+          break;
+        case 'tipo':
+          this.tipoFilter = this.tipoFilter.filter((v) => v !== value);
+          break;
+        case 'linha':
+          this.linhaFilter = this.linhaFilter.filter((v) => v !== value);
+          break;
+        case 'arco':
+          this.arcoFilter = this.arcoFilter.filter((v) => v !== value);
+          break;
+        case 'sentidoVia':
+          this.sentidoViaFilter = this.sentidoViaFilter.filter((v) => v !== value);
+          break;
+        case 'tipoLocal':
+          this.tipoLocalFilter = this.tipoLocalFilter.filter((v) => v !== value);
+          break;
+        case 'culpabilidade':
+          this.culpabilidadeFilter = this.culpabilidadeFilter.filter((v) => v !== value);
+          break;
+        case 'houveVitimas':
+          this.houveVitimasFilter = this.houveVitimasFilter.filter((v) => v !== value);
+          break;
+        case 'terceirizado':
+          this.terceirizadoFilter = this.terceirizadoFilter.filter((v) => v !== value);
+          break;
+        case 'origem':
+          this.origemFilter = this.origemFilter.filter((v) => v !== value);
+          break;
+        case 'classificacao':
+          this.classificacaoFilter = this.classificacaoFilter.filter((v) => v !== value);
+          break;
+      }
+    }
+    this.onFilterChange();
+  }
+
+  private formatChipDate(isoDate: string): string {
+    if (!isoDate) {
+      return '';
+    }
+    const [y, m, d] = isoDate.split('-');
+    return d && m && y ? `${d}/${m}/${y}` : isoDate;
   }
 
   loadItems(): void {
@@ -219,6 +465,12 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   }
 
   onFilterChange(): void {
+    if (!this.veiculoFilter) {
+      this.veiculoFilterLabel = '';
+    }
+    if (!this.motoristaFilter) {
+      this.motoristaFilterLabel = '';
+    }
     if (this.filterTimeout) {
       clearTimeout(this.filterTimeout);
     }
@@ -237,6 +489,8 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
     this.dataFimFilter = '';
     this.veiculoFilter = '';
     this.motoristaFilter = '';
+    this.veiculoFilterLabel = '';
+    this.motoristaFilterLabel = '';
     this.arcoFilter = [];
     this.sentidoViaFilter = [];
     this.tipoLocalFilter = [];
@@ -245,6 +499,7 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
     this.terceirizadoFilter = [];
     this.origemFilter = [];
     this.classificacaoFilter = [];
+    this.filterStateService.clear();
     this.onFilterChange();
   }
 
@@ -255,19 +510,25 @@ export class OcorrenciaListComponent extends BaseListComponent<Ocorrencia> imple
   // Callbacks dos autocompletes
   onVeiculoSelected(veiculo: Veiculo): void {
     this.veiculoFilter = veiculo.id;
+    this.veiculoFilterLabel = veiculo.placa
+      ? `${veiculo.descricao} (${veiculo.placa})`
+      : veiculo.descricao;
     this.onFilterChange();
   }
 
   onMotoristaSelected(motorista: Motorista): void {
     this.motoristaFilter = motorista.id;
+    this.motoristaFilterLabel = motorista.nome;
     this.onFilterChange();
   }
 
   createItem(): void {
+    this.saveFilterState();
     this.router.navigate(['/ocorrencia/new']);
   }
 
   editItem(item: Ocorrencia): void {
+    this.saveFilterState();
     this.router.navigate(['/ocorrencia/edit', item.id]);
   }
 

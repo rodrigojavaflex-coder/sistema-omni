@@ -75,15 +75,16 @@ export class Usuario extends BaseEntity {
   })
   @ManyToOne(() => EmpresaTerceira, { nullable: true, eager: false })
   @JoinColumn({ name: 'idEmpresa' })
-  empresa?: EmpresaTerceira;
+  empresa?: EmpresaTerceira | null;
 
   @ApiProperty({
     description: 'ID da empresa vinculada ao usuário',
     required: false,
     format: 'uuid',
+    nullable: true,
   })
   @Column({ type: 'uuid', nullable: true })
-  idEmpresa?: string;
+  idEmpresa?: string | null;
 
   @ApiProperty({
     description: 'Tema preferido do usuário',
@@ -93,4 +94,13 @@ export class Usuario extends BaseEntity {
   })
   @Column({ default: 'Claro', length: 10 })
   tema: string;
+
+  @ApiProperty({
+    description: 'IDs dos atalhos personalizados da tela inicial (null = padrão do sistema)',
+    required: false,
+    type: [String],
+    nullable: true,
+  })
+  @Column({ name: 'atalhos_home', type: 'jsonb', nullable: true })
+  atalhosHome: string[] | null;
 }

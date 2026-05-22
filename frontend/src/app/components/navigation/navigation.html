@@ -42,6 +42,20 @@
         </div>
       }
       <ul class="nav-list">
+        <li class="nav-item">
+          <a
+            routerLink="/"
+            [class.active]="isHomeActive()"
+            class="nav-link"
+            [attr.title]="!shouldShowExpanded ? 'Início' : null"
+            (click)="onMenuItemClick()"
+          >
+            <span class="nav-icon" [innerHTML]="getMenuIcon('feather-home')"></span>
+            @if (shouldShowExpanded) {
+              <span class="nav-text">Início</span>
+            }
+          </a>
+        </li>
         @for (item of getDisplayMenuItems(); track item.label) {
         <li class="nav-item">
           <!-- Item de menu normal -->

@@ -50,8 +50,30 @@ Copie o bloco abaixo para cada regra nova.
 - **Origem da regra:** Requisito de produto, 2026-04-27
 - **Status:** Implementada
 
+### RN-AUTH-002 - Atalhos da tela inicial (home)
+- **Modulo:** Autenticacao / Usuario
+- **Fluxo:** Usuario personaliza atalhos rapidos na tela de boas-vindas
+- **Descricao:** Preferencia persistida em `usuarios.atalhos_home` (JSON array de IDs), ate 8 itens, ordem definida pelo usuario. IDs estaticos derivados das rotas do menu; links BI cadastrados usam `bi-acesso:{uuid}`. `null` no banco = usuario ainda nao personalizou; frontend usa atalhos padrao filtrados por permissao. Categorias em «Personalizar atalhos» seguem a hierarquia do menu (ex.: `Cadastros / Gerais`, `Gestão / Fluxo Vistoria`, `Gestão / BI`).
+- **Condicoes de entrada:** Usuario autenticado
+- **Validacoes:** Apenas o proprio usuario pode alterar seus atalhos (`PATCH /users/:id/atalhos-home`); maximo 8 itens; somente IDs do catalogo
+- **Acoes do sistema:** Exibir grid de atalhos na home; modal de personalizacao com busca, selecao e reordenacao; persistir preferencia no banco
+- **Mensagens ao usuario:** Erro ao salvar: "Nao foi possivel salvar os atalhos da tela inicial."; 403 ao tentar alterar atalhos de outro usuario
+- **Permissoes envolvidas:** Cada atalho exige a permissao `:read` da rota correspondente (telas de irregularidades: `tratamento:read`, `manutencao:read` ou `validacao_final:read`)
+- **Dados impactados:** `usuarios.atalhos_home`
+- **Rastreabilidade:** Nao exige auditoria dedicada
+- **Criterios de aceite:**
+  - [ ] Login sem personalizacao exibe atalhos padrao filtrados por permissao
+  - [ ] Personalizar, salvar e recarregar persiste no banco
+  - [ ] Atalho sem permissao nao aparece na home nem no modal
+  - [ ] Links BI cadastrados aparecem em «Gestão / BI» quando o usuario tem permissao
+  - [ ] Tentativa de alterar atalhos de outro usuario retorna 403
+- **Cenarios de excecao:** Usuario sem nenhuma permissao de atalho ve estado vazio com CTA para configurar
+- **Origem da regra:** Alinhamento com NEST_ANGULAR (RN-014), 2026-05-20
+- **Status:** Implementada
+
 ### 1. Vistoria
 #### Regras
+- [x] RN-VIS-003 - Permissoes de acesso e acao por tela do fluxo de irregularidades
 - [ ] RN-VIS-001 - Placeholder
 - [ ] RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
 
@@ -98,6 +120,40 @@ Copie o bloco abaixo para cada regra nova.
 - **Origem da regra:** Requisito de produto — descricao obrigatoria da irregularidade, 2026-05-06
 - **Status:** Implementada
 
+### RN-VIS-003 - Permissoes de acesso e acao por tela do fluxo de irregularidades
+- **Modulo:** Vistoria
+- **Fluxo:** Telas web Tratamento, Manutencao e Validacao (`/irregularidades/*`)
+- **Descricao:** Cada tela exige permissao `:read` propria para menu, rota e listagem API. Permissoes de acao (`:update`, `:start`, `:finish`, `:mark_not_proceeding`) controlam apenas botoes e endpoints de transicao; nao substituem o `:read` de acesso.
+- **Condicoes de entrada:** Usuario autenticado com perfil contendo permissoes do fluxo
+- **Validacoes:**
+  - Menu e rota de Tratamento exigem `irregularidade_tratamento:read`
+  - Menu e rota de Manutencao exigem `irregularidade_manutencao:read`
+  - Menu e rota de Validacao exigem `irregularidade_validacao_final:read`
+  - `GET /irregularidades` exige `:read` de cada etapa correspondente aos status consultados (REGISTRADA/CANCELADA → tratamento; EM_MANUTENCAO → manutencao; CONCLUIDA/NAO_PROCEDE/VALIDADA → validacao final)
+  - Consulta com multiplos status exige todas as permissoes `:read` envolvidas
+- **Acoes do sistema:**
+  - Cadastro de perfis agrupa permissoes em «Irregularidades – Tratamento», «Irregularidades – Manutenção» e «Irregularidades – Validação»
+  - `irregularidade_manutencao:start` aparece no grupo Tratamento (botao «Enviar para manutenção» nesta tela)
+  - API retorna HTTP 403 quando falta `:read` da etapa consultada
+  - Filtro «Todos» na tela Tratamento (frontend) monta a lista de status conforme `:read` do usuario antes de chamar a API
+- **Mensagens ao usuario:** Guard/rota redireciona para home sem `:read`; API 403 com lista de permissoes faltantes
+- **Permissoes envolvidas:**
+  - Tratamento: `irregularidade_tratamento:read` (acesso), `irregularidade_tratamento:update` (reclassificar/cancelar), `irregularidade_manutencao:start` (enviar para manutencao)
+  - Manutencao: `irregularidade_manutencao:read` (acesso), `irregularidade_manutencao:finish`, `irregularidade_manutencao:mark_not_proceeding`
+  - Validacao: `irregularidade_validacao_final:read` (acesso), `irregularidade_validacao_final:update` (validar/reprovar)
+- **Dados impactados:** Nenhum (sem alteracao de schema; keys de permissao mantidas)
+- **Rastreabilidade:** Nao exige auditoria adicional
+- **Criterios de aceite:**
+  - [ ] Usuario so com permissoes de acao (sem `:read`) nao ve menu nem rota da tela
+  - [ ] Usuario com `:read` ve fila sem botoes de acao nao autorizados
+  - [ ] Operador Tratamento precisa de `tratamento:read` + acoes desejadas (ex.: `update`, `manutencao:start`)
+  - [ ] `GET /irregularidades` retorna 403 ao consultar status de etapa sem `:read`
+  - [ ] Cadastro de perfil exibe 3 grupos com labels alinhados as telas
+  - [ ] Filtro «Todos» em Tratamento lista apenas status das etapas com `:read` do usuario
+- **Cenarios de excecao:** Perfis existentes com acao mas sem `:read` perdem acesso ate inclusao da permissao de leitura; filtro «Todos» em Tratamento envia ao backend apenas status permitidos pelas permissoes `:read` do usuario (tratamento → REGISTRADA/CANCELADA; manutencao → EM_MANUTENCAO; validacao → CONCLUIDA/NAO_PROCEDE/VALIDADA)
+- **Origem da regra:** Reorganizacao de permissoes do fluxo web, 2026-05-21
+- **Status:** Implementada
+
 ### 2. Ocorrencias
 #### Regras
 - [ ] RN-OCO-001 - Placeholder
@@ -128,6 +184,7 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-05-21: RN-VIS-003 Permissoes de acesso (`:read`) e acao separadas por tela do fluxo de irregularidades (Tratamento, Manutencao, Validacao); grupos no cadastro de perfis.
 - 2026-05-06: RN-VIS-002 Descricao obrigatoria ao registrar/editar irregularidade na vistoria (app mobile + API `observacao`), com validacao trim e UX acessivel.
 - 2026-04-27: RN-AUTH-001 Recuperacao de senha por OTP (e-mail), web e mobile.
 - 2026-04-22: Criacao do template inicial.

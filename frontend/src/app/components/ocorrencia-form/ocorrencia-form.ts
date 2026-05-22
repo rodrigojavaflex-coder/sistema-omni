@@ -97,6 +97,9 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
   valorOrcamentoRaw = '';
   isValorOrcamentoFocused = false;
 
+  /** Evita envio duplicado do formulário (duplo clique ou submit + click) */
+  isSaving = false;
+
   constructor(router: Router) {
     super(router);
   }
@@ -112,6 +115,18 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
     this.origemService.getAll().subscribe((list) => (this.origens = list));
     this.empresaService.getAll().subscribe((list) => (this.empresas = list));
     super.ngOnInit();
+
+    this.route.paramMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((params) => {
+        const paramId = params.get('id');
+        if (paramId && paramId !== this.entityId) {
+          this.editMode = true;
+          this.entityId = paramId;
+          void this.reloadEntityForEdit(paramId);
+        }
+      });
+
     // Disparo 2: quando Data ou Hora mudam (após preencher os dois), verifica novamente
     this.form
       .get('dataHora')
@@ -231,6 +246,17 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
   protected async updateEntity(id: string, data: UpdateOcorrenciaDto): Promise<void> {
     await firstValueFrom(this.ocorrenciaService.update(id, data));
     this.notificationService.success('Ocorrência atualizada com sucesso!');
+  }
+
+  private async reloadEntityForEdit(id: string): Promise<void> {
+    this.loading = true;
+    try {
+      await this.loadEntityById(id);
+    } catch (error) {
+      this.handleError(error, 'Erro ao carregar dados');
+    } finally {
+      this.loading = false;
+    }
   }
 
   protected async loadEntityById(id: string): Promise<void> {
@@ -548,7 +574,13 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
     }
   }
 
-  override async onSubmit(): Promise<void> {
+  override async onSubmit(event?: Event): Promise<void> {
+    event?.preventDefault();
+
+    if (this.isSaving) {
+      return;
+    }
+
     this.submitted = true;
 
     if (this.form.invalid) {
@@ -557,12 +589,18 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       return;
     }
 
+    const entityId =
+      this.route.snapshot.paramMap.get('id') ??
+      this.entityId ??
+      this.ocorrencia?.id;
+
+    this.isSaving = true;
     this.loading = true;
     try {
       const formData = this.buildFormData();
 
-      if (this.editMode && this.entityId) {
-        await this.updateEntity(this.entityId, formData);
+      if (entityId) {
+        await this.updateEntity(entityId, formData);
       } else {
         await this.saveEntity(formData as CreateOcorrenciaDto);
       }
@@ -572,6 +610,7 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       const errorMessage = error.error?.message || 'Erro ao salvar ocorrência';
       this.notificationService.error(errorMessage);
     } finally {
+      this.isSaving = false;
       this.loading = false;
     }
   }

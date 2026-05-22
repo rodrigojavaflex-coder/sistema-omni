@@ -328,22 +328,14 @@ export const MENU_CONFIGURATION: MenuConfig = {
               label: 'Tratamento',
               route: '/irregularidades/tratamento',
               icon: 'feather-activity',
-              requiredPermissions: [
-                Permission.IRREGULARIDADE_TRATAMENTO_READ,
-                Permission.IRREGULARIDADE_TRATAMENTO_UPDATE,
-              ],
+              requiredPermissions: [Permission.IRREGULARIDADE_TRATAMENTO_READ],
               parentMenu: 'Gestão'
             },
             {
               label: 'Manutenção',
               route: '/irregularidades/manutencao',
               icon: 'feather-settings',
-              requiredPermissions: [
-                Permission.IRREGULARIDADE_MANUTENCAO_READ,
-                Permission.IRREGULARIDADE_MANUTENCAO_START,
-                Permission.IRREGULARIDADE_MANUTENCAO_FINISH,
-                Permission.IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING,
-              ],
+              requiredPermissions: [Permission.IRREGULARIDADE_MANUTENCAO_READ],
               parentMenu: 'Gestão'
             },
             {
@@ -352,7 +344,6 @@ export const MENU_CONFIGURATION: MenuConfig = {
               icon: 'feather-check',
               requiredPermissions: [
                 Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
-                Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
               ],
               parentMenu: 'Gestão'
             }

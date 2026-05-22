@@ -1,5 +1,9 @@
 <ion-app>
-  <ion-menu *ngIf="isAuthenticated && isNative" content-id="main-content">
+  <ion-menu
+    *ngIf="isAuthenticated && isNative"
+    menuId="main-menu"
+    contentId="main-content"
+  >
     <ion-header>
       <ion-toolbar>
         <ion-title></ion-title>

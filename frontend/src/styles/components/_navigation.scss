@@ -566,3 +566,20 @@
 .sidebar.floating {
   animation: slideInLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
+
+// Home — mesmos ícones SVG do menu lateral
+.home-shortcut-icon.nav-icon svg {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+.home-personalize-btn-icon.nav-icon svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.home-shortcuts-preview-icon.nav-icon svg,
+.home-shortcuts-row-icon.nav-icon svg {
+  width: 22px !important;
+  height: 22px !important;
+}

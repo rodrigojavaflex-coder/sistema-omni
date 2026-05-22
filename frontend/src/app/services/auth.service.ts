@@ -393,6 +393,15 @@ export class AuthService {
     }
   }
 
+  updateCurrentUserAtalhosHome(atalhosHome: string[] | null): void {
+    const currentUser = this.currentUserSubject.value;
+    if (currentUser) {
+      const updatedUser = { ...currentUser, atalhosHome };
+      this.currentUserSubject.next(updatedUser);
+      this.persistUserSnapshot(updatedUser);
+    }
+  }
+
   async requestPasswordReset(email: string): Promise<{ message: string }> {
     return firstValueFrom(
       this.http.post<{ message: string }>(`${this.apiUrl}/password-reset/request`, { email }),

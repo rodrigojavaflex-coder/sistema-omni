@@ -310,38 +310,43 @@ export const PERMISSION_GROUPS = {
   'Vistoria Web': [
     { key: Permission.VISTORIA_WEB_READ, label: 'Visualizar vistorias (web)' },
   ],
-  Irregularidades: [
+  'Irregularidades – Tratamento': [
     {
       key: Permission.IRREGULARIDADE_TRATAMENTO_READ,
-      label: 'Visualizar irregularidades para tratamento',
+      label:
+        'Acessar tela Tratamento (visualizar fila de irregularidades registradas)',
     },
     {
       key: Permission.IRREGULARIDADE_TRATAMENTO_UPDATE,
-      label: 'Atualizar irregularidades de tratamento',
-    },
-    {
-      key: Permission.IRREGULARIDADE_MANUTENCAO_READ,
-      label: 'Visualizar fila de manutenção de irregularidades',
+      label: 'Tratamento: reclassificar e cancelar irregularidade',
     },
     {
       key: Permission.IRREGULARIDADE_MANUTENCAO_START,
-      label: 'Enviar irregularidade para manutenção',
+      label: 'Tratamento: enviar para manutenção (individual ou em lote)',
+    },
+  ],
+  'Irregularidades – Manutenção': [
+    {
+      key: Permission.IRREGULARIDADE_MANUTENCAO_READ,
+      label: 'Acessar tela Manutenção (visualizar fila em manutenção)',
     },
     {
       key: Permission.IRREGULARIDADE_MANUTENCAO_FINISH,
-      label: 'Concluir manutenção de irregularidade',
+      label: 'Manutenção: concluir manutenção',
     },
     {
       key: Permission.IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING,
-      label: 'Marcar irregularidade como não procede',
+      label: 'Manutenção: marcar como não procede',
     },
+  ],
+  'Irregularidades – Validação': [
     {
       key: Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
-      label: 'Visualizar fila de validação final',
+      label: 'Acessar tela Validação (visualizar fila para validação final)',
     },
     {
       key: Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
-      label: 'Executar validação final de irregularidade',
+      label: 'Validação: aprovar (validar final) ou reprovar e devolver para manutenção',
     },
   ],
   'Áreas Vistoriadas': [

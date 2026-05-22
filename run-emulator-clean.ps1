@@ -1,4 +1,5 @@
 param(
+  [switch]$Production,
   [switch]$ErrorOnly,
   [switch]$NoLog
 )
@@ -26,9 +27,23 @@ $adbExe = Join-Path $adbDir "adb.exe"
 $packageName = "com.omni.sistema"
 $apkPath = Join-Path $androidDir "app\build\outputs\apk\debug\app-debug.apk"
 
-Invoke-Step -Title "Build e sync (mobile)" -Action {
+if ($Production) {
+  $buildConfig = 'production'
+  $apiUrl = 'https://api.sistemasfarmamais.com/api'
+} else {
+  $buildConfig = 'development'
+  $apiUrl = 'https://api-dev.sistemasfarmamais.com/api'
+}
+
+Write-Host ""
+Write-Host "Ambiente: $buildConfig | API: $apiUrl" -ForegroundColor Yellow
+if ($Production) {
+  Write-Host "Atencao: o app usara dados da API de producao (tunnel omni-api -> localhost:8080)." -ForegroundColor DarkYellow
+}
+
+Invoke-Step -Title "Build e sync (mobile - $buildConfig)" -Action {
   Set-Location $mobileDir
-  npm run build
+  npm run build -- --configuration $buildConfig
   npx cap sync android
 }
 
@@ -71,5 +86,5 @@ if (-not $NoLog) {
   }
 } else {
   Write-Host ""
-  Write-Host "Fluxo concluido sem monitoramento de log (-NoLog)." -ForegroundColor Green
+  Write-Host "Fluxo concluido ($buildConfig, -NoLog). API: $apiUrl" -ForegroundColor Green
 }

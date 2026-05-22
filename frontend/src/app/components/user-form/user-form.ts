@@ -57,7 +57,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
       senha: ['', []],
       ativo: [true],
       perfilIds: [[], Validators.required],
-      idEmpresa: [''],
+      idEmpresa: [null as string | null],
     });
   }
 
@@ -100,7 +100,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
       email: formValue.email,
       ativo: formValue.ativo,
       perfilIds: this.getPerfilIdsSelecionados(),
-      idEmpresa: formValue.idEmpresa || undefined,
+      idEmpresa: this.normalizeIdEmpresa(formValue.idEmpresa),
       departamentoIds: this.getDepartamentoIdsSelecionados(),
     };
     if (formValue.senha) {
@@ -124,7 +124,7 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
       email: user?.email || '',
       ativo: user?.ativo ?? true,
       perfilIds: user?.perfis?.map((perfil) => perfil.id) || [],
-      idEmpresa: user?.idEmpresa || '',
+      idEmpresa: user?.idEmpresa ?? null,
     });
     this.perfisSelecionados = user?.perfis?.map((perfil) => perfil.nomePerfil) || [];
     this.departamentosSelecionados =
@@ -186,5 +186,11 @@ export class UserFormComponent extends BaseFormComponent<CreateUsuarioDto | Upda
     this.form.get('perfilIds')?.setValue(this.getPerfilIdsSelecionados());
     this.form.get('perfilIds')?.markAsTouched();
     this.form.get('perfilIds')?.updateValueAndValidity();
+  }
+
+  /** Envia `null` explicitamente para limpar vínculo de empresa na API. */
+  private normalizeIdEmpresa(value: string | null | undefined): string | null {
+    const trimmed = (value ?? '').toString().trim();
+    return trimmed.length > 0 ? trimmed : null;
   }
 }

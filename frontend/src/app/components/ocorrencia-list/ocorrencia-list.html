@@ -1,9 +1,9 @@
-<div class="list-container">
-  <div class="list-header">
+<div class="list-container ocorrencia-list-view">
+  <div class="list-header list-header-compact">
     <h2>Ocorrências</h2>
     <div class="header-actions">
       @if (canCreate()) {
-        <button class="btn btn-primary" (click)="createItem()">
+        <button class="btn btn-primary btn-compact" (click)="createItem()">
           Nova Ocorrência
         </button>
       }
@@ -67,7 +67,6 @@
           <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
         </svg>
       </button>
-      <button (click)="clearFilters()" class="btn btn-secondary">Limpar</button>
       
       <!-- Botão para expandir filtros avançados -->
       <button 
@@ -157,49 +156,90 @@
         </app-multi-select>
       </div>
     }
-  </div>  <!-- Paginação -->
-  @if (totalPages > 1) {
-    <div class="pagination">
-      <button 
-        (click)="onPageChange(currentPage - 1)"
-        [disabled]="currentPage === 1"
-        class="btn-pagination"
+  </div>
+
+  <!-- Filtros ativos + paginação compacta -->
+  <div class="list-meta-bar">
+    <div class="list-meta-bar-left">
+      <div class="active-filters-section">
+        <span class="active-filters-title">Filtros ativos</span>
+        @if (hasActiveFilters()) {
+          <div class="active-filters-chips">
+            @for (chip of getActiveFilterChips(); track chip.key) {
+              <span class="filter-chip">
+                <span class="filter-chip-text">
+                  <strong>{{ chip.label }}:</strong> {{ chip.value }}
+                </span>
+                <button
+                  type="button"
+                  class="filter-chip-remove"
+                  (click)="removeFilter(chip.key)"
+                  [attr.aria-label]="'Remover filtro ' + chip.label"
+                >×</button>
+              </span>
+            }
+          </div>
+        } @else {
+          <span class="active-filters-empty">Nenhum filtro aplicado</span>
+        }
+      </div>
+      <button
+        type="button"
+        class="btn btn-secondary btn-clear-filters"
+        (click)="clearFilters()"
+        [disabled]="!hasActiveFilters()"
       >
-        Anterior
-      </button>
-      
-      <span class="page-info">
-        Página {{ currentPage }} de {{ totalPages }} ({{ totalItems }} itens)
-      </span>
-      
-      <button 
-        (click)="onPageChange(currentPage + 1)"
-        [disabled]="currentPage === totalPages"
-        class="btn-pagination"
-      >
-        Próxima
+        Limpar filtros
       </button>
     </div>
-  }
+
+    @if (totalItems > 0) {
+      <div class="pagination-inline">
+        @if (totalPages > 1) {
+          <button
+            type="button"
+            (click)="onPageChange(currentPage - 1)"
+            [disabled]="currentPage === 1"
+            class="btn-pagination"
+          >
+            ‹
+          </button>
+        }
+        <span class="page-info">
+          Pág. {{ currentPage }}/{{ totalPages || 1 }} · {{ totalItems }} itens
+        </span>
+        @if (totalPages > 1) {
+          <button
+            type="button"
+            (click)="onPageChange(currentPage + 1)"
+            [disabled]="currentPage === totalPages"
+            class="btn-pagination"
+          >
+            ›
+          </button>
+        }
+      </div>
+    }
+  </div>
 
   <!-- Loading -->
   @if (loading) {
-    <div class="loading">
-      Carregando ocorrências...
+    <div class="loading loading-compact">
+      Carregando...
     </div>
   }
 
   <!-- Error -->
   @if (error) {
-    <div class="error-message">
+    <div class="error-message error-compact">
       {{ error }}
     </div>
   }
 
   <!-- Tabela de ocorrências -->
   @if (!loading && !error) {
-    <div class="table-container">
-      <table class="data-table">
+    <div class="table-container table-container-compact">
+      <table class="data-table data-table-compact">
         <thead>
           <tr>
             <th>Nº</th>
@@ -222,9 +262,9 @@
               <td>{{ item.numero || '-' }}</td>
               <td>{{ formatDate(item.dataHora) }}</td>
               <td>{{ item.tipo }}</td>
-              <td>
-                <div>{{ item.veiculo.descricao }}</div>
-                <small>{{ item.veiculo.placa }}</small>
+              <td class="cell-veiculo">
+                <span class="cell-veiculo-desc">{{ item.veiculo.descricao }}</span>
+                <span class="cell-veiculo-placa">{{ item.veiculo.placa }}</span>
               </td>
               <td>{{ item.motorista.nome }}</td>
               <td>{{ item.linha || '-' }}</td>
@@ -241,26 +281,18 @@
                 }
               </td>
               <td>{{ getDias(item) }}</td>
-              <td class="table-actions">
+              <td class="table-actions table-actions-grid">
                 @if (canUpdate()) {
-                  <button class="btn btn-small btn-primary" (click)="editItem(item)">
-                    Editar
-                  </button>
+                  <button class="btn btn-small btn-primary" (click)="editItem(item)">Editar</button>
                 }
                 @if (canDelete()) {
-                  <button class="btn btn-small btn-danger" (click)="confirmDeleteItem(item)">
-                    Excluir
-                  </button>
+                  <button class="btn btn-small btn-danger" (click)="confirmDeleteItem(item)">Excluir</button>
                 }
                 @if (canAudit()) {
-                  <button class="btn btn-small btn-audit" (click)="openAuditModal(item)" title="Auditoria">
-                    Auditoria
-                  </button>
+                  <button class="btn btn-small btn-audit" (click)="openAuditModal(item)" title="Auditoria">Auditoria</button>
                 }
                 @if (canUpdateStatus()) {
-                  <button class="btn btn-small btn-andamento" (click)="openStatusModal(item)" title="Registrar andamento">
-                    Andamento
-                  </button>
+                  <button class="btn btn-small btn-andamento" (click)="openStatusModal(item)" title="Registrar andamento">Andamento</button>
                 }
               </td>
             </tr>
@@ -270,8 +302,26 @@
 
       <!-- Mensagem quando não há ocorrências -->
       @if (items.length === 0) {
-        <div class="no-data">
+        <div class="no-data no-data-compact">
           Nenhuma ocorrência encontrada.
+        </div>
+      }
+
+      @if (totalPages > 1 && items.length > 0) {
+        <div class="pagination-inline pagination-bottom">
+          <button
+            type="button"
+            (click)="onPageChange(currentPage - 1)"
+            [disabled]="currentPage === 1"
+            class="btn-pagination"
+          >‹ Anterior</button>
+          <span class="page-info">Pág. {{ currentPage }}/{{ totalPages }}</span>
+          <button
+            type="button"
+            (click)="onPageChange(currentPage + 1)"
+            [disabled]="currentPage === totalPages"
+            class="btn-pagination"
+          >Próxima ›</button>
         </div>
       }
     </div>
