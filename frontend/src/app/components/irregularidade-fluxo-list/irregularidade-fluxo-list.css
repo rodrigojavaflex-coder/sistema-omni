@@ -25,10 +25,30 @@
 
 .filters-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
   align-items: center;
   margin-bottom: 0.5rem;
+}
+
+.filters-row .form-input,
+.filters-row .form-select {
+  font-size: 0.82rem;
+  padding: 0.38rem 0.5rem;
+  min-height: 2.15rem;
+}
+
+.filters-row .form-select {
+  min-width: 7.25rem;
+  max-width: 9.25rem;
+  padding-right: 1.65rem;
+}
+
+.filters-row .btn-secondary {
+  flex-shrink: 0;
+  padding: 0.38rem 0.65rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
 }
 
 .filter-periodo {
@@ -49,19 +69,27 @@
 }
 
 .filter-veiculo {
-  flex: 1 1 auto;
-  min-width: 360px;
+  flex: 1 1 10rem;
+  min-width: 9rem;
+  max-width: 13.5rem;
+}
+
+.filter-veiculo ::ng-deep .autocomplete-input {
+  font-size: 0.82rem;
+  padding: 0.38rem 1.65rem 0.38rem 0.5rem;
+  min-height: 2.15rem;
 }
 
 .filter-ordem-servico {
-  flex: 0 1 11rem;
-  min-width: 9rem;
-  max-width: 14rem;
+  flex: 0 1 8.5rem;
+  min-width: 7.5rem;
+  max-width: 9rem;
 }
 
-.form-select {
-  min-width: 220px;
-  max-width: 260px;
+@media (max-width: 1100px) {
+  .filters-row {
+    flex-wrap: wrap;
+  }
 }
 
 .bulk-actions {
@@ -902,6 +930,46 @@ textarea.form-control {
 :host-context(body.theme-dark) .irregularidade-card--expanded {
   background: #0f172a;
   border-left-color: #60a5fa;
+}
+
+.col-codigo--sos {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.badge-sos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: var(--sos-badge-bg, #fee2e2);
+  color: var(--sos-badge-fg, #991b1b);
+  vertical-align: middle;
+  line-height: 1.2;
+}
+
+.badge-sos-icon {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+}
+
+.btn-sos-registrar {
+  font-weight: 600;
+}
+
+:host-context(body.theme-dark) .badge-sos {
+  --sos-badge-bg: rgba(239, 68, 68, 0.22);
+  --sos-badge-fg: #fecaca;
 }
 
 :host-context(body.theme-dark) .irregularidade-list-header,

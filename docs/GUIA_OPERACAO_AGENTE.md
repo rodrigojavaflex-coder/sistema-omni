@@ -9,6 +9,7 @@
 - Para UI: exigir tema claro/escuro e estados (hover/focus/disabled).
 - Para negocio: citar RN-* do `docs/regras-negocio.md`.
 - Para API/DB: indicar contrato esperado e se precisa migration.
+- Para rotas/telas novas: exigir `permissionGuard` alinhado ao menu (ver secao abaixo).
 - Se for tarefa grande, pedir plano curto antes de implementar.
 
 ## Objetivo
@@ -20,6 +21,30 @@ Sempre informar:
 - resultado esperado (criterio de pronto);
 - escopo (arquivos/modulos impactados);
 - restricoes (nao mexer em X, manter comportamento Y).
+
+## Protecao de rotas (frontend)
+
+Toda rota autenticada de tela funcional deve usar **dois guards**:
+- `authGuard` — usuario logado;
+- `permissionGuard` — permissao de acesso a tela (ou guard especifico documentado).
+
+### Regra obrigatoria em novos desenvolvimentos
+1. Ao criar rota em `app.routes.ts`, **nunca** usar apenas `authGuard`.
+2. Definir `data.permissions` alinhado ao menu em `menu.model.ts` e, quando possivel, reutilizar `config/route-permissions.ts`:
+   - listagem: qualquer permissao CRUD do modulo (`:read`, `:create`, `:update`, `:delete`);
+   - criacao: `:create`;
+   - edicao: `:update`;
+   - BI (`bi-acesso/view/:id`): `permissionGuard` com `data.dynamicPermissionParam: 'id'` (mesma chave `bi_link:{id}` do menu dinamico).
+3. Excecoes explicitas (documentar no PR):
+   - `''` (home): so `authGuard`;
+   - `login`, `redefinir-senha`: sem guard;
+   - `users/:id/change-password`: `changePasswordGuard` (proprio usuario ou `user:update`).
+4. Checklist antes de concluir:
+   - [ ] Menu e rota exigem a mesma permissao;
+   - [ ] URL direta redireciona para `/` sem permissao;
+   - [ ] API do modulo tambem valida permissao (backend).
+
+Referencia: RN-VIS-003 (`docs/regras-negocio.md`) — menu + rota + API alinhados.
 
 ---
 
@@ -148,6 +173,8 @@ Criterios de aceite:
 - Precisa migration?
 - Precisa validar tema claro/escuro?
 - Existe regra RN-* que deve ser citada?
+- Nova rota/tela exige `permissionGuard` (ou guard especifico)?
+- Permissoes da rota batem com `menu.model.ts` e backend?
 
 ---
 

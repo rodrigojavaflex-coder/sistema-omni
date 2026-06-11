@@ -1,0 +1,506 @@
+<div class="sos-modal-overlay" *ngIf="open" (click)="$event.stopPropagation()">
+  <div
+    class="sos-modal"
+    [class.sos-modal--etapa1]="etapa === 1"
+    [class.sos-modal--etapa2]="etapa === 2"
+    role="dialog"
+    aria-labelledby="sos-modal-title"
+  >
+    <div class="sos-modal-header">
+      <h3 id="sos-modal-title">Registrar irregularidade SOS</h3>
+      <button type="button" class="sos-modal-close" (click)="tentarFechar()" aria-label="Fechar">×</button>
+    </div>
+
+    <div class="sos-steps" aria-label="Etapas">
+      <span [class.active]="etapa === 1">1. Dados da vistoria</span>
+      <span [class.active]="etapa === 2">2. Irregularidades</span>
+      <span [class.active]="etapa === 3">3. Revisão</span>
+    </div>
+
+    <div class="form-error" *ngIf="error && modoAbertura === 'formulario' && etapa !== 1">{{ error }}</div>
+    <div class="form-warning" *ngIf="midiaUploadError">
+      {{ midiaUploadError }}
+      <button type="button" class="btn btn-link" (click)="retryMidiasPendentes()" *ngIf="pendingMidiaIrregularidadeId">
+        Tentar mídias novamente
+      </button>
+    </div>
+
+    <div class="sos-modal-body sos-etapa-sessao" *ngIf="modoAbertura === 'verificando'">
+      <p class="sos-verificando-sessao">Verificando sessão SOS em andamento...</p>
+    </div>
+
+    <div class="sos-modal-body sos-etapa-sessao" *ngIf="modoAbertura === 'escolher_sessao' && sessaoAbertaPendente as sessao">
+      <section class="sos-etapa1-section sos-sessao-pendente">
+        <h4 class="sos-etapa1-section-title">Sessão SOS em andamento</h4>
+        <p class="sos-sessao-intro">
+          Encontramos uma vistoria SOS não concluída para o seu usuário. Deseja continuar de onde parou ou excluir e iniciar uma nova?
+        </p>
+
+        <div class="sos-alert sos-alert--error" *ngIf="error" role="alert">
+          <span class="sos-alert-icon" aria-hidden="true">!</span>
+          <span class="sos-alert-text">{{ error }}</span>
+        </div>
+
+        <dl class="sos-sessao-detalhes">
+          <div class="sos-sessao-detalhe">
+            <dt>Veículo</dt>
+            <dd>{{ rotuloVeiculoSessao }}</dd>
+          </div>
+          <div class="sos-sessao-detalhe">
+            <dt>Motorista</dt>
+            <dd>{{ sessao.motoristaNome || '—' }}</dd>
+          </div>
+          <div class="sos-sessao-detalhe">
+            <dt>Odômetro</dt>
+            <dd>{{ sessao.odometro }}</dd>
+          </div>
+          <div class="sos-sessao-detalhe" *ngIf="sessao.porcentagembateria !== null">
+            <dt>% Bateria</dt>
+            <dd>{{ sessao.porcentagembateria }}</dd>
+          </div>
+          <div class="sos-sessao-detalhe">
+            <dt>Iniciada em</dt>
+            <dd>{{ formatarDataSessao(sessao.datavistoria) }}</dd>
+          </div>
+          <div class="sos-sessao-detalhe">
+            <dt>Irregularidades salvas</dt>
+            <dd>{{ sessao.irregularidades.length }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <!-- Etapa 1 -->
+    <div class="sos-modal-body sos-etapa1" *ngIf="modoAbertura === 'formulario' && etapa === 1">
+      <div class="sos-etapa1-alerts" *ngIf="error || vistoriaMobileEmAndamento">
+        <div class="sos-alert sos-alert--error" *ngIf="error" role="alert">
+          <span class="sos-alert-icon" aria-hidden="true">!</span>
+          <span class="sos-alert-text">{{ error }}</span>
+        </div>
+        <div class="sos-alert sos-alert--warning" *ngIf="vistoriaMobileEmAndamento" role="status">
+          <span class="sos-alert-icon" aria-hidden="true">i</span>
+          <span class="sos-alert-text">Há vistoria mobile em andamento neste veículo (informativo).</span>
+        </div>
+      </div>
+
+      <div class="sos-etapa1-form">
+        <section class="sos-etapa1-section">
+          <h4 class="sos-etapa1-section-title">Identificação</h4>
+          <div class="sos-etapa1-row-veiculo-motorista">
+            <div class="form-group sos-etapa1-veiculo">
+              <label [class.form-label-invalid]="veiculoInvalido">Veículo *</label>
+              <app-veiculo-autocomplete
+                [isInvalid]="veiculoInvalido"
+                [filterStatus]="statusVeiculoAtivo"
+                (veiculoSelected)="onVeiculoSelected($event)"
+              ></app-veiculo-autocomplete>
+              <div class="sos-field-error" *ngIf="veiculoInvalido">Selecione um veículo ativo.</div>
+            </div>
+
+            <div class="form-group sos-etapa1-motorista">
+              <label [class.form-label-invalid]="motoristaInvalido">Motorista *</label>
+              <app-motorista-autocomplete
+                [isInvalid]="motoristaInvalido"
+                [filterStatus]="statusMotoristaAtivo"
+                (motoristaSelected)="onMotoristaSelected($event)"
+              ></app-motorista-autocomplete>
+              <div class="sos-field-error" *ngIf="motoristaInvalido">Selecione um motorista ativo.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sos-etapa1-section">
+          <h4 class="sos-etapa1-section-title">Medições do veículo</h4>
+          <div class="sos-etapa1-medicoes">
+            <div class="form-group sos-etapa1-odometro">
+              <div class="sos-odometro-label-row">
+                <label [class.form-label-invalid]="odometroInvalido">Odômetro *</label>
+                <span class="sos-ultimo-odometro" *ngIf="ultimoOdometro !== null">
+                  Último odômetro do veículo: <strong>{{ ultimoOdometro }}</strong>
+                </span>
+              </div>
+              <input
+                type="text"
+                class="form-input"
+                [class.is-invalid]="odometroInvalido"
+                inputmode="numeric"
+                [value]="odometroDisplay"
+                (input)="onOdometroInput($any($event.target).value)"
+              />
+              <div class="sos-field-error" *ngIf="mensagemErroOdometro">{{ mensagemErroOdometro }}</div>
+            </div>
+
+            <div class="form-group sos-etapa1-bateria" *ngIf="isEletrico">
+              <label [class.form-label-invalid]="bateriaInvalida">% Bateria *</label>
+              <input
+                type="number"
+                class="form-input"
+                [class.is-invalid]="bateriaInvalida"
+                min="0"
+                max="100"
+                [(ngModel)]="bateria"
+              />
+              <div class="sos-field-error" *ngIf="bateriaInvalida">Informe um percentual entre 0 e 100.</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Etapa 2 -->
+    <div class="sos-modal-body sos-etapa2" *ngIf="modoAbertura === 'formulario' && etapa === 2">
+      <div class="sos-etapa2-context">
+        <div class="sos-context-main">
+          <span class="badge-sos">SOS</span>
+          <ng-container *ngIf="selectedVeiculo as veiculo; else veiculoContextoFallback">
+            <strong>{{ veiculo.descricao }}</strong>
+            <span class="sos-context-placa" *ngIf="veiculo.placa">{{ veiculo.placa }}</span>
+          </ng-container>
+          <ng-template #veiculoContextoFallback>
+            <strong>Veículo</strong>
+          </ng-template>
+        </div>
+        <div class="sos-context-meta">
+          <span>{{ salvas.length }} salva(s) nesta sessão</span>
+          <span>{{ pendentes.length }} pendência(s) no veículo</span>
+        </div>
+      </div>
+
+      <div class="sos-etapa2-layout">
+        <div class="sos-etapa2-main sos-etapa2-lista">
+          <div class="sos-lista-header">
+            <div>
+              <h4 class="sos-section-title">Irregularidades desta vistoria</h4>
+              <p class="sos-section-hint">Registre uma ou mais irregularidades antes de revisar e concluir.</p>
+            </div>
+            <button type="button" class="btn btn-primary" (click)="abrirFormIrregularidade()" [disabled]="loading">
+              + Adicionar irregularidade
+            </button>
+          </div>
+
+          <div class="sos-lista-empty" *ngIf="!salvas.length">
+            <p>Nenhuma irregularidade registrada nesta vistoria.</p>
+            <button type="button" class="btn btn-primary" (click)="abrirFormIrregularidade()" [disabled]="loading">
+              Adicionar primeira irregularidade
+            </button>
+          </div>
+
+          <div class="salva-lista" *ngIf="salvas.length">
+            <div class="salva-lista-item" *ngFor="let s of salvas">
+              <div class="salva-lista-item-header">
+                <span class="badge-sos">SOS</span>
+                <strong>O.S. #{{ s.numeroIrregularidade || '—' }}</strong>
+                <span class="salva-lista-midias">{{ s.qtdFotos }} foto(s) · {{ s.qtdAudios }} áudio(s)</span>
+              </div>
+              <p class="salva-lista-classificacao">{{ s.nomeArea }} / {{ s.nomeComponente }} / {{ s.descricaoSintoma }}</p>
+              <span class="salva-lista-alerta" *ngIf="s.exigeFoto && s.qtdFotos === 0">Foto obrigatória pendente</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="sos-etapa2-sidebar">
+          <div class="sos-sidebar-panel sos-pendentes-panel">
+            <h4>Pendências do veículo</h4>
+            <div class="sidebar-empty" *ngIf="!pendentes.length">Nenhuma pendência aberta para este veículo.</div>
+            <div
+              class="pendente-item"
+              *ngFor="let p of pendentes"
+              [class.pendente-item--destaque]="isPendenciaDestacada(p)"
+            >
+              <strong>O.S. #{{ p.numeroIrregularidade || '—' }}</strong>
+              <span>{{ p.nomeArea }} / {{ p.nomeComponente }}</span>
+              <span>{{ p.descricaoSintoma }}</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- Etapa 3 -->
+    <div class="sos-modal-body" *ngIf="modoAbertura === 'formulario' && etapa === 3">
+      <p *ngIf="selectedVeiculo as veiculo"><strong>Veículo:</strong> {{ veiculo.descricao }}</p>
+      <p *ngIf="selectedMotorista as motorista"><strong>Motorista:</strong> {{ motorista.nome }}</p>
+      <p><strong>Odômetro:</strong> {{ odometro }}</p>
+      <p *ngIf="isEletrico"><strong>Bateria:</strong> {{ bateria }}%</p>
+      <p><strong>Tempo da vistoria:</strong> {{ tempoMinutos }} min</p>
+      <table class="sos-revisao-table">
+        <thead>
+          <tr><th>O.S.</th><th>Classificação</th><th>Mídias</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of salvas">
+            <td><span class="badge-sos">SOS</span> #{{ s.numeroIrregularidade || '—' }}</td>
+            <td>{{ s.nomeArea }} / {{ s.nomeComponente }} / {{ s.descricaoSintoma }}</td>
+            <td>{{ s.qtdFotos }} fotos, {{ s.qtdAudios }} áudios</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sos-modal-footer">
+      <ng-container *ngIf="modoAbertura === 'verificando'">
+        <button type="button" class="btn btn-secondary" (click)="fechar()" [disabled]="loading">Cancelar</button>
+      </ng-container>
+
+      <ng-container *ngIf="modoAbertura === 'escolher_sessao'">
+        <button type="button" class="btn btn-secondary" (click)="fechar()" [disabled]="loading">Cancelar</button>
+        <button type="button" class="btn btn-danger" (click)="solicitarExcluirSessaoPendente()" [disabled]="loading">
+          Excluir sessão
+        </button>
+        <button type="button" class="btn btn-primary" (click)="continuarSessaoPendente()" [disabled]="loading">
+          Continuar sessão
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="modoAbertura === 'formulario'" [ngSwitch]="etapa">
+        <ng-container *ngSwitchCase="1">
+          <button type="button" class="btn btn-secondary" (click)="tentarFechar()">Cancelar</button>
+          <button type="button" class="btn btn-primary" [disabled]="loading" (click)="avancarEtapa1()">
+            Avançar
+          </button>
+        </ng-container>
+        <ng-container *ngSwitchCase="2">
+          <button type="button" class="btn btn-secondary" (click)="solicitarVoltarEtapa1()" [disabled]="loading">Voltar</button>
+          <button type="button" class="btn btn-danger" (click)="cancelarSos()" [disabled]="loading">Cancelar SOS</button>
+          <button type="button" class="btn btn-primary" [disabled]="loading || salvas.length === 0" (click)="irParaRevisao()">Revisar e concluir</button>
+        </ng-container>
+        <ng-container *ngSwitchCase="3">
+          <button type="button" class="btn btn-secondary" (click)="etapa = 2">Voltar</button>
+          <button type="button" class="btn btn-danger" (click)="cancelarSos()" [disabled]="loading">Cancelar SOS</button>
+          <button type="button" class="btn btn-primary" [disabled]="loading || !canConcluirSos" (click)="concluirSos()">Concluir SOS</button>
+        </ng-container>
+      </ng-container>
+    </div>
+  </div>
+</div>
+
+<div class="sos-submodal-overlay" *ngIf="open && showIrregularidadeFormModal" (click)="$event.stopPropagation()">
+  <div class="sos-submodal" role="dialog" aria-labelledby="sos-submodal-title" (click)="$event.stopPropagation()">
+    <div class="sos-submodal-header">
+      <h4 id="sos-submodal-title">Nova irregularidade</h4>
+      <button type="button" class="sos-modal-close" (click)="fecharFormIrregularidade()" aria-label="Fechar">×</button>
+    </div>
+
+    <div class="form-error" *ngIf="irregularidadeFormError">{{ irregularidadeFormError }}</div>
+
+    <div class="sos-submodal-body sos-submodal-body--compact">
+      <div class="sos-sub-classificacao">
+        <div class="form-group sos-sub-field">
+          <label [class.form-label-invalid]="areaInvalida">Área *</label>
+          <input
+            class="form-input"
+            [class.is-invalid]="areaInvalida"
+            [(ngModel)]="areaBusca"
+            (focus)="showAreaOptions = true"
+            (blur)="showAreaOptions = false"
+            (keydown)="onAreaKeydown($event)"
+            placeholder="Buscar área"
+          />
+          <div class="autocomplete-options" *ngIf="showAreaOptions && filteredAreas.length">
+            <button type="button" class="autocomplete-option" *ngFor="let area of filteredAreas" (mousedown)="selectArea(area)">
+              {{ area.nome }}
+            </button>
+          </div>
+          <div class="field-hint field-hint--empty" *ngIf="showAreaOptions && !filteredAreas.length">Nenhuma área encontrada.</div>
+        </div>
+
+        <div class="form-group sos-sub-field">
+          <label [class.form-label-invalid]="componenteInvalido">Componente *</label>
+          <input
+            class="form-input"
+            [class.is-invalid]="componenteInvalido"
+            [(ngModel)]="componenteBusca"
+            (focus)="showComponenteOptions = true"
+            (blur)="showComponenteOptions = false"
+            (keydown)="onComponenteKeydown($event)"
+            [disabled]="!modalIdArea"
+            placeholder="Buscar componente"
+          />
+          <div class="field-hint" *ngIf="!modalIdArea">Selecione uma área primeiro.</div>
+          <div class="autocomplete-options" *ngIf="showComponenteOptions && modalIdArea && filteredComponentes.length">
+            <button type="button" class="autocomplete-option" *ngFor="let c of filteredComponentes" (mousedown)="selectComponente(c)">
+              {{ c.nome }}
+            </button>
+          </div>
+          <div class="field-hint field-hint--empty" *ngIf="showComponenteOptions && modalIdArea && !filteredComponentes.length">
+            Nenhum componente encontrado.
+          </div>
+        </div>
+
+        <div class="form-group sos-sub-field">
+          <label [class.form-label-invalid]="sintomaInvalido">Sintoma *</label>
+          <input
+            class="form-input"
+            [class.is-invalid]="sintomaInvalido"
+            [(ngModel)]="sintomaBusca"
+            (focus)="showSintomaOptions = true"
+            (blur)="showSintomaOptions = false"
+            (keydown)="onSintomaKeydown($event)"
+            [disabled]="!modalIdComponente"
+            placeholder="Buscar sintoma"
+          />
+          <div class="field-hint" *ngIf="!modalIdComponente">Selecione um componente primeiro.</div>
+          <div class="autocomplete-options" *ngIf="showSintomaOptions && modalIdComponente && filteredSintomas.length">
+            <button type="button" class="autocomplete-option" *ngFor="let s of filteredSintomas" (mousedown)="selectSintoma(s)">
+              {{ s.sintoma?.descricao }}
+            </button>
+          </div>
+          <div class="field-hint field-hint--empty" *ngIf="showSintomaOptions && modalIdComponente && !filteredSintomas.length">
+            Nenhum sintoma encontrado.
+          </div>
+        </div>
+      </div>
+
+      <div class="sos-selecao-card" *ngIf="temClassificacaoCompleta">
+        <div class="sos-selecao-path">
+          <span class="sos-selecao-part">{{ areaBusca }}</span>
+          <span class="sos-selecao-sep" aria-hidden="true">›</span>
+          <span class="sos-selecao-part">{{ componenteBusca }}</span>
+          <span class="sos-selecao-sep" aria-hidden="true">›</span>
+          <span class="sos-selecao-part sos-selecao-part--destaque">{{ sintomaBusca }}</span>
+        </div>
+        <div class="sos-selecao-meta" *ngIf="selectedMatriz">
+          <span [class]="getGravidadeChipClass(selectedMatriz.gravidade)">{{ selectedMatriz.gravidade }}</span>
+          <span class="chip chip-requisito chip-requisito--foto" *ngIf="selectedMatriz.exigeFoto">Foto obrigatória</span>
+          <span class="chip chip-requisito chip-requisito--audio" *ngIf="selectedMatriz.permiteAudio">Áudio permitido</span>
+        </div>
+      </div>
+
+      <div class="form-group sos-sub-field">
+        <label [class.form-label-invalid]="observacaoInvalida">Descreva o problema *</label>
+        <textarea
+          class="form-input"
+          [class.is-invalid]="observacaoInvalida"
+          rows="2"
+          [(ngModel)]="observacao"
+          placeholder="Informe o que foi observado no veículo"
+        ></textarea>
+        <div class="field-hint field-hint--invalid" *ngIf="observacaoInvalida">A descrição do problema é obrigatória.</div>
+      </div>
+
+      <div
+        class="sos-midias-row"
+        [class.sos-midias-row--solo]="!selectedMatriz?.permiteAudio"
+      >
+        <div
+          class="sos-midia-panel"
+          [class.sos-midia-panel--disabled]="!temClassificacaoCompleta"
+          [class.sos-midia-panel--invalid]="fotosInvalidas"
+          [class.sos-midia-panel--filled]="fotos.length > 0"
+        >
+          <label class="sos-midia-card sos-midia-card--header">
+            <span class="sos-midia-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M9 3h6l1.5 2H20a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3.5L9 3zm3 16a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+            </span>
+            <span class="sos-midia-text">
+              <strong>Fotos</strong>
+              <small>{{ fotos.length }} selecionada(s)<span *ngIf="selectedMatriz?.exigeFoto"> · obrigatório</span></small>
+            </span>
+            <span class="sos-midia-action">{{ temClassificacaoCompleta ? 'Adicionar' : 'Bloqueado' }}</span>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              [disabled]="!temClassificacaoCompleta"
+              (change)="onFotosSelected($event)"
+            />
+          </label>
+          <div class="sos-midia-panel-body" *ngIf="fotos.length">
+            <div class="midia-preview-list">
+              <div class="midia-preview" *ngFor="let foto of fotos; let i = index">
+                <img [src]="foto.previewUrl" alt="Preview da foto" />
+                <button type="button" class="midia-preview-remove" (click)="removerFoto(i)" aria-label="Remover foto">×</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="sos-midia-panel"
+          *ngIf="selectedMatriz?.permiteAudio"
+          [class.sos-midia-panel--disabled]="!temClassificacaoCompleta"
+          [class.sos-midia-panel--filled]="audios.length > 0"
+        >
+          <label class="sos-midia-card sos-midia-card--header">
+            <span class="sos-midia-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zm-7-3h2.2a1 1 0 0 1 1 1.1A4.9 4.9 0 0 0 12 18.9a4.9 4.9 0 0 0 4.8-4.8 1 1 0 0 1 1-1.1H20a1 1 0 0 1 1 1.1A7.9 7.9 0 0 1 12 22a7.9 7.9 0 0 1-8-7.9 1 1 0 0 1 1-1.1z"/></svg>
+            </span>
+            <span class="sos-midia-text">
+              <strong>Áudios</strong>
+              <small>{{ audios.length }} selecionado(s) · máx. 15 MB</small>
+            </span>
+            <span class="sos-midia-action">{{ temClassificacaoCompleta ? 'Adicionar' : 'Bloqueado' }}</span>
+            <input
+              type="file"
+              accept="audio/*"
+              multiple
+              hidden
+              [disabled]="!temClassificacaoCompleta"
+              (change)="onAudiosSelected($event)"
+            />
+          </label>
+          <div class="sos-midia-panel-body" *ngIf="audios.length">
+            <div class="audio-list audio-list--compact">
+              <div *ngFor="let audio of audios; let i = index" class="audio-item audio-item--compact">
+                <audio controls [src]="audio.previewUrl"></audio>
+                <button type="button" class="btn btn-link btn-sm" (click)="removerAudio(i)">Remover</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-hint" *ngIf="!temClassificacaoCompleta">
+        Selecione área, componente e sintoma para anexar mídias.
+      </div>
+
+      <div class="midia-upload-hint" *ngIf="fotosInvalidas">Foto obrigatória para este sintoma.</div>
+    </div>
+
+    <div class="sos-submodal-footer">
+      <button type="button" class="btn btn-secondary" (click)="fecharFormIrregularidade()" [disabled]="loading">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="salvarIrregularidade()" [disabled]="loading">Salvar irregularidade</button>
+    </div>
+  </div>
+</div>
+
+<app-confirmation-modal
+  [isVisible]="open && showExcluirSessaoPendenteModal"
+  title="Excluir sessão SOS"
+  [message]="excluirSessaoPendenteConfirmMessage"
+  confirmText="Sim, excluir"
+  cancelText="Voltar"
+  (confirmed)="onExcluirSessaoPendenteConfirmed()"
+  (cancelled)="onExcluirSessaoPendenteDismissed()"
+></app-confirmation-modal>
+
+<app-confirmation-modal
+  [isVisible]="open && showCancelConfirmModal"
+  title="Cancelar SOS"
+  [message]="cancelSosConfirmMessage"
+  confirmText="Sim, cancelar"
+  cancelText="Voltar"
+  (confirmed)="onCancelSosConfirmed()"
+  (cancelled)="onCancelSosDismissed()"
+></app-confirmation-modal>
+
+<app-confirmation-modal
+  [isVisible]="open && showVoltarEtapa1Modal"
+  title="Voltar para dados da vistoria"
+  message="Já existem irregularidades salvas nesta sessão. Voltar não as remove, mas você poderá revisar os dados da vistoria. Deseja continuar?"
+  confirmText="Sim, voltar"
+  cancelText="Permanecer aqui"
+  (confirmed)="voltarEtapa1()"
+  (cancelled)="onVoltarEtapa1Dismissed()"
+></app-confirmation-modal>
+
+<app-confirmation-modal
+  [isVisible]="open && showDuplicataConfirmModal"
+  title="Pendência duplicada"
+  [message]="duplicataConfirmMessage"
+  confirmText="Registrar mesmo assim"
+  cancelText="Cancelar"
+  (confirmed)="onDuplicataConfirmed()"
+  (cancelled)="onDuplicataDismissed()"
+></app-confirmation-modal>

@@ -111,6 +111,7 @@ export enum Permission {
   // Fluxo de Irregularidades
   IRREGULARIDADE_TRATAMENTO_READ = 'irregularidade_tratamento:read',
   IRREGULARIDADE_TRATAMENTO_UPDATE = 'irregularidade_tratamento:update',
+  IRREGULARIDADE_TRATAMENTO_CREATE_SOS = 'irregularidade_tratamento:create_sos',
   IRREGULARIDADE_MANUTENCAO_READ = 'irregularidade_manutencao:read',
   IRREGULARIDADE_MANUTENCAO_START = 'irregularidade_manutencao:start',
   IRREGULARIDADE_MANUTENCAO_FINISH = 'irregularidade_manutencao:finish',
@@ -323,6 +324,10 @@ export const PERMISSION_GROUPS = {
     {
       key: Permission.IRREGULARIDADE_MANUTENCAO_START,
       label: 'Tratamento: enviar para manutenção (individual ou em lote)',
+    },
+    {
+      key: Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+      label: 'Tratamento: registrar irregularidade SOS (web)',
     },
   ],
   'Irregularidades – Manutenção': [

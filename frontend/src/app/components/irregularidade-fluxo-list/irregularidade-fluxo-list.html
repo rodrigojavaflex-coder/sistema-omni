@@ -18,6 +18,7 @@
       />
       <app-veiculo-autocomplete
         class="filter-veiculo"
+        placeholder="Buscar veículo..."
         (veiculoSelected)="onVeiculoSelected($event)"
       ></app-veiculo-autocomplete>
       <select
@@ -32,6 +33,16 @@
       </select>
       <select
         class="form-select"
+        [(ngModel)]="filtroOrigemRegistro"
+        (ngModelChange)="onComboFilterChange()"
+        aria-label="Filtrar por origem"
+      >
+        <option value="">Origem (todas)</option>
+        <option value="SOS_WEB">Somente SOS</option>
+        <option value="MOBILE">Somente mobile</option>
+      </select>
+      <select
+        class="form-select"
         *ngIf="modo === 'tratamento'"
         [(ngModel)]="filtroStatus"
         (ngModelChange)="onComboFilterChange()"
@@ -42,7 +53,7 @@
         </option>
       </select>
       <app-periodo-fluxo-filter
-        class="filter-periodo"
+        class="filter-periodo filter-periodo--compact"
         [clearSeq]="filtroPeriodoClearSeq"
         (periodoAplicado)="onPeriodoAplicado($event)"
       ></app-periodo-fluxo-filter>
@@ -52,6 +63,14 @@
 
   <div class="actions-panel">
     <div class="buttons-row">
+      <button
+        class="btn btn-warning btn-sos-registrar"
+        *ngIf="modo === 'tratamento' && canTratamentoCreateSos"
+        type="button"
+        (click)="openSosModal()"
+      >
+        Registrar SOS
+      </button>
       <button
         class="btn btn-primary"
         *ngIf="canShowTratamentoActions && canManutencaoStart"
@@ -200,7 +219,22 @@
               }}
             </div>
           </div>
-          <div class="col-codigo" *ngIf="modo === 'tratamento' || modo === 'manutencao' || modo === 'validacao-final'">
+          <div
+            class="col-codigo"
+            [class.col-codigo--sos]="isSosItem(item)"
+            *ngIf="modo === 'tratamento' || modo === 'manutencao' || modo === 'validacao-final'"
+          >
+            <span class="badge-sos" *ngIf="isSosItem(item)" title="Registro SOS (web)">
+              <svg class="badge-sos-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                  stroke-width="2.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              SOS
+            </span>
             {{ item.numeroIrregularidade || '-' }}
           </div>
           <div class="col-irregularidade">
@@ -286,12 +320,12 @@
 
           <div class="media-section">
             <div class="media-block">
-              <strong>Fotos: {{ item.quantidadeFotos ?? item.fotos?.length ?? 0 }}</strong>
-              <div class="thumb-list" *ngIf="item.fotos?.length; else semFotos">
+              <strong>Fotos: {{ item.quantidadeFotos ?? (item.fotos ?? []).length }}</strong>
+              <div class="thumb-list" *ngIf="(item.fotos ?? []).length; else semFotos">
                 <button
                   type="button"
                   class="thumb-button"
-                  *ngFor="let foto of item.fotos"
+                  *ngFor="let foto of item.fotos ?? []"
                   (click)="$event.stopPropagation(); openImagePreview(foto)"
                   title="Clique para ampliar"
                 >
@@ -304,9 +338,9 @@
             </div>
 
             <div class="media-block">
-              <strong>Áudios: {{ item.quantidadeAudios ?? item.audios?.length ?? 0 }}</strong>
-              <div class="audio-list" *ngIf="item.audios?.length; else semAudios">
-                <div class="audio-item" *ngFor="let audio of item.audios">
+              <strong>Áudios: {{ item.quantidadeAudios ?? (item.audios ?? []).length }}</strong>
+              <div class="audio-list" *ngIf="(item.audios ?? []).length; else semAudios">
+                <div class="audio-item" *ngFor="let audio of item.audios ?? []">
                   <audio controls [src]="getAudioSrc(audio)"></audio>
                 </div>
               </div>
@@ -330,7 +364,9 @@
     <div class="modal-header">
       <h3>
         Histórico da irregularidade
-        <span *ngIf="historicoSelecionado?.numeroIrregularidade">#{{ historicoSelecionado?.numeroIrregularidade }}</span>
+        <ng-container *ngIf="historicoSelecionado as historico">
+          <span *ngIf="historico.numeroIrregularidade">#{{ historico.numeroIrregularidade }}</span>
+        </ng-container>
       </h3>
       <button class="btn-close" (click)="closeHistoricoModal()">×</button>
     </div>

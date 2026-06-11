@@ -63,6 +63,25 @@
   min-width: 260px;
 }
 
+.badge-origem-sos {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid #c45c00;
+  color: #9a4500;
+  background: #fff3e8;
+  margin-right: 0.35rem;
+}
+
+:host-context(body.theme-dark) .badge-origem-sos {
+  border-color: #b36b00;
+  color: #ffb366;
+  background: #3d2a14;
+}
+
 .status-badge {
   font-size: 0.75rem;
   padding: 4px 8px;

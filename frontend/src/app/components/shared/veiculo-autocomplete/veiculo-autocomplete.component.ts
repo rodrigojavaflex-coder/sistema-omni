@@ -29,6 +29,7 @@ import { map } from 'rxjs/operators';
 })
 export class VeiculoAutocompleteComponent implements ControlValueAccessor, OnInit {
   @Input() isInvalid = false;
+  @Input() placeholder?: string;
   @Input() filterStatus?: StatusVeiculo; // Filtro de status opcional (ex: 'ATIVO')
   @Output() veiculoSelected = new EventEmitter<Veiculo>();
 
@@ -42,7 +43,7 @@ export class VeiculoAutocompleteComponent implements ControlValueAccessor, OnIni
 
   ngOnInit(): void {
     this.autocompleteConfig = {
-      placeholder: 'Buscar veículo (mín. 2 caracteres)...',
+      placeholder: this.placeholder?.trim() || 'Buscar veículo (mín. 2 caracteres)...',
       searchFn: (searchTerm: string) => {
         return this.veiculoService.getVeiculos({ 
           page: 1, 
@@ -56,8 +57,7 @@ export class VeiculoAutocompleteComponent implements ControlValueAccessor, OnIni
           }))
         );
       },
-      displayFn: (veiculo: Veiculo) => veiculo.descricao,
-      displaySecondaryFn: (veiculo: Veiculo) => veiculo.placa,
+      displayFn: (veiculo: Veiculo) => this.formatVeiculoDisplay(veiculo),
       minChars: 2,
       debounceTime: 300,
       limit: 20
@@ -65,8 +65,14 @@ export class VeiculoAutocompleteComponent implements ControlValueAccessor, OnIni
   }
 
   onVeiculoSelected(veiculo: Veiculo): void {
+    this.value = this.formatVeiculoDisplay(veiculo);
     this.onChange(veiculo.id);
     this.veiculoSelected.emit(veiculo);
+  }
+
+  private formatVeiculoDisplay(veiculo: Veiculo): string {
+    const placa = veiculo.placa?.trim();
+    return placa ? `${veiculo.descricao} - ${placa}` : veiculo.descricao;
   }
 
   onInputChange(value: string): void {
@@ -80,7 +86,7 @@ export class VeiculoAutocompleteComponent implements ControlValueAccessor, OnIni
     if (value && value !== this.value) {
       this.veiculoService.getById(value).subscribe({
         next: (veiculo: Veiculo) => {
-          this.value = veiculo.descricao;
+          this.value = this.formatVeiculoDisplay(veiculo);
         },
         error: () => {
           this.value = value; // Fallback para o ID se não encontrar

@@ -1,3 +1,28 @@
+export interface SosSessaoIrregularidadeResumo {
+  id: string;
+  numeroIrregularidade?: number;
+  nomeArea: string;
+  nomeComponente: string;
+  descricaoSintoma: string;
+  qtdFotos: number;
+  qtdAudios: number;
+  exigeFoto: boolean;
+}
+
+export interface SosSessaoAberta {
+  id: string;
+  idVeiculo: string;
+  idMotorista: string;
+  odometro: number;
+  porcentagembateria: number | null;
+  datavistoria: string;
+  numeroVistoria?: number;
+  veiculoDescricao?: string;
+  veiculoPlaca?: string;
+  motoristaNome?: string;
+  irregularidades: SosSessaoIrregularidadeResumo[];
+}
+
 export interface VistoriaResumo {
   id: string;
   idVeiculo: string;
@@ -9,6 +34,7 @@ export interface VistoriaResumo {
   tempo: number;
   observacao?: string;
   status?: string;
+  origem?: string | null;
   veiculo?: { descricao?: string; placa?: string };
   motorista?: { nome?: string; matricula?: string };
 }
@@ -16,6 +42,8 @@ export interface VistoriaResumo {
 /** Resumo de irregularidade (GET /vistoria/:id/irregularidades) */
 export interface IrregularidadeResumo {
   id: string;
+  numeroIrregularidade?: number;
+  idvistoria?: string;
   idarea: string;
   nomeArea?: string;
   idcomponente: string;

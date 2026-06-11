@@ -74,8 +74,9 @@ Copie o bloco abaixo para cada regra nova.
 ### 1. Vistoria
 #### Regras
 - [x] RN-VIS-003 - Permissoes de acesso e acao por tela do fluxo de irregularidades
+- [x] RN-VIS-004 - Registrar irregularidade SOS na web (Tratamento)
 - [ ] RN-VIS-001 - Placeholder
-- [ ] RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
+- [x] RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
 
 #### Exemplo (preencher e substituir)
 ### RN-VIS-001 - Reclassificar irregularidade por cascata
@@ -154,6 +155,32 @@ Copie o bloco abaixo para cada regra nova.
 - **Origem da regra:** Reorganizacao de permissoes do fluxo web, 2026-05-21
 - **Status:** Implementada
 
+### RN-VIS-004 - Registrar irregularidade SOS na web (Tratamento)
+- **Modulo:** Vistoria
+- **Fluxo:** Tela web Tratamento (`/irregularidades/tratamento`)
+- **Descricao:** Operador com permissao dedicada abre sessao SOS, registra uma ou mais irregularidades com vistoria pai automatica e conclui ou cancela a sessao. Irregularidades SOS seguem o fluxo normal apos o registro.
+- **Condicoes de entrada:** Usuario autenticado com `irregularidade_tratamento:create_sos` e `irregularidade_tratamento:read`
+- **Validacoes:**
+  - Veiculo e motorista ativos via autocomplete
+  - Odometro validado no frontend e backend (maior que ultimo quando existir); ultimo odometro considera apenas vistorias `FINALIZADA` (exclui `EM_ANDAMENTO` e `CANCELADA`)
+  - Bateria obrigatoria para veiculo eletrico
+  - Descricao da irregularidade obrigatoria (RN-VIS-002); observacao da vistoria opcional
+  - Matriz: `exigeFoto` e `permiteAudio`
+  - Concluir SOS exige ao menos uma irregularidade e fotos quando obrigatorias
+  - Pendencia duplicada: aviso e confirmacao; sem bloqueio
+- **Acoes do sistema:**
+  - Ao abrir o modal SOS, verificar sessao `EM_ANDAMENTO` com `origem = SOS_WEB` do usuario logado; se existir, oferecer continuar ou excluir (exclusao fisica em cascata)
+  - Criar vistoria `EM_ANDAMENTO` com `origem = SOS_WEB`
+  - Registrar irregularidade(s) com `origem_registro = SOS_WEB`
+  - Historico `registrar_sos` com observacao «Irregularidade registrada por SOS»
+  - Finalizar com tempo em minutos (minimo 1) ou cancelar SOS excluindo vistoria, irregularidades, historico e midias do banco (sem status CANCELADA)
+- **Permissoes envolvidas:** `irregularidade_tratamento:create_sos`, `irregularidade_tratamento:read`; demais acoes do fluxo conforme RN-VIS-003
+- **Dados impactados:** `vistorias`, `irregularidades.origem_registro`, `vistorias.origem`, `irregularidades_midias`, `irregularidade_historico`
+- **Rastreabilidade:** Historico com usuario, data e tempo de etapa
+- **Criterios de aceite:** Ver `docs/PLANO_IRREGULARIDADE_SOS_WEB.md`
+- **Origem da regra:** Requisito de produto — irregularidade SOS web, 2026-06-08
+- **Status:** Implementada
+
 ### 2. Ocorrencias
 #### Regras
 - [ ] RN-OCO-001 - Placeholder
@@ -184,6 +211,8 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-06-08: RN-VIS-004 Cancelamento SOS passa a excluir registros do banco (vistoria e irregularidades), sem marcar CANCELADA.
+- 2026-06-08: RN-VIS-004 Registro de irregularidade SOS na web (Tratamento), vistoria pai automatica, origem SOS, filtro e badge no fluxo.
 - 2026-05-21: RN-VIS-003 Permissoes de acesso (`:read`) e acao separadas por tela do fluxo de irregularidades (Tratamento, Manutencao, Validacao); grupos no cadastro de perfis.
 - 2026-05-06: RN-VIS-002 Descricao obrigatoria ao registrar/editar irregularidade na vistoria (app mobile + API `observacao`), com validacao trim e UX acessivel.
 - 2026-04-27: RN-AUTH-001 Recuperacao de senha por OTP (e-mail), web e mobile.

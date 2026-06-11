@@ -1,5 +1,9 @@
 import { GravidadeCriticidade } from './matriz-criticidade.model';
 
+export enum OrigemRegistroIrregularidade {
+  SOS_WEB = 'SOS_WEB',
+}
+
 export enum StatusIrregularidade {
   REGISTRADA = 'REGISTRADA',
   CANCELADA = 'CANCELADA',
@@ -35,6 +39,7 @@ export interface IrregularidadeFluxoItem {
   criadoEm: string;
   entradaStatusEm?: string;
   atualizadoEm: string;
+  origemRegistro?: OrigemRegistroIrregularidade;
 }
 
 export interface IrregularidadeMidiaFluxoItem {
@@ -59,8 +64,11 @@ export interface IrregularidadeHistoricoItem {
 /** Campo temporal usado com dataInicio/dataFim na listagem por status (espelha a coluna "Registrado"). */
 export type ReferenciaPeriodoIrregularidade = 'CRIADO_EM' | 'ENTRADA_STATUS';
 
+export type FiltroOrigemRegistro = 'SOS_WEB' | 'MOBILE';
+
 export interface ListarIrregularidadeFiltros {
   idVeiculo?: string;
+  origemRegistro?: FiltroOrigemRegistro;
   /** Trecho numérico da O.S. para busca parcial no backend (ex.: `2026`). */
   ordemServico?: string;
   gravidade?: GravidadeCriticidade[];

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/pages/configuracoes/configuracoes.page.scss"],
+  "sourcesContent": [".content {\r\n  padding: 12px;\r\n}\r\n\r\n.info {\r\n  margin-top: 10px;\r\n  font-size: 0.9rem;\r\n}\r\n"],
+  "mappings": ";AAAA,CAAA;AACE,WAAA;;AAGF,CAAA;AACE,cAAA;AACA,aAAA;;",
+  "names": []
+}

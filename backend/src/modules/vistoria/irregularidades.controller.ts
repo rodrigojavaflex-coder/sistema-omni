@@ -85,6 +85,7 @@ export class IrregularidadesController {
     @Query('dataFim') dataFim?: string,
     @Query('referenciaPeriodo') referenciaPeriodo?: string,
     @Query('ordemServico') ordemServico?: string,
+    @Query('origemRegistro') origemRegistro?: string,
     @Req() req?: Request & { user?: Usuario },
   ): Promise<IrregularidadeResumoDto[]> {
     const statuses = (status ?? '')
@@ -108,6 +109,13 @@ export class IrregularidadesController {
         : ('CRIADO_EM' as const);
 
     const ordemServicoDigits = this.parseOrdemServicoQuery(ordemServico);
+    const origemFiltro =
+      origemRegistro === 'SOS_WEB'
+        ? ('SOS_WEB' as const)
+        : origemRegistro === 'MOBILE'
+          ? ('MOBILE' as const)
+          : undefined;
+
     const filtrosLista = {
       idVeiculo,
       gravidade: gravidades,
@@ -115,6 +123,7 @@ export class IrregularidadesController {
       dataFim,
       referenciaPeriodo: refPeriodo,
       ordemServico: ordemServicoDigits,
+      origemRegistro: origemFiltro,
     };
 
     if (statuses.length === 0) {
@@ -320,7 +329,10 @@ export class IrregularidadesController {
   @Post(':id/imagens')
   @ApiOperation({ summary: 'Enviar imagens da irregularidade' })
   @ApiResponse({ status: 201, type: [IrregularidadeMidia] })
-  @Permissions(Permission.VISTORIA_UPDATE)
+  @Permissions(
+    Permission.VISTORIA_UPDATE,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   @UseInterceptors(
     FilesInterceptor('files', 10, {
       limits: { fileSize: 5 * 1024 * 1024 },
@@ -329,8 +341,10 @@ export class IrregularidadesController {
   uploadImages(
     @Param('id', new ParseUUIDPipe()) id: string,
     @UploadedFiles() files: Express.Multer.File[],
+    @Req() req: Request & { user?: Usuario },
   ): Promise<IrregularidadeMidia[]> {
-    return this.irregularidadeService.uploadImages(id, files);
+    const permissions = collectUserPermissions(req.user?.perfis);
+    return this.irregularidadeService.uploadImages(id, files, permissions);
   }
 
   @Post(':id/audio')
@@ -338,7 +352,10 @@ export class IrregularidadesController {
     summary: 'Enviar áudio da irregularidade (pode enviar múltiplos)',
   })
   @ApiResponse({ status: 201, type: IrregularidadeMidia })
-  @Permissions(Permission.VISTORIA_UPDATE)
+  @Permissions(
+    Permission.VISTORIA_UPDATE,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: 15 * 1024 * 1024 },
@@ -348,27 +365,41 @@ export class IrregularidadesController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @UploadedFile() file: Express.Multer.File,
     @Body('duracao_ms') duracaoMs?: string,
+    @Req() req?: Request & { user?: Usuario },
   ): Promise<IrregularidadeMidia> {
     const parsed = duracaoMs ? Number(duracaoMs) : undefined;
-    return this.irregularidadeService.uploadAudio(id, file, parsed);
+    const permissions = collectUserPermissions(req?.user?.perfis);
+    return this.irregularidadeService.uploadAudio(id, file, parsed, permissions);
   }
 
   @Delete(':id/audio')
   @ApiOperation({ summary: 'Remover todos os áudios da irregularidade' })
   @ApiResponse({ status: 200 })
-  @Permissions(Permission.VISTORIA_UPDATE)
-  removeAudio(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
-    return this.irregularidadeService.removeAudio(id);
+  @Permissions(
+    Permission.VISTORIA_UPDATE,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
+  removeAudio(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: Request & { user?: Usuario },
+  ): Promise<void> {
+    const permissions = collectUserPermissions(req.user?.perfis);
+    return this.irregularidadeService.removeAudio(id, permissions);
   }
 
   @Delete(':id/midias/:midiaId')
   @ApiOperation({ summary: 'Remover mídia por id' })
   @ApiResponse({ status: 204 })
-  @Permissions(Permission.VISTORIA_UPDATE)
+  @Permissions(
+    Permission.VISTORIA_UPDATE,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   removeMidia(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Param('midiaId', new ParseUUIDPipe()) midiaId: string,
+    @Req() req: Request & { user?: Usuario },
   ): Promise<void> {
-    return this.irregularidadeService.removeMidia(midiaId);
+    const permissions = collectUserPermissions(req.user?.perfis);
+    return this.irregularidadeService.removeMidia(midiaId, permissions);
   }
 }

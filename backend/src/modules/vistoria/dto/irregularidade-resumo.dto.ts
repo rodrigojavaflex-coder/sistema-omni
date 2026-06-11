@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { StatusIrregularidade } from '../../../common/enums/status-irregularidade.enum';
 import { GravidadeCriticidade } from '../../../common/enums/gravidade-criticidade.enum';
+import { OrigemRegistroIrregularidade } from '../../../common/enums/origem-vistoria.enum';
 
 export class IrregularidadeMidiaResumoDto {
   @ApiProperty({ description: 'ID da mídia', format: 'uuid' })
@@ -123,4 +124,11 @@ export class IrregularidadeResumoDto {
     type: () => [IrregularidadeMidiaResumoDto],
   })
   audios?: IrregularidadeMidiaResumoDto[];
+
+  @ApiProperty({
+    description: 'Origem do registro (omitido = mobile)',
+    enum: OrigemRegistroIrregularidade,
+    required: false,
+  })
+  origemRegistro?: OrigemRegistroIrregularidade;
 }

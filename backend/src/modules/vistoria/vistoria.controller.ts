@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -24,6 +25,9 @@ import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
 import { Vistoria } from './entities/vistoria.entity';
 import { VistoriaService } from './vistoria.service';
 import { CreateVistoriaDto } from './dto/create-vistoria.dto';
+import { CreateVistoriaSosDto } from './dto/create-vistoria-sos.dto';
+import { collectUserPermissions } from '../../common/utils/irregularidade-permissions.util';
+import { Usuario } from '../usuarios/entities/usuario.entity';
 import { FinalizeVistoriaDto } from './dto/finalize-vistoria.dto';
 import { UpdateVistoriaDto } from './dto/update-vistoria.dto';
 import { CreateIrregularidadeDto } from './dto/create-irregularidade.dto';
@@ -31,6 +35,7 @@ import { IrregularidadeResumoDto } from './dto/irregularidade-resumo.dto';
 import { IrregularidadeImagemResumoDto } from './dto/irregularidade-imagem-resumo.dto';
 import { IrregularidadeAudioResumoDto } from './dto/irregularidade-audio-resumo.dto';
 import { IrregularidadeHistoricoVeiculoDto } from './dto/irregularidade-historico-veiculo.dto';
+import { SosSessaoAbertaDto } from './dto/sos-sessao-aberta.dto';
 import { IrregularidadeService } from './irregularidade.service';
 import { Request } from 'express';
 
@@ -52,8 +57,44 @@ export class VistoriaController {
     return this.vistoriaService.create(dto);
   }
 
+  @Post('sos')
+  @Permissions(Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS)
+  @ApiOperation({ summary: 'Iniciar vistoria SOS (web)' })
+  @ApiResponse({ status: 201, description: 'Vistoria SOS criada', type: Vistoria })
+  createSos(
+    @Body() dto: CreateVistoriaSosDto,
+    @Req() req: Request & { user?: Usuario },
+  ): Promise<Vistoria> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new BadRequestException('Usuário não autenticado');
+    }
+    return this.vistoriaService.createSos(dto, userId);
+  }
+
+  @Get('sos/sessao-aberta')
+  @Permissions(Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS)
+  @ApiOperation({ summary: 'Buscar sessão SOS em andamento do usuário logado' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sessão SOS em andamento ou null',
+    type: SosSessaoAbertaDto,
+  })
+  findSosSessaoAberta(
+    @Req() req: Request & { user?: Usuario },
+  ): Promise<SosSessaoAbertaDto | null> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new BadRequestException('Usuário não autenticado');
+    }
+    return this.vistoriaService.getSosSessaoAberta(userId);
+  }
+
   @Post(':id/irregularidades')
-  @Permissions(Permission.VISTORIA_UPDATE)
+  @Permissions(
+    Permission.VISTORIA_UPDATE,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   @ApiOperation({ summary: 'Registrar irregularidade' })
   @ApiResponse({
     status: 201,
@@ -66,9 +107,14 @@ export class VistoriaController {
   addIrregularidade(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: CreateIrregularidadeDto,
-    @Req() req: Request & { user?: { id?: string; idEmpresa?: string } },
+    @Req() req: Request & { user?: Usuario },
   ) {
-    return this.irregularidadeService.create(id, dto, req.user);
+    const permissions = collectUserPermissions(req.user?.perfis);
+    return this.irregularidadeService.create(id, dto, {
+      id: req.user?.id,
+      idEmpresa: req.user?.idEmpresa ?? undefined,
+      permissions,
+    });
   }
 
   @Get(':id/irregularidades')
@@ -117,7 +163,10 @@ export class VistoriaController {
   }
 
   @Post(':id/finalizar')
-  @Permissions(Permission.VISTORIA_UPDATE)
+  @Permissions(
+    Permission.VISTORIA_UPDATE,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   @ApiOperation({ summary: 'Finalizar vistoria' })
   @ApiResponse({
     status: 200,
@@ -147,7 +196,11 @@ export class VistoriaController {
   }
 
   @Get('veiculo/:id/ultimo-odometro')
-  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
+  @Permissions(
+    Permission.VISTORIA_READ,
+    Permission.VISTORIA_WEB_READ,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   @ApiOperation({ summary: 'Buscar último odômetro por veículo' })
   @ApiResponse({ status: 200, description: 'Último odômetro encontrado' })
   findUltimoOdometro(
@@ -158,7 +211,11 @@ export class VistoriaController {
   }
 
   @Get('veiculo/:id/irregularidades-pendentes')
-  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
+  @Permissions(
+    Permission.VISTORIA_READ,
+    Permission.VISTORIA_WEB_READ,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   @ApiOperation({ summary: 'Listar irregularidades não resolvidas do veículo' })
   @ApiResponse({
     status: 200,
@@ -235,7 +292,10 @@ export class VistoriaController {
   }
 
   @Post(':id/cancelar')
-  @Permissions(Permission.VISTORIA_UPDATE)
+  @Permissions(
+    Permission.VISTORIA_UPDATE,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   @ApiOperation({ summary: 'Cancelar vistoria' })
   @ApiResponse({
     status: 200,

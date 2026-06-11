@@ -14,6 +14,7 @@ import { Componente } from './componente.entity';
 import { Sintoma } from './sintoma.entity';
 import { IrregularidadeMidia } from './irregularidade-midia.entity';
 import { StatusIrregularidade } from '../../../common/enums/status-irregularidade.enum';
+import { OrigemRegistroIrregularidade } from '../../../common/enums/origem-vistoria.enum';
 
 @Entity('irregularidades')
 @Index('IDX_IRREGULARIDADE_VISTORIA', ['idVistoria'])
@@ -151,4 +152,12 @@ export class Irregularidade extends BaseEntity {
     cascade: true,
   })
   midias?: IrregularidadeMidia[];
+
+  @ApiProperty({
+    description: 'Origem do registro (null = mobile)',
+    enum: OrigemRegistroIrregularidade,
+    required: false,
+  })
+  @Column({ name: 'origem_registro', type: 'varchar', length: 20, nullable: true })
+  origemRegistro?: OrigemRegistroIrregularidade | null;
 }

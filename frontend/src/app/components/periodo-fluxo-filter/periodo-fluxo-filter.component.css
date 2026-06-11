@@ -1,4 +1,55 @@
 /* Alinhado ao painel de filtros do fluxo: variáveis herdadas de .form-control / tema */
+:host.filter-periodo--compact .periodo-toolbar {
+  gap: 0.2rem;
+  padding: 0.2rem 0.3rem;
+}
+
+:host.filter-periodo--compact .periodo-nav-btn {
+  width: 2rem;
+  height: 2rem;
+}
+
+:host.filter-periodo--compact .periodo-chevron {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+:host.filter-periodo--compact .periodo-cal-btn {
+  width: 2rem;
+  height: 2rem;
+  margin-left: 0;
+}
+
+:host.filter-periodo--compact .periodo-cal-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+:host.filter-periodo--compact .periodo-label--slot,
+:host.filter-periodo--compact .periodo-label-static,
+:host.filter-periodo--compact .periodo-label-pick-wrap--dia,
+:host.filter-periodo--compact .periodo-label-pick-wrap--mes,
+:host.filter-periodo--compact .periodo-label-pick-wrap--semana {
+  font-size: 0.82rem;
+  min-height: 2rem;
+}
+
+:host.filter-periodo--compact .periodo-label-static,
+:host.filter-periodo--compact .periodo-label-pick-wrap--dia,
+:host.filter-periodo--compact .periodo-label-pick-wrap--mes {
+  min-width: 7.5rem;
+}
+
+:host.filter-periodo--compact .periodo-label-pick-wrap--semana {
+  min-width: 9rem;
+}
+
+:host.filter-periodo--compact .periodo-year-inline {
+  min-width: 4.25rem;
+  min-height: 2rem;
+  font-size: 0.82rem;
+}
+
 .periodo-fluxo-host {
   position: relative;
   display: inline-flex;

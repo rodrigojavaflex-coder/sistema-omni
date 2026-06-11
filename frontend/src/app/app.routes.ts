@@ -6,7 +6,9 @@ import { UserFormComponent } from './components/user-form/user-form';
 import { AuditoriaComponent } from './components/auditoria/auditoria';
 import { authGuard } from './guards/auth.guard';
 import { permissionGuard } from './guards/permission.guard';
+import { changePasswordGuard } from './guards/change-password.guard';
 import { Permission } from './models/usuario.model';
+import { RoutePermissions } from './config/route-permissions';
 import { ConfiguracaoComponent } from './modules/configuracao/configuracao.component';
 import { ConfiguracaoTempoFluxoComponent } from './modules/configuracao-tempo-fluxo/configuracao-tempo-fluxo.component';
 import { HomeComponent } from './components/home/home';
@@ -17,257 +19,382 @@ import { BiAcessoLinkListComponent } from './components/bi-acesso-link-list/bi-a
 import { BiAcessoViewerComponent } from './components/bi-acesso-viewer/bi-acesso-viewer';
 
 export const routes: Routes = [
-  // Rota de configuração
   {
     path: 'configuracao',
     component: ConfiguracaoComponent,
     canActivate: [authGuard, permissionGuard],
-    data: { permissions: [Permission.CONFIGURACAO_ACCESS] }
+    data: { permissions: [Permission.CONFIGURACAO_ACCESS] },
   },
   {
     path: 'configuracao/tempo-fluxo',
     component: ConfiguracaoTempoFluxoComponent,
     canActivate: [authGuard, permissionGuard],
-    data: { permissions: [Permission.CONFIGURACAO_TEMPO_FLUXO_ACCESS] }
+    data: { permissions: [Permission.CONFIGURACAO_TEMPO_FLUXO_ACCESS] },
   },
-  // Rota de login (sem guard)
   {
     path: 'login',
-    component: LoginComponent
+    component: LoginComponent,
   },
   {
     path: 'redefinir-senha',
-    component: PasswordRedefinirComponent
+    component: PasswordRedefinirComponent,
   },
-  
-  // Rotas protegidas
+
   {
     path: 'users',
     component: UserListComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.users.list] },
   },
   {
     path: 'users/new',
     component: UserFormComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.users.create] },
   },
   {
     path: 'users/edit/:id',
     component: UserFormComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.users.update] },
   },
   {
     path: 'users/:id/change-password',
     component: ChangePasswordComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, changePasswordGuard],
   },
   {
     path: 'auditoria',
     component: AuditoriaComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.auditoria.list] },
   },
   {
     path: 'bi-acesso-links',
     component: BiAcessoLinkListComponent,
     canActivate: [authGuard, permissionGuard],
-    data: {
-      permissions: [
-        Permission.BI_ACESSO_LINK_READ,
-        Permission.BI_ACESSO_LINK_CREATE,
-        Permission.BI_ACESSO_LINK_UPDATE,
-        Permission.BI_ACESSO_LINK_DELETE,
-      ],
-    },
+    data: { permissions: [...RoutePermissions.biAcessoLinks.list] },
   },
   {
     path: 'bi-acesso/view/:id',
     component: BiAcessoViewerComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, permissionGuard],
+    data: { dynamicPermissionParam: 'id' },
   },
   {
     path: 'veiculo',
-    loadComponent: () => import('./components/veiculo-list/veiculo-list').then(m => m.VeiculoListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/veiculo-list/veiculo-list').then(
+        (m) => m.VeiculoListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.veiculo.list] },
   },
   {
     path: 'veiculo/new',
-    loadComponent: () => import('./components/veiculo-form/veiculo-form').then(m => m.VeiculoFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/veiculo-form/veiculo-form').then(
+        (m) => m.VeiculoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.veiculo.create] },
   },
   {
     path: 'veiculo/edit/:id',
-    loadComponent: () => import('./components/veiculo-form/veiculo-form').then(m => m.VeiculoFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/veiculo-form/veiculo-form').then(
+        (m) => m.VeiculoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.veiculo.update] },
   },
   {
     path: 'modelos-veiculo',
-    loadComponent: () => import('./components/modelo-veiculo-list/modelo-veiculo-list').then(m => m.ModeloVeiculoListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/modelo-veiculo-list/modelo-veiculo-list').then(
+        (m) => m.ModeloVeiculoListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.modeloVeiculo.list] },
   },
   {
     path: 'modelos-veiculo/new',
-    loadComponent: () => import('./components/modelo-veiculo-form/modelo-veiculo-form').then(m => m.ModeloVeiculoFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/modelo-veiculo-form/modelo-veiculo-form').then(
+        (m) => m.ModeloVeiculoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.modeloVeiculo.create] },
   },
   {
     path: 'modelos-veiculo/edit/:id',
-    loadComponent: () => import('./components/modelo-veiculo-form/modelo-veiculo-form').then(m => m.ModeloVeiculoFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/modelo-veiculo-form/modelo-veiculo-form').then(
+        (m) => m.ModeloVeiculoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.modeloVeiculo.update] },
   },
-  // Rotas de motorista com lazy loading
   {
     path: 'motorista',
-    loadComponent: () => import('./components/motorista-list/motorista-list').then(m => m.MotoristaListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/motorista-list/motorista-list').then(
+        (m) => m.MotoristaListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.motorista.list] },
   },
   {
     path: 'motorista/new',
-    loadComponent: () => import('./components/motorista-form/motorista-form').then(m => m.MotoristaFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/motorista-form/motorista-form').then(
+        (m) => m.MotoristaFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.motorista.create] },
   },
   {
     path: 'motorista/edit/:id',
-    loadComponent: () => import('./components/motorista-form/motorista-form').then(m => m.MotoristaFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/motorista-form/motorista-form').then(
+        (m) => m.MotoristaFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.motorista.update] },
   },
-  // Rotas de ocorrência com lazy loading
   {
     path: 'ocorrencia',
-    loadComponent: () => import('./components/ocorrencia-list/ocorrencia-list').then(m => m.OcorrenciaListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/ocorrencia-list/ocorrencia-list').then(
+        (m) => m.OcorrenciaListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.ocorrencia.list] },
   },
   {
     path: 'ocorrencia/new',
-    loadComponent: () => import('./components/ocorrencia-form/ocorrencia-form').then(m => m.OcorrenciaFormComponent),
+    loadComponent: () =>
+      import('./components/ocorrencia-form/ocorrencia-form').then(
+        (m) => m.OcorrenciaFormComponent,
+      ),
     canActivate: [authGuard, permissionGuard],
-    data: { permissions: [Permission.OCORRENCIA_CREATE] },
+    data: { permissions: [...RoutePermissions.ocorrencia.create] },
   },
   {
     path: 'ocorrencia/edit/:id',
-    loadComponent: () => import('./components/ocorrencia-form/ocorrencia-form').then(m => m.OcorrenciaFormComponent),
+    loadComponent: () =>
+      import('./components/ocorrencia-form/ocorrencia-form').then(
+        (m) => m.OcorrenciaFormComponent,
+      ),
     canActivate: [authGuard, permissionGuard],
-    data: { permissions: [Permission.OCORRENCIA_UPDATE] },
+    data: { permissions: [...RoutePermissions.ocorrencia.update] },
   },
-  // Rotas de origem da ocorrência
   {
     path: 'origem-ocorrencia',
-    loadComponent: () => import('./components/origem-ocorrencia-list/origem-ocorrencia-list').then(m => m.OrigemOcorrenciaListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/origem-ocorrencia-list/origem-ocorrencia-list').then(
+        (m) => m.OrigemOcorrenciaListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.origemOcorrencia.list] },
   },
   {
     path: 'origem-ocorrencia/new',
-    loadComponent: () => import('./components/origem-ocorrencia-form/origem-ocorrencia-form').then(m => m.OrigemOcorrenciaFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/origem-ocorrencia-form/origem-ocorrencia-form').then(
+        (m) => m.OrigemOcorrenciaFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.origemOcorrencia.create] },
   },
   {
     path: 'origem-ocorrencia/edit/:id',
-    loadComponent: () => import('./components/origem-ocorrencia-form/origem-ocorrencia-form').then(m => m.OrigemOcorrenciaFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/origem-ocorrencia-form/origem-ocorrencia-form').then(
+        (m) => m.OrigemOcorrenciaFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.origemOcorrencia.update] },
   },
-  // Rotas de categoria da ocorrência
   {
     path: 'categoria-ocorrencia',
-    loadComponent: () => import('./components/categoria-ocorrencia-list/categoria-ocorrencia-list').then(m => m.CategoriaOcorrenciaListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/categoria-ocorrencia-list/categoria-ocorrencia-list').then(
+        (m) => m.CategoriaOcorrenciaListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.categoriaOcorrencia.list] },
   },
   {
     path: 'categoria-ocorrencia/new',
-    loadComponent: () => import('./components/categoria-ocorrencia-form/categoria-ocorrencia-form').then(m => m.CategoriaOcorrenciaFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/categoria-ocorrencia-form/categoria-ocorrencia-form').then(
+        (m) => m.CategoriaOcorrenciaFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.categoriaOcorrencia.create] },
   },
   {
     path: 'categoria-ocorrencia/edit/:id',
-    loadComponent: () => import('./components/categoria-ocorrencia-form/categoria-ocorrencia-form').then(m => m.CategoriaOcorrenciaFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/categoria-ocorrencia-form/categoria-ocorrencia-form').then(
+        (m) => m.CategoriaOcorrenciaFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.categoriaOcorrencia.update] },
   },
-  // Rotas de empresa terceira
   {
     path: 'empresa-terceira',
-    loadComponent: () => import('./components/empresa-terceira-list/empresa-terceira-list').then(m => m.EmpresaTerceiraListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/empresa-terceira-list/empresa-terceira-list').then(
+        (m) => m.EmpresaTerceiraListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.empresaTerceira.list] },
   },
   {
     path: 'empresa-terceira/new',
-    loadComponent: () => import('./components/empresa-terceira-form/empresa-terceira-form').then(m => m.EmpresaTerceiraFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/empresa-terceira-form/empresa-terceira-form').then(
+        (m) => m.EmpresaTerceiraFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.empresaTerceira.create] },
   },
   {
     path: 'empresa-terceira/edit/:id',
-    loadComponent: () => import('./components/empresa-terceira-form/empresa-terceira-form').then(m => m.EmpresaTerceiraFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/empresa-terceira-form/empresa-terceira-form').then(
+        (m) => m.EmpresaTerceiraFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.empresaTerceira.update] },
   },
-  // Rotas de trecho com lazy loading
   {
     path: 'trechos',
-    loadComponent: () => import('./components/trecho-form/trecho-form').then(m => m.TrechoFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/trecho-form/trecho-form').then(
+        (m) => m.TrechoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.trecho.list] },
   },
   {
     path: 'trechos/new',
-    loadComponent: () => import('./components/trecho-form/trecho-form').then(m => m.TrechoFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/trecho-form/trecho-form').then(
+        (m) => m.TrechoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.trecho.create] },
   },
   {
     path: 'trechos/edit/:id',
-    loadComponent: () => import('./components/trecho-form/trecho-form').then(m => m.TrechoFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/trecho-form/trecho-form').then(
+        (m) => m.TrechoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.trecho.update] },
   },
-  // Rotas de catálogo de vistoria (grid único: áreas + componentes ao expandir)
   {
     path: 'areas-vistoriadas',
-    loadComponent: () => import('./components/area-vistoriada-list/area-vistoriada-list').then(m => m.AreaVistoriadaListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/area-vistoriada-list/area-vistoriada-list').then(
+        (m) => m.AreaVistoriadaListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.areaVistoriada.list] },
   },
   {
     path: 'componentes',
-    loadComponent: () => import('./components/componente-list/componente-list').then(m => m.ComponenteListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/componente-list/componente-list').then(
+        (m) => m.ComponenteListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.componente.list] },
   },
   {
     path: 'componentes/new',
-    loadComponent: () => import('./components/componente-form/componente-form').then(m => m.ComponenteFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/componente-form/componente-form').then(
+        (m) => m.ComponenteFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.componente.create] },
   },
   {
     path: 'componentes/edit/:id',
-    loadComponent: () => import('./components/componente-form/componente-form').then(m => m.ComponenteFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/componente-form/componente-form').then(
+        (m) => m.ComponenteFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.componente.update] },
   },
   {
     path: 'sintomas',
-    loadComponent: () => import('./components/sintoma-list/sintoma-list').then(m => m.SintomaListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/sintoma-list/sintoma-list').then(
+        (m) => m.SintomaListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.sintoma.list] },
   },
   {
     path: 'sintomas/new',
-    loadComponent: () => import('./components/sintoma-form/sintoma-form').then(m => m.SintomaFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/sintoma-form/sintoma-form').then(
+        (m) => m.SintomaFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.sintoma.create] },
   },
   {
     path: 'sintomas/edit/:id',
-    loadComponent: () => import('./components/sintoma-form/sintoma-form').then(m => m.SintomaFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/sintoma-form/sintoma-form').then(
+        (m) => m.SintomaFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.sintoma.update] },
   },
   {
     path: 'matriz-criticidade',
-    loadComponent: () => import('./components/matriz-criticidade-list/matriz-criticidade-list').then(m => m.MatrizCriticidadeListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/matriz-criticidade-list/matriz-criticidade-list').then(
+        (m) => m.MatrizCriticidadeListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.matrizCriticidade.list] },
   },
   {
     path: 'matriz-criticidade/new',
-    loadComponent: () => import('./components/matriz-criticidade-form/matriz-criticidade-form').then(m => m.MatrizCriticidadeFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/matriz-criticidade-form/matriz-criticidade-form').then(
+        (m) => m.MatrizCriticidadeFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.matrizCriticidade.create] },
   },
   {
     path: 'matriz-criticidade/edit/:id',
-    loadComponent: () => import('./components/matriz-criticidade-form/matriz-criticidade-form').then(m => m.MatrizCriticidadeFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/matriz-criticidade-form/matriz-criticidade-form').then(
+        (m) => m.MatrizCriticidadeFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.matrizCriticidade.update] },
   },
   {
     path: 'vistorias',
-    loadComponent: () => import('./components/vistoria-list/vistoria-list').then(m => m.VistoriaListComponent),
+    loadComponent: () =>
+      import('./components/vistoria-list/vistoria-list').then(
+        (m) => m.VistoriaListComponent,
+      ),
     canActivate: [authGuard, permissionGuard],
-    data: { permissions: [Permission.VISTORIA_WEB_READ] }
+    data: { permissions: [Permission.VISTORIA_WEB_READ] },
   },
   {
     path: 'irregularidades/tratamento',
@@ -305,81 +432,99 @@ export const routes: Routes = [
       modo: 'validacao-final',
     },
   },
-  // Rotas de perfil: paths específicos antes da rota geral para evitar conflitos de prefixo
   {
     path: 'perfil/new',
     component: PerfilFormComponent,
     canActivate: [authGuard, permissionGuard],
-    data: { permissions: [Permission.PROFILE_CREATE] }
+    data: { permissions: [Permission.PROFILE_CREATE] },
   },
   {
     path: 'perfil/edit/:id',
     component: PerfilFormComponent,
     canActivate: [authGuard, permissionGuard],
-    data: { permissions: [Permission.PROFILE_UPDATE] }
+    data: { permissions: [Permission.PROFILE_UPDATE] },
   },
   {
     path: 'perfil',
     component: PerfilListComponent,
     canActivate: [authGuard, permissionGuard],
     data: { permissions: [Permission.PROFILE_READ] },
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
-  // Rotas de departamento
   {
     path: 'departamento',
-    loadComponent: () => import('./components/departamento-list/departamento-list').then(m => m.DepartamentoListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/departamento-list/departamento-list').then(
+        (m) => m.DepartamentoListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.departamento.list] },
   },
   {
     path: 'departamento/new',
-    loadComponent: () => import('./components/departamento-form/departamento-form').then(m => m.DepartamentoFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/departamento-form/departamento-form').then(
+        (m) => m.DepartamentoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.departamento.create] },
   },
   {
     path: 'departamento/edit/:id',
-    loadComponent: () => import('./components/departamento-form/departamento-form').then(m => m.DepartamentoFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/departamento-form/departamento-form').then(
+        (m) => m.DepartamentoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.departamento.update] },
   },
-  // Metas
   {
     path: 'meta',
-    loadComponent: () => import('./components/meta-list/meta-list').then(m => m.MetaListComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/meta-list/meta-list').then((m) => m.MetaListComponent),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.meta.list] },
   },
   {
     path: 'meta/dashboard',
-    loadComponent: () => import('./components/meta-dashboard/meta-dashboard').then(m => m.MetaDashboardComponent),
+    loadComponent: () =>
+      import('./components/meta-dashboard/meta-dashboard').then(
+        (m) => m.MetaDashboardComponent,
+      ),
     canActivate: [authGuard, permissionGuard],
-    data: { permissions: [Permission.META_EXECUCAO_READ] }
+    data: { permissions: [Permission.META_EXECUCAO_READ] },
   },
   {
     path: 'meta/new',
-    loadComponent: () => import('./components/meta-form/meta-form').then(m => m.MetaFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/meta-form/meta-form').then((m) => m.MetaFormComponent),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.meta.create] },
   },
   {
     path: 'meta/edit/:id',
-    loadComponent: () => import('./components/meta-form/meta-form').then(m => m.MetaFormComponent),
-    canActivate: [authGuard]
+    loadComponent: () =>
+      import('./components/meta-form/meta-form').then((m) => m.MetaFormComponent),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.meta.update] },
   },
-  // Painel de Ocorrências
   {
     path: 'ocorrencia/painel',
-    loadComponent: () => import('./components/painel-ocorrencias/painel-ocorrencias').then(m => m.PainelOcorrenciasComponent),
+    loadComponent: () =>
+      import('./components/painel-ocorrencias/painel-ocorrencias').then(
+        (m) => m.PainelOcorrenciasComponent,
+      ),
     canActivate: [authGuard, permissionGuard],
-    data: { permissions: [Permission.OCORRENCIA_PAINEL_VIEW] }
+    data: { permissions: [Permission.OCORRENCIA_PAINEL_VIEW] },
   },
-  
-  // Home padrão
+
   {
     path: '',
     component: HomeComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
-  // Rota wildcard
   {
     path: '**',
-    redirectTo: ''
-  }
+    redirectTo: '',
+  },
 ];

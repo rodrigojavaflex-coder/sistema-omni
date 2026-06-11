@@ -129,6 +129,12 @@ export class AutocompleteComponent<T extends { id: string }> implements ControlV
   }
 
   onKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.confirmSelectionOnEnter();
+      return;
+    }
+
     if (!this.showDropdown || this.filteredItems.length === 0) {
       return;
     }
@@ -149,19 +155,53 @@ export class AutocompleteComponent<T extends { id: string }> implements ControlV
         this.scrollToSelected();
         break;
 
-      case 'Enter':
-        event.preventDefault();
-        if (this.selectedIndex >= 0 && this.selectedIndex < this.filteredItems.length) {
-          this.selectItem(this.filteredItems[this.selectedIndex]);
-        }
-        break;
-
       case 'Escape':
         event.preventDefault();
         this.showDropdown = false;
         this.selectedIndex = -1;
         break;
     }
+  }
+
+  private confirmSelectionOnEnter(): void {
+    if (this.showDropdown && this.filteredItems.length > 0) {
+      const index =
+        this.selectedIndex >= 0 && this.selectedIndex < this.filteredItems.length
+          ? this.selectedIndex
+          : 0;
+      this.selectItem(this.filteredItems[index]);
+      return;
+    }
+
+    const minChars = this.config.minChars || 2;
+    const term = this.searchText.trim();
+    if (term.length < minChars) {
+      return;
+    }
+
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
+    }
+
+    this.isLoading = true;
+    this.config.searchFn(term).subscribe({
+      next: (response) => {
+        this.filteredItems = response.data;
+        this.isLoading = false;
+        if (this.filteredItems.length > 0) {
+          this.selectItem(this.filteredItems[0]);
+          return;
+        }
+        this.showDropdown = true;
+      },
+      error: (error) => {
+        console.error('Erro ao buscar:', error);
+        this.filteredItems = [];
+        this.showDropdown = false;
+        this.isLoading = false;
+      },
+    });
   }
 
   scrollToSelected(): void {

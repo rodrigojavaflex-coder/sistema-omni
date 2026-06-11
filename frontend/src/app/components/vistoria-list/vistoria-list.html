@@ -60,6 +60,9 @@
           <div>{{ vistoria.motorista?.nome || '-' }}</div>
           <div>{{ vistoria.datavistoria | date: 'dd/MM/yyyy HH:mm' }}</div>
           <div>
+            @if (vistoria.origem === 'SOS_WEB') {
+              <span class="badge-origem-sos">SOS</span>
+            }
             <span class="status-badge" [ngClass]="getStatusClass(vistoria.status)">
               {{ getStatusLabel(vistoria.status) }}
             </span>

@@ -1,4 +1,15 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  ApplicationRef,
+  Component,
+  ComponentRef,
+  DestroyRef,
+  EnvironmentInjector,
+  OnDestroy,
+  OnInit,
+  createComponent,
+  inject,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -15,7 +26,10 @@ import {
   RelatorioManutencaoPreview,
   StatusIrregularidade,
   ReferenciaPeriodoIrregularidade,
+  OrigemRegistroIrregularidade,
+  FiltroOrigemRegistro,
 } from '../../models/irregularidade-fluxo.model';
+import { IrregularidadeSosModalComponent } from '../irregularidade-sos-modal/irregularidade-sos-modal';
 import { GravidadeCriticidade } from '../../models/matriz-criticidade.model';
 import { EmpresaTerceira } from '../../models/empresa-terceira.model';
 import { AuthService } from '../../services/auth.service';
@@ -65,6 +79,10 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   private readonly areaService = inject(AreaVistoriadaService);
   private readonly matrizService = inject(MatrizCriticidadeService);
   private readonly veiculoService = inject(VeiculoService);
+  private readonly appRef = inject(ApplicationRef);
+  private readonly environmentInjector = inject(EnvironmentInjector);
+  private readonly destroyRef = inject(DestroyRef);
+  private sosModalRef: ComponentRef<IrregularidadeSosModalComponent> | null = null;
 
   loading = false;
   error = '';
@@ -85,6 +103,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   filtroDataInicio = '';
   filtroDataFim = '';
   filtroGravidade = '';
+  filtroOrigemRegistro: '' | FiltroOrigemRegistro = '';
   filtroStatus: StatusIrregularidade | '' = StatusIrregularidade.REGISTRADA;
   gravidadeOptions: GravidadeCriticidade[] = ['VERDE', 'AMARELO', 'VERMELHO'];
   statusOptions: StatusIrregularidade[] = Object.values(StatusIrregularidade);
@@ -149,6 +168,10 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   canValidacaoFinalRead = this.authService.hasPermission(
     Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
   );
+  canTratamentoCreateSos = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  );
+  readonly OrigemRegistroIrregularidade = OrigemRegistroIrregularidade;
 
   ngOnInit(): void {
     this.modo = (this.route.snapshot.data['modo'] as FluxoModo) ?? 'tratamento';
@@ -163,6 +186,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (this.ordemServicoFiltroDebounce) {
       clearTimeout(this.ordemServicoFiltroDebounce);
     }
+    this.destroySosModal();
   }
 
   private loadTempoFaixas(): void {
@@ -243,6 +267,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         dataInicio: this.filtroDataInicio || undefined,
         dataFim: this.filtroDataFim || undefined,
         referenciaPeriodo: this.referenciaPeriodoParaListagem(),
+        origemRegistro: this.filtroOrigemRegistro || undefined,
       })
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
@@ -310,6 +335,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.filtroOrdemServico = '';
     this.filtroPeriodoClearSeq += 1;
     this.filtroGravidade = '';
+    this.filtroOrigemRegistro = '';
     if (this.modo === 'tratamento') {
       this.filtroStatus = StatusIrregularidade.REGISTRADA;
     }
@@ -1089,6 +1115,64 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return `${this.getStatusLabel(evento.statusOrigem)} -> ${destino}`;
   }
 
+  isSosItem(item: IrregularidadeFluxoItem): boolean {
+    return item.origemRegistro === OrigemRegistroIrregularidade.SOS_WEB;
+  }
+
+  openSosModal(): void {
+    const modal = this.ensureSosModal();
+    modal.setInput('open', true);
+    modal.changeDetectorRef.detectChanges();
+  }
+
+  onSosModalClosed(): void {
+    if (this.sosModalRef) {
+      this.sosModalRef.setInput('open', false);
+      this.sosModalRef.changeDetectorRef.detectChanges();
+      this.loadItems();
+    }
+  }
+
+  onSosCompleted(): void {
+    if (this.sosModalRef) {
+      this.sosModalRef.setInput('open', false);
+      this.sosModalRef.changeDetectorRef.detectChanges();
+    }
+    this.loadItems('Irregularidade SOS registrada com sucesso.');
+  }
+
+  private ensureSosModal(): ComponentRef<IrregularidadeSosModalComponent> {
+    if (this.sosModalRef) {
+      return this.sosModalRef;
+    }
+
+    const ref = createComponent(IrregularidadeSosModalComponent, {
+      environmentInjector: this.environmentInjector,
+    });
+    this.appRef.attachView(ref.hostView);
+    document.body.appendChild(ref.location.nativeElement);
+
+    ref.instance.closed
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.onSosModalClosed());
+
+    ref.instance.completed
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.onSosCompleted());
+
+    this.sosModalRef = ref;
+    return ref;
+  }
+
+  private destroySosModal(): void {
+    if (!this.sosModalRef) {
+      return;
+    }
+    this.appRef.detachView(this.sosModalRef.hostView);
+    this.sosModalRef.destroy();
+    this.sosModalRef = null;
+  }
+
   getAcaoHistoricoLabel(acao?: string | null): string {
     if (!acao) {
       return '-';
@@ -1098,6 +1182,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     switch (normalizada) {
       case 'registrar':
         return 'Registrar irregularidade';
+      case 'registrar_sos':
+        return 'Registrar irregularidade SOS';
       case 'reclassificar':
         return 'Reclassificar irregularidade';
       case 'cancelar':

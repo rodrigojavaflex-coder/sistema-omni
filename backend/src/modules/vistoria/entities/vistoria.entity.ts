@@ -4,6 +4,7 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { Veiculo } from '../../veiculo/entities/veiculo.entity';
 import { Motorista } from '../../motorista/entities/motorista.entity';
 import { StatusVistoria } from '../../../common/enums/status-vistoria.enum';
+import { OrigemVistoria } from '../../../common/enums/origem-vistoria.enum';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 @Entity('vistorias')
@@ -89,4 +90,12 @@ export class Vistoria extends BaseEntity {
     default: StatusVistoria.EM_ANDAMENTO,
   })
   status: StatusVistoria;
+
+  @ApiProperty({
+    description: 'Origem da vistoria (null = mobile)',
+    enum: OrigemVistoria,
+    required: false,
+  })
+  @Column({ name: 'origem', type: 'varchar', length: 20, nullable: true })
+  origem?: OrigemVistoria | null;
 }

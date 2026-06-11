@@ -36,6 +36,11 @@ import {
   IrregularidadeHistoricoVeiculoItemDto,
 } from './dto/irregularidade-historico-veiculo.dto';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
+import {
+  OrigemRegistroIrregularidade,
+  OrigemVistoria,
+} from '../../common/enums/origem-vistoria.enum';
+import { Permission } from '../../common/enums/permission.enum';
 import { StatusIrregularidade } from '../../common/enums/status-irregularidade.enum';
 import { GravidadeCriticidade } from '../../common/enums/gravidade-criticidade.enum';
 import { IrregularidadeHistorico } from './entities/irregularidade-historico.entity';
@@ -80,10 +85,16 @@ export class IrregularidadeService {
   async create(
     vistoriaId: string,
     dto: CreateIrregularidadeDto,
-    actor?: { id?: string; idEmpresa?: string },
+    actor?: {
+      id?: string;
+      idEmpresa?: string;
+      permissions?: Set<string>;
+    },
   ): Promise<Irregularidade> {
     const vistoria = await this.getVistoriaOrFail(vistoriaId);
     this.assertVistoriaAberta(vistoria);
+    this.assertIrregularidadeCreatePermission(vistoria, actor?.permissions);
+    const isSosVistoria = vistoria.origem === OrigemVistoria.SOS_WEB;
     const idUsuarioEvento = actor?.id ?? vistoria.idUsuario;
 
     await this.ensureArea(dto.idarea);
@@ -109,6 +120,9 @@ export class IrregularidadeService {
             observacao: dto.observacao,
             resolvido: false,
             statusAtual: StatusIrregularidade.REGISTRADA,
+            origemRegistro: isSosVistoria
+              ? OrigemRegistroIrregularidade.SOS_WEB
+              : null,
           });
 
           try {
@@ -134,10 +148,12 @@ export class IrregularidadeService {
             idIrregularidade: saved.id,
             statusOrigem: undefined,
             statusDestino: StatusIrregularidade.REGISTRADA,
-            acao: 'registrar',
+            acao: isSosVistoria ? 'registrar_sos' : 'registrar',
             idUsuario: idUsuarioEvento,
             idEmpresaEvento: actor?.idEmpresa,
-            observacao: 'Irregularidade registrada pelo aplicativo',
+            observacao: isSosVistoria
+              ? 'Irregularidade registrada por SOS'
+              : 'Irregularidade registrada pelo aplicativo',
           },
         );
         return saved;
@@ -369,6 +385,8 @@ export class IrregularidadeService {
       ordemServico?: string;
       /** Alinha o filtro de datas à coluna "Registrado" por etapa (front: getDataRegistradoFluxo). */
       referenciaPeriodo?: 'CRIADO_EM' | 'ENTRADA_STATUS';
+      /** Filtra por origem do registro (`SOS_WEB` ou `MOBILE` para null). */
+      origemRegistro?: 'SOS_WEB' | 'MOBILE';
     },
   ): Promise<IrregularidadeResumoDto[]> {
     let qb = this.irregularidadeRepository
@@ -412,6 +430,14 @@ export class IrregularidadeService {
       qb = qb.andWhere('i.idEmpresaManutencao = :idEmpresa', {
         idEmpresa: context.idEmpresa,
       });
+    }
+
+    if (filters?.origemRegistro === 'SOS_WEB') {
+      qb = qb.andWhere('i.origemRegistro = :origemRegistro', {
+        origemRegistro: OrigemRegistroIrregularidade.SOS_WEB,
+      });
+    } else if (filters?.origemRegistro === 'MOBILE') {
+      qb = qb.andWhere('i.origemRegistro IS NULL');
     }
 
     if (filters?.idVeiculo) {
@@ -1054,9 +1080,11 @@ export class IrregularidadeService {
   async uploadImages(
     irregularidadeId: string,
     files: Express.Multer.File[],
+    permissions?: Set<string>,
   ): Promise<IrregularidadeMidia[]> {
     const irregularidade = await this.getIrregularidadeOrFail(irregularidadeId);
     await this.ensureVistoriaAberta(irregularidade.idVistoria);
+    await this.assertSosMidiaPermission(irregularidadeId, permissions);
 
     const matriz = await this.ensureMatriz(
       irregularidade.idComponente,
@@ -1106,6 +1134,7 @@ export class IrregularidadeService {
     irregularidadeId: string,
     file: Express.Multer.File,
     duracaoMs?: number,
+    permissions?: Set<string>,
   ): Promise<IrregularidadeMidia> {
     if (!file) {
       throw new BadRequestException('Arquivo de áudio não enviado');
@@ -1113,6 +1142,7 @@ export class IrregularidadeService {
 
     const irregularidade = await this.getIrregularidadeOrFail(irregularidadeId);
     await this.ensureVistoriaAberta(irregularidade.idVistoria);
+    await this.assertSosMidiaPermission(irregularidadeId, permissions);
 
     const matriz = await this.ensureMatriz(
       irregularidade.idComponente,
@@ -1140,23 +1170,30 @@ export class IrregularidadeService {
     return this.midiaRepository.save(midia);
   }
 
-  async removeAudio(irregularidadeId: string): Promise<void> {
+  async removeAudio(
+    irregularidadeId: string,
+    permissions?: Set<string>,
+  ): Promise<void> {
     const irregularidade = await this.getIrregularidadeOrFail(irregularidadeId);
     await this.ensureVistoriaAberta(irregularidade.idVistoria);
+    await this.assertSosMidiaPermission(irregularidadeId, permissions);
     await this.midiaRepository.delete({
       idIrregularidade: irregularidadeId,
       tipo: 'audio',
     });
   }
 
-  async removeMidia(midiaId: string): Promise<void> {
+  async removeMidia(midiaId: string, permissions?: Set<string>): Promise<void> {
     const midia = await this.midiaRepository.findOne({
       where: { id: midiaId },
     });
     if (!midia) {
       throw new NotFoundException('Mídia não encontrada');
     }
-    await this.ensureVistoriaAberta(midia.idIrregularidade);
+    await this.ensureVistoriaAberta(
+      (await this.getIrregularidadeOrFail(midia.idIrregularidade)).idVistoria,
+    );
+    await this.assertSosMidiaPermission(midia.idIrregularidade, permissions);
     await this.midiaRepository.remove(midia);
   }
 
@@ -2046,7 +2083,44 @@ export class IrregularidadeService {
       quantidadeAudios,
       fotos,
       audios,
+      origemRegistro: item.origemRegistro ?? undefined,
     };
+  }
+
+  private assertIrregularidadeCreatePermission(
+    vistoria: Vistoria,
+    permissions?: Set<string>,
+  ): void {
+    const normalized = permissions ?? new Set<string>();
+    const canMobile = normalized.has(Permission.VISTORIA_UPDATE.toLowerCase());
+    const canSos = normalized.has(
+      Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS.toLowerCase(),
+    );
+    const isSosVistoria = vistoria.origem === OrigemVistoria.SOS_WEB;
+
+    if (isSosVistoria) {
+      if (!canSos && !canMobile) {
+        throw new ForbiddenException(
+          'Sem permissão para registrar irregularidade em vistoria SOS.',
+        );
+      }
+      return;
+    }
+
+    if (!canMobile) {
+      throw new ForbiddenException(
+        'Sem permissão para registrar irregularidade em vistoria mobile.',
+      );
+    }
+  }
+
+  private async assertSosMidiaPermission(
+    irregularidadeId: string,
+    permissions?: Set<string>,
+  ): Promise<void> {
+    const irregularidade = await this.getIrregularidadeOrFail(irregularidadeId);
+    const vistoria = await this.getVistoriaOrFail(irregularidade.idVistoria);
+    this.assertIrregularidadeCreatePermission(vistoria, permissions);
   }
 
   private assertStatus(

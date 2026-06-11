@@ -49,6 +49,9 @@ export class IrregularidadeService {
     if (filtros?.referenciaPeriodo) {
       params = params.set('referenciaPeriodo', filtros.referenciaPeriodo);
     }
+    if (filtros?.origemRegistro) {
+      params = params.set('origemRegistro', filtros.origemRegistro);
+    }
     return this.http.get<IrregularidadeFluxoItem[]>(this.apiUrl, { params });
   }
 
