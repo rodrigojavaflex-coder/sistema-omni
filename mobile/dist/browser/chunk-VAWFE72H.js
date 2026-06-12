@@ -1,6 +1,6 @@
 import {
   environment
-} from "./chunk-AN5CWPW3.js";
+} from "./chunk-3YNOEOQF.js";
 import {
   HttpClient,
   Injectable,
@@ -8,7 +8,7 @@ import {
   inject,
   setClassMetadata,
   ɵɵdefineInjectable
-} from "./chunk-7F2ASLWB.js";
+} from "./chunk-AUXGTX7T.js";
 import {
   Capacitor
 } from "./chunk-XS4INNGU.js";
@@ -43,4 +43,4 @@ var MatrizCriticidadeService = class _MatrizCriticidadeService {
 export {
   MatrizCriticidadeService
 };
-//# sourceMappingURL=chunk-RHJFJ3UX.js.map
+//# sourceMappingURL=chunk-VAWFE72H.js.map

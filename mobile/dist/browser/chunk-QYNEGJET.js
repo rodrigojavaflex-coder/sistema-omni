@@ -1,6 +1,6 @@
 import {
   environment
-} from "./chunk-AN5CWPW3.js";
+} from "./chunk-3YNOEOQF.js";
 import {
   HttpClient,
   Injectable,
@@ -8,7 +8,7 @@ import {
   inject,
   setClassMetadata,
   ɵɵdefineInjectable
-} from "./chunk-7F2ASLWB.js";
+} from "./chunk-AUXGTX7T.js";
 import {
   Capacitor
 } from "./chunk-XS4INNGU.js";
@@ -58,4 +58,4 @@ var AreaVistoriadaService = class _AreaVistoriadaService {
 export {
   AreaVistoriadaService
 };
-//# sourceMappingURL=chunk-EOQXX5A3.js.map
+//# sourceMappingURL=chunk-QYNEGJET.js.map

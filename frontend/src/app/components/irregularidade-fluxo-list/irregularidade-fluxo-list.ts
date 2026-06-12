@@ -272,14 +272,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (items) => {
-          this.items = (items ?? []).slice().sort((a, b) => {
-            const aTime = new Date(this.getDataRegistradoFluxo(a)).getTime();
-            const bTime = new Date(this.getDataRegistradoFluxo(b)).getTime();
-            if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0;
-            if (Number.isNaN(aTime)) return 1;
-            if (Number.isNaN(bTime)) return -1;
-            return aTime - bTime;
-          });
+          this.items = this.sortItemsFluxo(items ?? []);
           this.selectedIds.clear();
           if (avisoPosEmail?.trim()) {
             this.info = avisoPosEmail.trim();
@@ -1117,6 +1110,31 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
 
   isSosItem(item: IrregularidadeFluxoItem): boolean {
     return item.origemRegistro === OrigemRegistroIrregularidade.SOS_WEB;
+  }
+
+  /**
+   * Ordenação da fila: SOS primeiro; dentro de cada grupo, mais antiga primeiro
+   * (mesma referência temporal da coluna Registrado / filtro de período).
+   */
+  private sortItemsFluxo(items: IrregularidadeFluxoItem[]): IrregularidadeFluxoItem[] {
+    return items.slice().sort((a, b) => {
+      const aSos = this.isSosItem(a) ? 0 : 1;
+      const bSos = this.isSosItem(b) ? 0 : 1;
+      if (aSos !== bSos) {
+        return aSos - bSos;
+      }
+
+      const aTime = new Date(this.getDataRegistradoFluxo(a)).getTime();
+      const bTime = new Date(this.getDataRegistradoFluxo(b)).getTime();
+      if (Number.isNaN(aTime) && Number.isNaN(bTime)) return 0;
+      if (Number.isNaN(aTime)) return 1;
+      if (Number.isNaN(bTime)) return -1;
+      if (aTime !== bTime) {
+        return aTime - bTime;
+      }
+
+      return (a.numeroIrregularidade ?? 0) - (b.numeroIrregularidade ?? 0);
+    });
   }
 
   openSosModal(): void {

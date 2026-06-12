@@ -26,7 +26,7 @@ import {
   ɵɵproperty,
   ɵɵtext,
   ɵɵtextInterpolate1
-} from "./chunk-7F2ASLWB.js";
+} from "./chunk-AUXGTX7T.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import "./chunk-XS4INNGU.js";
@@ -148,4 +148,4 @@ var SobrePage = class _SobrePage {
 export {
   SobrePage
 };
-//# sourceMappingURL=chunk-RJG6MLTT.js.map
+//# sourceMappingURL=chunk-LMMBGIHK.js.map

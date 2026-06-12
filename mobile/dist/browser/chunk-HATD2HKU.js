@@ -1,24 +1,24 @@
 import {
   AreaVistoriadaService
-} from "./chunk-EOQXX5A3.js";
+} from "./chunk-QYNEGJET.js";
 import {
   MatrizCriticidadeService
-} from "./chunk-RHJFJ3UX.js";
+} from "./chunk-VAWFE72H.js";
 import {
   VistoriaBootstrapService
-} from "./chunk-MDNFBFQA.js";
+} from "./chunk-VLZHX7ZA.js";
 import {
   VistoriaService
-} from "./chunk-YUK26TMQ.js";
+} from "./chunk-HN2GLSV2.js";
 import {
   VistoriaFlowService
-} from "./chunk-6KJ4EGXY.js";
+} from "./chunk-I75DQO4E.js";
 import {
   AuthService
-} from "./chunk-7MZB25UE.js";
+} from "./chunk-2D7MZDC7.js";
 import {
   ErrorMessageService
-} from "./chunk-AN5CWPW3.js";
+} from "./chunk-3YNOEOQF.js";
 import {
   AlertController,
   ChangeDetectorRef,
@@ -32,7 +32,6 @@ import {
   IonContent,
   IonFooter,
   IonHeader,
-  IonIcon,
   IonMenuButton,
   IonSpinner,
   IonText,
@@ -40,6 +39,7 @@ import {
   IonToolbar,
   NgForOf,
   NgIf,
+  Platform,
   Router,
   inject,
   setClassMetadata,
@@ -61,7 +61,7 @@ import {
   ɵɵtext,
   ɵɵtextInterpolate,
   ɵɵtextInterpolate1
-} from "./chunk-7F2ASLWB.js";
+} from "./chunk-AUXGTX7T.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import "./chunk-JCEFQURH.js";
@@ -409,6 +409,52 @@ function VistoriaAreasPage_div_21_Template(rf, ctx) {
     \u0275\u0275property("ngIf", !ctx_r1.loadingComponentes && !ctx_r1.errorMessage && ctx_r1.componentes.length > 0);
   }
 }
+function VistoriaAreasPage_ion_footer_22_ion_button_5_ion_spinner_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "ion-spinner", 26);
+  }
+}
+function VistoriaAreasPage_ion_footer_22_ion_button_5_span_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span");
+    \u0275\u0275text(1, "Cancelar");
+    \u0275\u0275elementEnd();
+  }
+}
+function VistoriaAreasPage_ion_footer_22_ion_button_5_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r11 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "ion-button", 45);
+    \u0275\u0275listener("click", function VistoriaAreasPage_ion_footer_22_ion_button_5_Template_ion_button_click_0_listener() {
+      \u0275\u0275restoreView(_r11);
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.voltarOuFechar());
+    });
+    \u0275\u0275template(1, VistoriaAreasPage_ion_footer_22_ion_button_5_ion_spinner_1_Template, 1, 0, "ion-spinner", 46)(2, VistoriaAreasPage_ion_footer_22_ion_button_5_span_2_Template, 2, 0, "span", 16);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("disabled", ctx_r1.isExcluindo);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.isExcluindo);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", !ctx_r1.isExcluindo);
+  }
+}
+function VistoriaAreasPage_ion_footer_22_ion_button_6_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r12 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "ion-button", 47);
+    \u0275\u0275listener("click", function VistoriaAreasPage_ion_footer_22_ion_button_6_Template_ion_button_click_0_listener() {
+      \u0275\u0275restoreView(_r12);
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.voltarOuFechar());
+    });
+    \u0275\u0275text(1, " Voltar ");
+    \u0275\u0275elementEnd();
+  }
+}
 function VistoriaAreasPage_ion_footer_22_Template(rf, ctx) {
   if (rf & 1) {
     const _r10 = \u0275\u0275getCurrentView();
@@ -420,15 +466,15 @@ function VistoriaAreasPage_ion_footer_22_Template(rf, ctx) {
     });
     \u0275\u0275text(4, " Concluir Vistoria ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "ion-button", 43);
-    \u0275\u0275listener("click", function VistoriaAreasPage_ion_footer_22_Template_ion_button_click_5_listener() {
-      \u0275\u0275restoreView(_r10);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.voltarOuFechar());
-    });
-    \u0275\u0275element(6, "ion-icon", 44);
-    \u0275\u0275text(7, " Voltar ");
-    \u0275\u0275elementEnd()()()();
+    \u0275\u0275template(5, VistoriaAreasPage_ion_footer_22_ion_button_5_Template, 3, 3, "ion-button", 43)(6, VistoriaAreasPage_ion_footer_22_ion_button_6_Template, 2, 0, "ion-button", 44);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(5);
+    \u0275\u0275property("ngIf", ctx_r1.exibeBotaoCancelar);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.exibeBotaoVoltar);
   }
 }
 var VistoriaAreasPage = class _VistoriaAreasPage {
@@ -441,11 +487,14 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
   errorMessageService = inject(ErrorMessageService);
   authService = inject(AuthService);
   router = inject(Router);
+  platform = inject(Platform);
   cdr = inject(ChangeDetectorRef);
+  backButtonSub;
   areas = [];
   contagemPorArea = {};
   contagemPendentesPorArea = {};
   loading = false;
+  isExcluindo = false;
   errorMessage = "";
   /** Bottom sheet de componentes (mesma aba) */
   selectedArea = null;
@@ -473,12 +522,61 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
   get canViewHistoricoVeiculo() {
     return this.authService.hasPermission("vistoria_web_historico_veiculo:read");
   }
+  get exibeBotaoCancelar() {
+    return this.selectedArea === null;
+  }
+  get exibeBotaoVoltar() {
+    return this.selectedArea !== null;
+  }
   voltarOuFechar() {
     if (this.selectedArea !== null) {
       this.fecharSheetComponentes();
-    } else {
-      this.router.navigate(["/vistoria/inicio"]);
+      return;
     }
+    void this.confirmarExclusaoVistoria();
+  }
+  confirmarExclusaoVistoria() {
+    return __async(this, null, function* () {
+      const vistoriaId = this.flowService.getVistoriaId();
+      if (!vistoriaId || this.isExcluindo) {
+        return;
+      }
+      const alert = yield this.alertController.create({
+        header: "Cancelar a Vistoria",
+        message: "Deseja excluir a vistoria?",
+        cssClass: "alert-excluir-vistoria",
+        buttons: [
+          {
+            text: "Continuar vistoria",
+            role: "cancel",
+            cssClass: "alert-button-continuar"
+          },
+          {
+            text: "Excluir vistoria",
+            role: "confirm",
+            cssClass: "alert-button-excluir"
+          }
+        ]
+      });
+      yield alert.present();
+      const { role } = yield alert.onDidDismiss();
+      if (role !== "confirm") {
+        return;
+      }
+      this.isExcluindo = true;
+      this.errorMessage = "";
+      try {
+        yield this.vistoriaService.cancelarVistoria(vistoriaId);
+        this.bootstrapService.invalidate(vistoriaId);
+        this.flowService.finalizar();
+        this.router.navigate(["/home"]);
+      } catch (error) {
+        this.errorMessage = this.errorMessageService.fromApi(error, "Nao foi possivel excluir a vistoria. Tente novamente.");
+      } finally {
+        this.isExcluindo = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
   ngOnInit() {
     const vistoriaId = this.flowService.getVistoriaId();
@@ -501,12 +599,23 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
   }
   ionViewWillEnter() {
     return __async(this, null, function* () {
+      this.registrarBotaoVoltarDispositivo();
       if (!this.initialized) {
         return;
       }
       const navState = history.state ?? {};
       this.reopenAreaId = navState.reopenAreaId ?? this.reopenAreaId;
       yield this.carregarAreas();
+    });
+  }
+  ionViewWillLeave() {
+    this.backButtonSub?.unsubscribe();
+    this.backButtonSub = void 0;
+  }
+  registrarBotaoVoltarDispositivo() {
+    this.backButtonSub?.unsubscribe();
+    this.backButtonSub = this.platform.backButton.subscribeWithPriority(10, () => {
+      this.voltarOuFechar();
     });
   }
   carregarAreas() {
@@ -766,7 +875,7 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
   static \u0275fac = function VistoriaAreasPage_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _VistoriaAreasPage)();
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VistoriaAreasPage, selectors: [["app-vistoria-areas"]], decls: 23, vars: 11, consts: [[3, "translucent"], ["slot", "start"], ["menu", "main-menu"], ["slot", "end"], ["class", "resumo-btn", "fill", "solid", "color", "medium", "aria-label", "Pendencias de outras vistorias", 3, "click", 4, "ngIf"], ["fill", "solid", "color", "medium", "aria-label", "Resumo da vistoria", 1, "resumo-btn", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "18", "height", "18", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true"], ["d", "m3 17 2 2 4-4"], ["d", "m3 7 2 2 4-4"], ["d", "M13 6h8"], ["d", "M13 12h8"], ["d", "M13 18h8"], [3, "fullscreen"], ["class", "selected-context", 4, "ngIf"], ["class", "content", 4, "ngIf"], ["class", "content sheet-context", 4, "ngIf"], [4, "ngIf"], ["fill", "solid", "color", "medium", "aria-label", "Pendencias de outras vistorias", 1, "resumo-btn", 3, "click"], ["x", "8", "y", "2", "width", "8", "height", "4", "rx", "1"], ["d", "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"], ["d", "M9 12h6"], ["d", "M9 16h6"], [1, "selected-context"], [1, "context-card"], ["class", "context-card", 4, "ngIf"], [1, "content"], ["name", "crescent"], ["color", "danger"], [1, "error-message"], ["fill", "outline", 3, "click"], [1, "content", "sheet-context"], [1, "cards-selection-title"], [1, "cards-container"], ["button", "", "class", "level-card", 3, "click", 4, "ngFor", "ngForOf"], ["button", "", 1, "level-card", 3, "click"], ["class", "ion-text-wrap", 4, "ngIf"], ["color", "primary"], [1, "ion-text-wrap"], ["color", "warning"], ["class", "cards-selection-title", 4, "ngIf"], ["class", "cards-container", 4, "ngIf"], [1, "footer-actions"], [1, "btn-main", 3, "click"], ["fill", "outline", "color", "medium", 1, "btn-voltar", 3, "click"], ["slot", "start", "src", "/icons/corner-up-left.svg", "aria-hidden", "true"]], template: function VistoriaAreasPage_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VistoriaAreasPage, selectors: [["app-vistoria-areas"]], decls: 23, vars: 11, consts: [[3, "translucent"], ["slot", "start"], ["menu", "main-menu"], ["slot", "end"], ["class", "resumo-btn", "fill", "solid", "color", "medium", "aria-label", "Pendencias de outras vistorias", 3, "click", 4, "ngIf"], ["fill", "solid", "color", "medium", "aria-label", "Resumo da vistoria", 1, "resumo-btn", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "18", "height", "18", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true"], ["d", "m3 17 2 2 4-4"], ["d", "m3 7 2 2 4-4"], ["d", "M13 6h8"], ["d", "M13 12h8"], ["d", "M13 18h8"], [3, "fullscreen"], ["class", "selected-context", 4, "ngIf"], ["class", "content", 4, "ngIf"], ["class", "content sheet-context", 4, "ngIf"], [4, "ngIf"], ["fill", "solid", "color", "medium", "aria-label", "Pendencias de outras vistorias", 1, "resumo-btn", 3, "click"], ["x", "8", "y", "2", "width", "8", "height", "4", "rx", "1"], ["d", "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"], ["d", "M9 12h6"], ["d", "M9 16h6"], [1, "selected-context"], [1, "context-card"], ["class", "context-card", 4, "ngIf"], [1, "content"], ["name", "crescent"], ["color", "danger"], [1, "error-message"], ["fill", "outline", 3, "click"], [1, "content", "sheet-context"], [1, "cards-selection-title"], [1, "cards-container"], ["button", "", "class", "level-card", 3, "click", 4, "ngFor", "ngForOf"], ["button", "", 1, "level-card", 3, "click"], ["class", "ion-text-wrap", 4, "ngIf"], ["color", "primary"], [1, "ion-text-wrap"], ["color", "warning"], ["class", "cards-selection-title", 4, "ngIf"], ["class", "cards-container", 4, "ngIf"], [1, "footer-actions"], [1, "btn-main", 3, "click"], ["class", "btn-cancelar", "fill", "solid", 3, "disabled", "click", 4, "ngIf"], ["class", "btn-voltar", "fill", "solid", 3, "click", 4, "ngIf"], ["fill", "solid", 1, "btn-cancelar", 3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], ["fill", "solid", 1, "btn-voltar", 3, "click"]], template: function VistoriaAreasPage_Template(rf, ctx) {
     if (rf & 1) {
       \u0275\u0275elementStart(0, "ion-header", 0)(1, "ion-toolbar")(2, "ion-buttons", 1);
       \u0275\u0275element(3, "ion-menu-button", 2);
@@ -788,7 +897,7 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
       \u0275\u0275elementStart(15, "ion-content", 12);
       \u0275\u0275template(16, VistoriaAreasPage_div_16_Template, 12, 3, "div", 13)(17, VistoriaAreasPage_div_17_Template, 4, 0, "div", 14)(18, VistoriaAreasPage_div_18_Template, 6, 1, "div", 14)(19, VistoriaAreasPage_div_19_Template, 5, 1, "div", 15)(20, VistoriaAreasPage_div_20_Template, 5, 0, "div", 14)(21, VistoriaAreasPage_div_21_Template, 6, 5, "div", 15);
       \u0275\u0275elementEnd();
-      \u0275\u0275template(22, VistoriaAreasPage_ion_footer_22_Template, 8, 0, "ion-footer", 16);
+      \u0275\u0275template(22, VistoriaAreasPage_ion_footer_22_Template, 7, 2, "ion-footer", 16);
     }
     if (rf & 2) {
       \u0275\u0275property("translucent", true);
@@ -819,7 +928,6 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
     IonContent,
     IonFooter,
     IonHeader,
-    IonIcon,
     IonCard,
     IonCardHeader,
     IonCardTitle,
@@ -831,7 +939,7 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
     IonButton,
     IonText,
     IonSpinner
-  ], styles: ['@charset "UTF-8";\n\n\n\nion-content[_ngcontent-%COMP%] {\n  --padding-bottom: 108px;\n}\nion-footer[_ngcontent-%COMP%] {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer[_ngcontent-%COMP%]   ion-toolbar[_ngcontent-%COMP%] {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-voltar[_ngcontent-%COMP%] {\n  flex: 0 0 30%;\n  min-width: 0;\n}\n.btn-main[_ngcontent-%COMP%] {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  padding: 24px;\n  gap: 12px;\n}\n.content.sheet-context[_ngcontent-%COMP%] {\n  align-items: stretch;\n}\n.cards-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  width: 100%;\n  margin-top: 12px;\n}\n.level-card[_ngcontent-%COMP%] {\n  margin: 0;\n  cursor: pointer;\n  --background:\n    linear-gradient(\n      180deg,\n      #f8fbff 0%,\n      #eef4ff 100%);\n  border: 1px solid #d7e3ff;\n  box-shadow: 0 2px 8px rgba(25, 88, 191, 0.08);\n  transition:\n    transform 120ms ease,\n    box-shadow 120ms ease,\n    filter 120ms ease;\n}\n.level-card[_ngcontent-%COMP%]:active {\n  transform: scale(0.99);\n  box-shadow: 0 1px 4px rgba(25, 88, 191, 0.16);\n  filter: brightness(0.98);\n}\n.level-card[_ngcontent-%COMP%]:focus-visible {\n  outline: 2px solid #1d4ed8;\n  outline-offset: 2px;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-header[_ngcontent-%COMP%] {\n  padding: 16px 18px;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-title[_ngcontent-%COMP%] {\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: #1d4ed8;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-content[_ngcontent-%COMP%] {\n  padding-top: 0;\n  padding-bottom: 16px;\n  padding-inline: 18px;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-content[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0 0 4px 0;\n  font-size: 1rem;\n  color: var(--ion-color-medium-shade);\n}\n.cards-selection-title[_ngcontent-%COMP%] {\n  margin: 0;\n  font-weight: 700;\n  color: #1d4ed8;\n}\n.nivel-instruction[_ngcontent-%COMP%] {\n  --min-height: 48px;\n  --padding-top: 10px;\n  --padding-bottom: 10px;\n  --padding-start: 16px;\n  --padding-end: 16px;\n  --background: var(--ion-color-primary-tint, #e8f4ff);\n  --border-width: 0 0 1px 0;\n  --border-color: var(--ion-color-primary-shade, #0d6efd);\n}\n.nivel-instruction[_ngcontent-%COMP%]   .nivel-instruction-inner[_ngcontent-%COMP%] {\n  width: 100%;\n  font-weight: 600;\n  font-size: 1rem;\n  color: var(--ion-color-dark);\n}\n.nivel-instruction[_ngcontent-%COMP%]   .nivel-breadcrumb[_ngcontent-%COMP%] {\n  color: var(--ion-color-primary);\n}\n.nivel-instruction[_ngcontent-%COMP%]   .nivel-link[_ngcontent-%COMP%] {\n  color: var(--ion-color-primary);\n  text-decoration: underline;\n  cursor: pointer;\n}\n.error-message[_ngcontent-%COMP%] {\n  padding: 12px 16px;\n}\n.vistoria-nr-bar[_ngcontent-%COMP%] {\n  --min-height: 44px;\n  --padding-start: 8px;\n  --padding-end: 8px;\n  --background: var(--ion-color-light);\n}\n.selected-context[_ngcontent-%COMP%] {\n  margin: 12px 12px 8px;\n  width: calc(100% - 24px);\n  display: grid;\n  grid-template-columns: 1fr;\n  gap: 8px;\n}\n.context-card[_ngcontent-%COMP%] {\n  padding: 10px 12px;\n  border-radius: 12px;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);\n  cursor: default;\n}\n.context-card[_ngcontent-%COMP%]   strong[_ngcontent-%COMP%] {\n  color: #0f172a;\n  font-weight: 700;\n  margin-right: 4px;\n}\n.context-card[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: #334155;\n  word-break: break-word;\n}\n.actions[_ngcontent-%COMP%] {\n  margin-top: 24px;\n}\n/*# sourceMappingURL=vistoria-areas.page.css.map */'] });
+  ], styles: ['@charset "UTF-8";\n\n\n\nion-content[_ngcontent-%COMP%] {\n  --padding-bottom: 108px;\n}\nion-footer[_ngcontent-%COMP%] {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer[_ngcontent-%COMP%]   ion-toolbar[_ngcontent-%COMP%] {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-cancelar[_ngcontent-%COMP%] {\n  flex: 0 0 30%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: var(--ion-color-danger, #eb445a) !important;\n  --background-hover: var(--ion-color-danger-shade, #d33939) !important;\n  --background-activated: var(--ion-color-danger-tint, #cf3c4f) !important;\n  --color: #ffffff !important;\n}\n.btn-voltar[_ngcontent-%COMP%] {\n  flex: 0 0 30%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: var(--ion-color-primary, #3880ff) !important;\n  --background-hover: var(--ion-color-primary-shade, #3171e0) !important;\n  --background-activated: var(--ion-color-primary-tint, #4c8dff) !important;\n  --color: #ffffff !important;\n  --border-width: 0;\n}\n.btn-main[_ngcontent-%COMP%] {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  padding: 24px;\n  gap: 12px;\n}\n.content.sheet-context[_ngcontent-%COMP%] {\n  align-items: stretch;\n}\n.cards-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  width: 100%;\n  margin-top: 12px;\n}\n.level-card[_ngcontent-%COMP%] {\n  margin: 0;\n  cursor: pointer;\n  --background:\n    linear-gradient(\n      180deg,\n      #f8fbff 0%,\n      #eef4ff 100%);\n  border: 1px solid #d7e3ff;\n  box-shadow: 0 2px 8px rgba(25, 88, 191, 0.08);\n  transition:\n    transform 120ms ease,\n    box-shadow 120ms ease,\n    filter 120ms ease;\n}\n.level-card[_ngcontent-%COMP%]:active {\n  transform: scale(0.99);\n  box-shadow: 0 1px 4px rgba(25, 88, 191, 0.16);\n  filter: brightness(0.98);\n}\n.level-card[_ngcontent-%COMP%]:focus-visible {\n  outline: 2px solid #1d4ed8;\n  outline-offset: 2px;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-header[_ngcontent-%COMP%] {\n  padding: 16px 18px;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-title[_ngcontent-%COMP%] {\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: #1d4ed8;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-content[_ngcontent-%COMP%] {\n  padding-top: 0;\n  padding-bottom: 16px;\n  padding-inline: 18px;\n}\n.level-card[_ngcontent-%COMP%]   ion-card-content[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0 0 4px 0;\n  font-size: 1rem;\n  color: var(--ion-color-medium-shade);\n}\n.cards-selection-title[_ngcontent-%COMP%] {\n  margin: 0;\n  font-weight: 700;\n  color: #1d4ed8;\n}\n.nivel-instruction[_ngcontent-%COMP%] {\n  --min-height: 48px;\n  --padding-top: 10px;\n  --padding-bottom: 10px;\n  --padding-start: 16px;\n  --padding-end: 16px;\n  --background: var(--ion-color-primary-tint, #e8f4ff);\n  --border-width: 0 0 1px 0;\n  --border-color: var(--ion-color-primary-shade, #0d6efd);\n}\n.nivel-instruction[_ngcontent-%COMP%]   .nivel-instruction-inner[_ngcontent-%COMP%] {\n  width: 100%;\n  font-weight: 600;\n  font-size: 1rem;\n  color: var(--ion-color-dark);\n}\n.nivel-instruction[_ngcontent-%COMP%]   .nivel-breadcrumb[_ngcontent-%COMP%] {\n  color: var(--ion-color-primary);\n}\n.nivel-instruction[_ngcontent-%COMP%]   .nivel-link[_ngcontent-%COMP%] {\n  color: var(--ion-color-primary);\n  text-decoration: underline;\n  cursor: pointer;\n}\n.error-message[_ngcontent-%COMP%] {\n  padding: 12px 16px;\n}\n.vistoria-nr-bar[_ngcontent-%COMP%] {\n  --min-height: 44px;\n  --padding-start: 8px;\n  --padding-end: 8px;\n  --background: var(--ion-color-light);\n}\n.selected-context[_ngcontent-%COMP%] {\n  margin: 12px 12px 8px;\n  width: calc(100% - 24px);\n  display: grid;\n  grid-template-columns: 1fr;\n  gap: 8px;\n}\n.context-card[_ngcontent-%COMP%] {\n  padding: 10px 12px;\n  border-radius: 12px;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);\n  cursor: default;\n}\n.context-card[_ngcontent-%COMP%]   strong[_ngcontent-%COMP%] {\n  color: #0f172a;\n  font-weight: 700;\n  margin-right: 4px;\n}\n.context-card[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  color: #334155;\n  word-break: break-word;\n}\n.actions[_ngcontent-%COMP%] {\n  margin-top: 24px;\n}\n/*# sourceMappingURL=vistoria-areas.page.css.map */'] });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(VistoriaAreasPage, [{
@@ -842,7 +950,6 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
       IonContent,
       IonFooter,
       IonHeader,
-      IonIcon,
       IonCard,
       IonCardHeader,
       IonCardTitle,
@@ -1011,14 +1118,28 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
       <ion-button class="btn-main" (click)="finalizarVistoria()">
         Concluir Vistoria
       </ion-button>
-      <ion-button class="btn-voltar" fill="outline" color="medium" (click)="voltarOuFechar()">
-        <ion-icon slot="start" src="/icons/corner-up-left.svg" aria-hidden="true"></ion-icon>
+      <ion-button
+        *ngIf="exibeBotaoCancelar"
+        class="btn-cancelar"
+        fill="solid"
+        [disabled]="isExcluindo"
+        (click)="voltarOuFechar()"
+      >
+        <ion-spinner *ngIf="isExcluindo" name="crescent"></ion-spinner>
+        <span *ngIf="!isExcluindo">Cancelar</span>
+      </ion-button>
+      <ion-button
+        *ngIf="exibeBotaoVoltar"
+        class="btn-voltar"
+        fill="solid"
+        (click)="voltarOuFechar()"
+      >
         Voltar
       </ion-button>
     </div>
   </ion-toolbar>
 </ion-footer>
-`, styles: ['@charset "UTF-8";\n\n/* src/app/pages/vistoria/vistoria-areas.page.scss */\nion-content {\n  --padding-bottom: 108px;\n}\nion-footer {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer ion-toolbar {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer ion-button {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-voltar {\n  flex: 0 0 30%;\n  min-width: 0;\n}\n.btn-main {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  padding: 24px;\n  gap: 12px;\n}\n.content.sheet-context {\n  align-items: stretch;\n}\n.cards-container {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  width: 100%;\n  margin-top: 12px;\n}\n.level-card {\n  margin: 0;\n  cursor: pointer;\n  --background:\n    linear-gradient(\n      180deg,\n      #f8fbff 0%,\n      #eef4ff 100%);\n  border: 1px solid #d7e3ff;\n  box-shadow: 0 2px 8px rgba(25, 88, 191, 0.08);\n  transition:\n    transform 120ms ease,\n    box-shadow 120ms ease,\n    filter 120ms ease;\n}\n.level-card:active {\n  transform: scale(0.99);\n  box-shadow: 0 1px 4px rgba(25, 88, 191, 0.16);\n  filter: brightness(0.98);\n}\n.level-card:focus-visible {\n  outline: 2px solid #1d4ed8;\n  outline-offset: 2px;\n}\n.level-card ion-card-header {\n  padding: 16px 18px;\n}\n.level-card ion-card-title {\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: #1d4ed8;\n}\n.level-card ion-card-content {\n  padding-top: 0;\n  padding-bottom: 16px;\n  padding-inline: 18px;\n}\n.level-card ion-card-content p {\n  margin: 0 0 4px 0;\n  font-size: 1rem;\n  color: var(--ion-color-medium-shade);\n}\n.cards-selection-title {\n  margin: 0;\n  font-weight: 700;\n  color: #1d4ed8;\n}\n.nivel-instruction {\n  --min-height: 48px;\n  --padding-top: 10px;\n  --padding-bottom: 10px;\n  --padding-start: 16px;\n  --padding-end: 16px;\n  --background: var(--ion-color-primary-tint, #e8f4ff);\n  --border-width: 0 0 1px 0;\n  --border-color: var(--ion-color-primary-shade, #0d6efd);\n}\n.nivel-instruction .nivel-instruction-inner {\n  width: 100%;\n  font-weight: 600;\n  font-size: 1rem;\n  color: var(--ion-color-dark);\n}\n.nivel-instruction .nivel-breadcrumb {\n  color: var(--ion-color-primary);\n}\n.nivel-instruction .nivel-link {\n  color: var(--ion-color-primary);\n  text-decoration: underline;\n  cursor: pointer;\n}\n.error-message {\n  padding: 12px 16px;\n}\n.vistoria-nr-bar {\n  --min-height: 44px;\n  --padding-start: 8px;\n  --padding-end: 8px;\n  --background: var(--ion-color-light);\n}\n.selected-context {\n  margin: 12px 12px 8px;\n  width: calc(100% - 24px);\n  display: grid;\n  grid-template-columns: 1fr;\n  gap: 8px;\n}\n.context-card {\n  padding: 10px 12px;\n  border-radius: 12px;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);\n  cursor: default;\n}\n.context-card strong {\n  color: #0f172a;\n  font-weight: 700;\n  margin-right: 4px;\n}\n.context-card span {\n  color: #334155;\n  word-break: break-word;\n}\n.actions {\n  margin-top: 24px;\n}\n/*# sourceMappingURL=vistoria-areas.page.css.map */\n'] }]
+`, styles: ['@charset "UTF-8";\n\n/* src/app/pages/vistoria/vistoria-areas.page.scss */\nion-content {\n  --padding-bottom: 108px;\n}\nion-footer {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer ion-toolbar {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer ion-button {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-cancelar {\n  flex: 0 0 30%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: var(--ion-color-danger, #eb445a) !important;\n  --background-hover: var(--ion-color-danger-shade, #d33939) !important;\n  --background-activated: var(--ion-color-danger-tint, #cf3c4f) !important;\n  --color: #ffffff !important;\n}\n.btn-voltar {\n  flex: 0 0 30%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: var(--ion-color-primary, #3880ff) !important;\n  --background-hover: var(--ion-color-primary-shade, #3171e0) !important;\n  --background-activated: var(--ion-color-primary-tint, #4c8dff) !important;\n  --color: #ffffff !important;\n  --border-width: 0;\n}\n.btn-main {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  padding: 24px;\n  gap: 12px;\n}\n.content.sheet-context {\n  align-items: stretch;\n}\n.cards-container {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  width: 100%;\n  margin-top: 12px;\n}\n.level-card {\n  margin: 0;\n  cursor: pointer;\n  --background:\n    linear-gradient(\n      180deg,\n      #f8fbff 0%,\n      #eef4ff 100%);\n  border: 1px solid #d7e3ff;\n  box-shadow: 0 2px 8px rgba(25, 88, 191, 0.08);\n  transition:\n    transform 120ms ease,\n    box-shadow 120ms ease,\n    filter 120ms ease;\n}\n.level-card:active {\n  transform: scale(0.99);\n  box-shadow: 0 1px 4px rgba(25, 88, 191, 0.16);\n  filter: brightness(0.98);\n}\n.level-card:focus-visible {\n  outline: 2px solid #1d4ed8;\n  outline-offset: 2px;\n}\n.level-card ion-card-header {\n  padding: 16px 18px;\n}\n.level-card ion-card-title {\n  font-size: 1.15rem;\n  font-weight: 600;\n  color: #1d4ed8;\n}\n.level-card ion-card-content {\n  padding-top: 0;\n  padding-bottom: 16px;\n  padding-inline: 18px;\n}\n.level-card ion-card-content p {\n  margin: 0 0 4px 0;\n  font-size: 1rem;\n  color: var(--ion-color-medium-shade);\n}\n.cards-selection-title {\n  margin: 0;\n  font-weight: 700;\n  color: #1d4ed8;\n}\n.nivel-instruction {\n  --min-height: 48px;\n  --padding-top: 10px;\n  --padding-bottom: 10px;\n  --padding-start: 16px;\n  --padding-end: 16px;\n  --background: var(--ion-color-primary-tint, #e8f4ff);\n  --border-width: 0 0 1px 0;\n  --border-color: var(--ion-color-primary-shade, #0d6efd);\n}\n.nivel-instruction .nivel-instruction-inner {\n  width: 100%;\n  font-weight: 600;\n  font-size: 1rem;\n  color: var(--ion-color-dark);\n}\n.nivel-instruction .nivel-breadcrumb {\n  color: var(--ion-color-primary);\n}\n.nivel-instruction .nivel-link {\n  color: var(--ion-color-primary);\n  text-decoration: underline;\n  cursor: pointer;\n}\n.error-message {\n  padding: 12px 16px;\n}\n.vistoria-nr-bar {\n  --min-height: 44px;\n  --padding-start: 8px;\n  --padding-end: 8px;\n  --background: var(--ion-color-light);\n}\n.selected-context {\n  margin: 12px 12px 8px;\n  width: calc(100% - 24px);\n  display: grid;\n  grid-template-columns: 1fr;\n  gap: 8px;\n}\n.context-card {\n  padding: 10px 12px;\n  border-radius: 12px;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);\n  cursor: default;\n}\n.context-card strong {\n  color: #0f172a;\n  font-weight: 700;\n  margin-right: 4px;\n}\n.context-card span {\n  color: #334155;\n  word-break: break-word;\n}\n.actions {\n  margin-top: 24px;\n}\n/*# sourceMappingURL=vistoria-areas.page.css.map */\n'] }]
   }], null, null);
 })();
 (() => {
@@ -1027,4 +1148,4 @@ var VistoriaAreasPage = class _VistoriaAreasPage {
 export {
   VistoriaAreasPage
 };
-//# sourceMappingURL=chunk-YWHHTL63.js.map
+//# sourceMappingURL=chunk-HATD2HKU.js.map

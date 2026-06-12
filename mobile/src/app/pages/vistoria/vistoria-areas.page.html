@@ -155,8 +155,22 @@
       <ion-button class="btn-main" (click)="finalizarVistoria()">
         Concluir Vistoria
       </ion-button>
-      <ion-button class="btn-voltar" fill="outline" color="medium" (click)="voltarOuFechar()">
-        <ion-icon slot="start" src="/icons/corner-up-left.svg" aria-hidden="true"></ion-icon>
+      <ion-button
+        *ngIf="exibeBotaoCancelar"
+        class="btn-cancelar"
+        fill="solid"
+        [disabled]="isExcluindo"
+        (click)="voltarOuFechar()"
+      >
+        <ion-spinner *ngIf="isExcluindo" name="crescent"></ion-spinner>
+        <span *ngIf="!isExcluindo">Cancelar</span>
+      </ion-button>
+      <ion-button
+        *ngIf="exibeBotaoVoltar"
+        class="btn-voltar"
+        fill="solid"
+        (click)="voltarOuFechar()"
+      >
         Voltar
       </ion-button>
     </div>

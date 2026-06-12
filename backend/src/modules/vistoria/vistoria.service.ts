@@ -440,11 +440,12 @@ export class VistoriaService {
     if (vistoria.status === StatusVistoria.FINALIZADA) {
       throw new BadRequestException('Vistoria já finalizada');
     }
-    if (vistoria.origem === OrigemVistoria.SOS_WEB) {
-      return this.cancelSos(vistoriaId);
+    if (vistoria.status !== StatusVistoria.EM_ANDAMENTO) {
+      throw new BadRequestException(
+        'Somente vistorias em andamento podem ser excluídas',
+      );
     }
-    vistoria.status = StatusVistoria.CANCELADA;
-    return this.vistoriaRepository.save(vistoria);
+    return this.excluirVistoriaEmCascata(vistoriaId);
   }
 
   async cancelSos(vistoriaId: string): Promise<Vistoria> {
@@ -457,7 +458,16 @@ export class VistoriaService {
     if (vistoria.status === StatusVistoria.FINALIZADA) {
       throw new BadRequestException('Vistoria já finalizada');
     }
+    if (vistoria.status !== StatusVistoria.EM_ANDAMENTO) {
+      throw new BadRequestException(
+        'Somente vistorias em andamento podem ser excluídas',
+      );
+    }
+    return this.excluirVistoriaEmCascata(vistoriaId);
+  }
 
+  private async excluirVistoriaEmCascata(vistoriaId: string): Promise<Vistoria> {
+    const vistoria = await this.findOne(vistoriaId);
     const snapshot = { ...vistoria };
 
     await this.vistoriaRepository.manager.transaction(async (manager) => {

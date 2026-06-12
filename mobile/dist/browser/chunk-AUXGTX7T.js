@@ -77191,6 +77191,7 @@ export {
   FormBuilder,
   FormsModule,
   ReactiveFormsModule,
+  Platform,
   IonRouterOutlet2 as IonRouterOutlet,
   IonModal3 as IonModal,
   IonApp,
@@ -77397,4 +77398,4 @@ export {
    * (C) Ionic http://ionicframework.com - MIT License
    *)
 */
-//# sourceMappingURL=chunk-7F2ASLWB.js.map
+//# sourceMappingURL=chunk-AUXGTX7T.js.map

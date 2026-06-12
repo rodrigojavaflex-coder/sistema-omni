@@ -296,10 +296,12 @@ export class VistoriaController {
     Permission.VISTORIA_UPDATE,
     Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
   )
-  @ApiOperation({ summary: 'Cancelar vistoria' })
+  @ApiOperation({
+    summary: 'Excluir vistoria em andamento (cascata de irregularidades)',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Vistoria cancelada',
+    description: 'Vistoria excluída com irregularidades vinculadas',
     type: Vistoria,
   })
   cancel(@Param('id', new ParseUUIDPipe()) id: string): Promise<Vistoria> {

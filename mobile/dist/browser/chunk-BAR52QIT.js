@@ -1,15 +1,15 @@
 import {
   VistoriaService
-} from "./chunk-YUK26TMQ.js";
+} from "./chunk-HN2GLSV2.js";
 import {
   VistoriaFlowService
-} from "./chunk-6KJ4EGXY.js";
+} from "./chunk-I75DQO4E.js";
 import {
   AuthService
-} from "./chunk-7MZB25UE.js";
+} from "./chunk-2D7MZDC7.js";
 import {
   ErrorMessageService
-} from "./chunk-AN5CWPW3.js";
+} from "./chunk-3YNOEOQF.js";
 import {
   Component,
   FormsModule,
@@ -56,7 +56,7 @@ import {
   ɵɵtwoWayBindingSet,
   ɵɵtwoWayListener,
   ɵɵtwoWayProperty
-} from "./chunk-7F2ASLWB.js";
+} from "./chunk-AUXGTX7T.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import "./chunk-JCEFQURH.js";
@@ -92,7 +92,7 @@ function VistoriaFinalizarPage_div_8_div_29_For_5_Template(rf, ctx) {
 }
 function VistoriaFinalizarPage_div_8_div_29_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 25)(1, "p")(2, "strong");
+    \u0275\u0275elementStart(0, "div", 22)(1, "p")(2, "strong");
     \u0275\u0275text(3, "Detalhes:");
     \u0275\u0275elementEnd()();
     \u0275\u0275repeaterCreate(4, VistoriaFinalizarPage_div_8_div_29_For_5_Template, 2, 1, "p", null, \u0275\u0275repeaterTrackByIdentity);
@@ -106,7 +106,7 @@ function VistoriaFinalizarPage_div_8_div_29_Template(rf, ctx) {
 }
 function VistoriaFinalizarPage_div_8_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 23)(1, "p")(2, "strong");
+    \u0275\u0275elementStart(0, "div", 20)(1, "p")(2, "strong");
     \u0275\u0275text(3, "Vistoria:");
     \u0275\u0275elementEnd();
     \u0275\u0275text(4);
@@ -141,7 +141,7 @@ function VistoriaFinalizarPage_div_8_Template(rf, ctx) {
     \u0275\u0275elementEnd();
     \u0275\u0275text(28);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(29, VistoriaFinalizarPage_div_8_div_29_Template, 6, 0, "div", 24);
+    \u0275\u0275template(29, VistoriaFinalizarPage_div_8_div_29_Template, 6, 0, "div", 21);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -166,14 +166,14 @@ function VistoriaFinalizarPage_div_8_Template(rf, ctx) {
 }
 function VistoriaFinalizarPage_div_9_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 23)(1, "p");
+    \u0275\u0275elementStart(0, "div", 20)(1, "p");
     \u0275\u0275text(2, "Carregando resumo da vistoria...");
     \u0275\u0275elementEnd()();
   }
 }
 function VistoriaFinalizarPage_ion_text_23_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "ion-text", 26)(1, "p", 27);
+    \u0275\u0275elementStart(0, "ion-text", 23)(1, "p", 24);
     \u0275\u0275text(2);
     \u0275\u0275elementEnd()();
   }
@@ -185,7 +185,7 @@ function VistoriaFinalizarPage_ion_text_23_Template(rf, ctx) {
 }
 function VistoriaFinalizarPage_ion_spinner_28_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "ion-spinner", 28);
+    \u0275\u0275element(0, "ion-spinner", 25);
   }
 }
 function VistoriaFinalizarPage_span_29_Template(rf, ctx) {
@@ -195,14 +195,14 @@ function VistoriaFinalizarPage_span_29_Template(rf, ctx) {
     \u0275\u0275elementEnd();
   }
 }
-function VistoriaFinalizarPage_div_35_p_32_Template(rf, ctx) {
+function VistoriaFinalizarPage_div_32_p_32_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "p");
     \u0275\u0275text(1, "- Nenhuma irregularidade registrada");
     \u0275\u0275elementEnd();
   }
 }
-function VistoriaFinalizarPage_div_35_For_34_Template(rf, ctx) {
+function VistoriaFinalizarPage_div_32_For_34_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "p");
     \u0275\u0275text(1);
@@ -214,10 +214,10 @@ function VistoriaFinalizarPage_div_35_For_34_Template(rf, ctx) {
     \u0275\u0275textInterpolate1("- ", detalhe_r4);
   }
 }
-function VistoriaFinalizarPage_div_35_Template(rf, ctx) {
+function VistoriaFinalizarPage_div_32_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 29)(1, "div", 30)(2, "h2");
+    \u0275\u0275elementStart(0, "div", 26)(1, "div", 27)(2, "h2");
     \u0275\u0275text(3);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(4, "p")(5, "strong");
@@ -250,14 +250,14 @@ function VistoriaFinalizarPage_div_35_Template(rf, ctx) {
     \u0275\u0275elementEnd();
     \u0275\u0275text(27);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(28, "div", 31)(29, "p")(30, "strong");
+    \u0275\u0275elementStart(28, "div", 28)(29, "p")(30, "strong");
     \u0275\u0275text(31, "Resumo:");
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(32, VistoriaFinalizarPage_div_35_p_32_Template, 2, 0, "p", 17);
-    \u0275\u0275repeaterCreate(33, VistoriaFinalizarPage_div_35_For_34_Template, 2, 1, "p", null, \u0275\u0275repeaterTrackByIdentity);
+    \u0275\u0275template(32, VistoriaFinalizarPage_div_32_p_32_Template, 2, 0, "p", 17);
+    \u0275\u0275repeaterCreate(33, VistoriaFinalizarPage_div_32_For_34_Template, 2, 1, "p", null, \u0275\u0275repeaterTrackByIdentity);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(35, "ion-button", 32);
-    \u0275\u0275listener("click", function VistoriaFinalizarPage_div_35_Template_ion_button_click_35_listener() {
+    \u0275\u0275elementStart(35, "ion-button", 29);
+    \u0275\u0275listener("click", function VistoriaFinalizarPage_div_32_Template_ion_button_click_35_listener() {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.confirmarConclusao());
@@ -408,7 +408,7 @@ var VistoriaFinalizarPage = class _VistoriaFinalizarPage {
   static \u0275fac = function VistoriaFinalizarPage_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _VistoriaFinalizarPage)();
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VistoriaFinalizarPage, selectors: [["app-vistoria-finalizar"]], decls: 36, vars: 11, consts: [[3, "translucent"], ["slot", "start"], ["menu", "main-menu"], [3, "fullscreen"], [1, "content"], ["class", "resumo-vistoria", 4, "ngIf"], ["position", "stacked", 1, "tempo-total-label"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true"], ["cx", "12", "cy", "12", "r", "10"], ["points", "12 6 12 12 16 14"], [1, "tempo-total-valor"], ["position", "stacked"], ["placeholder", "Observa\xE7\xE3o opcional", 3, "ngModelChange", "ngModel"], ["color", "danger", 4, "ngIf"], [1, "footer-actions"], [1, "btn-main", 3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], [4, "ngIf"], ["fill", "outline", "color", "medium", 1, "btn-voltar", 3, "click"], ["slot", "start", "xmlns", "http://www.w3.org/2000/svg", "width", "18", "height", "18", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true"], ["points", "9 14 4 9 9 4"], ["d", "M20 20v-7a4 4 0 0 0-4-4H4"], ["class", "sucesso-overlay", "aria-modal", "true", "role", "dialog", 4, "ngIf"], [1, "resumo-vistoria"], ["class", "irregularidades-lista", 4, "ngIf"], [1, "irregularidades-lista"], ["color", "danger"], [1, "error-message"], ["name", "crescent"], ["aria-modal", "true", "role", "dialog", 1, "sucesso-overlay"], [1, "sucesso-card"], [1, "irregularidades-lista-overlay"], ["expand", "block", 3, "click"]], template: function VistoriaFinalizarPage_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VistoriaFinalizarPage, selectors: [["app-vistoria-finalizar"]], decls: 33, vars: 11, consts: [[3, "translucent"], ["slot", "start"], ["menu", "main-menu"], [3, "fullscreen"], [1, "content"], ["class", "resumo-vistoria", 4, "ngIf"], ["position", "stacked", 1, "tempo-total-label"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true"], ["cx", "12", "cy", "12", "r", "10"], ["points", "12 6 12 12 16 14"], [1, "tempo-total-valor"], ["position", "stacked"], ["placeholder", "Observa\xE7\xE3o opcional", 3, "ngModelChange", "ngModel"], ["color", "danger", 4, "ngIf"], [1, "footer-actions"], [1, "btn-main", 3, "click", "disabled"], ["name", "crescent", 4, "ngIf"], [4, "ngIf"], ["fill", "solid", 1, "btn-voltar", 3, "click"], ["class", "sucesso-overlay", "aria-modal", "true", "role", "dialog", 4, "ngIf"], [1, "resumo-vistoria"], ["class", "irregularidades-lista", 4, "ngIf"], [1, "irregularidades-lista"], ["color", "danger"], [1, "error-message"], ["name", "crescent"], ["aria-modal", "true", "role", "dialog", 1, "sucesso-overlay"], [1, "sucesso-card"], [1, "irregularidades-lista-overlay"], ["expand", "block", 3, "click"]], template: function VistoriaFinalizarPage_Template(rf, ctx) {
     if (rf & 1) {
       \u0275\u0275elementStart(0, "ion-header", 0)(1, "ion-toolbar")(2, "ion-buttons", 1);
       \u0275\u0275element(3, "ion-menu-button", 2);
@@ -450,13 +450,9 @@ var VistoriaFinalizarPage = class _VistoriaFinalizarPage {
       \u0275\u0275listener("click", function VistoriaFinalizarPage_Template_ion_button_click_30_listener() {
         return ctx.voltar();
       });
-      \u0275\u0275namespaceSVG();
-      \u0275\u0275elementStart(31, "svg", 19);
-      \u0275\u0275element(32, "polyline", 20)(33, "path", 21);
-      \u0275\u0275elementEnd();
-      \u0275\u0275text(34, " Voltar ");
+      \u0275\u0275text(31, " Voltar ");
       \u0275\u0275elementEnd()()()();
-      \u0275\u0275template(35, VistoriaFinalizarPage_div_35_Template, 37, 8, "div", 22);
+      \u0275\u0275template(32, VistoriaFinalizarPage_div_32_Template, 37, 8, "div", 19);
     }
     if (rf & 2) {
       \u0275\u0275property("translucent", true);
@@ -478,7 +474,7 @@ var VistoriaFinalizarPage = class _VistoriaFinalizarPage {
       \u0275\u0275property("ngIf", ctx.isSaving);
       \u0275\u0275advance();
       \u0275\u0275property("ngIf", !ctx.isSaving);
-      \u0275\u0275advance(6);
+      \u0275\u0275advance(3);
       \u0275\u0275property("ngIf", ctx.sucessoVisivel);
     }
   }, dependencies: [
@@ -499,7 +495,7 @@ var VistoriaFinalizarPage = class _VistoriaFinalizarPage {
     IonButton,
     IonSpinner,
     IonText
-  ], styles: ["\n\nion-content[_ngcontent-%COMP%] {\n  --padding-bottom: 108px;\n}\nion-footer[_ngcontent-%COMP%] {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer[_ngcontent-%COMP%]   ion-toolbar[_ngcontent-%COMP%] {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-voltar[_ngcontent-%COMP%] {\n  flex: 0 0 30%;\n  min-width: 0;\n}\n.btn-main[_ngcontent-%COMP%] {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content[_ngcontent-%COMP%] {\n  padding: 16px;\n}\n.vistoria-nr-bar[_ngcontent-%COMP%] {\n  --min-height: 36px;\n  --background: var(--ion-color-light);\n}\n.vistoria-center-info[_ngcontent-%COMP%] {\n  text-align: center;\n}\n.vistoria-center-info[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  display: block;\n  line-height: 1.2;\n}\n.vistoria-center-info[_ngcontent-%COMP%]   span[_ngcontent-%COMP%]:first-child {\n  font-size: 0.8rem;\n  font-weight: 600;\n}\n.vistoria-center-info[_ngcontent-%COMP%]   span[_ngcontent-%COMP%]:last-child {\n  font-size: 0.95rem;\n  font-weight: 700;\n}\n.error-message[_ngcontent-%COMP%] {\n  margin: 8px 0 0;\n  font-size: 0.9rem;\n}\n.resumo-vistoria[_ngcontent-%COMP%] {\n  margin-bottom: 12px;\n  padding: 12px;\n  border-radius: 8px;\n  background: var(--ion-color-light);\n}\n.resumo-vistoria[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0 0 6px;\n}\n.tempo-total-label[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n}\n.tempo-total-valor[_ngcontent-%COMP%] {\n  font-size: 1.05rem;\n  font-weight: 700;\n  color: #0f172a;\n  margin-top: 6px;\n}\n.sucesso-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  inset: 0;\n  z-index: 9999;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n  background: rgba(2, 6, 23, 0.82);\n}\n.sucesso-card[_ngcontent-%COMP%] {\n  width: min(720px, 100%);\n  max-height: 90vh;\n  overflow: auto;\n  padding: 18px;\n  border-radius: 12px;\n  background: #ffffff;\n  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35);\n}\n.sucesso-card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin: 0 0 12px;\n  font-size: 1.15rem;\n}\n.sucesso-card[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0 0 6px;\n}\n.irregularidades-lista-overlay[_ngcontent-%COMP%] {\n  margin: 12px 0 14px;\n}\n/*# sourceMappingURL=vistoria-finalizar.page.css.map */"] });
+  ], styles: ["\n\nion-content[_ngcontent-%COMP%] {\n  --padding-bottom: 108px;\n}\nion-footer[_ngcontent-%COMP%] {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer[_ngcontent-%COMP%]   ion-toolbar[_ngcontent-%COMP%] {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer[_ngcontent-%COMP%]   ion-button[_ngcontent-%COMP%] {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-voltar[_ngcontent-%COMP%] {\n  flex: 0 0 30%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: var(--ion-color-primary, #3880ff) !important;\n  --background-hover: var(--ion-color-primary-shade, #3171e0) !important;\n  --background-activated: var(--ion-color-primary-tint, #4c8dff) !important;\n  --color: #ffffff !important;\n  --border-width: 0;\n}\n.btn-main[_ngcontent-%COMP%] {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content[_ngcontent-%COMP%] {\n  padding: 16px;\n}\n.vistoria-nr-bar[_ngcontent-%COMP%] {\n  --min-height: 36px;\n  --background: var(--ion-color-light);\n}\n.vistoria-center-info[_ngcontent-%COMP%] {\n  text-align: center;\n}\n.vistoria-center-info[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n  display: block;\n  line-height: 1.2;\n}\n.vistoria-center-info[_ngcontent-%COMP%]   span[_ngcontent-%COMP%]:first-child {\n  font-size: 0.8rem;\n  font-weight: 600;\n}\n.vistoria-center-info[_ngcontent-%COMP%]   span[_ngcontent-%COMP%]:last-child {\n  font-size: 0.95rem;\n  font-weight: 700;\n}\n.error-message[_ngcontent-%COMP%] {\n  margin: 8px 0 0;\n  font-size: 0.9rem;\n}\n.resumo-vistoria[_ngcontent-%COMP%] {\n  margin-bottom: 12px;\n  padding: 12px;\n  border-radius: 8px;\n  background: var(--ion-color-light);\n}\n.resumo-vistoria[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0 0 6px;\n}\n.tempo-total-label[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n}\n.tempo-total-valor[_ngcontent-%COMP%] {\n  font-size: 1.05rem;\n  font-weight: 700;\n  color: #0f172a;\n  margin-top: 6px;\n}\n.sucesso-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  inset: 0;\n  z-index: 9999;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n  background: rgba(2, 6, 23, 0.82);\n}\n.sucesso-card[_ngcontent-%COMP%] {\n  width: min(720px, 100%);\n  max-height: 90vh;\n  overflow: auto;\n  padding: 18px;\n  border-radius: 12px;\n  background: #ffffff;\n  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35);\n}\n.sucesso-card[_ngcontent-%COMP%]   h2[_ngcontent-%COMP%] {\n  margin: 0 0 12px;\n  font-size: 1.15rem;\n}\n.sucesso-card[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0 0 6px;\n}\n.irregularidades-lista-overlay[_ngcontent-%COMP%] {\n  margin: 12px 0 14px;\n}\n/*# sourceMappingURL=vistoria-finalizar.page.css.map */"] });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(VistoriaFinalizarPage, [{
@@ -520,7 +516,7 @@ var VistoriaFinalizarPage = class _VistoriaFinalizarPage {
       IonButton,
       IonSpinner,
       IonText
-    ], template: '<ion-header [translucent]="true">\r\n  <ion-toolbar>\r\n    <ion-buttons slot="start">\r\n      <ion-menu-button menu="main-menu"></ion-menu-button>\r\n    </ion-buttons>\r\n    <ion-title>Finalizar Vistoria</ion-title>\r\n  </ion-toolbar>\r\n</ion-header>\r\n\r\n<ion-content [fullscreen]="true">\r\n  <div class="content">\r\n    <div class="resumo-vistoria" *ngIf="!loadingResumo">\r\n      <p><strong>Vistoria:</strong> {{ resumoVistoriaNumero }}</p>\r\n      <p><strong>Vistoriador:</strong> {{ resumoVistoriador }}</p>\r\n      <p><strong>Ve\xEDculo vistoriado:</strong> {{ resumoVeiculo }}</p>\r\n      <p><strong>Motorista:</strong> {{ resumoMotorista }}</p>\r\n      <p><strong>Od\xF4metro:</strong> {{ resumoOdometro }}</p>\r\n      <p><strong>% Bateria:</strong> {{ resumoBateria }}</p>\r\n      <p><strong>Irregularidades identificadas:</strong> {{ resumoIrregularidades }}</p>\r\n      <div *ngIf="resumoIrregularidadesDetalhes.length > 0" class="irregularidades-lista">\r\n        <p><strong>Detalhes:</strong></p>\r\n        @for (detalhe of resumoIrregularidadesDetalhes; track detalhe) {\r\n          <p>{{ detalhe }}</p>\r\n        }\r\n      </div>\r\n    </div>\r\n\r\n    <div class="resumo-vistoria" *ngIf="loadingResumo">\r\n      <p>Carregando resumo da vistoria...</p>\r\n    </div>\r\n\r\n    <ion-item>\r\n      <ion-label position="stacked" class="tempo-total-label">\r\n        <span>Tempo total (minutos):</span>\r\n        <svg\r\n          xmlns="http://www.w3.org/2000/svg"\r\n          width="16"\r\n          height="16"\r\n          viewBox="0 0 24 24"\r\n          fill="none"\r\n          stroke="currentColor"\r\n          stroke-width="2"\r\n          stroke-linecap="round"\r\n          stroke-linejoin="round"\r\n          aria-hidden="true"\r\n        >\r\n          <circle cx="12" cy="12" r="10"></circle>\r\n          <polyline points="12 6 12 12 16 14"></polyline>\r\n        </svg>\r\n      </ion-label>\r\n      <ion-text class="tempo-total-valor">{{ tempoTotalFormatado }}</ion-text>\r\n    </ion-item>\r\n\r\n    <ion-item>\r\n      <ion-label position="stacked">Observa\xE7\xE3o geral</ion-label>\r\n      <ion-textarea\r\n        [(ngModel)]="observacao"\r\n        placeholder="Observa\xE7\xE3o opcional"\r\n      ></ion-textarea>\r\n    </ion-item>\r\n\r\n    <ion-text color="danger" *ngIf="errorMessage">\r\n      <p class="error-message">{{ errorMessage }}</p>\r\n    </ion-text>\r\n\r\n  </div>\r\n</ion-content>\r\n\r\n<ion-footer>\r\n  <ion-toolbar>\r\n    <div class="footer-actions">\r\n      <ion-button class="btn-main" [disabled]="isSaving" (click)="finalizar()">\r\n        <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>\r\n        <span *ngIf="!isSaving">Finalizar Vistoria</span>\r\n      </ion-button>\r\n      <ion-button class="btn-voltar" fill="outline" color="medium" (click)="voltar()">\r\n        <svg\r\n          slot="start"\r\n          xmlns="http://www.w3.org/2000/svg"\r\n          width="18"\r\n          height="18"\r\n          viewBox="0 0 24 24"\r\n          fill="none"\r\n          stroke="currentColor"\r\n          stroke-width="2"\r\n          stroke-linecap="round"\r\n          stroke-linejoin="round"\r\n          aria-hidden="true"\r\n        >\r\n          <polyline points="9 14 4 9 9 4"></polyline>\r\n          <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>\r\n        </svg>\r\n        Voltar\r\n      </ion-button>\r\n    </div>\r\n  </ion-toolbar>\r\n</ion-footer>\r\n\r\n<div class="sucesso-overlay" *ngIf="sucessoVisivel" aria-modal="true" role="dialog">\r\n  <div class="sucesso-card">\r\n    <h2>Vistoria {{ resumoVistoriaNumero }} conclu\xEDda com sucesso</h2>\r\n    <p><strong>Vistoriador:</strong> {{ resumoVistoriador }}</p>\r\n    <p><strong>Ve\xEDculo:</strong> {{ resumoVeiculo }}</p>\r\n    <p><strong>Motorista:</strong> {{ resumoMotorista }}</p>\r\n    <p><strong>Od\xF4metro:</strong> {{ resumoOdometro }}</p>\r\n    <p><strong>% Bateria:</strong> {{ resumoBateria }}</p>\r\n    <p><strong>Irregularidades:</strong> {{ resumoIrregularidades }}</p>\r\n\r\n    <div class="irregularidades-lista-overlay">\r\n      <p><strong>Resumo:</strong></p>\r\n      <p *ngIf="resumoIrregularidadesDetalhes.length === 0">- Nenhuma irregularidade registrada</p>\r\n      @for (detalhe of resumoIrregularidadesDetalhes; track detalhe) {\r\n        <p>- {{ detalhe }}</p>\r\n      }\r\n    </div>\r\n\r\n    <ion-button expand="block" (click)="confirmarConclusao()">OK</ion-button>\r\n  </div>\r\n</div>\r\n', styles: ["/* src/app/pages/vistoria/vistoria-finalizar.page.scss */\nion-content {\n  --padding-bottom: 108px;\n}\nion-footer {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer ion-toolbar {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer ion-button {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-voltar {\n  flex: 0 0 30%;\n  min-width: 0;\n}\n.btn-main {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content {\n  padding: 16px;\n}\n.vistoria-nr-bar {\n  --min-height: 36px;\n  --background: var(--ion-color-light);\n}\n.vistoria-center-info {\n  text-align: center;\n}\n.vistoria-center-info span {\n  display: block;\n  line-height: 1.2;\n}\n.vistoria-center-info span:first-child {\n  font-size: 0.8rem;\n  font-weight: 600;\n}\n.vistoria-center-info span:last-child {\n  font-size: 0.95rem;\n  font-weight: 700;\n}\n.error-message {\n  margin: 8px 0 0;\n  font-size: 0.9rem;\n}\n.resumo-vistoria {\n  margin-bottom: 12px;\n  padding: 12px;\n  border-radius: 8px;\n  background: var(--ion-color-light);\n}\n.resumo-vistoria p {\n  margin: 0 0 6px;\n}\n.tempo-total-label {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n}\n.tempo-total-valor {\n  font-size: 1.05rem;\n  font-weight: 700;\n  color: #0f172a;\n  margin-top: 6px;\n}\n.sucesso-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 9999;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n  background: rgba(2, 6, 23, 0.82);\n}\n.sucesso-card {\n  width: min(720px, 100%);\n  max-height: 90vh;\n  overflow: auto;\n  padding: 18px;\n  border-radius: 12px;\n  background: #ffffff;\n  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35);\n}\n.sucesso-card h2 {\n  margin: 0 0 12px;\n  font-size: 1.15rem;\n}\n.sucesso-card p {\n  margin: 0 0 6px;\n}\n.irregularidades-lista-overlay {\n  margin: 12px 0 14px;\n}\n/*# sourceMappingURL=vistoria-finalizar.page.css.map */\n"] }]
+    ], template: '<ion-header [translucent]="true">\r\n  <ion-toolbar>\r\n    <ion-buttons slot="start">\r\n      <ion-menu-button menu="main-menu"></ion-menu-button>\r\n    </ion-buttons>\r\n    <ion-title>Finalizar Vistoria</ion-title>\r\n  </ion-toolbar>\r\n</ion-header>\r\n\r\n<ion-content [fullscreen]="true">\r\n  <div class="content">\r\n    <div class="resumo-vistoria" *ngIf="!loadingResumo">\r\n      <p><strong>Vistoria:</strong> {{ resumoVistoriaNumero }}</p>\r\n      <p><strong>Vistoriador:</strong> {{ resumoVistoriador }}</p>\r\n      <p><strong>Ve\xEDculo vistoriado:</strong> {{ resumoVeiculo }}</p>\r\n      <p><strong>Motorista:</strong> {{ resumoMotorista }}</p>\r\n      <p><strong>Od\xF4metro:</strong> {{ resumoOdometro }}</p>\r\n      <p><strong>% Bateria:</strong> {{ resumoBateria }}</p>\r\n      <p><strong>Irregularidades identificadas:</strong> {{ resumoIrregularidades }}</p>\r\n      <div *ngIf="resumoIrregularidadesDetalhes.length > 0" class="irregularidades-lista">\r\n        <p><strong>Detalhes:</strong></p>\r\n        @for (detalhe of resumoIrregularidadesDetalhes; track detalhe) {\r\n          <p>{{ detalhe }}</p>\r\n        }\r\n      </div>\r\n    </div>\r\n\r\n    <div class="resumo-vistoria" *ngIf="loadingResumo">\r\n      <p>Carregando resumo da vistoria...</p>\r\n    </div>\r\n\r\n    <ion-item>\r\n      <ion-label position="stacked" class="tempo-total-label">\r\n        <span>Tempo total (minutos):</span>\r\n        <svg\r\n          xmlns="http://www.w3.org/2000/svg"\r\n          width="16"\r\n          height="16"\r\n          viewBox="0 0 24 24"\r\n          fill="none"\r\n          stroke="currentColor"\r\n          stroke-width="2"\r\n          stroke-linecap="round"\r\n          stroke-linejoin="round"\r\n          aria-hidden="true"\r\n        >\r\n          <circle cx="12" cy="12" r="10"></circle>\r\n          <polyline points="12 6 12 12 16 14"></polyline>\r\n        </svg>\r\n      </ion-label>\r\n      <ion-text class="tempo-total-valor">{{ tempoTotalFormatado }}</ion-text>\r\n    </ion-item>\r\n\r\n    <ion-item>\r\n      <ion-label position="stacked">Observa\xE7\xE3o geral</ion-label>\r\n      <ion-textarea\r\n        [(ngModel)]="observacao"\r\n        placeholder="Observa\xE7\xE3o opcional"\r\n      ></ion-textarea>\r\n    </ion-item>\r\n\r\n    <ion-text color="danger" *ngIf="errorMessage">\r\n      <p class="error-message">{{ errorMessage }}</p>\r\n    </ion-text>\r\n\r\n  </div>\r\n</ion-content>\r\n\r\n<ion-footer>\r\n  <ion-toolbar>\r\n    <div class="footer-actions">\r\n      <ion-button class="btn-main" [disabled]="isSaving" (click)="finalizar()">\r\n        <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>\r\n        <span *ngIf="!isSaving">Finalizar Vistoria</span>\r\n      </ion-button>\r\n      <ion-button class="btn-voltar" fill="solid" (click)="voltar()">\r\n        Voltar\r\n      </ion-button>\r\n    </div>\r\n  </ion-toolbar>\r\n</ion-footer>\r\n\r\n<div class="sucesso-overlay" *ngIf="sucessoVisivel" aria-modal="true" role="dialog">\r\n  <div class="sucesso-card">\r\n    <h2>Vistoria {{ resumoVistoriaNumero }} conclu\xEDda com sucesso</h2>\r\n    <p><strong>Vistoriador:</strong> {{ resumoVistoriador }}</p>\r\n    <p><strong>Ve\xEDculo:</strong> {{ resumoVeiculo }}</p>\r\n    <p><strong>Motorista:</strong> {{ resumoMotorista }}</p>\r\n    <p><strong>Od\xF4metro:</strong> {{ resumoOdometro }}</p>\r\n    <p><strong>% Bateria:</strong> {{ resumoBateria }}</p>\r\n    <p><strong>Irregularidades:</strong> {{ resumoIrregularidades }}</p>\r\n\r\n    <div class="irregularidades-lista-overlay">\r\n      <p><strong>Resumo:</strong></p>\r\n      <p *ngIf="resumoIrregularidadesDetalhes.length === 0">- Nenhuma irregularidade registrada</p>\r\n      @for (detalhe of resumoIrregularidadesDetalhes; track detalhe) {\r\n        <p>- {{ detalhe }}</p>\r\n      }\r\n    </div>\r\n\r\n    <ion-button expand="block" (click)="confirmarConclusao()">OK</ion-button>\r\n  </div>\r\n</div>\r\n', styles: ["/* src/app/pages/vistoria/vistoria-finalizar.page.scss */\nion-content {\n  --padding-bottom: 108px;\n}\nion-footer {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer ion-toolbar {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer ion-button {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.footer-actions {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.btn-voltar {\n  flex: 0 0 30%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: var(--ion-color-primary, #3880ff) !important;\n  --background-hover: var(--ion-color-primary-shade, #3171e0) !important;\n  --background-activated: var(--ion-color-primary-tint, #4c8dff) !important;\n  --color: #ffffff !important;\n  --border-width: 0;\n}\n.btn-main {\n  flex: 1 1 70%;\n  min-width: 0;\n  font-size: 1.05rem;\n  --background: #f5930a !important;\n  --background-hover: #dd8509 !important;\n  --background-activated: #c97708 !important;\n  --color: #ffffff !important;\n}\n.content {\n  padding: 16px;\n}\n.vistoria-nr-bar {\n  --min-height: 36px;\n  --background: var(--ion-color-light);\n}\n.vistoria-center-info {\n  text-align: center;\n}\n.vistoria-center-info span {\n  display: block;\n  line-height: 1.2;\n}\n.vistoria-center-info span:first-child {\n  font-size: 0.8rem;\n  font-weight: 600;\n}\n.vistoria-center-info span:last-child {\n  font-size: 0.95rem;\n  font-weight: 700;\n}\n.error-message {\n  margin: 8px 0 0;\n  font-size: 0.9rem;\n}\n.resumo-vistoria {\n  margin-bottom: 12px;\n  padding: 12px;\n  border-radius: 8px;\n  background: var(--ion-color-light);\n}\n.resumo-vistoria p {\n  margin: 0 0 6px;\n}\n.tempo-total-label {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n}\n.tempo-total-valor {\n  font-size: 1.05rem;\n  font-weight: 700;\n  color: #0f172a;\n  margin-top: 6px;\n}\n.sucesso-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 9999;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 16px;\n  background: rgba(2, 6, 23, 0.82);\n}\n.sucesso-card {\n  width: min(720px, 100%);\n  max-height: 90vh;\n  overflow: auto;\n  padding: 18px;\n  border-radius: 12px;\n  background: #ffffff;\n  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.35);\n}\n.sucesso-card h2 {\n  margin: 0 0 12px;\n  font-size: 1.15rem;\n}\n.sucesso-card p {\n  margin: 0 0 6px;\n}\n.irregularidades-lista-overlay {\n  margin: 12px 0 14px;\n}\n/*# sourceMappingURL=vistoria-finalizar.page.css.map */\n"] }]
   }], null, null);
 })();
 (() => {
@@ -529,4 +525,4 @@ var VistoriaFinalizarPage = class _VistoriaFinalizarPage {
 export {
   VistoriaFinalizarPage
 };
-//# sourceMappingURL=chunk-FPQYW2TD.js.map
+//# sourceMappingURL=chunk-BAR52QIT.js.map

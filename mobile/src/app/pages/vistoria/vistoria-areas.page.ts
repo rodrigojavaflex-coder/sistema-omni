@@ -1,7 +1,9 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { NgFor, NgIf } from '@angular/common';
 import {
   AlertController,
+  Platform,
   IonButton,
   IonCard,
   IonCardContent,
@@ -10,7 +12,6 @@ import {
   IonContent,
   IonFooter,
   IonHeader,
-  IonIcon,
   IonTitle,
   IonToolbar,
   IonButtons,
@@ -41,7 +42,6 @@ import { AuthService } from '../../services/auth.service';
     IonContent,
     IonFooter,
     IonHeader,
-    IonIcon,
     IonCard,
     IonCardHeader,
     IonCardTitle,
@@ -65,12 +65,15 @@ export class VistoriaAreasPage implements OnInit {
   private errorMessageService = inject(ErrorMessageService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private platform = inject(Platform);
   private cdr = inject(ChangeDetectorRef);
+  private backButtonSub?: Subscription;
 
   areas: AreaVistoriada[] = [];
   contagemPorArea: Record<string, number> = {};
   contagemPendentesPorArea: Record<string, number> = {};
   loading = false;
+  isExcluindo = false;
   errorMessage = '';
 
   /** Bottom sheet de componentes (mesma aba) */
@@ -104,11 +107,67 @@ export class VistoriaAreasPage implements OnInit {
     return this.authService.hasPermission('vistoria_web_historico_veiculo:read');
   }
 
+  get exibeBotaoCancelar(): boolean {
+    return this.selectedArea === null;
+  }
+
+  get exibeBotaoVoltar(): boolean {
+    return this.selectedArea !== null;
+  }
+
   voltarOuFechar(): void {
     if (this.selectedArea !== null) {
       this.fecharSheetComponentes();
-    } else {
-      this.router.navigate(['/vistoria/inicio']);
+      return;
+    }
+    void this.confirmarExclusaoVistoria();
+  }
+
+  async confirmarExclusaoVistoria(): Promise<void> {
+    const vistoriaId = this.flowService.getVistoriaId();
+    if (!vistoriaId || this.isExcluindo) {
+      return;
+    }
+
+    const alert = await this.alertController.create({
+      header: 'Cancelar a Vistoria',
+      message: 'Deseja excluir a vistoria?',
+      cssClass: 'alert-excluir-vistoria',
+      buttons: [
+        {
+          text: 'Continuar vistoria',
+          role: 'cancel',
+          cssClass: 'alert-button-continuar',
+        },
+        {
+          text: 'Excluir vistoria',
+          role: 'confirm',
+          cssClass: 'alert-button-excluir',
+        },
+      ],
+    });
+
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role !== 'confirm') {
+      return;
+    }
+
+    this.isExcluindo = true;
+    this.errorMessage = '';
+    try {
+      await this.vistoriaService.cancelarVistoria(vistoriaId);
+      this.bootstrapService.invalidate(vistoriaId);
+      this.flowService.finalizar();
+      this.router.navigate(['/home']);
+    } catch (error: unknown) {
+      this.errorMessage = this.errorMessageService.fromApi(
+        error,
+        'Nao foi possivel excluir a vistoria. Tente novamente.',
+      );
+    } finally {
+      this.isExcluindo = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -136,12 +195,26 @@ export class VistoriaAreasPage implements OnInit {
   }
 
   async ionViewWillEnter(): Promise<void> {
+    this.registrarBotaoVoltarDispositivo();
+
     if (!this.initialized) {
       return;
     }
     const navState = (history.state ?? {}) as { reopenAreaId?: string };
     this.reopenAreaId = navState.reopenAreaId ?? this.reopenAreaId;
     await this.carregarAreas();
+  }
+
+  ionViewWillLeave(): void {
+    this.backButtonSub?.unsubscribe();
+    this.backButtonSub = undefined;
+  }
+
+  private registrarBotaoVoltarDispositivo(): void {
+    this.backButtonSub?.unsubscribe();
+    this.backButtonSub = this.platform.backButton.subscribeWithPriority(10, () => {
+      this.voltarOuFechar();
+    });
   }
 
   async carregarAreas(): Promise<void> {

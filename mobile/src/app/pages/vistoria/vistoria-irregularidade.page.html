@@ -73,9 +73,9 @@
       <strong>Componente:</strong>
       <span>{{ componenteNome }}</span>
     </div>
-    <div class="context-card" *ngIf="selectedMatriz?.sintoma?.descricao">
+    <div class="context-card" *ngIf="selectedMatriz?.sintoma?.descricao as sintomaDescricao">
       <strong>Sintoma:</strong>
-      <span>{{ selectedMatriz?.sintoma?.descricao }}</span>
+      <span>{{ sintomaDescricao }}</span>
     </div>
   </div>
 
@@ -230,12 +230,10 @@
       </ion-button>
       <ion-button
         class="btn-voltar"
-        fill="outline"
-        color="medium"
+        fill="solid"
         (click)="voltar()"
         [disabled]="gravandoAudio || gravacaoPreparando"
       >
-        <ion-icon slot="start" src="/icons/corner-up-left.svg" aria-hidden="true"></ion-icon>
         Voltar
       </ion-button>
     </div>

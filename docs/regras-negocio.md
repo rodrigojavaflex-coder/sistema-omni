@@ -75,6 +75,7 @@ Copie o bloco abaixo para cada regra nova.
 #### Regras
 - [x] RN-VIS-003 - Permissoes de acesso e acao por tela do fluxo de irregularidades
 - [x] RN-VIS-004 - Registrar irregularidade SOS na web (Tratamento)
+- [x] RN-VIS-005 - Desistencia da vistoria mobile com exclusao em cascata
 - [ ] RN-VIS-001 - Placeholder
 - [x] RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
 
@@ -174,11 +175,35 @@ Copie o bloco abaixo para cada regra nova.
   - Registrar irregularidade(s) com `origem_registro = SOS_WEB`
   - Historico `registrar_sos` com observacao «Irregularidade registrada por SOS»
   - Finalizar com tempo em minutos (minimo 1) ou cancelar SOS excluindo vistoria, irregularidades, historico e midias do banco (sem status CANCELADA)
+  - Nas filas de Tratamento, Manutencao e Validacao Final, irregularidades SOS (`origem_registro = SOS_WEB`) aparecem antes das demais; dentro de cada grupo, ordenar pela data de referencia da etapa (mais antiga primeiro)
 - **Permissoes envolvidas:** `irregularidade_tratamento:create_sos`, `irregularidade_tratamento:read`; demais acoes do fluxo conforme RN-VIS-003
 - **Dados impactados:** `vistorias`, `irregularidades.origem_registro`, `vistorias.origem`, `irregularidades_midias`, `irregularidade_historico`
 - **Rastreabilidade:** Historico com usuario, data e tempo de etapa
 - **Criterios de aceite:** Ver `docs/PLANO_IRREGULARIDADE_SOS_WEB.md`
 - **Origem da regra:** Requisito de produto — irregularidade SOS web, 2026-06-08
+- **Status:** Implementada
+
+### RN-VIS-005 - Desistencia da vistoria mobile com exclusao em cascata
+- **Modulo:** Vistoria
+- **Fluxo:** App mobile — tela de areas e lista de vistorias em andamento na tela inicial
+- **Descricao:** A vistoria mobile em andamento segue fluxo linear (inicio → areas → irregularidades → finalizar). Nao e permitido voltar da tela de areas para editar veiculo/motorista. Ao desistir, o usuario confirma exclusao permanente da vistoria e dados vinculados.
+- **Condicoes de entrada:** Vistoria com `status = EM_ANDAMENTO` e origem mobile (`origem` nula).
+- **Validacoes:**
+  - Somente vistorias `EM_ANDAMENTO` podem ser excluidas por `POST /vistoria/:id/cancelar`
+  - Vistorias `FINALIZADA` retornam erro funcional
+- **Acoes do sistema:**
+  - Bloquear navegacao areas → inicio; redirecionar inicio para areas quando houver vistoria ativa no fluxo
+  - Exibir confirmacao antes de excluir
+  - Excluir em cascata: `irregularidade_historico`, `irregularidades_midias`, `irregularidades` e `vistorias`
+- **Mensagens ao usuario:** Confirmacao com aviso de exclusao permanente; erro funcional se exclusao falhar
+- **Permissoes envolvidas:** `VISTORIA_UPDATE` (endpoint `cancelar` existente)
+- **Dados impactados:** `vistorias`, `irregularidades`, `irregularidades_midias`, `irregularidade_historico`
+- **Criterios de aceite:**
+  - [ ] Botao Desistir na tela de areas nao retorna ao inicio sem exclusao
+  - [ ] Confirmacao obrigatoria antes de excluir
+  - [ ] Apos exclusao, vistoria nao aparece em andamento
+  - [ ] Irregularidades da vistoria excluida nao permanecem no banco
+- **Origem da regra:** Simplificacao do fluxo mobile — desistencia com limpeza de dados, 2026-06-11
 - **Status:** Implementada
 
 ### 2. Ocorrencias
@@ -211,6 +236,8 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-06-11: RN-VIS-004 Prioridade de listagem: irregularidades SOS no topo das filas do fluxo; demais itens por data de referencia da etapa (mais antiga primeiro).
+- 2026-06-11: RN-VIS-005 Desistencia da vistoria mobile bloqueia volta ao inicio e exclui vistoria em andamento em cascata (como SOS).
 - 2026-06-08: RN-VIS-004 Cancelamento SOS passa a excluir registros do banco (vistoria e irregularidades), sem marcar CANCELADA.
 - 2026-06-08: RN-VIS-004 Registro de irregularidade SOS na web (Tratamento), vistoria pai automatica, origem SOS, filtro e badge no fluxo.
 - 2026-05-21: RN-VIS-003 Permissoes de acesso (`:read`) e acao separadas por tela do fluxo de irregularidades (Tratamento, Manutencao, Validacao); grupos no cadastro de perfis.

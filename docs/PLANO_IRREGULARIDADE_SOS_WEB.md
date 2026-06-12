@@ -471,6 +471,12 @@ Falha de upload após criar irregularidade: botão **Tentar novamente** na Etapa
 - Novo controle na `filters-panel`: `Origem: Todas | SOS | Mobile` (ou checkbox "Somente SOS")
 - Query `origemRegistro=SOS_WEB` na API
 
+### Ordenação da fila
+
+- Irregularidades SOS (`origem_registro = SOS_WEB`) **sempre no topo** em Tratamento, Manutenção e Validação Final
+- Dentro do grupo SOS e do grupo demais: **mais antiga primeiro**, pela mesma data da coluna "Registrado" (`criadoEm` em Tratamento; `entradaStatusEm` nas demais etapas)
+- Implementado em `GET /irregularidades` (`listByStatus`) e espelhado no front (`sortItemsFluxo`)
+
 ### Histórico
 
 - Ação `registrar_sos` → label *"Registrar irregularidade SOS"*
@@ -512,6 +518,7 @@ Falha de upload após criar irregularidade: botão **Tentar novamente** na Etapa
 3. [ ] Usuário com permissão conclui SOS; irregularidades aparecem na fila **REGISTRADA** para todos com `:read`.
 4. [ ] Badge **SOS** visível em Tratamento, Manutenção e Validação.
 5. [ ] Filtro "Somente SOS" funciona nas três telas.
+5b. [ ] Irregularidades SOS aparecem **antes** das demais na listagem das três telas; dentro de cada grupo, mais antiga primeiro.
 6. [ ] Histórico exibe usuário, data, tempo de etapa; observação *"Irregularidade registrada por SOS"*.
 7. [ ] Vistoria pai criada com veículo/motorista (autocomplete), odômetro e bateria (se elétrico); vistoriador = usuário logado; data = servidor.
 8. [ ] Observação da vistoria opcional; observação da irregularidade obrigatória (RN-VIS-002).

@@ -121,11 +121,13 @@ export class VistoriaInicioPage implements OnInit {
       this.loadingAndamento = false;
     }
 
-    await this.carregarVistoriaEmEdicao();
   }
 
   async ionViewWillEnter(): Promise<void> {
-    await this.carregarVistoriaEmEdicao();
+    if (this.flowService.getVistoriaId()) {
+      this.router.navigate(['/vistoria/areas']);
+      return;
+    }
     await this.atualizarListaEmAndamento();
   }
 
@@ -210,11 +212,12 @@ export class VistoriaInicioPage implements OnInit {
 
   async cancelarVistoriaEmAndamento(vistoria: Vistoria): Promise<void> {
     const alert = await this.alertController.create({
-      header: 'Cancelar vistoria',
-      message: 'Deseja realmente cancelar esta vistoria em andamento?',
+      header: 'Excluir vistoria',
+      message: 'Deseja excluir a vistoria?',
+      cssClass: 'alert-excluir-vistoria',
       buttons: [
-        { text: 'Voltar', role: 'cancel' },
-        { text: 'Cancelar vistoria', role: 'confirm' },
+        { text: 'Voltar', role: 'cancel', cssClass: 'alert-button-continuar' },
+        { text: 'Excluir vistoria', role: 'confirm', cssClass: 'alert-button-excluir' },
       ],
     });
 
@@ -232,11 +235,10 @@ export class VistoriaInicioPage implements OnInit {
       }
       this.bootstrapService.invalidate(vistoria.id);
       await this.atualizarListaEmAndamento();
-      await this.carregarVistoriaEmEdicao();
     } catch (error: any) {
       this.errorMessage = this.errorMessageService.fromApi(
         error,
-        'Nao foi possivel cancelar a vistoria. Tente novamente.',
+        'Nao foi possivel excluir a vistoria. Tente novamente.',
       );
     }
   }
@@ -382,37 +384,6 @@ export class VistoriaInicioPage implements OnInit {
     this.isSaving = true;
     this.errorMessage = '';
     try {
-      const vistoriaId = this.flowService.getVistoriaId();
-      if (vistoriaId) {
-        try {
-          const atualizada = await this.vistoriaService.atualizarVistoria(vistoriaId, {
-            idveiculo: this.selectedVeiculo.id,
-            idmotorista: this.selectedMotorista.id,
-            odometro: Number(this.odometro),
-            porcentagembateria:
-              this.bateria === null ? null : Number(this.bateria),
-            datavistoria: this.datavistoriaIso,
-          });
-          this.flowService.updateContext({
-            numeroVistoria: atualizada.numeroVistoria,
-            veiculoId: this.selectedVeiculo.id,
-            veiculoDescricao: this.selectedVeiculo.descricao,
-            veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
-            veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? undefined,
-            datavistoria: this.datavistoriaIso,
-          });
-          this.router.navigate(['/vistoria/areas']);
-          return;
-        } catch (errorAtualizacao: any) {
-          // Quando a vistoria em memória não existe mais no backend, limpa o contexto e inicia uma nova.
-          if (this.isVistoriaNaoEncontradaError(errorAtualizacao)) {
-            this.flowService.finalizar();
-          } else {
-            throw errorAtualizacao;
-          }
-        }
-      }
-
       const vistoria = await this.vistoriaService.iniciarVistoria({
         idusuario: user.id,
         idveiculo: this.selectedVeiculo.id,
@@ -529,62 +500,4 @@ export class VistoriaInicioPage implements OnInit {
     return true;
   }
 
-  private async carregarVistoriaEmEdicao(): Promise<void> {
-    const vistoriaId = this.flowService.getVistoriaId();
-    if (!vistoriaId) {
-      return;
-    }
-    try {
-      const vistoria = await this.vistoriaService.getById(vistoriaId);
-      if (vistoria?.veiculo) {
-        this.selectedVeiculo = {
-          id: vistoria.idVeiculo,
-          descricao: vistoria.veiculo?.descricao ?? '',
-          placa: vistoria.veiculo?.placa ?? '',
-          status: 'ATIVO',
-          combustivel: vistoria.veiculo?.combustivel,
-        };
-        this.veiculoSearch = `${this.selectedVeiculo.descricao} - ${this.selectedVeiculo.placa}`;
-        this.carregarUltimoOdometro(this.selectedVeiculo.id, vistoria.id);
-      }
-      if (vistoria?.motorista) {
-      this.selectedMotorista = {
-        id: vistoria.idMotorista,
-        nome: vistoria.motorista?.nome ?? '',
-        matricula: vistoria.motorista?.matricula ?? '',
-        status: 'ATIVO',
-      } as Motorista;
-        this.motoristaSearch = `${this.selectedMotorista.nome} - ${this.selectedMotorista.matricula}`;
-      }
-      this.onOdometroInput(vistoria.odometro);
-      if (this.isBateriaObrigatoria()) {
-        this.bateria =
-          vistoria.porcentagembateria === null || vistoria.porcentagembateria === undefined
-            ? null
-            : Number(vistoria.porcentagembateria);
-      } else {
-        this.bateria = null;
-      }
-      if (vistoria.datavistoria) {
-        const date = new Date(vistoria.datavistoria);
-        this.datavistoriaDisplay = date.toLocaleString('pt-BR');
-        this.datavistoriaIso = date.toISOString();
-      }
-      this.flowService.updateContext({
-        veiculoDescricao: vistoria.veiculo?.descricao,
-        datavistoria: vistoria.datavistoria,
-      });
-    } catch (error: any) {
-      if (this.isVistoriaNaoEncontradaError(error)) {
-        this.flowService.finalizar();
-      }
-      // mantém dados atuais se falhar
-    }
-  }
-
-  private isVistoriaNaoEncontradaError(error: any): boolean {
-    const status = error?.status;
-    const message = error?.error?.message ?? error?.message ?? '';
-    return status === 404 || /vistoria não encontrada/i.test(String(message));
-  }
 }

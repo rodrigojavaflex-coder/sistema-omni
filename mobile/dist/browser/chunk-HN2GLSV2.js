@@ -1,6 +1,6 @@
 import {
   environment
-} from "./chunk-AN5CWPW3.js";
+} from "./chunk-3YNOEOQF.js";
 import {
   HttpClient,
   Injectable,
@@ -8,7 +8,7 @@ import {
   inject,
   setClassMetadata,
   ɵɵdefineInjectable
-} from "./chunk-7F2ASLWB.js";
+} from "./chunk-AUXGTX7T.js";
 import {
   Capacitor
 } from "./chunk-XS4INNGU.js";
@@ -150,4 +150,4 @@ var VistoriaService = class _VistoriaService {
 export {
   VistoriaService
 };
-//# sourceMappingURL=chunk-YUK26TMQ.js.map
+//# sourceMappingURL=chunk-HN2GLSV2.js.map

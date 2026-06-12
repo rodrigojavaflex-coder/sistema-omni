@@ -38,8 +38,8 @@
           <h3>{{ vistoria.veiculo?.descricao || 'Veículo' }}</h3>
           <p>
             Motorista: {{ vistoria.motorista?.nome || '---' }}
-            <span *ngIf="vistoria.motorista?.matricula">
-              • Matricula: {{ formatarMatricula(vistoria.motorista?.matricula || '') }}
+            <span *ngIf="vistoria.motorista?.matricula as matricula">
+              • Matricula: {{ formatarMatricula(matricula) }}
             </span>
           </p>
           <p>
@@ -51,7 +51,7 @@
             Continuar
           </ion-button>
           <ion-button fill="outline" color="danger" (click)="cancelarVistoriaEmAndamento(vistoria)">
-            Cancelar
+            Excluir
           </ion-button>
         </div>
       </ion-item>

@@ -459,21 +459,22 @@ export class IrregularidadeService {
         gravidade: filters.gravidade,
       });
     }
+    const useEntradaStatus = filters?.referenciaPeriodo === 'ENTRADA_STATUS';
+    /**
+     * ENTRADA_STATUS: instante da última transição para o status atual no histórico,
+     * com fallback em criadoEm (igual ao cálculo de entradaStatusEm no retorno desta lista).
+     * CRIADO_EM: data de criação do registro (fila de tratamento).
+     */
+    const dataRefSql = useEntradaStatus
+      ? `COALESCE((
+          SELECT MAX(hist."dataEvento")
+          FROM "irregularidade_historico" hist
+          WHERE hist."idIrregularidade" = "i"."id"
+            AND hist."statusDestino" = "i"."status_atual"
+        ), "i"."criadoEm")`
+      : '"i"."criadoEm"';
+
     if (filters?.dataInicio || filters?.dataFim) {
-      const useEntradaStatus = filters.referenciaPeriodo === 'ENTRADA_STATUS';
-      /**
-       * ENTRADA_STATUS: instante da última transição para o status atual no histórico,
-       * com fallback em criadoEm (igual ao cálculo de entradaStatusEm no retorno desta lista).
-       * CRIADO_EM: data de criação do registro (fila de tratamento).
-       */
-      const dataRefSql = useEntradaStatus
-        ? `COALESCE((
-            SELECT MAX(hist."dataEvento")
-            FROM "irregularidade_historico" hist
-            WHERE hist."idIrregularidade" = "i"."id"
-              AND hist."statusDestino" = "i"."status_atual"
-          ), "i"."criadoEm")`
-        : 'i.criadoEm';
       if (filters.dataInicio) {
         const dataInicio = this.parseLocalDate(filters.dataInicio, false);
         qb = qb.andWhere(`${dataRefSql} >= :dataInicio`, { dataInicio });
@@ -485,7 +486,13 @@ export class IrregularidadeService {
     }
 
     const result = await qb
-      .orderBy('i.atualizadoEm', 'DESC')
+      .orderBy(
+        `CASE WHEN "i"."origem_registro" = :sosOrigemOrdem THEN 0 ELSE 1 END`,
+        'ASC',
+      )
+      .addOrderBy(dataRefSql, 'ASC')
+      .addOrderBy('"i"."id"', 'ASC')
+      .setParameter('sosOrigemOrdem', OrigemRegistroIrregularidade.SOS_WEB)
       .getRawAndEntities();
     const ids = result.entities.map((i) => i.id);
 

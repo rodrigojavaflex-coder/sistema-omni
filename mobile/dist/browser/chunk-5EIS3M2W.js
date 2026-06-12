@@ -1,26 +1,26 @@
 import {
   VeiculoService
-} from "./chunk-XLNGG74R.js";
+} from "./chunk-LOADK2W3.js";
 import {
   VistoriaBootstrapService
-} from "./chunk-MDNFBFQA.js";
+} from "./chunk-VLZHX7ZA.js";
 import {
   VistoriaService
-} from "./chunk-YUK26TMQ.js";
+} from "./chunk-HN2GLSV2.js";
 import {
   addIcons,
   refreshOutline
 } from "./chunk-C5VNYMLZ.js";
 import {
   VistoriaFlowService
-} from "./chunk-6KJ4EGXY.js";
+} from "./chunk-I75DQO4E.js";
 import {
   AuthService
-} from "./chunk-7MZB25UE.js";
+} from "./chunk-2D7MZDC7.js";
 import {
   ErrorMessageService,
   environment
-} from "./chunk-AN5CWPW3.js";
+} from "./chunk-3YNOEOQF.js";
 import {
   AlertController,
   Component,
@@ -73,7 +73,7 @@ import {
   ɵɵtwoWayBindingSet,
   ɵɵtwoWayListener,
   ɵɵtwoWayProperty
-} from "./chunk-7F2ASLWB.js";
+} from "./chunk-AUXGTX7T.js";
 import "./chunk-JZ773BOS.js";
 import "./chunk-T5LCTCQ6.js";
 import "./chunk-JCEFQURH.js";
@@ -176,10 +176,10 @@ function VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_span_6_Template(rf
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const vistoria_r2 = \u0275\u0275nextContext().$implicit;
-    const ctx_r2 = \u0275\u0275nextContext(3);
+    const matricula_r2 = ctx.ngIf;
+    const ctx_r2 = \u0275\u0275nextContext(4);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" \u2022 Matricula: ", ctx_r2.formatarMatricula((vistoria_r2.motorista == null ? null : vistoria_r2.motorista.matricula) || ""), " ");
+    \u0275\u0275textInterpolate1(" \u2022 Matricula: ", ctx_r2.formatarMatricula(matricula_r2), " ");
   }
 }
 function VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_Template(rf, ctx) {
@@ -197,32 +197,32 @@ function VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_Template(rf, ctx) 
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(9, "div", 24)(10, "ion-button", 25);
     \u0275\u0275listener("click", function VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_Template_ion_button_click_10_listener() {
-      const vistoria_r2 = \u0275\u0275restoreView(_r1).$implicit;
+      const vistoria_r4 = \u0275\u0275restoreView(_r1).$implicit;
       const ctx_r2 = \u0275\u0275nextContext(3);
-      return \u0275\u0275resetView(ctx_r2.continuarVistoria(vistoria_r2));
+      return \u0275\u0275resetView(ctx_r2.continuarVistoria(vistoria_r4));
     });
     \u0275\u0275text(11, " Continuar ");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(12, "ion-button", 26);
     \u0275\u0275listener("click", function VistoriaInicioPage_ion_card_13_ion_list_5_ion_item_1_Template_ion_button_click_12_listener() {
-      const vistoria_r2 = \u0275\u0275restoreView(_r1).$implicit;
+      const vistoria_r4 = \u0275\u0275restoreView(_r1).$implicit;
       const ctx_r2 = \u0275\u0275nextContext(3);
-      return \u0275\u0275resetView(ctx_r2.cancelarVistoriaEmAndamento(vistoria_r2));
+      return \u0275\u0275resetView(ctx_r2.cancelarVistoriaEmAndamento(vistoria_r4));
     });
-    \u0275\u0275text(13, " Cancelar ");
+    \u0275\u0275text(13, " Excluir ");
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    const vistoria_r2 = ctx.$implicit;
+    const vistoria_r4 = ctx.$implicit;
     const ctx_r2 = \u0275\u0275nextContext(3);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate((vistoria_r2.veiculo == null ? null : vistoria_r2.veiculo.descricao) || "Ve\xEDculo");
+    \u0275\u0275textInterpolate((vistoria_r4.veiculo == null ? null : vistoria_r4.veiculo.descricao) || "Ve\xEDculo");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1(" Motorista: ", (vistoria_r2.motorista == null ? null : vistoria_r2.motorista.nome) || "---", " ");
+    \u0275\u0275textInterpolate1(" Motorista: ", (vistoria_r4.motorista == null ? null : vistoria_r4.motorista.nome) || "---", " ");
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", vistoria_r2.motorista == null ? null : vistoria_r2.motorista.matricula);
+    \u0275\u0275property("ngIf", vistoria_r4.motorista == null ? null : vistoria_r4.motorista.matricula);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1(" Data: ", ctx_r2.formatarDataHora24(vistoria_r2.datavistoria), " ");
+    \u0275\u0275textInterpolate1(" Data: ", ctx_r2.formatarDataHora24(vistoria_r4.datavistoria), " ");
   }
 }
 function VistoriaInicioPage_ion_card_13_ion_list_5_Template(rf, ctx) {
@@ -264,12 +264,12 @@ function VistoriaInicioPage_ion_list_19_Template(rf, ctx) {
 }
 function VistoriaInicioPage_ion_list_20_ion_item_1_Template(rf, ctx) {
   if (rf & 1) {
-    const _r4 = \u0275\u0275getCurrentView();
+    const _r5 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "ion-item", 28);
     \u0275\u0275listener("click", function VistoriaInicioPage_ion_list_20_ion_item_1_Template_ion_item_click_0_listener() {
-      const veiculo_r5 = \u0275\u0275restoreView(_r4).$implicit;
+      const veiculo_r6 = \u0275\u0275restoreView(_r5).$implicit;
       const ctx_r2 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r2.selecionarVeiculo(veiculo_r5));
+      return \u0275\u0275resetView(ctx_r2.selecionarVeiculo(veiculo_r6));
     });
     \u0275\u0275elementStart(1, "ion-label")(2, "h3");
     \u0275\u0275text(3);
@@ -279,13 +279,13 @@ function VistoriaInicioPage_ion_list_20_ion_item_1_Template(rf, ctx) {
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    const veiculo_r5 = ctx.$implicit;
+    const veiculo_r6 = ctx.$implicit;
     const ctx_r2 = \u0275\u0275nextContext(2);
-    \u0275\u0275classProp("is-selected", (ctx_r2.selectedVeiculo == null ? null : ctx_r2.selectedVeiculo.id) === veiculo_r5.id);
+    \u0275\u0275classProp("is-selected", (ctx_r2.selectedVeiculo == null ? null : ctx_r2.selectedVeiculo.id) === veiculo_r6.id);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(veiculo_r5.descricao);
+    \u0275\u0275textInterpolate(veiculo_r6.descricao);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(veiculo_r5.placa);
+    \u0275\u0275textInterpolate(veiculo_r6.placa);
   }
 }
 function VistoriaInicioPage_ion_list_20_Template(rf, ctx) {
@@ -328,12 +328,12 @@ function VistoriaInicioPage_ion_list_27_Template(rf, ctx) {
 }
 function VistoriaInicioPage_ion_list_28_ion_item_1_Template(rf, ctx) {
   if (rf & 1) {
-    const _r6 = \u0275\u0275getCurrentView();
+    const _r7 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "ion-item", 28);
     \u0275\u0275listener("click", function VistoriaInicioPage_ion_list_28_ion_item_1_Template_ion_item_click_0_listener() {
-      const motorista_r7 = \u0275\u0275restoreView(_r6).$implicit;
+      const motorista_r8 = \u0275\u0275restoreView(_r7).$implicit;
       const ctx_r2 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r2.selecionarMotorista(motorista_r7));
+      return \u0275\u0275resetView(ctx_r2.selecionarMotorista(motorista_r8));
     });
     \u0275\u0275elementStart(1, "ion-label")(2, "h3");
     \u0275\u0275text(3);
@@ -343,13 +343,13 @@ function VistoriaInicioPage_ion_list_28_ion_item_1_Template(rf, ctx) {
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    const motorista_r7 = ctx.$implicit;
+    const motorista_r8 = ctx.$implicit;
     const ctx_r2 = \u0275\u0275nextContext(2);
-    \u0275\u0275classProp("is-selected", (ctx_r2.selectedMotorista == null ? null : ctx_r2.selectedMotorista.id) === motorista_r7.id);
+    \u0275\u0275classProp("is-selected", (ctx_r2.selectedMotorista == null ? null : ctx_r2.selectedMotorista.id) === motorista_r8.id);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(motorista_r7.nome);
+    \u0275\u0275textInterpolate(motorista_r8.nome);
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1("Matr\xEDcula: ", ctx_r2.formatarMatricula(motorista_r7.matricula));
+    \u0275\u0275textInterpolate1("Matr\xEDcula: ", ctx_r2.formatarMatricula(motorista_r8.matricula));
   }
 }
 function VistoriaInicioPage_ion_list_28_Template(rf, ctx) {
@@ -458,12 +458,14 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       } finally {
         this.loadingAndamento = false;
       }
-      yield this.carregarVistoriaEmEdicao();
     });
   }
   ionViewWillEnter() {
     return __async(this, null, function* () {
-      yield this.carregarVistoriaEmEdicao();
+      if (this.flowService.getVistoriaId()) {
+        this.router.navigate(["/vistoria/areas"]);
+        return;
+      }
       yield this.atualizarListaEmAndamento();
     });
   }
@@ -538,11 +540,12 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
   cancelarVistoriaEmAndamento(vistoria) {
     return __async(this, null, function* () {
       const alert = yield this.alertController.create({
-        header: "Cancelar vistoria",
-        message: "Deseja realmente cancelar esta vistoria em andamento?",
+        header: "Excluir vistoria",
+        message: "Deseja excluir a vistoria?",
+        cssClass: "alert-excluir-vistoria",
         buttons: [
-          { text: "Voltar", role: "cancel" },
-          { text: "Cancelar vistoria", role: "confirm" }
+          { text: "Voltar", role: "cancel", cssClass: "alert-button-continuar" },
+          { text: "Excluir vistoria", role: "confirm", cssClass: "alert-button-excluir" }
         ]
       });
       yield alert.present();
@@ -558,9 +561,8 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
         }
         this.bootstrapService.invalidate(vistoria.id);
         yield this.atualizarListaEmAndamento();
-        yield this.carregarVistoriaEmEdicao();
       } catch (error) {
-        this.errorMessage = this.errorMessageService.fromApi(error, "Nao foi possivel cancelar a vistoria. Tente novamente.");
+        this.errorMessage = this.errorMessageService.fromApi(error, "Nao foi possivel excluir a vistoria. Tente novamente.");
       }
     });
   }
@@ -687,34 +689,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       this.isSaving = true;
       this.errorMessage = "";
       try {
-        const vistoriaId = this.flowService.getVistoriaId();
-        if (vistoriaId) {
-          try {
-            const atualizada = yield this.vistoriaService.atualizarVistoria(vistoriaId, {
-              idveiculo: this.selectedVeiculo.id,
-              idmotorista: this.selectedMotorista.id,
-              odometro: Number(this.odometro),
-              porcentagembateria: this.bateria === null ? null : Number(this.bateria),
-              datavistoria: this.datavistoriaIso
-            });
-            this.flowService.updateContext({
-              numeroVistoria: atualizada.numeroVistoria,
-              veiculoId: this.selectedVeiculo.id,
-              veiculoDescricao: this.selectedVeiculo.descricao,
-              veiculoModeloId: this.selectedVeiculo.idModelo ?? this.selectedVeiculo.modeloVeiculo?.id,
-              veiculoModeloNome: this.selectedVeiculo.modeloVeiculo?.nome ?? void 0,
-              datavistoria: this.datavistoriaIso
-            });
-            this.router.navigate(["/vistoria/areas"]);
-            return;
-          } catch (errorAtualizacao) {
-            if (this.isVistoriaNaoEncontradaError(errorAtualizacao)) {
-              this.flowService.finalizar();
-            } else {
-              throw errorAtualizacao;
-            }
-          }
-        }
         const vistoria = yield this.vistoriaService.iniciarVistoria(__spreadProps(__spreadValues({
           idusuario: user.id,
           idveiculo: this.selectedVeiculo.id,
@@ -821,61 +795,6 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       }
       return true;
     });
-  }
-  carregarVistoriaEmEdicao() {
-    return __async(this, null, function* () {
-      const vistoriaId = this.flowService.getVistoriaId();
-      if (!vistoriaId) {
-        return;
-      }
-      try {
-        const vistoria = yield this.vistoriaService.getById(vistoriaId);
-        if (vistoria?.veiculo) {
-          this.selectedVeiculo = {
-            id: vistoria.idVeiculo,
-            descricao: vistoria.veiculo?.descricao ?? "",
-            placa: vistoria.veiculo?.placa ?? "",
-            status: "ATIVO",
-            combustivel: vistoria.veiculo?.combustivel
-          };
-          this.veiculoSearch = `${this.selectedVeiculo.descricao} - ${this.selectedVeiculo.placa}`;
-          this.carregarUltimoOdometro(this.selectedVeiculo.id, vistoria.id);
-        }
-        if (vistoria?.motorista) {
-          this.selectedMotorista = {
-            id: vistoria.idMotorista,
-            nome: vistoria.motorista?.nome ?? "",
-            matricula: vistoria.motorista?.matricula ?? "",
-            status: "ATIVO"
-          };
-          this.motoristaSearch = `${this.selectedMotorista.nome} - ${this.selectedMotorista.matricula}`;
-        }
-        this.onOdometroInput(vistoria.odometro);
-        if (this.isBateriaObrigatoria()) {
-          this.bateria = vistoria.porcentagembateria === null || vistoria.porcentagembateria === void 0 ? null : Number(vistoria.porcentagembateria);
-        } else {
-          this.bateria = null;
-        }
-        if (vistoria.datavistoria) {
-          const date = new Date(vistoria.datavistoria);
-          this.datavistoriaDisplay = date.toLocaleString("pt-BR");
-          this.datavistoriaIso = date.toISOString();
-        }
-        this.flowService.updateContext({
-          veiculoDescricao: vistoria.veiculo?.descricao,
-          datavistoria: vistoria.datavistoria
-        });
-      } catch (error) {
-        if (this.isVistoriaNaoEncontradaError(error)) {
-          this.flowService.finalizar();
-        }
-      }
-    });
-  }
-  isVistoriaNaoEncontradaError(error) {
-    const status = error?.status;
-    const message = error?.error?.message ?? error?.message ?? "";
-    return status === 404 || /vistoria não encontrada/i.test(String(message));
   }
   static \u0275fac = function VistoriaInicioPage_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _VistoriaInicioPage)();
@@ -1040,187 +959,187 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
       IonSearchbar,
       IonSpinner,
       IonText
-    ], template: `<ion-header [translucent]="true">\r
-  <ion-toolbar>\r
-    <ion-buttons slot="start" *ngIf="isNative">\r
-      <ion-menu-button menu="main-menu"></ion-menu-button>\r
-    </ion-buttons>\r
-    <ion-title>Nova Vistoria</ion-title>\r
-  </ion-toolbar>\r
-</ion-header>\r
-\r
-<ion-content [fullscreen]="true">\r
-  <ion-card class="card">\r
-    <ion-item class="datetime-item">\r
-      <ion-label position="stacked">Data/Hora</ion-label>\r
-      <ion-input [value]="datavistoriaDisplay" readonly="true"></ion-input>\r
-      <ion-button\r
-        fill="clear"\r
-        size="small"\r
-        slot="end"\r
-        aria-label="Atualizar data/hora"\r
-        (click)="atualizarDataHora()"\r
-      >\r
-        <ion-icon name="refresh-outline"></ion-icon>\r
-      </ion-button>\r
-    </ion-item>\r
-  </ion-card>\r
-\r
-  <ion-card class="card" *ngIf="loadingAndamento || vistoriasEmAndamento.length > 0">\r
-    <ion-item>\r
-      <ion-label position="stacked">Vistorias em andamento</ion-label>\r
-    </ion-item>\r
-    <ion-item *ngIf="loadingAndamento">\r
-      <ion-spinner name="crescent"></ion-spinner>\r
-      <ion-label>Carregando vistorias...</ion-label>\r
-    </ion-item>\r
-    <ion-list *ngIf="!loadingAndamento && vistoriasEmAndamento.length > 0">\r
-      <ion-item *ngFor="let vistoria of vistoriasEmAndamento">\r
-        <ion-label>\r
-          <h3>{{ vistoria.veiculo?.descricao || 'Ve\xEDculo' }}</h3>\r
-          <p>\r
-            Motorista: {{ vistoria.motorista?.nome || '---' }}\r
-            <span *ngIf="vistoria.motorista?.matricula">\r
-              \u2022 Matricula: {{ formatarMatricula(vistoria.motorista?.matricula || '') }}\r
-            </span>\r
-          </p>\r
-          <p>\r
-            Data: {{ formatarDataHora24(vistoria.datavistoria) }}\r
-          </p>\r
-        </ion-label>\r
-        <div slot="end" class="andamento-actions">\r
-          <ion-button fill="outline" (click)="continuarVistoria(vistoria)">\r
-            Continuar\r
-          </ion-button>\r
-          <ion-button fill="outline" color="danger" (click)="cancelarVistoriaEmAndamento(vistoria)">\r
-            Cancelar\r
-          </ion-button>\r
-        </div>\r
-      </ion-item>\r
-    </ion-list>\r
-  </ion-card>\r
-\r
-  <ion-card class="card">\r
-    <ion-item>\r
-      <ion-label position="stacked">Ve\xEDculo</ion-label>\r
-      <ion-searchbar\r
-        [debounce]="350"\r
-        placeholder="Buscar por descri\xE7\xE3o ou placa"\r
-        [value]="veiculoSearch"\r
-        (ionInput)="onBuscarVeiculos($event)"\r
-        (ionClear)="limparVeiculo()"\r
-      ></ion-searchbar>\r
-    </ion-item>\r
-    <ion-list *ngIf="loadingVeiculos">\r
-      <ion-item>\r
-        <ion-spinner name="crescent"></ion-spinner>\r
-        <ion-label>Buscando ve\xEDculos...</ion-label>\r
-      </ion-item>\r
-    </ion-list>\r
-    <ion-list *ngIf="!loadingVeiculos && veiculos.length > 0">\r
-      <ion-item\r
-        button\r
-        class="selection-item"\r
-        [class.is-selected]="selectedVeiculo?.id === veiculo.id"\r
-        *ngFor="let veiculo of veiculos"\r
-        (click)="selecionarVeiculo(veiculo)"\r
-      >\r
-        <ion-label>\r
-          <h3>{{ veiculo.descricao }}</h3>\r
-          <p>{{ veiculo.placa }}</p>\r
-        </ion-label>\r
-      </ion-item>\r
-    </ion-list>\r
-    <ion-item *ngIf="selectedVeiculo">\r
-      <ion-label>\r
-        <p>\xDAltimo Od\xF4metro: {{ formatarNumeroSemSeparador(ultimoOdometro) }}</p>\r
-        <p>Combust\xEDvel: {{ selectedVeiculo.combustivel || '-' }}</p>\r
-      </ion-label>\r
-    </ion-item>\r
-  </ion-card>\r
-\r
-  <ion-card class="card">\r
-    <ion-item>\r
-      <ion-label position="stacked">Motorista</ion-label>\r
-      <ion-searchbar\r
-        [debounce]="350"\r
-        placeholder="Buscar por nome, matr\xEDcula ou CPF"\r
-        [value]="motoristaSearch"\r
-        (ionInput)="onBuscarMotoristas($event)"\r
-        (ionClear)="limparMotorista()"\r
-      ></ion-searchbar>\r
-    </ion-item>\r
-    <ion-list *ngIf="loadingMotoristas">\r
-      <ion-item>\r
-        <ion-spinner name="crescent"></ion-spinner>\r
-        <ion-label>Buscando motoristas...</ion-label>\r
-      </ion-item>\r
-    </ion-list>\r
-    <ion-list *ngIf="!loadingMotoristas && motoristas.length > 0">\r
-      <ion-item\r
-        button\r
-        class="selection-item"\r
-        [class.is-selected]="selectedMotorista?.id === motorista.id"\r
-        *ngFor="let motorista of motoristas"\r
-        (click)="selecionarMotorista(motorista)"\r
-      >\r
-        <ion-label>\r
-          <h3>{{ motorista.nome }}</h3>\r
-          <p>Matr\xEDcula: {{ formatarMatricula(motorista.matricula) }}</p>\r
-        </ion-label>\r
-      </ion-item>\r
-    </ion-list>\r
-  </ion-card>\r
-\r
-  <ion-card class="card">\r
-    <ion-item>\r
-      <ion-label position="stacked" class="odometro-label">\r
-        Od\xF4metro\r
-        <span class="ultimo-odometro-destaque" *ngIf="ultimoOdometro !== null">\r
-          \xDAltimo od\xF4metro: {{ formatarNumeroSemSeparador(ultimoOdometro) }}\r
-        </span>\r
-      </ion-label>\r
-      <ion-input\r
-        type="text"\r
-        inputmode="numeric"\r
-        placeholder="Ex: 12345"\r
-        class="campo-destaque"\r
-        [value]="odometroDisplay"\r
-        (ionInput)="onOdometroInput($event.detail.value)"\r
-      ></ion-input>\r
-    </ion-item>\r
-    <ion-item>\r
-      <ion-label position="stacked">% Bateria</ion-label>\r
-      <ion-input\r
-        type="number"\r
-        [(ngModel)]="bateria"\r
-        placeholder="0 a 100"\r
-        min="0"\r
-        max="100"\r
-        [disabled]="!isBateriaObrigatoria()"\r
-        class="campo-destaque"\r
-      ></ion-input>\r
-    </ion-item>\r
-  </ion-card>\r
-\r
-  <ion-text color="danger" *ngIf="!canStart && startValidationMessage">\r
-    <p class="error-message">{{ startValidationMessage }}</p>\r
-  </ion-text>\r
-\r
-  <ion-text color="danger" *ngIf="errorMessage">\r
-    <p class="error-message">{{ errorMessage }}</p>\r
-  </ion-text>\r
-\r
-</ion-content>\r
-\r
-<ion-footer>\r
-  <ion-toolbar>\r
-    <ion-button expand="block" [disabled]="!canStart || isSaving" (click)="iniciarVistoria()">\r
-      <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>\r
-      <span *ngIf="!isSaving">Iniciar Vistoria</span>\r
-    </ion-button>\r
-  </ion-toolbar>\r
-</ion-footer>\r
+    ], template: `<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start" *ngIf="isNative">
+      <ion-menu-button menu="main-menu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Nova Vistoria</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-card class="card">
+    <ion-item class="datetime-item">
+      <ion-label position="stacked">Data/Hora</ion-label>
+      <ion-input [value]="datavistoriaDisplay" readonly="true"></ion-input>
+      <ion-button
+        fill="clear"
+        size="small"
+        slot="end"
+        aria-label="Atualizar data/hora"
+        (click)="atualizarDataHora()"
+      >
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </ion-card>
+
+  <ion-card class="card" *ngIf="loadingAndamento || vistoriasEmAndamento.length > 0">
+    <ion-item>
+      <ion-label position="stacked">Vistorias em andamento</ion-label>
+    </ion-item>
+    <ion-item *ngIf="loadingAndamento">
+      <ion-spinner name="crescent"></ion-spinner>
+      <ion-label>Carregando vistorias...</ion-label>
+    </ion-item>
+    <ion-list *ngIf="!loadingAndamento && vistoriasEmAndamento.length > 0">
+      <ion-item *ngFor="let vistoria of vistoriasEmAndamento">
+        <ion-label>
+          <h3>{{ vistoria.veiculo?.descricao || 'Ve\xEDculo' }}</h3>
+          <p>
+            Motorista: {{ vistoria.motorista?.nome || '---' }}
+            <span *ngIf="vistoria.motorista?.matricula as matricula">
+              \u2022 Matricula: {{ formatarMatricula(matricula) }}
+            </span>
+          </p>
+          <p>
+            Data: {{ formatarDataHora24(vistoria.datavistoria) }}
+          </p>
+        </ion-label>
+        <div slot="end" class="andamento-actions">
+          <ion-button fill="outline" (click)="continuarVistoria(vistoria)">
+            Continuar
+          </ion-button>
+          <ion-button fill="outline" color="danger" (click)="cancelarVistoriaEmAndamento(vistoria)">
+            Excluir
+          </ion-button>
+        </div>
+      </ion-item>
+    </ion-list>
+  </ion-card>
+
+  <ion-card class="card">
+    <ion-item>
+      <ion-label position="stacked">Ve\xEDculo</ion-label>
+      <ion-searchbar
+        [debounce]="350"
+        placeholder="Buscar por descri\xE7\xE3o ou placa"
+        [value]="veiculoSearch"
+        (ionInput)="onBuscarVeiculos($event)"
+        (ionClear)="limparVeiculo()"
+      ></ion-searchbar>
+    </ion-item>
+    <ion-list *ngIf="loadingVeiculos">
+      <ion-item>
+        <ion-spinner name="crescent"></ion-spinner>
+        <ion-label>Buscando ve\xEDculos...</ion-label>
+      </ion-item>
+    </ion-list>
+    <ion-list *ngIf="!loadingVeiculos && veiculos.length > 0">
+      <ion-item
+        button
+        class="selection-item"
+        [class.is-selected]="selectedVeiculo?.id === veiculo.id"
+        *ngFor="let veiculo of veiculos"
+        (click)="selecionarVeiculo(veiculo)"
+      >
+        <ion-label>
+          <h3>{{ veiculo.descricao }}</h3>
+          <p>{{ veiculo.placa }}</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+    <ion-item *ngIf="selectedVeiculo">
+      <ion-label>
+        <p>\xDAltimo Od\xF4metro: {{ formatarNumeroSemSeparador(ultimoOdometro) }}</p>
+        <p>Combust\xEDvel: {{ selectedVeiculo.combustivel || '-' }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-card>
+
+  <ion-card class="card">
+    <ion-item>
+      <ion-label position="stacked">Motorista</ion-label>
+      <ion-searchbar
+        [debounce]="350"
+        placeholder="Buscar por nome, matr\xEDcula ou CPF"
+        [value]="motoristaSearch"
+        (ionInput)="onBuscarMotoristas($event)"
+        (ionClear)="limparMotorista()"
+      ></ion-searchbar>
+    </ion-item>
+    <ion-list *ngIf="loadingMotoristas">
+      <ion-item>
+        <ion-spinner name="crescent"></ion-spinner>
+        <ion-label>Buscando motoristas...</ion-label>
+      </ion-item>
+    </ion-list>
+    <ion-list *ngIf="!loadingMotoristas && motoristas.length > 0">
+      <ion-item
+        button
+        class="selection-item"
+        [class.is-selected]="selectedMotorista?.id === motorista.id"
+        *ngFor="let motorista of motoristas"
+        (click)="selecionarMotorista(motorista)"
+      >
+        <ion-label>
+          <h3>{{ motorista.nome }}</h3>
+          <p>Matr\xEDcula: {{ formatarMatricula(motorista.matricula) }}</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+  </ion-card>
+
+  <ion-card class="card">
+    <ion-item>
+      <ion-label position="stacked" class="odometro-label">
+        Od\xF4metro
+        <span class="ultimo-odometro-destaque" *ngIf="ultimoOdometro !== null">
+          \xDAltimo od\xF4metro: {{ formatarNumeroSemSeparador(ultimoOdometro) }}
+        </span>
+      </ion-label>
+      <ion-input
+        type="text"
+        inputmode="numeric"
+        placeholder="Ex: 12345"
+        class="campo-destaque"
+        [value]="odometroDisplay"
+        (ionInput)="onOdometroInput($event.detail.value)"
+      ></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-label position="stacked">% Bateria</ion-label>
+      <ion-input
+        type="number"
+        [(ngModel)]="bateria"
+        placeholder="0 a 100"
+        min="0"
+        max="100"
+        [disabled]="!isBateriaObrigatoria()"
+        class="campo-destaque"
+      ></ion-input>
+    </ion-item>
+  </ion-card>
+
+  <ion-text color="danger" *ngIf="!canStart && startValidationMessage">
+    <p class="error-message">{{ startValidationMessage }}</p>
+  </ion-text>
+
+  <ion-text color="danger" *ngIf="errorMessage">
+    <p class="error-message">{{ errorMessage }}</p>
+  </ion-text>
+
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-button expand="block" [disabled]="!canStart || isSaving" (click)="iniciarVistoria()">
+      <ion-spinner *ngIf="isSaving" name="crescent"></ion-spinner>
+      <span *ngIf="!isSaving">Iniciar Vistoria</span>
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>
 `, styles: ["/* src/app/pages/vistoria/vistoria-inicio.page.scss */\nion-content {\n  --padding-bottom: 108px;\n}\nion-footer {\n  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);\n}\nion-footer ion-toolbar {\n  --min-height: 72px;\n  --background: #ffffff;\n  --border-width: 1px 0 0;\n  --border-color: #e2e8f0;\n  --padding-start: 12px;\n  --padding-end: 12px;\n  --padding-top: 8px;\n  --padding-bottom: calc(8px + env(safe-area-inset-bottom));\n}\nion-footer ion-button {\n  margin: 0;\n  min-height: 46px;\n  font-weight: 700;\n  letter-spacing: 0.2px;\n  text-transform: none;\n  --border-radius: 12px;\n}\n.card {\n  margin: 16px;\n}\n.datetime-item ion-button {\n  margin-top: 22px;\n}\nion-item ion-button {\n  margin-left: 8px;\n}\n.andamento-actions {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  align-items: stretch;\n  min-width: 118px;\n}\n.andamento-actions ion-button {\n  margin: 0;\n}\n.selection-item,\n.select-item {\n  --background: #ffffff;\n  --color: #0f172a;\n  --border-color: #e2e8f0;\n  --border-width: 1px;\n  --border-style: solid;\n  --border-radius: 12px;\n  margin: 6px 12px;\n}\n.selection-item ion-label h3 {\n  color: #0f172a;\n  font-weight: 600;\n}\n.selection-item ion-label p {\n  color: #64748b;\n}\n.selection-item.is-selected {\n  --background: #e8f1ff;\n  --border-color: #3b82f6;\n  --color: #1d4ed8;\n}\nion-select::part(placeholder) {\n  color: #64748b;\n}\nion-select::part(text) {\n  color: #0f172a;\n}\n.error-message {\n  margin: 8px 16px;\n  font-size: 0.9rem;\n}\n.campo-destaque::part(native) {\n  font-size: 1.25rem;\n  font-weight: 600;\n}\n.odometro-label {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 6px;\n}\n.ultimo-odometro-destaque {\n  color: #1d4ed8;\n  font-weight: 700;\n  font-size: 0.92rem;\n  background: #e8f1ff;\n  border: 1px solid #bfdbfe;\n  border-radius: 8px;\n  padding: 2px 8px;\n}\n/*# sourceMappingURL=vistoria-inicio.page.css.map */\n"] }]
   }], () => [], null);
 })();
@@ -1230,4 +1149,4 @@ var VistoriaInicioPage = class _VistoriaInicioPage {
 export {
   VistoriaInicioPage
 };
-//# sourceMappingURL=chunk-ROKRVEPY.js.map
+//# sourceMappingURL=chunk-5EIS3M2W.js.map
