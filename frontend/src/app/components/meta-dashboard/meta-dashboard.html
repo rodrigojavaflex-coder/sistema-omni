@@ -19,7 +19,6 @@
       *ngIf="showFilters"
       class="filters-card"
       [formGroup]="filtersForm"
-      (ngSubmit)="onApplyFilters()"
     >
       <div class="filters-grid">
         <label class="filter-field">
@@ -42,9 +41,6 @@
         </label>
       </div>
       <div class="filter-actions">
-        <button type="submit" class="btn btn-primary">
-          Aplicar filtros
-        </button>
         <button type="button" class="btn btn-secondary" (click)="onClearFilters()">
           Limpar
         </button>
@@ -96,7 +92,13 @@
                 </small>
               </strong>
             </div>
-            <div *ngIf="card.indicador !== indicadorEnum.POR_MEDIA && card.indicador !== indicadorEnum.PROGRESSO">
+            <div
+              *ngIf="
+                card.indicador !== indicadorEnum.POR_MEDIA &&
+                card.indicador !== indicadorEnum.PROGRESSO &&
+                card.indicador !== indicadorEnum.INDICE_ACUMULADO
+              "
+            >
               <span>Total executado</span>
               <strong>
                 {{ formatValorComUnidade(card.totalExecutado, card.unidade) }}
@@ -104,6 +106,12 @@
             </div>
             <div *ngIf="card.indicador === indicadorEnum.PROGRESSO">
               <span>Último lançamento</span>
+              <strong>
+                {{ formatValorComUnidade(card.statusAtualMeta, card.unidade) }}
+              </strong>
+            </div>
+            <div *ngIf="card.indicador === indicadorEnum.INDICE_ACUMULADO">
+              <span>Último valor realizado</span>
               <strong>
                 {{ formatValorComUnidade(card.statusAtualMeta, card.unidade) }}
               </strong>
@@ -219,7 +227,13 @@
             </small>
           </strong>
         </div>
-        <div *ngIf="meta.indicador !== indicadorEnum.POR_MEDIA && meta.indicador !== indicadorEnum.PROGRESSO">
+        <div
+          *ngIf="
+            meta.indicador !== indicadorEnum.POR_MEDIA &&
+            meta.indicador !== indicadorEnum.PROGRESSO &&
+            meta.indicador !== indicadorEnum.INDICE_ACUMULADO
+          "
+        >
           <span>Total executado</span>
           <strong>
             {{ formatValorComUnidade(meta.totalExecutado, meta.unidade) }}
@@ -227,6 +241,12 @@
         </div>
         <div *ngIf="meta.indicador === indicadorEnum.PROGRESSO">
           <span>Último lançamento</span>
+          <strong>
+            {{ formatValorComUnidade(meta.statusAtualMeta, meta.unidade) }}
+          </strong>
+        </div>
+        <div *ngIf="meta.indicador === indicadorEnum.INDICE_ACUMULADO">
+          <span>Último valor realizado</span>
           <strong>
             {{ formatValorComUnidade(meta.statusAtualMeta, meta.unidade) }}
           </strong>

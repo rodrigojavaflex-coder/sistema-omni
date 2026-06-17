@@ -174,7 +174,8 @@ export class MetaService {
         row.valorPlanejado !== null && row.valorPlanejado !== undefined
           ? Number(row.valorPlanejado)
           : null;
-      const totalExecutado = Number(row.totalExecutado ?? 0);
+      const totalExecutadoSum = Number(row.totalExecutado ?? 0);
+      const ultimoValorRealizado = lastExecutionMap.get(row.id) ?? 0;
       const totalExecucoesNum = Number(row.totalExecucoes ?? 0);
       const indicador =
         (row.indicador as IndicadorMeta) ?? IndicadorMeta.RESULTADO_ACUMULADO;
@@ -192,16 +193,18 @@ export class MetaService {
 
       let statusAtualMeta: number;
 
-      // Tratamento específico para PROGRESSO
-      if (indicador === IndicadorMeta.PROGRESSO) {
-        // Para progresso, usa o último lançamento
-        statusAtualMeta = lastExecutionMap.get(row.id) ?? 0;
+      // Tratamento específico para PROGRESSO e INDICE_ACUMULADO
+      if (
+        indicador === IndicadorMeta.PROGRESSO ||
+        indicador === IndicadorMeta.INDICE_ACUMULADO
+      ) {
+        statusAtualMeta = ultimoValorRealizado;
       } else if (indicador === IndicadorMeta.POR_MEDIA && mesesIntervalo > 0) {
         // Mantém lógica original do POR_MEDIA
-        statusAtualMeta = totalExecutado / mesesIntervalo;
+        statusAtualMeta = totalExecutadoSum / mesesIntervalo;
       } else {
         // Mantém lógica original do RESULTADO_ACUMULADO
-        statusAtualMeta = totalExecutado;
+        statusAtualMeta = totalExecutadoSum;
       }
 
       // Esta parte só afeta POR_MEDIA (mantém lógica original)
@@ -212,21 +215,28 @@ export class MetaService {
         valorPlanejado !== null
       ) {
         const totalProjetado =
-          totalExecutado + mesesSemExecucao * valorPlanejado;
+          totalExecutadoSum + mesesSemExecucao * valorPlanejado;
         statusAtualMeta = totalProjetado / mesesIntervalo;
       }
 
+      const totalExecutado =
+        indicador === IndicadorMeta.INDICE_ACUMULADO
+          ? ultimoValorRealizado
+          : totalExecutadoSum;
+
       // Determina a referência para cálculo do progresso
       let referencia: number;
-      if (indicador === IndicadorMeta.PROGRESSO) {
-        // Para progresso, compara último lançamento com meta
-        referencia = statusAtualMeta; // que já é o último lançamento
+      if (
+        indicador === IndicadorMeta.PROGRESSO ||
+        indicador === IndicadorMeta.INDICE_ACUMULADO
+      ) {
+        referencia = statusAtualMeta;
       } else if (indicador === IndicadorMeta.POR_MEDIA) {
         // Mantém lógica original do POR_MEDIA
         referencia = statusAtualMeta;
       } else {
         // Mantém lógica original do RESULTADO_ACUMULADO
-        referencia = totalExecutado;
+        referencia = totalExecutadoSum;
       }
 
       // Cálculo do progresso percentual

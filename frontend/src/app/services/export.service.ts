@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, from } from 'rxjs';
+import { saveAs } from 'file-saver';
 import { AuthService } from './auth.service';
 
 export interface ExportData {
@@ -90,7 +91,6 @@ export class ExportService {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      const { saveAs } = await import('file-saver');
       saveAs(blob, `${sanitizedFileName}.xlsx`);
     } catch (error) {
       console.error('Erro ao exportar para Excel:', error);

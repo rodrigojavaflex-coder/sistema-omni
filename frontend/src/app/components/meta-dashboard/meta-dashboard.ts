@@ -1,4 +1,5 @@
-import { Component, OnInit, ViewChild, ElementRef, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, ElementRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MetaService } from '../../services/meta.service';
@@ -37,6 +38,7 @@ export class MetaDashboardComponent implements OnInit {
   private errorModalService = inject(ErrorModalService);
   private authService = inject(AuthService);
   private departamentoService = inject(DepartamentoService);
+  private destroyRef = inject(DestroyRef);
 
   allCards: MetaDashboardCard[] = [];
   cards: MetaDashboardCard[] = [];
@@ -188,6 +190,13 @@ export class MetaDashboardComponent implements OnInit {
     this.canUpdateExecucao = this.authService.hasPermission(Permission.META_EXECUCAO_UPDATE);
     this.canDeleteExecucao = this.authService.hasPermission(Permission.META_EXECUCAO_DELETE);
     this.canAudit = this.authService.hasPermission(Permission.META_EXECUCAO_AUDIT);
+
+    this.filtersForm.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.onApplyFilters();
+      });
+
     await this.loadDepartamentosUsuario();
     await this.loadCards(false);
   }
@@ -271,7 +280,7 @@ export class MetaDashboardComponent implements OnInit {
       anoExercicio: anoExercicio || '',
       departamentoId: departamentoId || '',
     };
-    await this.filterCards(true, true);
+    await this.filterCards(true, false);
   }
 
   async onClearFilters(): Promise<void> {
@@ -279,8 +288,6 @@ export class MetaDashboardComponent implements OnInit {
       anoExercicio: '',
       departamentoId: '',
     });
-    this.appliedFilters = { anoExercicio: '', departamentoId: '' };
-    await this.filterCards(true, true);
   }
 
   openCreateExecucao(): void {
