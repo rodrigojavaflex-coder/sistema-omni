@@ -1,0 +1,120 @@
+<div class="list-container">
+  <div class="list-header">
+    <h2>Documentos</h2>
+    <div class="header-actions">
+      <button class="btn btn-primary" type="button" (click)="create()">Novo Documento</button>
+      <button class="btn-export-excel" type="button" (click)="exportToExcel()" title="Exportar para Excel">Excel</button>
+      <button class="btn-export-pdf" type="button" (click)="exportToPDF()" title="Exportar para PDF">PDF</button>
+    </div>
+  </div>
+
+  <div class="filters filters-grid">
+    <input
+      type="text"
+      class="filter-input"
+      placeholder="Filtrar por nome..."
+      [(ngModel)]="filterNome"
+      (input)="onFilterChange()"
+    />
+    <select class="filter-input" [(ngModel)]="filterTipoDocumentoId" (change)="onFilterChange()">
+      <option value="">Todos os tipos</option>
+      @for (tipo of tiposDocumento; track tipo.id) {
+        <option [value]="tipo.id">{{ tipo.nome }}</option>
+      }
+    </select>
+    <select class="filter-input" [(ngModel)]="filterDepartamentoId" (change)="onFilterChange()">
+      <option value="">Todos os departamentos</option>
+      @for (dep of departamentos; track dep.id) {
+        <option [value]="dep.id">{{ dep.nomeDepartamento }}</option>
+      }
+    </select>
+    <select class="filter-input" [(ngModel)]="filterStatus" (change)="onFilterChange()">
+      <option value="">Todos os status</option>
+      @for (status of statusOptions; track status) {
+        <option [value]="status">{{ statusLabels[status] }}</option>
+      }
+    </select>
+  </div>
+
+  @if (loading) {
+    <div class="loading">Carregando...</div>
+  } @else if (items.length === 0) {
+    <div class="empty-state">Nenhum documento cadastrado.</div>
+  } @else {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Tipo</th>
+          <th>Departamento</th>
+          <th>Responsável</th>
+          <th>Status</th>
+          <th>Tamanho</th>
+          <th>Compartilhamento</th>
+          <th class="actions-col">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items; track item.id) {
+          <tr>
+            <td>{{ item.nomeDocumento }}</td>
+            <td>{{ item.tipoDocumento.nome }}</td>
+            <td>{{ item.departamento.nomeDepartamento }}</td>
+            <td>{{ item.responsavel.nome }}</td>
+            <td>{{ statusLabels[item.status] }}</td>
+            <td>{{ formatBytes(item.tamanho) }}</td>
+            <td>
+              @if (isLinkAtivo(item)) {
+                <span class="badge badge-success">Ativo</span>
+              } @else if (item.compartilhamentoAtivo) {
+                <span class="badge badge-warning">Expirado</span>
+              } @else {
+                <span class="badge badge-muted">Inativo</span>
+              }
+            </td>
+            <td class="actions-col">
+              <div class="table-actions">
+                <button class="btn btn-small btn-primary" type="button" (click)="edit(item)">Editar</button>
+                <button class="btn btn-small btn-secondary" type="button" (click)="download(item)">Download</button>
+                @if (canCompartilhar && isLinkAtivo(item)) {
+                  <button class="btn btn-small btn-secondary" type="button" (click)="copyLink(item)">
+                    {{ copyFeedbackId === item.id ? 'Copiado!' : 'Copiar link' }}
+                  </button>
+                }
+                <button class="btn btn-small btn-danger" type="button" (click)="delete(item)">Excluir</button>
+                @if (canAudit) {
+                  <button class="btn btn-small btn-audit" type="button" (click)="openAudit(item)">Auditoria</button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  <app-confirmation-modal
+    [isVisible]="showDeleteModal"
+    title="Confirmação de Exclusão"
+    [message]="deleteModalMessage"
+    confirmText="Excluir"
+    cancelText="Cancelar"
+    (confirmed)="onDeleteConfirmed()"
+    (cancelled)="onDeleteCancelled()"
+  ></app-confirmation-modal>
+
+  @if (selectedForAudit) {
+    <app-historico-auditoria
+      [entidade]="'documentos'"
+      [entidadeId]="selectedForAudit.id"
+      [entityDisplayName]="'Documento'"
+      [fieldLabels]="{
+        nomeDocumento: 'Nome do Documento',
+        status: 'Status',
+        compartilhamentoAtivo: 'Compartilhamento Ativo'
+      }"
+      [showModal]="showAuditModal"
+      (modalClosed)="closeAudit()"
+    ></app-historico-auditoria>
+  }
+</div>

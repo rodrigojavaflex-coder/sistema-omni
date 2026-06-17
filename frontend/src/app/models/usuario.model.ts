@@ -134,6 +134,18 @@ export enum Permission {
   MATRIZCRITICIDADE_READ = 'matrizcriticidade:read',
   MATRIZCRITICIDADE_UPDATE = 'matrizcriticidade:update',
   MATRIZCRITICIDADE_DELETE = 'matrizcriticidade:delete',
+
+  TIPO_DOCUMENTO_CREATE = 'tipo_documento:create',
+  TIPO_DOCUMENTO_READ = 'tipo_documento:read',
+  TIPO_DOCUMENTO_UPDATE = 'tipo_documento:update',
+  TIPO_DOCUMENTO_DELETE = 'tipo_documento:delete',
+
+  DOCUMENTO_CREATE = 'documento:create',
+  DOCUMENTO_READ = 'documento:read',
+  DOCUMENTO_UPDATE = 'documento:update',
+  DOCUMENTO_DELETE = 'documento:delete',
+  DOCUMENTO_AUDIT = 'documento:audit',
+  DOCUMENTO_COMPARTILHAR = 'documento:compartilhar',
 }
 
 export interface PermissionGroup {

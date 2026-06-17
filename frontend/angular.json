@@ -40,7 +40,17 @@
               "jspdf",
               "file-saver",
               "rgbcolor",
-              "raf"
+              "raf",
+              "exceljs",
+              "mammoth",
+              "xlsx",
+              "lop",
+              "bluebird/js/release/promise",
+              "base64-js",
+              "dingbat-to-unicode",
+              "xmlbuilder",
+              "@xmldom/xmldom",
+              "@xmldom/xmldom/lib/dom"
             ]
           },
           "configurations": {

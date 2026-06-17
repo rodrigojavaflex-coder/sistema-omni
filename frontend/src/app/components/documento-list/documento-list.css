@@ -1,0 +1,40 @@
+@import '../departamento-list/departamento-list.css';
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.empty-state,
+.loading {
+  color: var(--text-secondary, #6b7280);
+  padding: 16px 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: color-mix(in srgb, var(--color-success, #16a34a) 15%, transparent);
+  color: var(--color-success, #16a34a);
+}
+
+.badge-warning {
+  background: color-mix(in srgb, var(--color-warning, #d97706) 15%, transparent);
+  color: var(--color-warning, #d97706);
+}
+
+.badge-muted {
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-secondary, #6b7280);
+}
+
+.table-actions {
+  flex-wrap: wrap;
+}

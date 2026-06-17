@@ -39,6 +39,13 @@ export const routes: Routes = [
     path: 'redefinir-senha',
     component: PasswordRedefinirComponent,
   },
+  {
+    path: 'documentos/publico/:token',
+    loadComponent: () =>
+      import('./components/documento-publico/documento-publico').then(
+        (m) => m.DocumentoPublicoComponent,
+      ),
+  },
 
   {
     path: 'users',
@@ -477,6 +484,60 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: [...RoutePermissions.departamento.update] },
+  },
+  {
+    path: 'tipo-documento',
+    loadComponent: () =>
+      import('./components/tipo-documento-list/tipo-documento-list').then(
+        (m) => m.TipoDocumentoListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.tipoDocumento.list] },
+  },
+  {
+    path: 'tipo-documento/new',
+    loadComponent: () =>
+      import('./components/tipo-documento-form/tipo-documento-form').then(
+        (m) => m.TipoDocumentoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.tipoDocumento.create] },
+  },
+  {
+    path: 'tipo-documento/edit/:id',
+    loadComponent: () =>
+      import('./components/tipo-documento-form/tipo-documento-form').then(
+        (m) => m.TipoDocumentoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.tipoDocumento.update] },
+  },
+  {
+    path: 'documento',
+    loadComponent: () =>
+      import('./components/documento-list/documento-list').then(
+        (m) => m.DocumentoListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.documento.list] },
+  },
+  {
+    path: 'documento/new',
+    loadComponent: () =>
+      import('./components/documento-form/documento-form').then(
+        (m) => m.DocumentoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.documento.create] },
+  },
+  {
+    path: 'documento/edit/:id',
+    loadComponent: () =>
+      import('./components/documento-form/documento-form').then(
+        (m) => m.DocumentoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.documento.update] },
   },
   {
     path: 'meta',

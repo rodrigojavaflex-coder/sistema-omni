@@ -1,0 +1,7 @@
+@import '../departamento-list/departamento-list.css';
+
+.empty-state,
+.loading {
+  color: var(--text-secondary, #6b7280);
+  padding: 16px 0;
+}

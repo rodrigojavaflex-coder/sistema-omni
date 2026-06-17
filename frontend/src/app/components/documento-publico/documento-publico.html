@@ -1,0 +1,113 @@
+<div class="public-page">
+  @if (loading) {
+    <div class="public-state">
+      <p class="status-text">Carregando documento...</p>
+    </div>
+  } @else if (error) {
+    <div class="public-state">
+      <div class="alert alert-error">{{ error }}</div>
+    </div>
+  } @else if (documento) {
+    <header class="public-toolbar">
+      <div class="public-toolbar__info">
+        <h1 [title]="documento.nomeDocumento">{{ documento.nomeDocumento }}</h1>
+        <span class="public-toolbar__divider" aria-hidden="true"></span>
+        <span class="file-kind-badge" [attr.data-kind]="fileKindLabel">{{ fileKindLabel }}</span>
+        <span class="public-toolbar__file" [title]="arquivoExibicaoNome">
+          {{ arquivoExibicaoNome }}
+        </span>
+        <span class="public-toolbar__size">{{ formatBytes(documento.tamanho) }}</span>
+      </div>
+
+      <div class="public-toolbar__actions">
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="downloading"
+          (click)="download()"
+        >
+          {{ downloading ? 'Baixando...' : 'Baixar documento' }}
+        </button>
+      </div>
+    </header>
+
+    <section class="preview-section" aria-label="Pré-visualização do documento">
+      @if (previewLoading) {
+        <div class="preview-state">
+          <p class="status-text">Gerando pré-visualização...</p>
+        </div>
+      } @else if (previewError) {
+        <div class="preview-state preview-state--warning">
+          <p>{{ previewError }}</p>
+        </div>
+      } @else if (preview && preview.unsupportedMessage) {
+        <div class="preview-state preview-state--warning">
+          <p>{{ preview.unsupportedMessage }}</p>
+        </div>
+      } @else if (preview) {
+        <div class="preview-panel">
+          @if (preview.kind === 'pdf' && previewObjectUrl) {
+            <iframe
+              class="preview-frame preview-frame--pdf"
+              [src]="previewObjectUrl"
+              title="Pré-visualização do PDF"
+            ></iframe>
+          } @else if (preview.kind === 'image' && previewObjectUrl) {
+            <div class="preview-image-wrap">
+              <img
+                class="preview-image"
+                [src]="previewObjectUrl"
+                [alt]="'Pré-visualização de ' + documento.nomeArquivo"
+              />
+            </div>
+          } @else if (preview.kind === 'excel' && preview.excelSheets && preview.excelSheets.length > 0) {
+            @if (preview.excelSheets.length > 1) {
+              <div class="excel-sheets-nav">
+                <label class="excel-sheets-nav__select-label">
+                  Aba
+                  <select
+                    class="excel-sheet-select"
+                    [value]="activeExcelSheetIndex"
+                    (change)="onExcelSheetSelect($event)"
+                    aria-label="Selecionar aba da planilha"
+                  >
+                    @for (sheet of preview.excelSheets; track $index; let index = $index) {
+                      <option [value]="index" [selected]="activeExcelSheetIndex === index">
+                        {{ sheet.name }}
+                      </option>
+                    }
+                  </select>
+                </label>
+                <span class="excel-sheets-nav__count">{{ preview.excelSheets.length }} abas</span>
+              </div>
+              <div class="excel-tabs" role="tablist" aria-label="Abas da planilha">
+                @for (sheet of preview.excelSheets; track $index; let index = $index) {
+                  <button
+                    type="button"
+                    class="excel-tab"
+                    role="tab"
+                    [class.excel-tab--active]="activeExcelSheetIndex === index"
+                    [attr.aria-selected]="activeExcelSheetIndex === index"
+                    [title]="sheet.name"
+                    (click)="selectExcelSheet(index)"
+                  >
+                    {{ sheet.name }}
+                  </button>
+                }
+              </div>
+            }
+            @if (activeExcelSheet && activeExcelSheet.isEmpty) {
+              <div class="preview-state preview-state--empty">
+                <p>Esta aba não possui dados tabulares para exibir (pode conter gráficos ou formatação).</p>
+              </div>
+            } @else if (activeExcelSheet) {
+              <app-excel-preview-table [sheet]="activeExcelSheet" />
+            }
+          } @else if (preview.kind === 'word' && previewHtml) {
+            <div class="preview-html preview-html--word" [innerHTML]="previewHtml"></div>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

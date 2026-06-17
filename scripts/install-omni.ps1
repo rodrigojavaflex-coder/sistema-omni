@@ -454,6 +454,12 @@ function Configure-IIS {
                     <action type="Redirect" url="/omni/" redirectType="Permanent" />
                 </rule>
 
+                <!-- 2b) Link publico de documentos sem prefixo /omni -->
+                <rule name="Public documentos redirect to omni" stopProcessing="true">
+                    <match url="^documentos/publico/(.*)" />
+                    <action type="Redirect" url="/omni/documentos/publico/{R:1}" redirectType="Permanent" />
+                </rule>
+
                 <!-- 3) API proxy -->
                 <rule name="API Proxy" stopProcessing="true">
                     <match url="^api/(.*)" />

@@ -34,6 +34,6 @@
   ></div>
 </div>
 
-<div class="login-container" *ngIf="!isAuthenticated">
+<div [ngClass]="guestShellClass" *ngIf="!isAuthenticated">
   <router-outlet></router-outlet>
 </div>

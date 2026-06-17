@@ -161,6 +161,26 @@ export const RoutePermissions = {
       Permission.BI_ACESSO_LINK_DELETE,
     ],
   },
+  tipoDocumento: {
+    list: [
+      Permission.TIPO_DOCUMENTO_CREATE,
+      Permission.TIPO_DOCUMENTO_READ,
+      Permission.TIPO_DOCUMENTO_UPDATE,
+      Permission.TIPO_DOCUMENTO_DELETE,
+    ],
+    create: [Permission.TIPO_DOCUMENTO_CREATE],
+    update: [Permission.TIPO_DOCUMENTO_UPDATE],
+  },
+  documento: {
+    list: [
+      Permission.DOCUMENTO_CREATE,
+      Permission.DOCUMENTO_READ,
+      Permission.DOCUMENTO_UPDATE,
+      Permission.DOCUMENTO_DELETE,
+    ],
+    create: [Permission.DOCUMENTO_CREATE],
+    update: [Permission.DOCUMENTO_UPDATE],
+  },
 } as const;
 
 /** Chave de permissão dinâmica para visualização de link de BI (alinhada ao backend). */

@@ -3,11 +3,19 @@ import { inject } from '@angular/core';
 import { catchError, throwError, switchMap, from } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
+const PUBLIC_API_URL_FRAGMENTS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/health',
+  '/api/health',
+  '/documentos/publico/',
+] as const;
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
 
-  const publicUrls = ['/auth/login', '/auth/register', '/auth/refresh', '/health', '/api/health'];
-  const isPublicUrl = publicUrls.some(url => req.url.includes(url));
+  const isPublicUrl = PUBLIC_API_URL_FRAGMENTS.some((url) => req.url.includes(url));
 
   if (isPublicUrl) {
     return next(req);

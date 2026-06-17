@@ -9,6 +9,7 @@ import { ErrorModalComponent } from '../error-modal/error-modal.component';
 import { ToastComponent } from '../toast/toast.component';
 import { Subject, filter, takeUntil } from 'rxjs';
 import { MenuState } from '../../services/navigation.service';
+import { isPublicDocumentRoute } from '../../config/public-routes';
 
 @Component({
   selector: 'app-layout',
@@ -30,6 +31,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   isDesktop = true;
   menuState: MenuState = 'hidden';
   isBiViewerRoute = false;
+  isPublicDocumentRoute = false;
 
   ngOnInit() {
     this.authService.isAuthenticated$
@@ -48,8 +50,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
         this.isDesktop = viewport === 'desktop';
       });
 
-    this.isBiViewerRoute = this.checkIfBiViewerRoute(this.router.url);
-    this.syncBiViewerScaleClass();
+    this.syncRouteFlags(this.router.url);
 
     this.router.events
       .pipe(
@@ -57,12 +58,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
       )
       .subscribe((event) => {
-        this.isBiViewerRoute = this.checkIfBiViewerRoute(event.urlAfterRedirects);
-        this.syncBiViewerScaleClass();
+        this.syncRouteFlags(event.urlAfterRedirects);
         if (this.isBiViewerRoute) {
           this.navigationService.closeMenu();
         }
       });
+  }
+
+  get guestShellClass(): string {
+    return this.isPublicDocumentRoute ? 'public-route-container' : 'login-container';
   }
 
   closeMenu() {
@@ -79,13 +83,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
     return !this.isDesktop && this.menuState === 'open';
   }
 
-  private checkIfBiViewerRoute(url: string): boolean {
-    return url.startsWith('/bi-acesso/view/');
+  private syncRouteFlags(url: string): void {
+    this.isBiViewerRoute = url.startsWith('/bi-acesso/view/');
+    this.isPublicDocumentRoute = isPublicDocumentRoute(url);
+    this.syncGlobalScaleClass();
   }
 
-  private syncBiViewerScaleClass(): void {
+  private syncGlobalScaleClass(): void {
     const htmlElement = this.document.documentElement;
-    if (this.isBiViewerRoute) {
+    if (this.isBiViewerRoute || this.isPublicDocumentRoute) {
       this.renderer.addClass(htmlElement, 'bi-viewer-scale-reset');
       return;
     }

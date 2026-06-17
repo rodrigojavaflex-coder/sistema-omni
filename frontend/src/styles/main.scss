@@ -316,6 +316,11 @@ img {
 // PRINT STYLES
 // ========================================
 
+body.excel-preview--resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
 @media print {
   .no-print {
     display: none !important;

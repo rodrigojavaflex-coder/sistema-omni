@@ -144,6 +144,20 @@ export enum Permission {
   MATRIZCRITICIDADE_READ = 'matrizcriticidade:read',
   MATRIZCRITICIDADE_UPDATE = 'matrizcriticidade:update',
   MATRIZCRITICIDADE_DELETE = 'matrizcriticidade:delete',
+
+  // Tipos de Documento
+  TIPO_DOCUMENTO_CREATE = 'tipo_documento:create',
+  TIPO_DOCUMENTO_READ = 'tipo_documento:read',
+  TIPO_DOCUMENTO_UPDATE = 'tipo_documento:update',
+  TIPO_DOCUMENTO_DELETE = 'tipo_documento:delete',
+
+  // Documentos
+  DOCUMENTO_CREATE = 'documento:create',
+  DOCUMENTO_READ = 'documento:read',
+  DOCUMENTO_UPDATE = 'documento:update',
+  DOCUMENTO_DELETE = 'documento:delete',
+  DOCUMENTO_AUDIT = 'documento:audit',
+  DOCUMENTO_COMPARTILHAR = 'documento:compartilhar',
 }
 
 export const PERMISSION_GROUPS = {
@@ -405,6 +419,35 @@ export const PERMISSION_GROUPS = {
     {
       key: Permission.MATRIZCRITICIDADE_DELETE,
       label: 'Excluir matriz de criticidade',
+    },
+  ],
+  'Tipos de Documento': [
+    {
+      key: Permission.TIPO_DOCUMENTO_CREATE,
+      label: 'Criar tipos de documento',
+    },
+    {
+      key: Permission.TIPO_DOCUMENTO_READ,
+      label: 'Visualizar tipos de documento',
+    },
+    {
+      key: Permission.TIPO_DOCUMENTO_UPDATE,
+      label: 'Editar tipos de documento',
+    },
+    {
+      key: Permission.TIPO_DOCUMENTO_DELETE,
+      label: 'Excluir tipos de documento',
+    },
+  ],
+  Documentos: [
+    { key: Permission.DOCUMENTO_CREATE, label: 'Criar documentos' },
+    { key: Permission.DOCUMENTO_READ, label: 'Visualizar documentos' },
+    { key: Permission.DOCUMENTO_UPDATE, label: 'Editar documentos' },
+    { key: Permission.DOCUMENTO_DELETE, label: 'Excluir documentos' },
+    { key: Permission.DOCUMENTO_AUDIT, label: 'Auditar documentos' },
+    {
+      key: Permission.DOCUMENTO_COMPARTILHAR,
+      label: 'Gerenciar link público de documentos',
     },
   ],
 };

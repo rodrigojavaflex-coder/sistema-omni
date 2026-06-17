@@ -27,6 +27,8 @@ import { OrigemOcorrenciaModule } from './modules/origem-ocorrencia/origem-ocorr
 import { CategoriaOcorrenciaModule } from './modules/categoria-ocorrencia/categoria-ocorrencia.module';
 import { EmpresaTerceiraModule } from './modules/empresa-terceira/empresa-terceira.module';
 import { BiAcessoModule } from './modules/bi-acesso/bi-acesso.module';
+import { TipoDocumentoModule } from './modules/tipo-documento/tipo-documento.module';
+import { DocumentoModule } from './modules/documento/documento.module';
 
 @Module({
   imports: [
@@ -65,6 +67,8 @@ import { BiAcessoModule } from './modules/bi-acesso/bi-acesso.module';
     CategoriaOcorrenciaModule,
     EmpresaTerceiraModule,
     BiAcessoModule,
+    TipoDocumentoModule,
+    DocumentoModule,
     TypeOrmModule.forFeature([Configuracao]),
   ],
   controllers: [AppController],

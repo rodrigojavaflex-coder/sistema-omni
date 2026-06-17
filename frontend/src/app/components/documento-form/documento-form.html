@@ -1,0 +1,286 @@
+<div class="form-container">
+  <h2>{{ getFormTitle() }} Documento</h2>
+
+  <div class="form-actions form-actions-top">
+    <button type="button" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+      @if (loading) {
+        <span class="spinner"></span>
+      }
+      {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-section">
+      <h3>Dados do Documento</h3>
+
+      <div class="form-group">
+        <label class="form-label">Nome do Documento *</label>
+        <input type="text" formControlName="nomeDocumento" class="form-input" />
+        @if (isFieldInvalid('nomeDocumento')) {
+          <div class="form-error">{{ getFieldError('nomeDocumento') }}</div>
+        }
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Tipo de Documento *</label>
+          <select formControlName="tipoDocumentoId" class="form-select">
+            <option value="">Selecione...</option>
+            @for (tipo of tiposDocumento; track tipo.id) {
+              <option [value]="tipo.id">{{ tipo.nome }}</option>
+            }
+          </select>
+          @if (isFieldInvalid('tipoDocumentoId')) {
+            <div class="form-error">{{ getFieldError('tipoDocumentoId') }}</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Departamento *</label>
+          <select formControlName="departamentoId" class="form-select">
+            <option value="">Selecione...</option>
+            @for (dep of departamentos; track dep.id) {
+              <option [value]="dep.id">{{ dep.nomeDepartamento }}</option>
+            }
+          </select>
+          @if (isFieldInvalid('departamentoId')) {
+            <div class="form-error">{{ getFieldError('departamentoId') }}</div>
+          }
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Responsável *</label>
+          <app-usuario-autocomplete
+            formControlName="responsavelId"
+            [isInvalid]="isFieldInvalid('responsavelId')"
+          ></app-usuario-autocomplete>
+          @if (isFieldInvalid('responsavelId')) {
+            <div class="form-error">{{ getFieldError('responsavelId') }}</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status *</label>
+          <select formControlName="status" class="form-select">
+            @for (status of statusOptions; track status) {
+              <option [value]="status">{{ statusLabels[status] }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Arquivo</h3>
+      @if (isCreateMode() || canReplaceFile) {
+        <div class="form-group file-upload-group">
+          <label class="form-label">
+            {{ editMode ? 'Substituir arquivo' : 'Arquivo *' }}
+          </label>
+
+          <input
+            #fileInput
+            type="file"
+            class="file-input-hidden"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+            (change)="onFileSelected($event)"
+          />
+
+          @if (selectedFile) {
+            <div class="file-preview-card">
+              @if (selectedFilePreviewUrl) {
+                <img
+                  class="file-preview-thumb"
+                  [src]="selectedFilePreviewUrl"
+                  [alt]="'Miniatura de ' + selectedFileName"
+                />
+              } @else {
+                <div
+                  class="file-preview-icon"
+                  [attr.data-kind]="getFileKindLabel(selectedFile.type, selectedFileName)"
+                >
+                  {{ getFileKindLabel(selectedFile.type, selectedFileName) }}
+                </div>
+              }
+
+              <div class="file-preview-details">
+                <span class="file-preview-name" [title]="arquivoExibicaoNome">{{ arquivoExibicaoNome }}</span>
+                <span class="file-preview-meta">{{ formatFileSize(selectedFile.size) }}</span>
+                @if (editMode && arquivoAtual) {
+                  <span class="file-preview-badge">Novo arquivo (substituirá o atual ao salvar)</span>
+                }
+              </div>
+
+              <div class="file-preview-actions">
+                <button type="button" class="btn btn-small btn-secondary" (click)="openFilePicker()">
+                  Trocar
+                </button>
+                <button type="button" class="btn btn-small btn-danger" (click)="removeSelectedFile()">
+                  Remover
+                </button>
+              </div>
+            </div>
+          } @else if (editMode && arquivoAtual) {
+            <div class="file-preview-card file-preview-card--current">
+              <div
+                class="file-preview-icon"
+                [attr.data-kind]="getFileKindLabel(arquivoAtualMimeType, arquivoAtual)"
+              >
+                {{ getFileKindLabel(arquivoAtualMimeType, arquivoAtual) }}
+              </div>
+
+              <div class="file-preview-details">
+                <span class="file-preview-name" [title]="arquivoExibicaoNome">{{ arquivoExibicaoNome }}</span>
+                @if (documentoAtual?.tamanho) {
+                  <span class="file-preview-meta">{{ formatFileSize(documentoAtual!.tamanho) }}</span>
+                }
+                <span class="file-preview-badge">Arquivo atual</span>
+              </div>
+
+              <div class="file-preview-actions">
+                <button
+                  type="button"
+                  class="btn btn-small btn-primary"
+                  [disabled]="downloadingArquivo"
+                  (click)="downloadArquivoAtual()"
+                >
+                  {{ downloadingArquivo ? 'Baixando...' : 'Download' }}
+                </button>
+                <button type="button" class="btn btn-small btn-secondary" (click)="openFilePicker()">
+                  Substituir
+                </button>
+              </div>
+            </div>
+          } @else {
+            <button type="button" class="btn btn-secondary file-picker-btn" (click)="openFilePicker()">
+              Escolher arquivo
+            </button>
+          }
+
+          <p class="help-text">Formatos: PDF, Word, Excel, PNG ou JPEG. Tamanho máximo: {{ maxFileSizeLabel }}.</p>
+        </div>
+      } @else if (editMode && arquivoAtual) {
+        <div class="file-preview-card file-preview-card--current">
+          <div
+            class="file-preview-icon"
+            [attr.data-kind]="getFileKindLabel(arquivoAtualMimeType, arquivoAtual)"
+          >
+            {{ getFileKindLabel(arquivoAtualMimeType, arquivoAtual) }}
+          </div>
+
+          <div class="file-preview-details">
+            <span class="file-preview-name" [title]="arquivoAtual">{{ arquivoAtual }}</span>
+            @if (documentoAtual?.tamanho) {
+              <span class="file-preview-meta">{{ formatFileSize(documentoAtual!.tamanho) }}</span>
+            }
+            <span class="file-preview-badge">Arquivo atual</span>
+          </div>
+
+          <div class="file-preview-actions">
+            <button
+              type="button"
+              class="btn btn-small btn-primary"
+              [disabled]="downloadingArquivo"
+              (click)="downloadArquivoAtual()"
+            >
+              {{ downloadingArquivo ? 'Baixando...' : 'Download' }}
+            </button>
+          </div>
+        </div>
+      } @else {
+        <p class="help-text">Documento obsoleto ou arquivado não permite substituir o arquivo.</p>
+      }
+    </div>
+
+    @if (canCompartilhar) {
+      <div
+        class="form-section sharing-section"
+        [class.sharing-section--disabled]="!hasArquivoParaCompartilhar"
+      >
+        <h3>Compartilhamento público</h3>
+        @if (!hasArquivoParaCompartilhar) {
+          <p class="help-text">
+            Selecione um arquivo acima para habilitar as opções de compartilhamento.
+          </p>
+        } @else if (!editMode) {
+          <p class="help-text">
+            Ao ativar o link, o documento será salvo automaticamente. Disponível apenas com status Ativo.
+          </p>
+        } @else {
+          <p class="help-text">
+            Gera um link de acesso sem login. Disponível apenas para documentos com status Ativo.
+          </p>
+        }
+
+        <div class="form-group">
+          <label class="form-label">Expiração opcional</label>
+          <input
+            type="datetime-local"
+            class="form-input"
+            [(ngModel)]="compartilhamentoExpiraEm"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="!hasArquivoParaCompartilhar"
+          />
+        </div>
+
+        @if (publicLink) {
+          <div class="link-box">
+            <input type="text" class="form-input" [value]="publicLink" readonly />
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="copyPublicLink()"
+              [disabled]="!hasArquivoParaCompartilhar"
+            >
+              {{ copyFeedback ? 'Copiado!' : 'Copiar link' }}
+            </button>
+          </div>
+        }
+
+        <div class="sharing-actions">
+          @if (!documentoAtual?.compartilhamentoAtivo) {
+            <button
+              type="button"
+              class="btn btn-primary"
+              [disabled]="sharingLoading || !compartilhamentoDisponivel"
+              (click)="ativarCompartilhamento()"
+            >
+              Ativar link
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="btn btn-secondary"
+              [disabled]="sharingLoading || !hasArquivoParaCompartilhar"
+              (click)="regenerarCompartilhamento()"
+            >
+              Regenerar link
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              [disabled]="sharingLoading || !hasArquivoParaCompartilhar"
+              (click)="desativarCompartilhamento()"
+            >
+              Desativar link
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        @if (loading) {
+          <span class="spinner"></span>
+        }
+        {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </form>
+</div>

@@ -165,6 +165,40 @@ export const MENU_CONFIGURATION: MenuConfig = {
           ]
         },
         {
+          label: 'Documentos',
+          icon: 'feather-folder',
+          requiredPermissions: [],
+          isSubmenu: true,
+          parentMenu: 'Cadastros',
+          submenuItems: [
+            {
+              label: 'Tipo de Docs',
+              title: 'Tipos de Documentos',
+              route: '/tipo-documento',
+              icon: 'feather-file-text',
+              requiredPermissions: [
+                Permission.TIPO_DOCUMENTO_CREATE,
+                Permission.TIPO_DOCUMENTO_READ,
+                Permission.TIPO_DOCUMENTO_UPDATE,
+                Permission.TIPO_DOCUMENTO_DELETE
+              ],
+              parentMenu: 'Cadastros'
+            },
+            {
+              label: 'Documentos',
+              route: '/documento',
+              icon: 'feather-book-open',
+              requiredPermissions: [
+                Permission.DOCUMENTO_CREATE,
+                Permission.DOCUMENTO_READ,
+                Permission.DOCUMENTO_UPDATE,
+                Permission.DOCUMENTO_DELETE
+              ],
+              parentMenu: 'Cadastros'
+            },
+          ]
+        },
+        {
           label: 'Ocorrência',
           icon: 'feather-alert-circle',
           requiredPermissions: [],

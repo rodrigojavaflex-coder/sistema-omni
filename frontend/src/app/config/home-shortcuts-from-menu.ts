@@ -18,6 +18,8 @@ const ROUTE_TO_SHORTCUT_ID: Record<string, string> = {
   '/veiculo': 'veiculos',
   '/modelos-veiculo': 'modelos-veiculo',
   '/empresa-terceira': 'empresas-terceiras',
+  '/tipo-documento': 'tipo-documento',
+  '/documento': 'documento',
   '/ocorrencia': 'ocorrencias',
   '/trechos': 'trechos',
   '/origem-ocorrencia': 'origem-ocorrencia',

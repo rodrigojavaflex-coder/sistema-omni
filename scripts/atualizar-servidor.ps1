@@ -381,8 +381,9 @@ if (Test-Path $rootWebConfigPath) {
     $hasCanonicalHostRule = $currentRootConfig -match 'name="Canonical host only"'
     $hasApiProxyRule = $currentRootConfig -match 'name="API Proxy"'
     $hasRootRedirectRule = $currentRootConfig -match 'name="Redirect root to /omni"'
+    $hasPublicDocumentosRedirectRule = $currentRootConfig -match 'name="Public documentos redirect to omni"'
     
-    if (-not ($hasCanonicalHostRule -and $hasApiProxyRule -and $hasRootRedirectRule)) {
+    if (-not ($hasCanonicalHostRule -and $hasApiProxyRule -and $hasRootRedirectRule -and $hasPublicDocumentosRedirectRule)) {
         Write-Host "  Web.config global desatualizado! Aplicando padrao da raiz..." -ForegroundColor Yellow
         
         $rootWebConfig = @"
@@ -407,6 +408,12 @@ if (Test-Path $rootWebConfigPath) {
           <action type="Redirect" url="/omni/" redirectType="Permanent" />
         </rule>
 
+        <!-- 2b) Link publico de documentos sem prefixo /omni -->
+        <rule name="Public documentos redirect to omni" stopProcessing="true">
+          <match url="^documentos/publico/(.*)" />
+          <action type="Redirect" url="/omni/documentos/publico/{R:1}" redirectType="Permanent" />
+        </rule>
+
         <!-- 3) API proxy -->
         <rule name="API Proxy" stopProcessing="true">
           <match url="^api/(.*)" />
@@ -421,7 +428,7 @@ if (Test-Path $rootWebConfigPath) {
         
         $rootWebConfig | Out-File -FilePath $rootWebConfigPath -Encoding UTF8 -Force
         Write-Host "  OK: Web.config GLOBAL atualizado com padrao da raiz!" -ForegroundColor Green
-        Write-Host "  -> Host canonico + redirect / + proxy /api" -ForegroundColor Gray
+        Write-Host "  -> Host canonico + redirect / + link publico documentos + proxy /api" -ForegroundColor Gray
     } else {
         Write-Host "  OK: Web.config global ja configurado (padrao da raiz)" -ForegroundColor Green
     }
@@ -448,6 +455,12 @@ if (Test-Path $rootWebConfigPath) {
         <rule name="Redirect root to /omni" stopProcessing="true">
           <match url="^$" />
           <action type="Redirect" url="/omni/" redirectType="Permanent" />
+        </rule>
+
+        <!-- 2b) Link publico de documentos sem prefixo /omni -->
+        <rule name="Public documentos redirect to omni" stopProcessing="true">
+          <match url="^documentos/publico/(.*)" />
+          <action type="Redirect" url="/omni/documentos/publico/{R:1}" redirectType="Permanent" />
         </rule>
 
         <!-- 3) API proxy -->

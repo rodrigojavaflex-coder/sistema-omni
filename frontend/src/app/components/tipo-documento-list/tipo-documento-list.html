@@ -1,0 +1,62 @@
+<div class="list-container">
+  <div class="list-header">
+    <h2>Tipos de Documento</h2>
+    <div class="header-actions">
+      <button class="btn btn-primary" type="button" (click)="create()">Novo Tipo</button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <input
+      type="text"
+      class="filter-input"
+      placeholder="Filtrar por nome..."
+      [(ngModel)]="filterNome"
+      (input)="onFilterChange()"
+    />
+  </div>
+
+  @if (loading) {
+    <div class="loading">Carregando...</div>
+  } @else if (items.length === 0) {
+    <div class="empty-state">Nenhum tipo de documento cadastrado.</div>
+  } @else {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Descrição</th>
+          <th>Ativo</th>
+          <th>Criado em</th>
+          <th class="actions-col">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items; track item.id) {
+          <tr>
+            <td>{{ item.nome }}</td>
+            <td>{{ item.descricao || '—' }}</td>
+            <td>{{ item.ativo ? 'Sim' : 'Não' }}</td>
+            <td>{{ item.criadoEm | date: 'short' }}</td>
+            <td class="actions-col">
+              <div class="table-actions">
+                <button class="btn btn-small btn-primary" type="button" (click)="edit(item)">Editar</button>
+                <button class="btn btn-small btn-danger" type="button" (click)="delete(item)">Excluir</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  <app-confirmation-modal
+    [isVisible]="showDeleteModal"
+    title="Confirmação de Exclusão"
+    [message]="deleteModalMessage"
+    confirmText="Excluir"
+    cancelText="Cancelar"
+    (confirmed)="onDeleteConfirmed()"
+    (cancelled)="onDeleteCancelled()"
+  ></app-confirmation-modal>
+</div>

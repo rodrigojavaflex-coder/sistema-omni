@@ -94,3 +94,11 @@
   padding: var(--layout-shell-padding);
 }
 
+.public-route-container {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  padding: 0;
+  background: var(--bg-primary, #f3f4f6);
+}
+

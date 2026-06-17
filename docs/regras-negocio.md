@@ -216,7 +216,87 @@ Copie o bloco abaixo para cada regra nova.
 
 ### 4. Cadastros Gerais
 #### Regras
-- [ ] RN-CAD-001 - Placeholder
+- [x] RN-DOC-001 - Metadados obrigatorios do documento
+- [x] RN-DOC-002 - Upload e limite de arquivo (25 MB)
+- [x] RN-DOC-003 - Transicao de status
+- [x] RN-DOC-004 - Exclusao de documento
+- [x] RN-DOC-005 - Link publico
+- [x] RN-DOC-006 - Regeneracao de token
+- [x] RN-DOC-007 - Responsavel vinculado a usuario
+- [x] RN-DOC-008 - Auditoria de documentos
+- [x] RN-DOC-009 - Preview Excel no link publico
+
+### RN-DOC-001 - Metadados obrigatorios
+- **Modulo:** Documentos
+- **Fluxo:** Cadastro de documento
+- **Descricao:** Nome do documento, tipo, departamento e responsavel (usuario ativo) sao obrigatorios na criacao.
+- **Validacoes:** Tipo e departamento devem existir; tipo deve estar ativo; responsavel deve existir e estar ativo.
+- **Mensagens ao usuario:** Erros 400 com mensagem funcional clara.
+- **Permissoes envolvidas:** `documento:create`, `documento:update`
+- **Dados impactados:** `documentos`, `tipos_documento`, `departamentos`, `usuarios`
+- **Status:** Implementada
+
+### RN-DOC-002 - Upload e limite de arquivo
+- **Modulo:** Documentos
+- **Fluxo:** Upload/substituicao de arquivo
+- **Descricao:** Upload obrigatorio na criacao; substituicao permitida na edicao quando status permitir.
+- **Validacoes:** Tamanho maximo 25 MB; MIME PDF, Word, Excel, PNG, JPEG.
+- **Mensagens ao usuario:** "Arquivo excede o limite maximo de 25 MB"; "Tipo de arquivo nao permitido..."
+- **Permissoes envolvidas:** `documento:create`, `documento:update`
+- **Dados impactados:** `documentos.dadosBytea`, `documentos.mimeType`, `documentos.tamanho`
+- **Status:** Implementada
+
+### RN-DOC-003 - Transicao de status
+- **Modulo:** Documentos
+- **Fluxo:** Edicao de documento
+- **Descricao:** Documento Obsoleto ou Arquivado nao permite edicao de metadados/arquivo; permite alterar status para Em Revisao.
+- **Validacoes:** Bloqueio de PATCH de campos exceto reabertura via status Em Revisao.
+- **Permissoes envolvidas:** `documento:update`
+- **Status:** Implementada
+
+### RN-DOC-004 - Exclusao
+- **Modulo:** Documentos
+- **Fluxo:** Exclusao
+- **Descricao:** Exclusao fisica exige `documento:delete`; recomenda-se status Arquivado.
+- **Permissoes envolvidas:** `documento:delete`
+- **Status:** Implementada
+
+### RN-DOC-005 - Link publico
+- **Modulo:** Documentos
+- **Fluxo:** Compartilhamento publico
+- **Descricao:** Link publico funciona apenas para status Ativo, `compartilhamentoAtivo=true`, token valido e nao expirado (expiracao opcional).
+- **Permissoes envolvidas:** endpoint publico sem JWT; gestao exige `documento:compartilhar`
+- **Status:** Implementada
+
+### RN-DOC-006 - Regeneracao de token
+- **Modulo:** Documentos
+- **Fluxo:** Compartilhamento publico
+- **Descricao:** Regenerar token invalida link anterior imediatamente; acao auditada.
+- **Permissoes envolvidas:** `documento:compartilhar`
+- **Status:** Implementada
+
+### RN-DOC-007 - Responsavel
+- **Modulo:** Documentos
+- **Fluxo:** Cadastro/edicao
+- **Descricao:** Responsavel e sempre um usuario do sistema (`usuarios.id`).
+- **Permissoes envolvidas:** `documento:create`, `documento:update`; busca de usuarios para autocomplete
+- **Status:** Implementada
+
+### RN-DOC-008 - Auditoria
+- **Modulo:** Documentos
+- **Fluxo:** CRUD e compartilhamento
+- **Descricao:** Auditar create/update/delete, substituicao de arquivo e ativar/desativar/regenerar compartilhamento.
+- **Permissoes envolvidas:** `documento:audit` para consulta de historico
+- **Status:** Implementada
+
+### RN-DOC-009 - Preview Excel no link publico
+- **Modulo:** Documentos
+- **Fluxo:** Acesso publico via token (`/documentos/publico/:token`)
+- **Descricao:** Planilhas Excel exibem preview completo em memoria (limite do arquivo: 25 MB), com primeira linha como cabecalho fixo, filtros por coluna e paginacao de 300 linhas por pagina. Colunas de data exibem `dd/mm/aaaa` com filtro por intervalo (De/Até); colunas de valor exibem `R$` com filtro por intervalo (Mín/Máx); demais colunas usam filtro texto + dropdown. Usuario pode redimensionar largura das colunas e limpar filtro individual por coluna.
+- **Validacoes:** Primeira linha da aba tratada como cabecalho; filtros aplicados no cliente antes da paginacao; download continua entregando arquivo integral.
+- **Mensagens ao usuario:** "Nenhuma linha corresponde aos filtros aplicados"; contador "Exibindo X–Y de Z linhas".
+- **Permissoes envolvidas:** Nenhuma (rota publica)
+- **Status:** Implementada
 
 ## Regras transversais
 
@@ -236,6 +316,8 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-06-17: RN-DOC-009 Preview Excel no link publico com cabecalho fixo, filtros por coluna e paginacao de 300 linhas.
+- 2026-06-16: RN-DOC-001 a RN-DOC-008 Cadastro de documentos (tipo, metadados, upload bytea 25MB, link publico com token e expiracao opcional).
 - 2026-06-11: RN-VIS-004 Prioridade de listagem: irregularidades SOS no topo das filas do fluxo; demais itens por data de referencia da etapa (mais antiga primeiro).
 - 2026-06-11: RN-VIS-005 Desistencia da vistoria mobile bloqueia volta ao inicio e exclui vistoria em andamento em cascata (como SOS).
 - 2026-06-08: RN-VIS-004 Cancelamento SOS passa a excluir registros do banco (vistoria e irregularidades), sem marcar CANCELADA.

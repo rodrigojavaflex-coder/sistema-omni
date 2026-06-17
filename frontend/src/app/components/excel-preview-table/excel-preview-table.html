@@ -1,0 +1,176 @@
+<div class="excel-preview">
+  <div class="excel-preview__toolbar">
+    <p class="excel-preview__range">{{ rangeLabel() }}</p>
+    @if (hasActiveFilters()) {
+      <button type="button" class="excel-preview__clear-filters" (click)="clearFilters()">
+        Limpar filtros
+      </button>
+    }
+  </div>
+
+  <div class="excel-preview__scroll" role="region" aria-label="Tabela da planilha" tabindex="0">
+    <table class="excel-preview__table">
+      <colgroup>
+        @for (header of sheet().headers; track $index; let columnIndex = $index) {
+          <col [style.width.px]="getColumnWidth(columnIndex)" />
+        }
+      </colgroup>
+      <thead class="excel-preview__head">
+        <tr class="excel-preview__header-row">
+          @for (header of sheet().headers; track $index; let columnIndex = $index) {
+            <th
+              scope="col"
+              class="excel-preview__header-cell"
+              [style.width.px]="getColumnWidth(columnIndex)"
+              [title]="getHeaderLabel(columnIndex)"
+            >
+              <span class="excel-preview__header-text">{{ getHeaderLabel(columnIndex) }}</span>
+              <span
+                class="excel-preview__resize-handle"
+                role="separator"
+                aria-orientation="vertical"
+                [attr.aria-label]="'Redimensionar coluna ' + getHeaderLabel(columnIndex)"
+                (mousedown)="onResizeStart(columnIndex, $event)"
+              ></span>
+            </th>
+          }
+        </tr>
+        <tr class="excel-preview__filter-row">
+          @for (header of sheet().headers; track $index; let columnIndex = $index) {
+            <th
+              scope="col"
+              class="excel-preview__filter-header"
+              [style.width.px]="getColumnWidth(columnIndex)"
+            >
+              <div class="excel-preview__filter-cell">
+                @if (hasColumnFilter(columnIndex)) {
+                  <button
+                    type="button"
+                    class="excel-preview__clear-column"
+                    [attr.aria-label]="'Limpar filtro da coluna ' + getHeaderLabel(columnIndex)"
+                    (click)="clearColumnFilter(columnIndex)"
+                  >
+                    Limpar coluna
+                  </button>
+                }
+                @if (getColumnType(columnIndex) === 'date') {
+                  <label class="excel-preview__filter-label">
+                    De
+                    <input
+                      type="date"
+                      class="excel-preview__filter-input"
+                      [value]="getDateFilterFrom(columnIndex)"
+                      [attr.aria-label]="'Data inicial em ' + getHeaderLabel(columnIndex)"
+                      (input)="onDateFilterChange(columnIndex, 'from', $event)"
+                    />
+                  </label>
+                  <label class="excel-preview__filter-label">
+                    Até
+                    <input
+                      type="date"
+                      class="excel-preview__filter-input"
+                      [value]="getDateFilterTo(columnIndex)"
+                      [attr.aria-label]="'Data final em ' + getHeaderLabel(columnIndex)"
+                      (input)="onDateFilterChange(columnIndex, 'to', $event)"
+                    />
+                  </label>
+                } @else if (getColumnType(columnIndex) === 'currency') {
+                  <label class="excel-preview__filter-label">
+                    Mín
+                    <input
+                      type="text"
+                      inputmode="decimal"
+                      class="excel-preview__filter-input"
+                      [value]="getNumberFilterMin(columnIndex)"
+                      [attr.aria-label]="'Valor mínimo em ' + getHeaderLabel(columnIndex)"
+                      placeholder="-0,00"
+                      (input)="onNumberFilterChange(columnIndex, 'min', $event)"
+                    />
+                  </label>
+                  <label class="excel-preview__filter-label">
+                    Máx
+                    <input
+                      type="text"
+                      inputmode="decimal"
+                      class="excel-preview__filter-input"
+                      [value]="getNumberFilterMax(columnIndex)"
+                      [attr.aria-label]="'Valor máximo em ' + getHeaderLabel(columnIndex)"
+                      placeholder="0,00"
+                      (input)="onNumberFilterChange(columnIndex, 'max', $event)"
+                    />
+                  </label>
+                } @else {
+                  <input
+                    type="search"
+                    class="excel-preview__filter-input"
+                    [value]="getTextFilter(columnIndex)"
+                    [attr.aria-label]="'Filtrar texto em ' + getHeaderLabel(columnIndex)"
+                    placeholder="Buscar..."
+                    (input)="onTextFilterInput(columnIndex, $event)"
+                  />
+                  <select
+                    class="excel-preview__filter-select"
+                    [value]="getDropdownFilter(columnIndex)"
+                    [attr.aria-label]="'Filtrar valor em ' + getHeaderLabel(columnIndex)"
+                    (change)="onDropdownFilterChange(columnIndex, $event)"
+                  >
+                    <option value="">Todos</option>
+                    @for (option of getColumnOptions(columnIndex); track option) {
+                      <option [value]="option">{{ option }}</option>
+                    }
+                  </select>
+                }
+              </div>
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @if (paginatedRows().length === 0) {
+          <tr>
+            <td class="excel-preview__empty" [attr.colspan]="sheet().headers.length">
+              Nenhuma linha corresponde aos filtros aplicados.
+            </td>
+          </tr>
+        } @else {
+          @for (row of paginatedRows(); track $index; let even = $even) {
+            <tr [class.excel-preview__row--even]="even">
+              @for (header of sheet().headers; track $index; let columnIndex = $index) {
+                <td
+                  [style.width.px]="getColumnWidth(columnIndex)"
+                  [title]="getCellValue(row, columnIndex)"
+                >
+                  <span class="excel-preview__cell-text">{{ getCellValue(row, columnIndex) }}</span>
+                </td>
+              }
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <div class="excel-preview__pagination">
+      <button
+        type="button"
+        class="excel-preview__page-btn"
+        [disabled]="currentPage() <= 1"
+        (click)="goToPreviousPage()"
+      >
+        Anterior
+      </button>
+      <span class="excel-preview__page-info">
+        Página {{ currentPage() }} de {{ totalPages() }}
+      </span>
+      <button
+        type="button"
+        class="excel-preview__page-btn"
+        [disabled]="currentPage() >= totalPages()"
+        (click)="goToNextPage()"
+      >
+        Próxima
+      </button>
+    </div>
+  }
+</div>

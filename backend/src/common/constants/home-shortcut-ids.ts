@@ -11,6 +11,8 @@ export const HOME_SHORTCUT_IDS = [
   'veiculos',
   'modelos-veiculo',
   'empresas-terceiras',
+  'tipo-documento',
+  'documento',
   'ocorrencias',
   'trechos',
   'origem-ocorrencia',
