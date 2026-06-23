@@ -29,8 +29,8 @@ export function buildDocumentoDownloadFileName(
 ): string {
   const extension = extractExtension(input.nomeArquivoOriginal);
   const parts = [
-    sanitizeFileNamePart(input.nomeDocumento),
     sanitizeFileNamePart(input.tipoDocumento),
+    sanitizeFileNamePart(input.nomeDocumento),
     sanitizeFileNamePart(input.departamento),
   ].filter((part) => part.length > 0);
 

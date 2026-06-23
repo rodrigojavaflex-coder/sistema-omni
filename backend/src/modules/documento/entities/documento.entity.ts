@@ -22,6 +22,10 @@ export class Documento extends BaseEntity {
   @Column({ type: 'varchar', length: 300, nullable: false })
   nomeDocumento: string;
 
+  @ApiProperty({ description: 'Detalhes complementares do documento', required: false })
+  @Column({ type: 'text', nullable: true })
+  detalhesDocumento?: string | null;
+
   @ManyToOne(() => TipoDocumento, { eager: true, nullable: false })
   @JoinColumn({ name: 'tipoDocumentoId' })
   tipoDocumento: TipoDocumento;

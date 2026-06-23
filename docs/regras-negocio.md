@@ -230,7 +230,7 @@ Copie o bloco abaixo para cada regra nova.
 - **Modulo:** Documentos
 - **Fluxo:** Cadastro de documento
 - **Descricao:** Nome do documento, tipo, departamento e responsavel (usuario ativo) sao obrigatorios na criacao.
-- **Validacoes:** Tipo e departamento devem existir; tipo deve estar ativo; responsavel deve existir e estar ativo.
+- **Validacoes:** Tipo e departamento devem existir; tipo deve estar ativo; responsavel deve existir e estar ativo. Combo de departamento lista todos os departamentos cadastrados (nao restringe por vinculo do usuario nem exige `departamento:read`). Campo opcional `detalhesDocumento` (ate 2000 caracteres). Nome padrao do arquivo para download: `TIPO.NOME.DEPARTAMENTO.extensao`.
 - **Mensagens ao usuario:** Erros 400 com mensagem funcional clara.
 - **Permissoes envolvidas:** `documento:create`, `documento:update`
 - **Dados impactados:** `documentos`, `tipos_documento`, `departamentos`, `usuarios`
@@ -316,6 +316,8 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-06-23: RN-DOC-001 Campo opcional detalhesDocumento; correcao de edicao de tipo; nome de arquivo TIPO.NOME.DEPARTAMENTO.
+- 2026-06-23: RN-DOC-001 Listagem de departamentos no cadastro de documentos disponivel com permissoes de documento (sem exigir `departamento:read`).
 - 2026-06-17: RN-DOC-009 Preview Excel no link publico com cabecalho fixo, filtros por coluna e paginacao de 300 linhas.
 - 2026-06-16: RN-DOC-001 a RN-DOC-008 Cadastro de documentos (tipo, metadados, upload bytea 25MB, link publico com token e expiracao opcional).
 - 2026-06-11: RN-VIS-004 Prioridade de listagem: irregularidades SOS no topo das filas do fluxo; demais itens por data de referencia da etapa (mais antiga primeiro).

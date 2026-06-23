@@ -36,6 +36,9 @@ export class DocumentoService {
   create(payload: CreateDocumentoPayload): Observable<DocumentoResumo> {
     const formData = new FormData();
     formData.append('nomeDocumento', payload.nomeDocumento);
+    if (payload.detalhesDocumento?.trim()) {
+      formData.append('detalhesDocumento', payload.detalhesDocumento.trim());
+    }
     formData.append('tipoDocumentoId', payload.tipoDocumentoId);
     formData.append('departamentoId', payload.departamentoId);
     formData.append('responsavelId', payload.responsavelId);

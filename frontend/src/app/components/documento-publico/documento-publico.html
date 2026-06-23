@@ -16,6 +16,9 @@
         <span class="public-toolbar__file" [title]="arquivoExibicaoNome">
           {{ arquivoExibicaoNome }}
         </span>
+        <span class="public-toolbar__updated">
+          Atualizado em: {{ formatDateTime(documento.atualizadoEm) }}
+        </span>
         <span class="public-toolbar__size">{{ formatBytes(documento.tamanho) }}</span>
       </div>
 

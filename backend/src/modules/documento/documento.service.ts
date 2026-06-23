@@ -62,6 +62,7 @@ export class DocumentoService {
 
     const documento = this.documentoRepository.create({
       nomeDocumento: dto.nomeDocumento.trim(),
+      detalhesDocumento: this.normalizeDetalhesDocumento(dto.detalhesDocumento),
       tipoDocumentoId: dto.tipoDocumentoId,
       departamentoId: dto.departamentoId,
       responsavelId: dto.responsavelId,
@@ -134,17 +135,23 @@ export class DocumentoService {
     if (dto.nomeDocumento !== undefined) {
       documento.nomeDocumento = dto.nomeDocumento.trim();
     }
+    if (dto.detalhesDocumento !== undefined) {
+      documento.detalhesDocumento = this.normalizeDetalhesDocumento(
+        dto.detalhesDocumento,
+      );
+    }
     if (dto.tipoDocumentoId !== undefined) {
-      await this.validateTipoDocumento(dto.tipoDocumentoId);
-      documento.tipoDocumentoId = dto.tipoDocumentoId;
+      documento.tipoDocumento = await this.validateTipoDocumento(
+        dto.tipoDocumentoId,
+      );
     }
     if (dto.departamentoId !== undefined) {
-      await this.validateDepartamento(dto.departamentoId);
-      documento.departamentoId = dto.departamentoId;
+      documento.departamento = await this.validateDepartamento(
+        dto.departamentoId,
+      );
     }
     if (dto.responsavelId !== undefined) {
-      await this.validateResponsavel(dto.responsavelId);
-      documento.responsavelId = dto.responsavelId;
+      documento.responsavel = await this.validateResponsavel(dto.responsavelId);
     }
     if (dto.status !== undefined) {
       documento.status = dto.status;
@@ -273,6 +280,7 @@ export class DocumentoService {
       departamento: documento.departamento?.nomeDepartamento ?? '',
       mimeType: documento.mimeType,
       tamanho: Number(documento.tamanho),
+      atualizadoEm: documento.atualizadoEm,
     };
   }
 
@@ -423,10 +431,19 @@ export class DocumentoService {
     return randomBytes(32).toString('hex');
   }
 
+  private normalizeDetalhesDocumento(value?: string | null): string | null {
+    if (value == null) {
+      return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
   private toResumo(documento: Documento): DocumentoResumoDto {
     return {
       id: documento.id,
       nomeDocumento: documento.nomeDocumento,
+      detalhesDocumento: documento.detalhesDocumento ?? null,
       tipoDocumento: {
         id: documento.tipoDocumento.id,
         nome: documento.tipoDocumento.nome,

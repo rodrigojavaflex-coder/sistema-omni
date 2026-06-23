@@ -185,6 +185,14 @@ export class DocumentoPublicoComponent implements OnInit, OnDestroy {
     }
   }
 
+  formatDateTime(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
+    return date.toLocaleString('pt-BR');
+  }
+
   formatBytes(bytes: number): string {
     if (bytes < 1024) {
       return `${bytes} B`;

@@ -128,6 +128,7 @@ export class DocumentoFormComponent
   protected initializeForm(): void {
     this.form = this.fb.group({
       nomeDocumento: ['', [Validators.required, Validators.maxLength(300)]],
+      detalhesDocumento: ['', [Validators.maxLength(2000)]],
       tipoDocumentoId: ['', [Validators.required]],
       departamentoId: ['', [Validators.required]],
       responsavelId: ['', [Validators.required]],
@@ -136,8 +137,10 @@ export class DocumentoFormComponent
   }
 
   protected buildFormData(): UpdateDocumentoPayload {
+    const detalhes = this.form.value.detalhesDocumento?.trim() ?? '';
     return {
       nomeDocumento: this.form.value.nomeDocumento,
+      detalhesDocumento: detalhes.length > 0 ? detalhes : null,
       tipoDocumentoId: this.form.value.tipoDocumentoId,
       departamentoId: this.form.value.departamentoId,
       responsavelId: this.form.value.responsavelId,
@@ -164,6 +167,8 @@ export class DocumentoFormComponent
     return firstValueFrom(
       this.documentoService.create({
         nomeDocumento: data.nomeDocumento ?? this.form.value.nomeDocumento,
+        detalhesDocumento:
+          data.detalhesDocumento ?? this.form.value.detalhesDocumento ?? undefined,
         tipoDocumentoId: data.tipoDocumentoId ?? this.form.value.tipoDocumentoId,
         departamentoId: data.departamentoId ?? this.form.value.departamentoId,
         responsavelId: data.responsavelId ?? this.form.value.responsavelId,
@@ -229,6 +234,7 @@ export class DocumentoFormComponent
 
     this.form.patchValue({
       nomeDocumento: documento.nomeDocumento,
+      detalhesDocumento: documento.detalhesDocumento ?? '',
       tipoDocumentoId: documento.tipoDocumento.id,
       departamentoId: documento.departamento.id,
       responsavelId: documento.responsavel.id,

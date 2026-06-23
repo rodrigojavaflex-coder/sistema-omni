@@ -352,20 +352,10 @@ export class ExcelPreviewTableComponent implements OnDestroy {
     const storedRaw = sheet.rawRows[rowIndex]?.[columnIndex] ?? null;
 
     if (columnType === 'currency') {
-      const parsedFromDisplay = extractRawValueFromDisplay(displayValue, columnType);
-      if (parsedFromDisplay != null) {
-        if (storedRaw == null) {
-          return parsedFromDisplay;
-        }
-        if (
-          storedRaw > 0 &&
-          parsedFromDisplay < 0 &&
-          Math.abs(storedRaw) === Math.abs(parsedFromDisplay)
-        ) {
-          return parsedFromDisplay;
-        }
-      }
-      return storedRaw;
+      return (
+        extractRawValueFromDisplay(displayValue, columnType) ??
+        storedRaw
+      );
     }
 
     if (columnType === 'date') {

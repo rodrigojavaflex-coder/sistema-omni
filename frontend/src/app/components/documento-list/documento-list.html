@@ -50,6 +50,7 @@
           <th>Responsável</th>
           <th>Status</th>
           <th>Tamanho</th>
+          <th>Atualizado em</th>
           <th>Compartilhamento</th>
           <th class="actions-col">Ações</th>
         </tr>
@@ -63,6 +64,7 @@
             <td>{{ item.responsavel.nome }}</td>
             <td>{{ statusLabels[item.status] }}</td>
             <td>{{ formatBytes(item.tamanho) }}</td>
+            <td>{{ formatDateTime(item.atualizadoEm) }}</td>
             <td>
               @if (isLinkAtivo(item)) {
                 <span class="badge badge-success">Ativo</span>
@@ -110,6 +112,7 @@
       [entityDisplayName]="'Documento'"
       [fieldLabels]="{
         nomeDocumento: 'Nome do Documento',
+        detalhesDocumento: 'Detalhes do Documento',
         status: 'Status',
         compartilhamentoAtivo: 'Compartilhamento Ativo'
       }"

@@ -36,7 +36,12 @@ export class DepartamentoController {
   }
 
   @Get()
-  @Permissions(Permission.DEPARTAMENTO_READ)
+  @Permissions(
+    Permission.DEPARTAMENTO_READ,
+    Permission.DOCUMENTO_READ,
+    Permission.DOCUMENTO_CREATE,
+    Permission.DOCUMENTO_UPDATE,
+  )
   @ApiOperation({ summary: 'Listar departamentos' })
   findAll(@Query('nome') nome?: string) {
     return this.departamentoService.findAll(nome);

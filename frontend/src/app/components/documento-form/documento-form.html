@@ -23,6 +23,19 @@
         }
       </div>
 
+      <div class="form-group">
+        <label class="form-label">Detalhes do Documento</label>
+        <textarea
+          rows="4"
+          formControlName="detalhesDocumento"
+          class="form-input"
+          placeholder="Informações complementares sobre o documento"
+        ></textarea>
+        @if (isFieldInvalid('detalhesDocumento')) {
+          <div class="form-error">{{ getFieldError('detalhesDocumento') }}</div>
+        }
+      </div>
+
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Tipo de Documento *</label>

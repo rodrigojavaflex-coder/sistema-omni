@@ -134,6 +134,7 @@ export class DocumentoListComponent
       'Status',
       'Arquivo',
       'Tamanho (bytes)',
+      'Atualizado em',
     ];
     const data = items.map((item) => [
       item.nomeDocumento,
@@ -143,6 +144,7 @@ export class DocumentoListComponent
       this.statusLabels[item.status],
       item.nomeArquivo,
       item.tamanho,
+      this.formatDateTime(item.atualizadoEm),
     ]);
     return { headers, data };
   }
@@ -204,6 +206,14 @@ export class DocumentoListComponent
     setTimeout(() => {
       this.copyFeedbackId = null;
     }, 2000);
+  }
+
+  formatDateTime(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
+    return date.toLocaleString('pt-BR');
   }
 
   formatBytes(bytes: number): string {

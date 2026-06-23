@@ -1,7 +1,10 @@
 export type ExcelColumnType = 'text' | 'date' | 'currency';
 
 const DATE_HEADER_PATTERN = /\b(data|date|dt\.?|vencimento|emiss[aã]o)\b/i;
-const CURRENCY_HEADER_PATTERN = /\b(valor|pre[cç]o|total|montante|r\$|custo|saldo)\b/i;
+const CURRENCY_HEADER_PATTERN = /\b(valor|pre[cç]o|total|montante|r\$|custo|saldo|receita|despesa|pagamento|recebimento|tarifa|taxa|multa|juros|d[eé]bito|cr[eé]dito|faturamento|lucro|preju[ií]zo)\b/i;
+const NON_CURRENCY_HEADER_PATTERN =
+  /\b(matricula|matr[ií]cula|ano|codigo|c[oó]digo|id|numero|n[uú]mero|n[ºo]|cpf|cnpj|cep|telefone|ddd|qtd|quantidade|sequencia|sequ[eê]ncia|ordem|item|linha|parcela|idade|mes|m[eê]s|dia|semana|hora|minuto|pagina|p[aá]gina|folha|versao|vers[aã]o|lote|serie|s[eé]rie|protocolo|processo|referencia|refer[eê]ncia|documento|chave|nota|nf|placa|sequencial|contador|ranking|posi[cç][aã]o|vagas|titulo|t[ií]tulo|nome|descricao|descri[cç][aã]o)\b/i;
+const BRL_DECIMAL_PATTERN = /^-?\d{1,3}(\.\d{3})*,\d{2}$/;
 const JS_DATE_STRING_PATTERN =
   /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+\w{3}\s+\d{1,2}\s+\d{4}/i;
 const DD_MM_YYYY_PATTERN = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
@@ -75,6 +78,24 @@ export function parseDateStringToMs(value: string): number | null {
   }
 
   return null;
+}
+
+export function hasExplicitCurrencyFormatting(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  if (/R\$/i.test(trimmed)) {
+    return true;
+  }
+
+  if (/^\(\s*[\d.,\s−–—-]+\s*\)$/.test(trimmed)) {
+    return true;
+  }
+
+  const compact = trimmed.replace(/\s/g, '');
+  return BRL_DECIMAL_PATTERN.test(compact);
 }
 
 export function parseCurrencyToNumber(value: string): number | null {
@@ -157,8 +178,26 @@ export function resolveCurrencyCellValue(value: unknown, text?: string): unknown
     return resolved;
   }
 
+  if (typeof resolved === 'string') {
+    const trimmed = resolved.trim();
+    if (hasExplicitCurrencyFormatting(trimmed)) {
+      const parsed = parseCurrencyToNumber(trimmed);
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+    return trimmed || null;
+  }
+
   if (resolved != null && resolved !== '') {
     return resolved;
+  }
+
+  if (normalizedText && hasExplicitCurrencyFormatting(normalizedText)) {
+    const parsed = parseCurrencyToNumber(normalizedText);
+    if (parsed != null) {
+      return parsed;
+    }
   }
 
   return normalizedText || null;
@@ -182,11 +221,11 @@ function isDateLikeValue(value: unknown): boolean {
 
 function isCurrencyLikeValue(value: unknown): boolean {
   if (typeof value === 'number') {
-    return Number.isFinite(value);
+    return Number.isFinite(value) && !Number.isInteger(value);
   }
 
   if (typeof value === 'string') {
-    return parseCurrencyToNumber(value) != null;
+    return hasExplicitCurrencyFormatting(value) && parseCurrencyToNumber(value) != null;
   }
 
   return false;
@@ -196,6 +235,9 @@ export function inferColumnType(header: string, samples: unknown[]): ExcelColumn
   const normalizedHeader = header.trim().toLowerCase();
   if (DATE_HEADER_PATTERN.test(normalizedHeader)) {
     return 'date';
+  }
+  if (NON_CURRENCY_HEADER_PATTERN.test(normalizedHeader)) {
+    return 'text';
   }
   if (CURRENCY_HEADER_PATTERN.test(normalizedHeader)) {
     return 'currency';
@@ -342,8 +384,17 @@ export function buildSheetFromMatrix(matrix: unknown[][]): {
     row.map((cell, columnIndex) => formatDisplayValue(cell, columnTypes[columnIndex])),
   );
 
-  const rawRows = dataMatrix.map((row) =>
-    row.map((cell, columnIndex) => extractRawValue(cell, columnTypes[columnIndex])),
+  const rawRows = rows.map((row, rowIndex) =>
+    row.map((displayValue, columnIndex) => {
+      const columnType = columnTypes[columnIndex];
+      if (columnType === 'currency') {
+        return (
+          extractRawValueFromDisplay(displayValue, 'currency') ??
+          extractRawValue(dataMatrix[rowIndex][columnIndex], 'currency')
+        );
+      }
+      return extractRawValue(dataMatrix[rowIndex][columnIndex], columnType);
+    }),
   );
 
   return { headers, rows, rawRows, columnTypes };

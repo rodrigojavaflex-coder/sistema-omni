@@ -32,6 +32,9 @@ export class DocumentoResumoDto {
   @ApiProperty()
   nomeDocumento: string;
 
+  @ApiPropertyOptional()
+  detalhesDocumento?: string | null;
+
   @ApiProperty({ type: TipoDocumentoResumoDto })
   tipoDocumento: TipoDocumentoResumoDto;
 
@@ -87,4 +90,7 @@ export class DocumentoPublicoResumoDto {
 
   @ApiProperty()
   tamanho: number;
+
+  @ApiProperty()
+  atualizadoEm: Date;
 }

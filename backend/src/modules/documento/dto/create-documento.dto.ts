@@ -9,6 +9,12 @@ export class CreateDocumentoDto {
   @MaxLength(300)
   nomeDocumento: string;
 
+  @ApiPropertyOptional({ description: 'Detalhes complementares do documento' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000, { message: 'Detalhes do documento não pode exceder 2000 caracteres' })
+  detalhesDocumento?: string;
+
   @ApiProperty({ format: 'uuid' })
   @IsUUID('4', { message: 'Tipo de documento inválido' })
   tipoDocumentoId: string;
