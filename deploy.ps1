@@ -21,6 +21,25 @@ if (!(Test-Path "backend\package.json") -or !(Test-Path "frontend\package.json")
     exit 1
 }
 
+# Pré-voo Node 24 (build deve usar a mesma major do servidor alvo)
+try {
+    $nodeVer = (node --version 2>$null)
+    if ($nodeVer -match '^v24\.') {
+        Write-Host "Node: $nodeVer (OK para pacote Node 24 no servidor)" -ForegroundColor Green
+    } elseif ($nodeVer) {
+        Write-Warning "Node $nodeVer — servidor alvo e Node 24 LTS. Prefira gerar o pacote com v24.18.x."
+    } else {
+        Write-Warning "Node nao encontrado no PATH."
+    }
+} catch {
+    Write-Warning "Nao foi possivel detectar versao do Node."
+}
+
+if (!(Test-Path "backend\package-lock.json")) {
+    Write-Error "backend\package-lock.json ausente. Rode 'npm install' em backend antes do deploy (npm ci no servidor depende do lock)."
+    exit 1
+}
+
 # =============================================================================
 # ETAPA 1: CONFIGURAR AMBIENTE DE PRODUÇÃO
 # =============================================================================
@@ -94,6 +113,24 @@ if ($LASTEXITCODE -ne 0) {
     Write-Error "Erro no build do backend"
     exit 1
 }
+
+$backendCritical = @(
+    "dist\main.js",
+    "dist\data-source.js"
+)
+foreach ($rel in $backendCritical) {
+    if (!(Test-Path $rel)) {
+        Write-Error "Build incompleto: backend\$rel nao encontrado (migrations exigem dist/data-source.js)."
+        exit 1
+    }
+}
+$migrationJs = Get-ChildItem "dist\migrations\*.js" -ErrorAction SilentlyContinue
+if (-not $migrationJs -or $migrationJs.Count -eq 0) {
+    Write-Warning "Nenhum backend\dist\migrations\*.js — migration:run:prod pode falhar se houver migrations pendentes."
+} else {
+    Write-Host "   OK: $($migrationJs.Count) migration(s) em dist" -ForegroundColor Green
+}
+
 Write-Host "   OK: Backend build concluido" -ForegroundColor Green
 Set-Location ..
 
@@ -117,8 +154,24 @@ Write-Host "   Copiando backend para ArquivosBackend..." -ForegroundColor Yellow
 New-Item -ItemType Directory -Path "$deployPath\ArquivosBackend\dist" -Force | Out-Null
 Copy-Item "backend\dist\*" "$deployPath\ArquivosBackend\dist\" -Recurse -Force
 Copy-Item "backend\package.json" "$deployPath\ArquivosBackend\" -Force
-Copy-Item "backend\package-lock.json" "$deployPath\ArquivosBackend\" -Force -ErrorAction SilentlyContinue
-Write-Host "   OK: Backend copiado para ArquivosBackend" -ForegroundColor Green
+if (!(Test-Path "backend\package-lock.json")) {
+    Write-Error "package-lock.json obrigatorio em ArquivosBackend para npm ci no servidor."
+    exit 1
+}
+Copy-Item "backend\package-lock.json" "$deployPath\ArquivosBackend\" -Force
+
+$stagingCritical = @(
+    "$deployPath\ArquivosBackend\dist\main.js",
+    "$deployPath\ArquivosBackend\dist\data-source.js",
+    "$deployPath\ArquivosBackend\package-lock.json"
+)
+foreach ($f in $stagingCritical) {
+    if (!(Test-Path $f)) {
+        Write-Error "Pacote incompleto: $f"
+        exit 1
+    }
+}
+Write-Host "   OK: Backend copiado para ArquivosBackend (dist + lock validados)" -ForegroundColor Green
 
 # Copiar frontend para ArquivosFrontend
 Write-Host "   Preparando pasta do frontend..." -ForegroundColor Yellow
@@ -164,7 +217,7 @@ if ($indexHtml -match '<base href="/omni/">') {
 Copy-Item "$frontendBuildPath\*" "$deployPath\ArquivosFrontend\" -Recurse -Force
 Write-Host "   OK: Frontend copiado para ArquivosFrontend" -ForegroundColor Green
 
-# Criar .env de produção no ArquivosBackend
+# Criar .env modelo apenas para bootstrap (atualizar-servidor.ps1 preserva .env em C:\Deploy\OMNI)
 $envProd = @"
 NODE_ENV=production
 DATABASE_HOST=localhost
@@ -252,7 +305,7 @@ PowerShell -ExecutionPolicy Bypass .\install-omni.ps1
 ```
 
 ## O que o script faz automaticamente:
-- Detecta e instala Node.js 20 LTS (se necessário)
+- Detecta e instala Node.js 24 LTS (se necessario; bootstrap inicial)
 - Detecta e instala NSSM (se necessário)  
 - Detecta e instala URL Rewrite Module + ARR (se necessário)
 - Copia backend para C:\Deploy\OMNI
@@ -363,12 +416,18 @@ Write-Host "    ├── diagnostico.ps1" -ForegroundColor Gray
 Write-Host "    └── README.md" -ForegroundColor Gray
 Write-Host ""
 Write-Host "PROXIMOS PASSOS NO SERVIDOR:" -ForegroundColor Cyan
-Write-Host "1. Criar pasta C:\NovaVersao no servidor" -ForegroundColor White
-Write-Host "2. Copiar todo conteudo de $deployPath para C:\NovaVersao" -ForegroundColor White
-Write-Host "3. Configurar banco no arquivo C:\NovaVersao\ArquivosBackend\.env" -ForegroundColor White
-Write-Host "4. Executar como Administrador:" -ForegroundColor White
-Write-Host "   cd C:\NovaVersao" -ForegroundColor Yellow
-Write-Host "   PowerShell -ExecutionPolicy Bypass .\install-omni.ps1" -ForegroundColor Yellow
+Write-Host "1. Copiar todo conteudo de $deployPath para C:\NovaVersao no servidor" -ForegroundColor White
+Write-Host "2. Servidor JA instalado (IIS + NSSM) — NAO use install-omni.ps1:" -ForegroundColor Yellow
+Write-Host "   a) nssm stop `"OMNI-Sistema`"" -ForegroundColor White
+Write-Host "   b) Instalar Node 24.18.x LTS (MSI) e confirmar: node -v" -ForegroundColor White
+Write-Host "   c) (Recomendado apos trocar Node) Remove-Item C:\Deploy\OMNI\node_modules -Recurse -Force -ErrorAction SilentlyContinue" -ForegroundColor Gray
+Write-Host "   d) cd C:\NovaVersao" -ForegroundColor Yellow
+Write-Host "      PowerShell -ExecutionPolicy Bypass .\atualizar-servidor.ps1" -ForegroundColor Yellow
+Write-Host "3. Validar via IIS: /omni, /api, login" -ForegroundColor White
+Write-Host "4. Bootstrap NOVO servidor (raro): use install-omni.ps1 e configure .env antes" -ForegroundColor Gray
+Write-Host ""
+Write-Host "INSTALACAO INICIAL (somente servidor novo):" -ForegroundColor Cyan
+Write-Host "   Configurar C:\NovaVersao\ArquivosBackend\.env e install-omni.ps1" -ForegroundColor Gray
 Write-Host ""
 Write-Host "SCRIPTS INCLUIDOS:" -ForegroundColor Cyan
 Write-Host "  ✓ install-omni.ps1 - Instalacao completa inicial" -ForegroundColor Green

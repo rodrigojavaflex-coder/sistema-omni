@@ -9,6 +9,7 @@
     "deps:check": "node scripts/verify-stack-deps.mjs",
     "deps:full": "node scripts/verify-stack-deps.mjs --full",
     "deps:full:quick": "node scripts/verify-stack-deps.mjs --full --skip-install",
+    "deps:full:quick:no-lint": "node scripts/verify-stack-deps.mjs --full --skip-install --skip-eslint",
     "deps:full:no-lint": "node scripts/verify-stack-deps.mjs --full --skip-eslint",
     "deps:restore": "node scripts/verify-stack-deps.mjs --restore-backup",
     "deps:audit-fix:full": "node scripts/verify-stack-deps.mjs --audit-fix --full",
@@ -19,7 +20,7 @@
     "build-backend": "cd backend && npm run build"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.0.0"
   },
   "author": "Rodrigo Teixeira",
   "license": "MIT",

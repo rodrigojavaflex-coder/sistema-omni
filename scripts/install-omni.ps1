@@ -33,8 +33,12 @@ function Install-NodeJS {
             $version = $nodeVersion -replace "v", ""
             $majorVersion = [int]($version -split "\.")[0]
             
-            if ($majorVersion -ge 18) {
+            if ($majorVersion -ge 24) {
                 Write-Host "  OK: Node.js $nodeVersion ja instalado (versao adequada)" -ForegroundColor Green
+                return
+            } elseif ($majorVersion -ge 22) {
+                Write-Host "  AVISO: Node.js $nodeVersion encontrado (v22). Para bootstrap novo, prefira v24 LTS." -ForegroundColor Yellow
+                Write-Host "  INFO: Em servidor ja em producao, atualize Node manualmente (ver docs/PLANO_ATUALIZACAO_NODE.md)." -ForegroundColor Yellow
                 return
             } else {
                 Write-Host "  AVISO: Node.js $nodeVersion encontrado, mas versao muito antiga" -ForegroundColor Yellow
@@ -44,9 +48,9 @@ function Install-NodeJS {
         Write-Host "  INFO: Node.js nao encontrado" -ForegroundColor Red
     }
     
-    Write-Host "  Instalando Node.js 20 LTS..." -ForegroundColor Yellow
+    Write-Host "  Instalando Node.js 24 LTS..." -ForegroundColor Yellow
     
-    $nodeUrl = "https://nodejs.org/dist/v20.10.0/node-v20.10.0-x64.msi"
+    $nodeUrl = "https://nodejs.org/dist/v24.18.0/node-v24.18.0-x64.msi"
     $nodeInstaller = "$env:TEMP\nodejs.msi"
     
     try {
