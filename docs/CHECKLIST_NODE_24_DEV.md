@@ -313,11 +313,11 @@ nssm start "OMNI-Sistema"
 
 ## 11. Validação produção — pós Node 24 + deploy
 
-> Marcar após janela no servidor (IIS + NSSM). Não commitar migração Node até esta seção OK.
+> Marcar após janela no servidor (IIS + NSSM). Seção concluída — commit Fase 2 `e77d391`.
 
 ### Infraestrutura
 
-- [ ] Backup confirmado (IIS `omni`, `web.config`, `C:\Deploy\OMNI`, banco) — recomendado antes de próximas janelas
+- [x] Backup confirmado (IIS `omni`, `web.config`, `C:\Deploy\OMNI`, banco) — 2026-07-27
 - [x] `node -v` no servidor → **v24.18.x** (`where.exe node`) — 2026-07-24
 - [x] `nssm status "OMNI-Sistema"` → RUNNING após `atualizar-servidor.ps1` — 2026-07-24
 - [x] `npm ci --omit=dev` em `C:\Deploy\OMNI` OK (via `atualizar-servidor.ps1`) — 2026-07-24
@@ -326,11 +326,11 @@ nssm start "OMNI-Sistema"
 
 - [x] `/omni` — SPA carrega — 2026-07-24
 - [x] Login produção — OK — 2026-07-24
-- [ ] Navegação + CRUD (1 entidade) — não revalidado na janela Node 24 (OK em dev 2026-07-23)
-- [ ] Tema claro/escuro — não revalidado na janela Node 24 (OK em dev 2026-07-23)
-- [ ] `/api` — responde (proxy)
-- [ ] `/api/docs` — Swagger
-- [ ] Logs NSSM sem erro de módulo nativo (`C:\Deploy\OMNI\logs\`)
+- [x] Navegação + CRUD (1 entidade) — OK produção — 2026-07-27
+- [x] Tema claro/escuro — OK produção — 2026-07-27
+- [x] `/api` — responde (proxy) — 2026-07-27
+- [x] `/api/docs` — Swagger — 2026-07-27
+- [x] Logs NSSM sem erro de módulo nativo (`C:\Deploy\OMNI\logs\`) — 2026-07-27
 
 ### Registro produção
 
@@ -340,7 +340,7 @@ nssm start "OMNI-Sistema"
 | Node no servidor | v24.18.x |
 | `deploy.ps1` / pacote NovaVersao | ☑ OK |
 | `atualizar-servidor.ps1` | ☑ OK |
-| Observações | Login produção OK; `node_modules` não removido manualmente — OK se `npm ci` no script |
+| Observações | §11 fechada 2026-07-27 (backup, /api, /api/docs, CRUD, tema, logs). Janela inicial 2026-07-24. |
 
 ---
 

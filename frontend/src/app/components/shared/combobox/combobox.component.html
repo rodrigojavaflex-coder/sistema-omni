@@ -1,0 +1,77 @@
+<div
+  class="combobox-container"
+  appClickOutside
+  (clickOutside)="closeDropdown()"
+>
+  <div class="combobox-input-wrapper">
+    <input
+      type="text"
+      class="combobox-input"
+      [class.is-invalid]="isInvalid"
+      [class.is-disabled]="isDisabled"
+      [placeholder]="placeholder"
+      [(ngModel)]="searchText"
+      [disabled]="isDisabled"
+      (input)="onSearchInput()"
+      (focus)="openDropdown()"
+      (keydown)="onKeyDown($event)"
+      autocomplete="off"
+      role="combobox"
+      [attr.aria-expanded]="isOpen"
+      aria-autocomplete="list"
+    />
+    @if (searchText && !isDisabled) {
+      <button
+        type="button"
+        class="combobox-clear"
+        (click)="clearSelection($event)"
+        aria-label="Limpar seleção"
+        tabindex="-1"
+      >
+        ✕
+      </button>
+    }
+    <button
+      type="button"
+      class="combobox-toggle"
+      [disabled]="isDisabled"
+      (click)="toggleDropdown()"
+      [attr.aria-expanded]="isOpen"
+      aria-label="Abrir opções"
+      tabindex="-1"
+    >
+      <svg
+        class="combobox-icon"
+        [class.open]="isOpen"
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        fill="currentColor"
+        viewBox="0 0 16 16"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"
+        />
+      </svg>
+    </button>
+  </div>
+
+  @if (isOpen) {
+    <div class="combobox-dropdown" role="listbox">
+      @for (option of filteredOptions; track option.value; let i = $index) {
+        <button
+          type="button"
+          class="combobox-item"
+          [class.selected]="i === selectedIndex || isSelected(option)"
+          (click)="selectOption(option)"
+        >
+          {{ option.label }}
+        </button>
+      }
+      @if (filteredOptions.length === 0) {
+        <div class="combobox-empty">Nenhuma opção encontrada</div>
+      }
+    </div>
+  }
+</div>

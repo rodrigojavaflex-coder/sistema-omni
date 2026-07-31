@@ -1,6 +1,6 @@
 <div class="form-container">
   <div class="form-header">
-    <h2>{{ getFormTitle() }} Ocorrência {{ editMode && ocorrencia?.numero ? '#' + (ocorrencia?.numero ?? '') : '' }}</h2>
+    <h2>{{ tituloOcorrencia }}</h2>
     
     <!-- Botões ao lado do título -->
     <div class="form-actions form-actions-header">
@@ -17,11 +17,13 @@
     <!-- Dados Básicos -->
     <div class="form-section">
       <h3>Dados Básicos</h3>
-      @if (editMode && ocorrencia?.numero) {
+      @if (editMode && ocorrencia; as occ) {
+        @if (occ.numero) {
         <div class="form-group">
           <label class="form-label">Nº da Ocorrência</label>
-          <div class="form-input form-input-readonly">{{ ocorrencia?.numero }}</div>
+          <div class="form-input form-input-readonly">{{ occ.numero }}</div>
         </div>
+        }
       }
       <div class="form-inline">
         <div class="form-group">
@@ -188,10 +190,11 @@
 
         <div class="form-group">
           <label class="form-label">Trecho</label>
-          <app-trecho-autocomplete 
-            formControlName="idTrecho" 
-            (trechoSelected)="onTrechoSelected($event)">
-          </app-trecho-autocomplete>
+          <app-combobox
+            formControlName="idTrecho"
+            [options]="trechoOptions"
+            placeholder="Selecione o trecho">
+          </app-combobox>
         </div>
 
         <div class="form-group">

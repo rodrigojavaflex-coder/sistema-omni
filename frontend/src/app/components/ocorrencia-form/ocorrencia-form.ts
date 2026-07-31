@@ -24,7 +24,7 @@ import { Veiculo, Motorista, Trecho } from '../../models';
 import { BaseFormComponent } from '../base/base-form.component';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
 import { MotoristaAutocompleteComponent } from '../shared/motorista-autocomplete/motorista-autocomplete.component';
-import { TrechoAutocompleteComponent } from '../shared/trecho-autocomplete/trecho-autocomplete.component';
+import { ComboboxComponent, ComboboxOption } from '../shared/combobox/combobox.component';
 import { MapaLocalizacaoComponent, PontoLocalizacao } from '../shared/mapa-localizacao/mapa-localizacao.component';
 import { DataHoraPickerComponent } from '../shared/data-hora-picker/data-hora-picker.component';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
@@ -42,7 +42,7 @@ import { ViewChild, ElementRef } from '@angular/core';
     ReactiveFormsModule,
     VeiculoAutocompleteComponent,
     MotoristaAutocompleteComponent,
-    TrechoAutocompleteComponent,
+    ComboboxComponent,
     MapaLocalizacaoComponent,
     DataHoraPickerComponent,
     ConfirmationModalComponent
@@ -65,7 +65,18 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
   origens: { id: string; descricao: string }[] = [];
   categorias: { id: string; descricao: string; idOrigem: string }[] = [];
   empresas: { id: string; descricao: string }[] = [];
+  trechoOptions: ComboboxOption[] = [];
   motoristaComEmpresa = false;
+
+  /** Título do formulário com número da ocorrência em edição */
+  get tituloOcorrencia(): string {
+    const titulo = `${this.getFormTitle()} Ocorrência`;
+    const numero = this.ocorrencia?.numero;
+    if (this.editMode && numero) {
+      return `${titulo} #${numero}`;
+    }
+    return titulo;
+  }
 
   /** Ocorrência carregada em edição (para exibir numero) */
   ocorrencia: Ocorrencia | null = null;
@@ -114,6 +125,14 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
     }
     this.origemService.getAll().subscribe((list) => (this.origens = list));
     this.empresaService.getAll().subscribe((list) => (this.empresas = list));
+    this.trechoService.getAll(1, 999999).subscribe((response) => {
+      this.trechoOptions = response.data
+        .map((trecho) => ({
+          value: trecho.id,
+          label: trecho.descricao,
+        }))
+        .sort((a, b) => this.compareTrechoPorNumero(a.label, b.label));
+    });
     super.ngOnInit();
 
     this.route.paramMap
@@ -351,6 +370,22 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
     return '/ocorrencia';
   }
 
+  /** Ordena trechos pelos 2 primeiros caracteres numéricos da descrição (01, 02, 03...). */
+  private compareTrechoPorNumero(descricaoA: string, descricaoB: string): number {
+    const numeroA = this.getTrechoNumeroOrdenacao(descricaoA);
+    const numeroB = this.getTrechoNumeroOrdenacao(descricaoB);
+    if (numeroA !== numeroB) {
+      return numeroA - numeroB;
+    }
+    return descricaoA.localeCompare(descricaoB, 'pt-BR');
+  }
+
+  private getTrechoNumeroOrdenacao(descricao: string): number {
+    const prefixo = descricao.trim().slice(0, 2);
+    const numero = Number.parseInt(prefixo, 10);
+    return Number.isNaN(numero) ? Number.MAX_SAFE_INTEGER : numero;
+  }
+
   // Callbacks dos autocompletes
   onVeiculoSelected(veiculo: Veiculo): void {
     this.form.patchValue({ idVeiculo: veiculo.id });
@@ -517,10 +552,6 @@ export class OcorrenciaFormComponent extends BaseFormComponent<CreateOcorrenciaD
       this.form.get('valorDoOrcamento')?.updateValueAndValidity();
       this.valorOrcamentoRaw = raw;
     }
-  }
-
-  onTrechoSelected(trecho: any): void {
-    this.form.patchValue({ idTrecho: trecho.id });
   }
 
   buscarTrechoPorLocalizacao(): void {
