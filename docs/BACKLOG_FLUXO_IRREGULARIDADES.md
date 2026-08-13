@@ -12,39 +12,64 @@ Objetivo: fechar o ciclo ponta a ponta de irregularidades do veiculo sem pacote 
 
 Status oficiais da irregularidade:
 - `REGISTRADA`
+- `RETRABALHO_GARANTIA` (retrabalho/garantia apos reprovacao na validacao final)
 - `CANCELADA`
 - `EM_MANUTENCAO`
 - `NAO_PROCEDE`
 - `CONCLUIDA`
 - `VALIDADA`
 
+Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao OS externa (dual: API BRT vs fluxo legado).
+
 ---
 
 ## Matriz de estados (fonte unica)
 
-### Irregularidade
+### Irregularidade — fluxo comum (sem API ou pos-envio API bem-sucedido)
 
 | Estado atual | Acao | Proximo estado | Pre-condicao | Erro esperado |
 | --- | --- | --- | --- | --- |
 | `REGISTRADA` | Corrigir classificacao | `REGISTRADA` | Destino valido e autorizado | `422` destino invalido |
-| `REGISTRADA` | Cancelar irregularidade | `CANCELADA` | Motivo obrigatorio (erro ao incluir ou nao procede) | `400` motivo obrigatorio |
-| `REGISTRADA` | Enviar para manutencao | `EM_MANUTENCAO` | Irregularidade ativa e empresa de manutencao definida | `422` transicao invalida |
-| `EM_MANUTENCAO` | Concluir manutencao | `CONCLUIDA` | Evidencia minima quando obrigatoria | `422` pendencia de execucao |
-| `EM_MANUTENCAO` | Marcar nao procede | `NAO_PROCEDE` | Justificativa tecnica obrigatoria | `400` justificativa obrigatoria |
-| `NAO_PROCEDE` | Encaminhar para validacao final | `CONCLUIDA` | Registro de nao procedimento preenchido | `422` pendencia de justificativa |
-| `CONCLUIDA` | Validar final | `VALIDADA` | Conferencia final aprovada | `422` pendencia de validacao |
-| `CONCLUIDA` | Reprovar final e retornar manutencao | `EM_MANUTENCAO` | Observacao obrigatoria na validacao | `400` observacao obrigatoria |
+| `REGISTRADA` | Cancelar irregularidade | `CANCELADA` | Motivo obrigatorio | `400` motivo obrigatorio |
+| `REGISTRADA` | Enviar para manutencao (sem API) | `EM_MANUTENCAO` | Empresa de manutencao definida | `422` transicao invalida |
+| `REGISTRADA` | Enviar para manutencao (com API) | `EM_MANUTENCAO` | POST OS externa OK ou duplicada idempotente | Permanece `REGISTRADA` + erro integracao |
+| `RETRABALHO_GARANTIA` | Corrigir classificacao | `RETRABALHO_GARANTIA` | Destino valido e autorizado | `422` destino invalido |
+| `RETRABALHO_GARANTIA` | Cancelar irregularidade | `CANCELADA` | Motivo obrigatorio | `400` motivo obrigatorio |
+| `RETRABALHO_GARANTIA` | Reenviar para manutencao | `EM_MANUTENCAO` | `os_orig` = `numeroIrregularidade-N` (N≥2); empresa configurada | Erro API: permanece `RETRABALHO_GARANTIA` |
+| `EM_MANUTENCAO` | Concluir manutencao (sem controle API) | `CONCLUIDA` | Evidencia minima quando obrigatoria | `422` pendencia |
+| `EM_MANUTENCAO` | Concluir manutencao (controle API) | `CONCLUIDA` | **v2:** apenas via retorno integrado | `422` bloqueio manual |
+| `EM_MANUTENCAO` | Marcar nao procede (sem controle API) | `NAO_PROCEDE` | Justificativa obrigatoria | `400` justificativa obrigatoria |
+| `EM_MANUTENCAO` | Marcar nao procede (controle API) | — | **Bloqueado** ate regra v2 | `422` bloqueio manual |
+| `EM_MANUTENCAO` | Cancelar OS BRT (controle API) | `REGISTRADA` | POST cancelamento BRT OK; permissao `cancel_os_brt`; OS ativa | Permanece `EM_MANUTENCAO` + erro BRT |
+| `NAO_PROCEDE` | Encaminhar para validacao final | `CONCLUIDA` | Justificativa preenchida | `422` pendencia |
+| `CONCLUIDA` | Validar final | `VALIDADA` | Conferencia aprovada | `422` pendencia |
+| `CONCLUIDA` | Reprovar final | `RETRABALHO_GARANTIA` | Observacao obrigatoria | `400` observacao obrigatoria |
+| `NAO_PROCEDE` | Reprovar final (quando aplicavel) | `RETRABALHO_GARANTIA` | Observacao obrigatoria | `400` observacao obrigatoria |
 
 ### Matriz de transicao final (permitido/proibido)
 
-| De \ Para | REGISTRADA | CANCELADA | EM_MANUTENCAO | NAO_PROCEDE | CONCLUIDA | VALIDADA |
-| --- | --- | --- | --- | --- | --- | --- |
-| `REGISTRADA` | Permitido (reclassificar) | Permitido | Permitido | Proibido | Proibido | Proibido |
-| `CANCELADA` | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido |
-| `EM_MANUTENCAO` | Proibido | Proibido | Proibido | Permitido | Permitido | Proibido |
-| `NAO_PROCEDE` | Proibido | Proibido | Proibido | Proibido | Permitido | Proibido |
-| `CONCLUIDA` | Proibido | Proibido | Permitido (reprovacao final) | Proibido | Proibido | Permitido |
-| `VALIDADA` | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido |
+| De \ Para | REGISTRADA | RETRABALHO_GARANTIA | CANCELADA | EM_MANUTENCAO | NAO_PROCEDE | CONCLUIDA | VALIDADA |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `REGISTRADA` | Permitido (reclassificar) | Proibido | Permitido | Permitido | Proibido | Proibido | Proibido |
+| `RETRABALHO_GARANTIA` | Proibido | Permitido (reclassificar) | Permitido | Permitido (reenvio) | Proibido | Proibido | Proibido |
+| `CANCELADA` | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido |
+| `EM_MANUTENCAO` | Proibido*** | Proibido | Proibido | Proibido | Permitido* | Permitido* | Proibido |
+| `NAO_PROCEDE` | Proibido | Proibido | Proibido | Proibido | Proibido | Permitido | Proibido |
+| `CONCLUIDA` | Proibido | Permitido (reprovacao final) | Proibido | Proibido** | Proibido | Proibido | Permitido |
+| `VALIDADA` | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido |
+
+\* Somente trilha **sem** controle API, ou via integracao de retorno (v2) na trilha API.
+
+\*\*\* Permitido para trilha API via cancelamento OS BRT (`EM_MANUTENCAO` → `REGISTRADA`).
+
+\*\* Transicao historica `CONCLUIDA` → `EM_MANUTENCAO` na reprovacao **substituida** por `CONCLUIDA` → `RETRABALHO_GARANTIA` (RN-VIS-006). Codigo legado deve ser alinhado na implementacao.
+
+### Integracao OS (BRT) — efeito no envio a partir de `REGISTRADA` / `RETRABALHO_GARANTIA`
+
+| Resultado HTTP / corpo | Status OMNI | Tela |
+| --- | --- | --- |
+| `201` success ou `200` duplicada | `EM_MANUTENCAO` | Manutencao |
+| Erro (`401`, `403`, `422`, etc.) | Inalterado (`REGISTRADA` ou `RETRABALHO_GARANTIA`) | Tratamento (detalhe do erro) |
 
 ---
 
@@ -182,6 +207,25 @@ Status oficiais da irregularidade:
 
 ---
 
+### US2.5 - Cancelar OS na integracao BRT (Manutencao)
+
+**Como** operador da manutencao  
+**Quero** cancelar a OS aberta na BRT e devolver a irregularidade ao Tratamento  
+**Para** corrigir encaminhamento indevido sem encerrar a irregularidade
+
+**Criterios de aceite**
+- Transicao: `EM_MANUTENCAO -> REGISTRADA` somente apos cancelamento OK na API BRT (`tpo_reg: 7`).
+- Permissao dedicada `irregularidade_manutencao:cancel_os_brt`.
+- Somente irregularidades com OS ativa na integracao (`controleIntegracaoApi`, `osOrigAtual`, `numOsExternoAtual`).
+- Falha BRT (ex.: `409 os_em_execucao`): permanece `EM_MANUTENCAO`.
+- Reenvio posterior usa novo `os_orig` com sufixo (`numeroIrregularidade-2`, `-3`, …).
+
+**Tarefas tecnicas**
+- Endpoint `POST /irregularidades/:id/cancelar-os-brt`.
+- Botao na tela Manutencao com modal de justificativa.
+
+---
+
 ## Epico 3 - Validacao Final
 
 ### US3.1 - Listar fila de validacao final
@@ -221,13 +265,14 @@ Status oficiais da irregularidade:
 ### US3.3 - Reprovar validacao final
 
 **Como** analista  
-**Quero** agregar novas informacoes na validacao final e devolver para manutencao  
-**Para** permitir nova tentativa de execucao
+**Quero** reprovar na validacao final e devolver para retrabalho/garantia  
+**Para** permitir novo envio para manutencao com registro de garantia (RN-VIS-006)
 
 **Criterios de aceite**
-- Transicao: `CONCLUIDA -> EM_MANUTENCAO`.
-- Transicao: `NAO_PROCEDE -> EM_MANUTENCAO`.
+- Transicao: `CONCLUIDA -> RETRABALHO_GARANTIA`.
+- Transicao: `NAO_PROCEDE -> RETRABALHO_GARANTIA` (quando acao de reprovacao aplicavel).
 - Observacao obrigatoria na reprovacao.
+- Item listado na tela Tratamento; reenvio para manutencao gera novo `os_orig` na integracao OS.
 - Historico com rastreabilidade completa.
 
 **Tarefas tecnicas**
@@ -304,6 +349,25 @@ Status oficiais da irregularidade:
 - Feedback visual claro dos status oficiais.
 - Mensagens de bloqueio por regra de negocio.
 - Preparar lote (fase 2) para acao em massa (iniciar manutencao, concluir, validar final).
+
+---
+
+## Epico 4 - Integracao OS externa (dual BRT) — RN-VIS-006
+
+### US4.1 - Configurar empresa de manutencao para API ou fluxo legado
+- Flags: tipo integracao, enviar e-mail relatorio, credenciais BRT (homolog/prod), URL base.
+
+### US4.2 - Enviar irregularidade/lote com ramificacao API
+- 1:1 OS; resposta parcial; erros permanecem no Tratamento com detalhe.
+
+### US4.3 - Historico de OS externas
+- Multiplos `os_orig`/`numOs` por irregularidade; OS ativa vs tentativas anteriores.
+
+### US4.4 - Bloqueio de conclusao manual (trilha API)
+- Manutencao somente leitura/acompanhamento ate retorno integrado (v2).
+
+### US4.5 - Retorno integrado BRT (v2)
+- Transicao automatica para `CONCLUIDA` e fila de Validacao Final.
 
 ---
 

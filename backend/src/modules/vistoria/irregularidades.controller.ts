@@ -219,10 +219,13 @@ export class IrregularidadesController {
     @Body() dto: IniciarManutencaoLoteDto,
     @Req()
     req: Request & {
-      user?: { id?: string; idEmpresa?: string; nome?: string };
+      user?: Usuario & { id?: string; idEmpresa?: string; nome?: string };
     },
   ): Promise<RelatorioManutencaoExecucaoDto> {
-    return this.irregularidadeService.iniciarManutencaoLote(dto, req.user);
+    return this.irregularidadeService.iniciarManutencaoLote(
+      dto,
+      mapFluxoActor(req.user),
+    );
   }
 
   @Patch(':id')
@@ -264,6 +267,20 @@ export class IrregularidadesController {
     return this.irregularidadeService.cancelar(id, dto, req.user);
   }
 
+  @Post(':id/cancelar-os-brt')
+  @ApiOperation({
+    summary: 'Cancelar OS na integração BRT e devolver irregularidade ao Tratamento',
+  })
+  @ApiResponse({ status: 200, type: Irregularidade })
+  @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_CANCEL_OS_BRT)
+  cancelarOsBrt(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: CancelarIrregularidadeDto,
+    @Req() req: Request & { user?: { id?: string; idEmpresa?: string } },
+  ): Promise<Irregularidade> {
+    return this.irregularidadeService.cancelarOsBrt(id, dto, req.user);
+  }
+
   @Post(':id/iniciar-manutencao')
   @ApiOperation({ summary: 'Enviar irregularidade para manutenção' })
   @ApiResponse({ status: 200, type: Irregularidade })
@@ -271,9 +288,13 @@ export class IrregularidadesController {
   iniciarManutencao(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: IniciarManutencaoIrregularidadeDto,
-    @Req() req: Request & { user?: { id?: string; idEmpresa?: string } },
+    @Req() req: Request & { user?: Usuario },
   ): Promise<Irregularidade> {
-    return this.irregularidadeService.iniciarManutencao(id, dto, req.user);
+    return this.irregularidadeService.iniciarManutencao(
+      id,
+      dto,
+      mapFluxoActor(req.user),
+    );
   }
 
   @Post(':id/concluir-manutencao')
@@ -402,4 +423,17 @@ export class IrregularidadesController {
     const permissions = collectUserPermissions(req.user?.perfis);
     return this.irregularidadeService.removeMidia(midiaId, permissions);
   }
+}
+
+function mapFluxoActor(
+  user?: Usuario,
+): { id?: string; idEmpresa?: string; nome?: string } | undefined {
+  if (!user) {
+    return undefined;
+  }
+  return {
+    id: user.id,
+    idEmpresa: user.idEmpresa ?? undefined,
+    nome: user.nome,
+  };
 }

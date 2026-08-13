@@ -438,3 +438,54 @@
   }
 }
 
+// Campo senha/token com botão de visibilidade (ícone dentro do input)
+.input-eye-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  width: 100%;
+
+  .form-input,
+  .form-control {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    padding-right: 2.75rem;
+  }
+
+  .btn-eye {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    z-index: 2;
+    margin-right: $spacing-sm;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    min-height: 2rem;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    border-radius: $radius-sm;
+
+    @include themed(color, $light-text-secondary, $dark-text-secondary);
+
+    &:hover:not(:disabled) {
+      @include themed(color, $light-text-primary, $dark-text-primary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}

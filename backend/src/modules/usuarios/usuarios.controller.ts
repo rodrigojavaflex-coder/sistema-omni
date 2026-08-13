@@ -30,10 +30,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateAtalhosHomeDto } from './dto/update-atalhos-home.dto';
 import { Usuario } from './entities/usuario.entity';
 import type { Request } from 'express';
-import {
-  PERMISSION_GROUPS,
-  Permission,
-} from '../../common/enums/permission.enum';
+import { Permission } from '../../common/enums/permission.enum';
+import { buildPermissionCatalog } from '../../common/utils/permission-catalog.util';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Perfil } from '../perfil/entities/perfil.entity';
@@ -70,17 +68,21 @@ export class UsuariosController {
   }
 
   @Get('permissions')
-  @ApiOperation({ summary: 'Listar todas as permissões disponíveis' })
+  @ApiOperation({
+    summary: 'Catálogo hierárquico de permissões (módulos → grupos)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Lista de permissões agrupadas por categoria',
+    description: 'Catálogo de permissões para cadastro de perfil',
   })
   async getPermissions() {
     const biPermissionItems = await this.biAcessoService.getPermissionItems();
-    return {
-      ...PERMISSION_GROUPS,
-      BI: biPermissionItems,
-    };
+    return buildPermissionCatalog({
+      'BI — Acesso': biPermissionItems.map((item) => ({
+        key: item.key,
+        label: item.label,
+      })),
+    });
   }
 
   @Get('profiles')

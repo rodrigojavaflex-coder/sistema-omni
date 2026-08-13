@@ -28,6 +28,9 @@ export enum Permission {
   PROFILE_READ = 'perfil:read',
   PROFILE_UPDATE = 'perfil:update',
   PROFILE_DELETE = 'perfil:delete',
+  PROFILE_DUPLICATE = 'perfil:duplicate',
+  PROFILE_ASSIGN_USERS = 'perfil:assign_users',
+  PROFILE_UNASSIGN_USERS = 'perfil:unassign_users',
   
   // Veículos
   VEICULO_CREATE = 'veiculo:create',
@@ -73,6 +76,7 @@ export enum Permission {
   EMPRESATERCIRA_READ = 'empresaterceira:read',
   EMPRESATERCIRA_UPDATE = 'empresaterceira:update',
   EMPRESATERCIRA_DELETE = 'empresaterceira:delete',
+  EMPRESATERCIRA_INTEGRACAO_CONFIG = 'empresaterceira:integracao_config',
 
   // Trechos
   TRECHO_CREATE = 'trecho:create',
@@ -114,6 +118,7 @@ export enum Permission {
   IRREGULARIDADE_MANUTENCAO_START = 'irregularidade_manutencao:start',
   IRREGULARIDADE_MANUTENCAO_FINISH = 'irregularidade_manutencao:finish',
   IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING = 'irregularidade_manutencao:mark_not_proceeding',
+  IRREGULARIDADE_MANUTENCAO_CANCEL_OS_BRT = 'irregularidade_manutencao:cancel_os_brt',
   IRREGULARIDADE_VALIDACAO_FINAL_READ = 'irregularidade_validacao_final:read',
   IRREGULARIDADE_VALIDACAO_FINAL_UPDATE = 'irregularidade_validacao_final:update',
   AREAVISTORIADA_CREATE = 'areavistoriada:create',
@@ -155,10 +160,40 @@ export interface PermissionGroup {
   }[];
 }
 
+export interface PermissionCatalogItem {
+  key: Permission | string;
+  label: string;
+}
+
+export interface PermissionCatalogGroup {
+  key: string;
+  label: string;
+  permissions: PermissionCatalogItem[];
+}
+
+export interface PermissionCatalogModule {
+  key: string;
+  label: string;
+  groups: PermissionCatalogGroup[];
+}
+
+export interface PermissionCatalog {
+  modules: PermissionCatalogModule[];
+  totalPermissions: number;
+}
+
+export interface PerfilUsuarioVinculado {
+  id: string;
+  nome: string;
+  empresaLabel?: string | null;
+}
+
 export interface Perfil {
   id: string;
   nomePerfil: string;
   permissoes: string[];
+  totalUsuarios?: number;
+  usuariosVinculados?: PerfilUsuarioVinculado[];
 }
 
 export interface Usuario {

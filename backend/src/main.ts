@@ -7,8 +7,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { Request, Response, json, urlencoded } from 'express';
+import { assertPermissionCatalogIntegrity } from './common/utils/permission-catalog.util';
 
 async function bootstrap() {
+  assertPermissionCatalogIntegrity();
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: true,
   });

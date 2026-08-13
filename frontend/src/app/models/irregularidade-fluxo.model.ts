@@ -6,6 +6,7 @@ export enum OrigemRegistroIrregularidade {
 
 export enum StatusIrregularidade {
   REGISTRADA = 'REGISTRADA',
+  RETRABALHO_GARANTIA = 'RETRABALHO_GARANTIA',
   CANCELADA = 'CANCELADA',
   EM_MANUTENCAO = 'EM_MANUTENCAO',
   NAO_PROCEDE = 'NAO_PROCEDE',
@@ -40,6 +41,11 @@ export interface IrregularidadeFluxoItem {
   entradaStatusEm?: string;
   atualizadoEm: string;
   origemRegistro?: OrigemRegistroIrregularidade;
+  controleIntegracaoApi?: boolean;
+  osOrigAtual?: string;
+  numOsExternoAtual?: number | null;
+  ultimoErroIntegracao?: string;
+  ultimoErroIntegracaoEm?: string;
 }
 
 export interface IrregularidadeMidiaFluxoItem {
@@ -119,6 +125,15 @@ export interface RelatorioManutencaoPreview {
 export interface RelatorioManutencaoExecucao extends RelatorioManutencaoPreview {
   totalEnviadas: number;
   emailEnviado: boolean;
+  falhas?: EnvioManutencaoFalhaItem[];
+}
+
+export interface EnvioManutencaoFalhaItem {
+  id: string;
+  numeroIrregularidade?: number;
+  codigoErro?: string;
+  mensagem: string;
+  httpStatus?: number;
 }
 
 export interface ReclassificarPayload {

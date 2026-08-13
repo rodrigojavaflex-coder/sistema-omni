@@ -51,6 +51,7 @@ type ModalAcao =
   | 'iniciar-manutencao'
   | 'reclassificar'
   | 'cancelar'
+  | 'cancelar-os-brt'
   | 'concluir'
   | 'nao-procede'
   | 'validar-final'
@@ -155,6 +156,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   );
   canManutencaoNaoProcede = this.authService.hasPermission(
     Permission.IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING,
+  );
+  canManutencaoCancelOsBrt = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_MANUTENCAO_CANCEL_OS_BRT,
   );
   canValidacaoFinalUpdate = this.authService.hasPermission(
     Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
@@ -430,6 +434,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         return 'Reclassificar irregularidade';
       case 'cancelar':
         return 'Cancelar irregularidade';
+      case 'cancelar-os-brt':
+        return 'Cancelar OS na BRT';
       case 'concluir':
         return 'Concluir manutenção';
       case 'nao-procede':
@@ -457,6 +463,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         return 'Reclassificar';
       case 'cancelar':
         return 'Cancelar irregularidade';
+      case 'cancelar-os-brt':
+        return 'Cancelar OS e devolver ao Tratamento';
       case 'concluir':
         return 'Concluir';
       case 'nao-procede':
@@ -490,6 +498,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       );
     }
     if (this.modalAcao === 'cancelar') return !!this.modalMotivoCancelamento.trim();
+    if (this.modalAcao === 'cancelar-os-brt') {
+      return !!this.modalMotivoCancelamento.trim();
+    }
     if (this.modalAcao === 'concluir') return !!this.modalObservacao.trim();
     if (this.modalAcao === 'nao-procede') return !!this.modalMotivoNaoProcede.trim();
     if (this.modalAcao === 'reprovar-final') return !!this.modalObservacao.trim();
@@ -555,6 +566,15 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         );
       }
       fallbackError = 'Erro ao cancelar irregularidade.';
+    } else if (this.modalAcao === 'cancelar-os-brt') {
+      for (const itemId of itemIds) {
+        requests.push(
+          this.irregularidadeService.cancelarOsBrt(itemId, {
+            motivo: this.modalMotivoCancelamento.trim(),
+          }),
+        );
+      }
+      fallbackError = 'Erro ao cancelar OS na integração BRT.';
     } else if (this.modalAcao === 'concluir') {
       for (const itemId of itemIds) {
         requests.push(
@@ -932,14 +952,47 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return this.getSelectedIds().length > 0;
   }
 
+  get manutencaoIntegracaoSelecionada(): boolean {
+    return this.items.some(
+      (item) =>
+        this.selectedIds.has(item.id) && !!item.controleIntegracaoApi,
+    );
+  }
+
+  /** Seleção válida para cancelar OS BRT: todas com OS ativa na integração. */
+  get manutencaoCancelOsBrtSelecionada(): boolean {
+    const selected = this.items.filter((item) => this.selectedIds.has(item.id));
+    if (!selected.length) {
+      return false;
+    }
+    return selected.every(
+      (item) =>
+        !!item.controleIntegracaoApi &&
+        item.numOsExternoAtual != null &&
+        !!item.osOrigAtual,
+    );
+  }
+
+  formatOrdemServico(item: IrregularidadeFluxoItem): string {
+    const omni = item.numeroIrregularidade;
+    if (item.numOsExternoAtual) {
+      return omni ? `${omni} / BRT ${item.numOsExternoAtual}` : `BRT ${item.numOsExternoAtual}`;
+    }
+    return omni ? String(omni) : '-';
+  }
+
   get canReclassificarSelecionado(): boolean {
     return this.getSelectedIds().length === 1;
   }
 
   get canShowTratamentoActions(): boolean {
+    if (this.modo !== 'tratamento') {
+      return false;
+    }
     return (
-      this.modo === 'tratamento' &&
-      this.filtroStatus === StatusIrregularidade.REGISTRADA
+      this.filtroStatus === '' ||
+      this.filtroStatus === StatusIrregularidade.REGISTRADA ||
+      this.filtroStatus === StatusIrregularidade.RETRABALHO_GARANTIA
     );
   }
 
@@ -1037,6 +1090,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     switch (status) {
       case StatusIrregularidade.REGISTRADA:
         return 'status status-registrada';
+      case StatusIrregularidade.RETRABALHO_GARANTIA:
+        return 'status status-retrabalho-garantia';
       case StatusIrregularidade.EM_MANUTENCAO:
         return 'status status-manutencao';
       case StatusIrregularidade.NAO_PROCEDE:
@@ -1072,6 +1127,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     switch (status) {
       case StatusIrregularidade.REGISTRADA:
         return 'Registrada';
+      case StatusIrregularidade.RETRABALHO_GARANTIA:
+        return 'Retrabalho / Garantia';
       case StatusIrregularidade.CANCELADA:
         return 'Cancelada';
       case StatusIrregularidade.EM_MANUTENCAO:
@@ -1206,6 +1263,12 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         return 'Reclassificar irregularidade';
       case 'cancelar':
         return 'Cancelar irregularidade';
+      case 'cancelar_api_os':
+        return 'Cancelar OS na integração BRT';
+      case 'enviar_api_os':
+        return 'Enviar OS para integração BRT';
+      case 'enviar_api_os_duplicada':
+        return 'Enviar OS para integração BRT (duplicada idempotente)';
       case 'iniciar_manutencao':
         return 'Iniciar manutenção';
       case 'concluir_manutencao':
@@ -1353,7 +1416,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
 
   /**
    * Status disponíveis na tela Tratamento conforme permissões :read do usuário.
-   * tratamento:read → REGISTRADA, CANCELADA
+   * tratamento:read → REGISTRADA, RETRABALHO_GARANTIA, CANCELADA
    * manutencao:read → EM_MANUTENCAO
    * validacao_final:read → CONCLUIDA, NAO_PROCEDE, VALIDADA
    */
@@ -1362,6 +1425,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (this.canTratamentoRead) {
       statuses.push(
         StatusIrregularidade.REGISTRADA,
+        StatusIrregularidade.RETRABALHO_GARANTIA,
         StatusIrregularidade.CANCELADA,
       );
     }
@@ -1390,8 +1454,29 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   private buildMensagemSucessoManutencao(res: RelatorioManutencaoExecucao): string {
     const total = Number(res?.totalEnviadas ?? 0);
     const totalVeiculos = Number(res?.resumo?.totalVeiculos ?? 0);
-    const totalAnexos = Number(res?.resumo?.totalAnexos ?? 0);
-    return `Encaminhamento concluído com sucesso: ${total} irregularidade(s) em ${totalVeiculos} veículo(s), com ${totalAnexos} anexo(s) no relatório.`;
+    const falhas = res?.falhas ?? [];
+    let msg = `Encaminhamento: ${total} irregularidade(s) enviada(s) para manutenção`;
+    if (totalVeiculos > 0) {
+      msg += ` (${totalVeiculos} veículo(s))`;
+    }
+    if (res?.emailEnviado) {
+      msg += '. E-mail com relatório enviado';
+    }
+    msg += '.';
+    if (falhas.length > 0) {
+      const detalhes = falhas
+        .slice(0, 5)
+        .map(
+          (f) =>
+            `#${f.numeroIrregularidade ?? f.id.slice(0, 8)}: ${f.mensagem}`,
+        )
+        .join(' | ');
+      msg += ` ${falhas.length} não enviada(s): ${detalhes}`;
+      if (falhas.length > 5) {
+        msg += '…';
+      }
+    }
+    return msg;
   }
 }
 

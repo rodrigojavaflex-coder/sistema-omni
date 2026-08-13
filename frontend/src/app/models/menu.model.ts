@@ -361,21 +361,21 @@ export const MENU_CONFIGURATION: MenuConfig = {
             {
               label: 'Tratamento',
               route: '/irregularidades/tratamento',
-              icon: 'feather-activity',
+              icon: 'tabler-replace',
               requiredPermissions: [Permission.IRREGULARIDADE_TRATAMENTO_READ],
               parentMenu: 'Gestão'
             },
             {
               label: 'Manutenção',
               route: '/irregularidades/manutencao',
-              icon: 'feather-settings',
+              icon: 'feather-bus-front',
               requiredPermissions: [Permission.IRREGULARIDADE_MANUTENCAO_READ],
               parentMenu: 'Gestão'
             },
             {
               label: 'Validação',
               route: '/irregularidades/validacao-final',
-              icon: 'feather-check',
+              icon: 'tabler-list-check',
               requiredPermissions: [
                 Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
               ],

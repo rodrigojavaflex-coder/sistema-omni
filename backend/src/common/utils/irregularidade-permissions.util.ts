@@ -14,6 +14,7 @@ export function getReadPermissionForStatus(
 ): Permission {
   switch (status) {
     case StatusIrregularidade.REGISTRADA:
+    case StatusIrregularidade.RETRABALHO_GARANTIA:
     case StatusIrregularidade.CANCELADA:
       return Permission.IRREGULARIDADE_TRATAMENTO_READ;
     case StatusIrregularidade.EM_MANUTENCAO:

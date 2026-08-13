@@ -18,6 +18,7 @@ import { AuditoriaInterceptor } from './common/interceptors/auditoria.intercepto
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import googleMapsConfig from './config/google-maps.config';
+import brtOsConfig from './config/brt-os.config';
 import { Configuracao } from './modules/configuracao/entities/configuracao.entity';
 import { DepartamentoModule } from './modules/departamento/departamento.module';
 import { MetaModule } from './modules/meta/meta.module';
@@ -34,7 +35,7 @@ import { DocumentoModule } from './modules/documento/documento.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, appConfig, googleMapsConfig],
+      load: [databaseConfig, appConfig, googleMapsConfig, brtOsConfig],
       envFilePath: '.env',
     }),
 

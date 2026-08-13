@@ -30,6 +30,7 @@
 - Deve criar migration para mudança estrutural (tabela/coluna/índice/constraint/tipo/default/nullable).
 - Toda migration deve ter `up`/`down` reversíveis e nome com intenção de negócio.
 - Não misturar migration estrutural com carga de dados grande sem necessidade.
+- **Permissões (`perfil.permissoes`)**: não conceder nem alterar permissões via migration, salvo se o usuário solicitar expressamente. Nova permissão entra no enum/catálogo (`permission.enum.ts`); a **concessão** a perfis é manual (tela de Perfis / operação acordada), não automática em migration.
 - Mudança de API deve validar DTO, contrato de resposta e impacto em consumidores.
 
 # Ambientes (Túneis)

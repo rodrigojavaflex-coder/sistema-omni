@@ -1,95 +1,326 @@
-<div class="list-container">
-  <div class="list-header">
-    <h2>Perfis</h2>
-    <div class="header-actions">
-      <button (click)="exportToExcel()" class="btn-export-excel" title="Exportar para Excel">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
-          <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
-        </svg>
-      </button>
-      <button (click)="exportToPDF()" class="btn-export-pdf" title="Exportar para PDF">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
-          <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.188-.012.396-.047.614-.084.51-.27 1.134-.52 1.794a10.954 10.954 0 0 0 .98 1.686 5.753 5.753 0 0 1 1.334.05c.364.066.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.856.856 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.712 5.712 0 0 1-.911-.95 11.651 11.651 0 0 0-1.997.406 11.307 11.307 0 0 1-1.02 1.51c-.292.35-.609.656-.927.787a.793.793 0 0 1-.58.029zm1.379-1.901c-.166.076-.32.156-.459.238-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361.01.022.02.036.026.044a.266.266 0 0 0 .035-.012c.137-.056.355-.235.635-.572a8.18 8.18 0 0 0 .45-.606zm1.64-1.33a12.71 12.71 0 0 1 1.01-.193 11.744 11.744 0 0 1-.51-.858 20.801 20.801 0 0 1-.5 1.05zm2.446.45c.15.163.296.3.435.41.24.19.407.253.498.256a.107.107 0 0 0 .07-.015.307.307 0 0 0 .094-.125.436.436 0 0 0 .059-.2.095.095 0 0 0-.026-.063c-.052-.062-.2-.152-.518-.209a3.876 3.876 0 0 0-.612-.053zM8.078 7.8a6.7 6.7 0 0 0 .2-.828c.031-.188.043-.343.038-.465a.613.613 0 0 0-.032-.198.517.517 0 0 0-.145.04c-.087.035-.158.106-.196.283-.04.192-.03.469.046.822.024.111.054.227.09.346z"/>
-        </svg>
-      </button>
-      @if (authService.hasPermission(Permission.PROFILE_CREATE)) {
-        <a routerLink="/perfil/new" class="btn btn-primary">Novo Perfil</a>
-      }
-    </div>
-  </div>
-
-  <!-- Loading -->
-  @if (loading) {
-    <div class="loading">
-      Carregando perfis...
-    </div>
-  }
-
-  <!-- Error -->
-  @if (error) {
-    <div class="error-message">
-      {{ error }}
-      <button class="btn btn-primary" (click)="loadItems()">Tentar Novamente</button>
-    </div>
-  }
-
-  <!-- Tabela de perfis -->
-  @if (!loading && !error) {
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Nome do Perfil</th>
-            <th>Permissões</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (perfil of items; track perfil.id) {
-            <tr>
-              <td>{{ perfil.nomePerfil }}</td>
-              <td>{{ formattedPermissoes[perfil.id] }}</td>
-              <td class="table-actions">
-                @if (authService.hasPermission(Permission.PROFILE_UPDATE)) {
-                  <button type="button" class="btn btn-small btn-primary" (click)="editPerfil(perfil)">
-                    Editar
-                  </button>
-                }
-                @if (authService.hasPermission(Permission.PROFILE_READ)) {
-                  <button type="button" class="btn btn-small btn-info" (click)="printPerfil(perfil)">
-                    Imprimir
-                  </button>
-                }
-                @if (authService.hasPermission(Permission.PROFILE_DELETE)) {
-                  <button type="button" class="btn btn-small btn-danger" (click)="deletePerfil(perfil)">
-                    Excluir
-                  </button>
-                }
-              </td>
-            </tr>
+<div class="perfil-page vendas-page">
+  <section class="results-card">
+    <div class="results-header">
+      <div>
+        <p class="page-subtitle">Administração</p>
+        <h1>Perfis</h1>
+        <p class="results-count">
+          @if (!loading && !error) {
+            @if (hasActiveFilters) {
+              Exibindo {{ displayedItems.length }} de {{ allItems.length }} perfis
+            } @else {
+              Exibindo {{ allItems.length }}
+              {{ allItems.length === 1 ? 'perfil' : 'perfis' }}
+            }
           }
-        </tbody>
-      </table>
-
-      <!-- Mensagem quando não há perfis -->
-      @if (items.length === 0) {
-        <div class="no-data">
-          Nenhum perfil encontrado.
-        </div>
-      }
+        </p>
+      </div>
+      <div class="header-actions">
+        @if (authService.hasPermission(Permission.PROFILE_CREATE)) {
+          <a routerLink="/perfil/new" class="btn btn-novo">
+            <i class="fas fa-plus"></i>
+            Novo Perfil
+          </a>
+        }
+        <button class="btn btn-ghost" (click)="loadItems()" [disabled]="loading">
+          <i class="fas fa-sync-alt"></i>
+          Atualizar
+        </button>
+      </div>
     </div>
-  }
+
+    @if (loading) {
+      <section class="state-inline">
+        <div class="spinner"></div>
+        <p>Carregando perfis...</p>
+      </section>
+    }
+
+    @if (error) {
+      <section class="state-inline error">
+        <p>{{ error }}</p>
+        <button class="btn btn-primario" (click)="loadItems()">Tentar novamente</button>
+      </section>
+    }
+
+    @if (!loading && !error) {
+      <div class="filters-inline">
+        <div class="filters-panel-top perfil-filters">
+          <div class="filter-field filter-field-nome">
+            <label for="filtroNomePerfil">Nome do perfil</label>
+            <input
+              id="filtroNomePerfil"
+              type="text"
+              class="form-control"
+              [(ngModel)]="filtroNome"
+              placeholder="Buscar por nome"
+            />
+          </div>
+          <div class="filter-field">
+            <label for="filtroModuloPerfil">Módulo</label>
+            <select
+              id="filtroModuloPerfil"
+              class="form-control"
+              [(ngModel)]="filtroModuloKey"
+            >
+              <option value="">Todos os módulos</option>
+              @if (permissionCatalog) {
+                @for (mod of permissionCatalog.modules; track mod.key) {
+                  <option [value]="mod.key">{{ mod.label }}</option>
+                }
+              }
+            </select>
+          </div>
+          <div class="filter-field">
+            <label for="filtroVinculoPerfil">Vínculo</label>
+            <select
+              id="filtroVinculoPerfil"
+              class="form-control"
+              [(ngModel)]="filtroVinculo"
+            >
+              <option value="todos">Todos</option>
+              <option value="com">Com usuários vinculados</option>
+              <option value="sem">Sem usuários vinculados</option>
+            </select>
+          </div>
+          <div class="filter-field filter-field-usuario">
+            <label for="filtroUsuarioPerfil">Usuários</label>
+            <app-usuario-autocomplete
+              #usuarioAutocomplete
+              id="filtroUsuarioPerfil"
+              placeholder="Buscar usuário..."
+              (usuarioSelected)="onUsuarioFiltroSelected($event)"
+            ></app-usuario-autocomplete>
+          </div>
+          @if (hasActiveFilters) {
+            <button type="button" class="btn btn-limpar" (click)="limparFiltros()">
+              Limpar filtros
+            </button>
+          }
+        </div>
+
+        @if (hasActiveFilters) {
+          <div class="filters-applied">
+            <span class="filters-count">
+              {{ displayedItems.length }}
+              {{ displayedItems.length === 1 ? 'resultado' : 'resultados' }}
+            </span>
+            @if (filtroNome.trim()) {
+              <button type="button" class="filter-chip" (click)="filtroNome = ''">
+                Nome: {{ filtroNome.trim() }}
+                <i class="fas fa-times" aria-hidden="true"></i>
+              </button>
+            }
+            @if (filtroModuloKey) {
+              <button type="button" class="filter-chip" (click)="filtroModuloKey = ''">
+                Módulo: {{ getModuloLabel(filtroModuloKey) }}
+                <i class="fas fa-times" aria-hidden="true"></i>
+              </button>
+            }
+            @if (filtroVinculo !== 'todos') {
+              <button
+                type="button"
+                class="filter-chip"
+                (click)="filtroVinculo = 'todos'"
+              >
+                Vínculo: {{ getVinculoFiltroLabel() }}
+                <i class="fas fa-times" aria-hidden="true"></i>
+              </button>
+            }
+            @if (filtroUsuarioId) {
+              <button
+                type="button"
+                class="filter-chip"
+                (click)="limparFiltroUsuario()"
+              >
+                Usuários: {{ filtroUsuarioLabel }}
+                <i class="fas fa-times" aria-hidden="true"></i>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="table-wrapper">
+        <table class="vendas-table data-table">
+          <thead>
+            <tr>
+              <th class="acoes-col">Ações</th>
+              <th class="sortable" (click)="toggleSortNome()">
+                Nome do Perfil
+                <i
+                  class="fas sort-icon"
+                  [class.fa-sort-up]="sortNome === 'asc'"
+                  [class.fa-sort-down]="sortNome === 'desc'"
+                  aria-hidden="true"
+                ></i>
+              </th>
+              <th class="col-usuarios">Usuários</th>
+              <th>Permissões por módulo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (allItems.length === 0) {
+              <tr class="no-data">
+                <td colspan="4">
+                  <i class="fas fa-inbox"></i>
+                  Nenhum perfil cadastrado.
+                </td>
+              </tr>
+            } @else if (displayedItems.length === 0) {
+              <tr class="no-data">
+                <td colspan="4">
+                  <i class="fas fa-filter"></i>
+                  Nenhum perfil encontrado para os filtros aplicados.
+                </td>
+              </tr>
+            }
+            @for (perfil of displayedItems; track perfil.id) {
+              <tr>
+                <td class="actions-cell">
+                  <div class="table-actions perfil-actions">
+                  @if (authService.hasPermission(Permission.PROFILE_UPDATE)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-editar"
+                      (click)="editPerfil(perfil)"
+                    >
+                      Editar
+                    </button>
+                  }
+                  @if (authService.hasPermission(Permission.PROFILE_DUPLICATE)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-duplicar"
+                      (click)="duplicatePerfil(perfil)"
+                      title="Duplicar perfil"
+                    >
+                      Duplicar
+                    </button>
+                  }
+                  @if (canOpenVincularModal) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-vincular"
+                      (click)="openVincularUsuarios(perfil)"
+                      title="Vincular usuários a este perfil"
+                    >
+                      Vincular
+                    </button>
+                  }
+                  @if (authService.hasPermission(Permission.PROFILE_READ)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-imprimir"
+                      (click)="printPerfil(perfil)"
+                    >
+                      Imprimir
+                    </button>
+                  }
+                  @if (authService.hasPermission(Permission.PROFILE_DELETE)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-excluir"
+                      (click)="deletePerfil(perfil)"
+                    >
+                      Excluir
+                    </button>
+                  }
+                  </div>
+                </td>
+                <td>
+                  <div class="perfil-name">
+                    <strong>{{ perfil.nomePerfil }}</strong>
+                    <small>{{ perfil.permissoes.length }} permissões</small>
+                  </div>
+                </td>
+                <td class="col-usuarios">
+                  <div class="usuarios-cell">
+                    <span class="usuario-count">{{ getUsuarioCount(perfil) }}</span>
+                    @if (getUsuariosVinculados(perfil).length) {
+                      <ul class="usuarios-lista">
+                        @for (
+                          usuario of getUsuariosVinculados(perfil);
+                          track usuario.id
+                        ) {
+                          <li>
+                            <span class="usuario-nome">{{ usuario.nome }}</span>
+                            @if (usuario.empresaLabel) {
+                              <span class="usuario-unidade">{{ usuario.empresaLabel }}</span>
+                            }
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <span class="usuarios-vazio">Nenhum usuário vinculado</span>
+                    }
+                  </div>
+                </td>
+                <td class="permissoes-cell">
+                  <div class="modulos-cell">
+                    <span class="modulo-count">{{
+                      getModulosComPermissoesCount(perfil)
+                    }}</span>
+                    @if (getModulosComPermissoes(perfil).length) {
+                      <ul class="modulos-lista">
+                        @for (
+                          chip of getModulosComPermissoes(perfil);
+                          track chip.moduleKey
+                        ) {
+                          <li>
+                            <app-menu-icon
+                              [iconKey]="getModuleIconKey(chip.moduleKey)"
+                              size="sm"
+                            ></app-menu-icon>
+                            <span class="modulo-nome">{{ chip.moduleLabel }}</span>
+                            <span class="modulo-qtd"
+                              >{{ chip.selected }}/{{ chip.total }}</span
+                            >
+                          </li>
+                        }
+                        @if (getUncatalogedCount(perfil) > 0) {
+                          <li class="modulo-legado" title="Permissões legadas fora do catálogo">
+                            <span class="modulo-nome">{{ getUncatalogedCount(perfil) }} legadas</span>
+                          </li>
+                        }
+                      </ul>
+                    } @else if (getUncatalogedCount(perfil) > 0) {
+                      <ul class="modulos-lista">
+                        <li class="modulo-legado" title="Permissões legadas fora do catálogo">
+                          <span class="modulo-nome">{{ getUncatalogedCount(perfil) }} legadas</span>
+                        </li>
+                      </ul>
+                    } @else {
+                      <span class="modulos-vazio">Sem permissões</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
 </div>
 
-  <!-- Modal de confirmação de exclusão de perfil -->
-  <app-confirmation-modal
-    [isVisible]="showDeleteModal"
-    [title]="deleteModalTitle"
-    [message]="deleteModalMessage"
-    confirmText="Excluir"
-    cancelText="Cancelar"
-    (confirmed)="onDeleteConfirmed()"
-    (cancelled)="onDeleteCancelled()"
-  ></app-confirmation-modal>
+<app-confirmation-modal
+  [isVisible]="showDeleteModal"
+  [title]="deleteModalTitle"
+  [message]="deleteModalMessage"
+  [detailLines]="deleteModalUsuarios"
+  confirmText="Excluir"
+  cancelText="Cancelar"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()"
+></app-confirmation-modal>
+
+<app-perfil-vincular-usuarios-modal
+  [visible]="vincularModalVisible"
+  [perfilNome]="vincularPerfil?.nomePerfil ?? ''"
+  [alreadyLinkedIds]="vincularAlreadyLinkedIds"
+  [canAssignUsers]="canAssignUsersInModal"
+  [canUnassignUsers]="canUnassignUsersInModal"
+  (closed)="closeVincularModal()"
+  (confirm)="onVincularUsuariosConfirm($event)"
+></app-perfil-vincular-usuarios-modal>

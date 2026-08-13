@@ -131,4 +131,19 @@ export class IrregularidadeResumoDto {
     required: false,
   })
   origemRegistro?: OrigemRegistroIrregularidade;
+
+  @ApiProperty({ required: false })
+  controleIntegracaoApi?: boolean;
+
+  @ApiProperty({ required: false })
+  osOrigAtual?: string;
+
+  @ApiProperty({ required: false })
+  numOsExternoAtual?: number | null;
+
+  @ApiProperty({ required: false })
+  ultimoErroIntegracao?: string;
+
+  @ApiProperty({ required: false })
+  ultimoErroIntegracaoEm?: string;
 }

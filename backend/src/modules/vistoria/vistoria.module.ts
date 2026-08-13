@@ -31,6 +31,13 @@ import { IrregularidadesController } from './irregularidades.controller';
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 import { Configuracao } from '../configuracao/entities/configuracao.entity';
 
+import { EmpresaTerceiraModule } from '../empresa-terceira/empresa-terceira.module';
+import { IrregularidadeOsExterna } from './entities/irregularidade-os-externa.entity';
+import { BrtOsIntegrationService } from './brt-os-integration.service';
+import {
+  IrregularidadeManutencaoEnvioService,
+} from './irregularidade-manutencao-envio.service';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -44,6 +51,7 @@ import { Configuracao } from '../configuracao/entities/configuracao.entity';
       Irregularidade,
       IrregularidadeMidia,
       IrregularidadeHistorico,
+      IrregularidadeOsExterna,
       ModeloVeiculo,
       Veiculo,
       Motorista,
@@ -52,6 +60,7 @@ import { Configuracao } from '../configuracao/entities/configuracao.entity';
       Configuracao,
     ]),
     AuthModule,
+    EmpresaTerceiraModule,
   ],
   controllers: [
     VistoriaController,
@@ -69,6 +78,8 @@ import { Configuracao } from '../configuracao/entities/configuracao.entity';
     SintomaService,
     MatrizCriticidadeService,
     IrregularidadeService,
+    BrtOsIntegrationService,
+    IrregularidadeManutencaoEnvioService,
   ],
 })
 export class VistoriaModule {}

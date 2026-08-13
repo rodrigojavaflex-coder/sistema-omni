@@ -1,1 +1,347 @@
-﻿/* Nenhuma customização necessária - usando 100% classes globais do design system */
+﻿.perfil-page {
+  padding: 1rem 1.25rem 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--cor-fundo, var(--bg-primary, #f8fafc));
+  min-height: calc(100vh - 120px);
+}
+
+.results-card {
+  background: var(--bg-card, var(--cor-card, #fff));
+  border: 1px solid var(--cor-borda, var(--border-color, #e2e8f0));
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--sombra-sm, 0 6px 18px rgba(15, 23, 42, 0.06));
+}
+
+.results-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.25rem;
+}
+
+.results-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  color: var(--text-primary, #0f172a);
+}
+
+.results-count {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.9rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-ghost {
+  border: 1px solid var(--cor-borda, #e2e8f0);
+  color: var(--text-primary, #0f172a);
+  background: var(--bg-card, #fff);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.state-inline {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-primary, #0f172a);
+}
+
+.state-inline.error {
+  color: var(--cor-erro, #b91c1c);
+}
+
+.state-inline .spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--cor-borda, #e2e8f0);
+  border-top: 3px solid var(--cor-primaria, #2563eb);
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  animation: spin 1s linear infinite;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.filters-inline {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.perfil-filters {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.2fr)
+    minmax(140px, 0.9fr)
+    minmax(150px, 0.9fr)
+    minmax(200px, 1.2fr)
+    auto;
+  gap: 0.75rem 1rem;
+  align-items: end;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--cor-borda, #e2e8f0);
+  border-radius: 10px;
+  background: var(--bg-secondary, #f8fafc);
+}
+
+.filter-field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--text-primary, #0f172a);
+}
+
+.filters-applied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filters-count {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #64748b);
+  margin-right: 0.25rem;
+}
+
+.filters-applied .filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--cor-borda, #cbd5e1);
+  background: var(--bg-card, #fff);
+  color: var(--text-primary, #0f172a);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.filters-applied .filter-chip:hover {
+  background: var(--bg-secondary, #f1f5f9);
+}
+
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+th.sortable .sort-icon {
+  margin-left: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--cor-primaria, #2563eb);
+}
+
+.perfil-name strong {
+  display: block;
+  color: var(--text-primary, #0f172a);
+}
+
+.perfil-name small {
+  color: var(--text-secondary, #64748b);
+  font-size: 0.8rem;
+}
+
+.col-usuarios {
+  min-width: 200px;
+  max-width: 320px;
+}
+
+.usuarios-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.usuario-count {
+  display: inline-flex;
+  flex-shrink: 0;
+  min-width: 1.75rem;
+  justify-content: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--bg-secondary, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+  font-weight: 600;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin-top: 0.1rem;
+}
+
+.usuarios-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.usuarios-lista li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--text-primary, #0f172a);
+  word-break: break-word;
+}
+
+.usuario-nome {
+  font-weight: 500;
+}
+
+.usuario-unidade {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+  white-space: nowrap;
+}
+
+.usuarios-vazio {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #94a3b8);
+  font-style: italic;
+}
+
+.permissoes-cell {
+  min-width: 220px;
+  max-width: 320px;
+}
+
+.modulos-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.modulo-count {
+  display: inline-flex;
+  flex-shrink: 0;
+  min-width: 1.75rem;
+  justify-content: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--bg-secondary, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+  font-weight: 600;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin-top: 0.1rem;
+}
+
+.modulos-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.modulos-lista li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--text-primary, #0f172a);
+  word-break: break-word;
+}
+
+.modulo-nome {
+  font-weight: 500;
+}
+
+.modulo-qtd {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+  white-space: nowrap;
+}
+
+.modulo-legado .modulo-nome {
+  color: var(--cor-aviso-texto, #92400e);
+}
+
+.modulos-vazio {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #94a3b8);
+  font-style: italic;
+}
+
+.actions-cell {
+  vertical-align: top;
+  text-align: left !important;
+  white-space: normal;
+}
+
+.perfil-page .acoes-col,
+.perfil-page .actions-cell {
+  width: 7.25rem;
+  min-width: 7.25rem;
+}
+
+.perfil-actions.table-actions {
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.perfil-actions .btn-sm {
+  width: 100%;
+  margin: 0;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1100px) {
+  .perfil-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filter-field-nome,
+  .filter-field-usuario {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .perfil-page {
+    padding: 1rem;
+  }
+
+  .perfil-filters {
+    grid-template-columns: 1fr;
+  }
+}

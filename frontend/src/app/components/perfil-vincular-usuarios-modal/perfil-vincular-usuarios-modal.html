@@ -1,0 +1,148 @@
+@if (visible) {
+  <div
+    class="pvu-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="pvu-title"
+    (click)="onOverlayClick($event)"
+  >
+    <div class="pvu-dialog" (click)="$event.stopPropagation()">
+      <header class="pvu-header">
+        <div class="pvu-header-text">
+          <h2 id="pvu-title">
+            Vincular usuários ao perfil: <span class="pvu-perfil-nome">{{ perfilNome }}</span>
+          </h2>
+        </div>
+        <button type="button" class="pvu-close" (click)="onCancel()" aria-label="Fechar">
+          ×
+        </button>
+      </header>
+
+      <div class="pvu-body">
+        <div class="pvu-toolbar">
+          <label class="pvu-search-wrap">
+            <span class="pvu-label">Filtrar lista</span>
+            <div class="pvu-search-field">
+              <i class="fas fa-search pvu-search-icon" aria-hidden="true"></i>
+              <input
+                type="search"
+                class="form-control pvu-search-input"
+                [(ngModel)]="searchTerm"
+                placeholder="Nome ou e-mail"
+                autocomplete="off"
+                [disabled]="loading || saving"
+              />
+            </div>
+          </label>
+          @if (!loading && allUsuarios.length > 0) {
+            <div class="pvu-stats" aria-live="polite">
+              <span class="pvu-stat">
+                <strong>{{ filteredUsuarios.length }}</strong>
+                {{ filteredUsuarios.length === 1 ? 'exibido' : 'exibidos' }}
+              </span>
+              @if (searchTerm.trim()) {
+                <span class="pvu-stat-muted">de {{ allUsuarios.length }} no total</span>
+              }
+            </div>
+          }
+        </div>
+
+        @if (error) {
+          <p class="pvu-error" role="alert">{{ error }}</p>
+        }
+
+        @if (loading) {
+          <div class="pvu-loading">
+            <span class="pvu-spinner" aria-hidden="true"></span>
+            <p>Carregando usuários...</p>
+          </div>
+        } @else {
+          <div class="pvu-list-panel">
+            <ul class="pvu-list" aria-label="Usuários">
+              @if (filteredUsuarios.length === 0) {
+                <li class="pvu-empty">Nenhum usuário encontrado.</li>
+              }
+              @for (usuario of filteredUsuarios; track usuario.id) {
+                <li
+                  class="pvu-item"
+                  [class.pvu-item-linked]="isLinked(usuario.id) && !isMarkedForUnlink(usuario.id)"
+                  [class.pvu-item-unlink]="isLinked(usuario.id) && isMarkedForUnlink(usuario.id)"
+                  [class.pvu-item-selected]="!isLinked(usuario.id) && isSelected(usuario.id)"
+                >
+                  <label class="pvu-item-label" [class.pvu-item-label-disabled]="isRowDisabled(usuario.id)">
+                    <input
+                      type="checkbox"
+                      class="pvu-checkbox"
+                      [checked]="isRowChecked(usuario.id)"
+                      [disabled]="isRowDisabled(usuario.id)"
+                      (change)="toggleUsuario(usuario, $any($event.target).checked)"
+                    />
+                    <span class="pvu-item-text">
+                      <span class="pvu-nome">{{ usuario.nome }}</span>
+                      <span class="pvu-email">{{ usuario.email }}</span>
+                    </span>
+                    @if (isLinked(usuario.id) && !isMarkedForUnlink(usuario.id)) {
+                      <span class="pvu-badge">Já vinculado</span>
+                    }
+                    @if (isLinked(usuario.id) && isMarkedForUnlink(usuario.id)) {
+                      <span class="pvu-badge pvu-badge-remove">Remover vínculo</span>
+                    }
+                  </label>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+
+      <footer class="pvu-footer">
+        <p class="pvu-selected-count">
+          @if (selectedAddCount > 0) {
+            <span>
+              <strong>{{ selectedAddCount }}</strong>
+              {{
+                selectedAddCount === 1
+                  ? ' novo vínculo'
+                  : ' novos vínculos'
+              }}
+            </span>
+          }
+          @if (selectedAddCount > 0 && selectedRemoveCount > 0) {
+            <span class="pvu-count-sep"> · </span>
+          }
+          @if (selectedRemoveCount > 0) {
+            <span>
+              <strong>{{ selectedRemoveCount }}</strong>
+              {{
+                selectedRemoveCount === 1
+                  ? ' remoção'
+                  : ' remoções'
+              }}
+            </span>
+          }
+          @if (!hasPendingChanges) {
+            <span>Nenhuma alteração selecionada</span>
+          }
+        </p>
+        <div class="pvu-footer-actions">
+          <button
+            type="button"
+            class="btn btn-cancelar pvu-btn"
+            (click)="onCancel()"
+            [disabled]="saving"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-salvar pvu-btn"
+            (click)="onConfirm()"
+            [disabled]="saving || loading || !hasPendingChanges"
+          >
+            {{ confirmButtonLabel }}
+          </button>
+        </div>
+      </footer>
+    </div>
+  </div>
+}

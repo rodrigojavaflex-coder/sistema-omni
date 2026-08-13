@@ -26,6 +26,18 @@ export class PerfilService {
     return this.http.patch<Perfil>(`${this.apiUrl}/${id}`, data);
   }
 
+  vincularUsuarios(id: string, usuarioIds: string[]): Observable<Perfil> {
+    return this.http.post<Perfil>(`${this.apiUrl}/${id}/vincular-usuarios`, {
+      usuarioIds,
+    });
+  }
+
+  desvincularUsuarios(id: string, usuarioIds: string[]): Observable<Perfil> {
+    return this.http.post<Perfil>(`${this.apiUrl}/${id}/desvincular-usuarios`, {
+      usuarioIds,
+    });
+  }
+
   delete(id: string): Observable<any> {
     // Retorna any para capturar corpo JSON de erro com message
     return this.http.delete<any>(`${this.apiUrl}/${id}`);

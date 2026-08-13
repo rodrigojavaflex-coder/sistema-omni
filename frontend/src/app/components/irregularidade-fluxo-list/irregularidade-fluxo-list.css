@@ -122,6 +122,25 @@
   color: #1e40af;
 }
 
+.integracao-erro {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--color-danger, #b91c1c);
+  font-size: 0.75rem;
+}
+
+.integracao-os-externa {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.status-retrabalho-garantia {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
 .status-manutencao {
   background: #fef3c7;
   color: #92400e;
@@ -1062,6 +1081,15 @@ textarea.form-control {
 :host-context(body.theme-dark) .status-registrada {
   background: rgba(59, 130, 246, 0.22);
   color: #bfdbfe;
+}
+
+:host-context(body.theme-dark) .integracao-erro {
+  color: #fecaca;
+}
+
+:host-context(body.theme-dark) .status-retrabalho-garantia {
+  background: rgba(139, 92, 246, 0.22);
+  color: #ddd6fe;
 }
 
 :host-context(body.theme-dark) .status-manutencao {

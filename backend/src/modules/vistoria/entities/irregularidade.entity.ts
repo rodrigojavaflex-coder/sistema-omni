@@ -160,4 +160,34 @@ export class Irregularidade extends BaseEntity {
   })
   @Column({ name: 'origem_registro', type: 'varchar', length: 20, nullable: true })
   origemRegistro?: OrigemRegistroIrregularidade | null;
+
+  @ApiProperty({
+    description: 'Irregularidade com conclusão controlada por integração de OS',
+    default: false,
+  })
+  @Column({
+    name: 'controle_integracao_api',
+    type: 'boolean',
+    default: false,
+  })
+  controleIntegracaoApi: boolean;
+
+  @ApiProperty({ description: 'os_orig ativo na integração externa', required: false })
+  @Column({ name: 'os_orig_atual', type: 'varchar', length: 80, nullable: true })
+  osOrigAtual?: string | null;
+
+  @ApiProperty({ description: 'Número da OS no sistema externo (ativo)', required: false })
+  @Column({ name: 'num_os_externo_atual', type: 'integer', nullable: true })
+  numOsExternoAtual?: number | null;
+
+  @ApiProperty({ description: 'Último erro de integração de OS', required: false })
+  @Column({ name: 'ultimo_erro_integracao', type: 'text', nullable: true })
+  ultimoErroIntegracao?: string | null;
+
+  @Column({
+    name: 'ultimo_erro_integracao_em',
+    type: 'timestamp',
+    nullable: true,
+  })
+  ultimoErroIntegracaoEm?: Date | null;
 }

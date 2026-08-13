@@ -443,7 +443,7 @@ export const routes: Routes = [
     path: 'perfil/new',
     component: PerfilFormComponent,
     canActivate: [authGuard, permissionGuard],
-    data: { permissions: [Permission.PROFILE_CREATE] },
+    data: { permissions: [Permission.PROFILE_CREATE, Permission.PROFILE_DUPLICATE] },
   },
   {
     path: 'perfil/edit/:id',

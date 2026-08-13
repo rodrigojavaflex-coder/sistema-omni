@@ -90,7 +90,31 @@ export class RelatorioManutencaoExecucaoDto extends RelatorioManutencaoPreviewDt
 
   @ApiProperty({
     description:
-      'True quando o SMTP enviou o PDF com sucesso; se o envio falhar, a operação retorna erro e nada é encaminhado para manutenção',
+      'True quando o SMTP enviou o PDF com sucesso; se o envio falhar em fluxo legado com e-mail obrigatório, a operação retorna erro',
   })
   emailEnviado: boolean;
+
+  @ApiProperty({
+    description: 'Itens que não foram encaminhados (integração API)',
+    required: false,
+    type: () => [EnvioManutencaoFalhaItemDto],
+  })
+  falhas?: EnvioManutencaoFalhaItemDto[];
+}
+
+export class EnvioManutencaoFalhaItemDto {
+  @ApiProperty({ format: 'uuid' })
+  id: string;
+
+  @ApiProperty({ required: false })
+  numeroIrregularidade?: number;
+
+  @ApiProperty({ required: false })
+  codigoErro?: string;
+
+  @ApiProperty()
+  mensagem: string;
+
+  @ApiProperty({ required: false })
+  httpStatus?: number;
 }

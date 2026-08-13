@@ -13,6 +13,8 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PerfilService } from './perfil.service';
 import { CreatePerfilDto } from './dto/create-perfil.dto';
 import { UpdatePerfilDto } from './dto/update-perfil.dto';
+import { VincularUsuariosPerfilDto } from './dto/vincular-usuarios-perfil.dto';
+import { DesvincularUsuariosPerfilDto } from './dto/desvincular-usuarios-perfil.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Permission } from '../../common/enums/permission.enum';
@@ -25,7 +27,7 @@ export class PerfilController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(Permission.PROFILE_CREATE)
+  @Permissions(Permission.PROFILE_CREATE, Permission.PROFILE_DUPLICATE)
   @ApiOperation({ summary: 'Criar novo perfil' })
   @ApiResponse({ status: 201, description: 'Perfil criado' })
   create(@Body() createPerfilDto: CreatePerfilDto) {
@@ -76,5 +78,33 @@ export class PerfilController {
   @ApiResponse({ status: 404, description: 'Perfil não encontrado' })
   getPrintData(@Param('id', ParseUUIDPipe) id: string) {
     return this.perfilService.getPrintData(id);
+  }
+
+  @Post(':id/vincular-usuarios')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions(Permission.PROFILE_ASSIGN_USERS)
+  @ApiOperation({
+    summary: 'Vincular um ou mais usuários ao perfil (adição ao vínculo existente)',
+  })
+  @ApiResponse({ status: 200, description: 'Usuários vinculados com sucesso' })
+  vincularUsuarios(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: VincularUsuariosPerfilDto,
+  ) {
+    return this.perfilService.vincularUsuarios(id, dto.usuarioIds);
+  }
+
+  @Post(':id/desvincular-usuarios')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Permissions(Permission.PROFILE_UNASSIGN_USERS)
+  @ApiOperation({
+    summary: 'Remover vínculo de um ou mais usuários com o perfil',
+  })
+  @ApiResponse({ status: 200, description: 'Vínculos removidos com sucesso' })
+  desvincularUsuarios(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DesvincularUsuariosPerfilDto,
+  ) {
+    return this.perfilService.desvincularUsuarios(id, dto.usuarioIds);
   }
 }

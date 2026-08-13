@@ -14,6 +14,13 @@ import { SafeHtml } from '@angular/platform-browser';
         <div class="modal-body">
           <p *ngIf="!messageHtml">{{ message }}</p>
           <div *ngIf="messageHtml" [innerHTML]="messageHtml"></div>
+          @if (detailLines?.length) {
+            <ul class="modal-detail-list">
+              @for (line of detailLines; track line) {
+                <li>{{ line }}</li>
+              }
+            </ul>
+          }
         </div>
         <div class="modal-footer">
           <button *ngIf="cancelText" class="btn btn-secondary" (click)="onCancel()">
@@ -34,6 +41,8 @@ export class ConfirmationModalComponent {
   @Input() message = 'Tem certeza que deseja continuar?';
   /** Quando informado, exibe HTML em vez de message (use conteúdo confiável/sanitizado). */
   @Input() messageHtml?: SafeHtml;
+  /** Linhas extras (ex.: usuários vinculados) exibidas abaixo da mensagem. */
+  @Input() detailLines: string[] | null = null;
   @Input() confirmText = 'Sim';
   @Input() cancelText = 'Cancelar';
   

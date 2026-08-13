@@ -76,6 +76,7 @@ Copie o bloco abaixo para cada regra nova.
 - [x] RN-VIS-003 - Permissoes de acesso e acao por tela do fluxo de irregularidades
 - [x] RN-VIS-004 - Registrar irregularidade SOS na web (Tratamento)
 - [x] RN-VIS-005 - Desistencia da vistoria mobile com exclusao em cascata
+- [x] RN-VIS-006 - Envio para manutencao com integracao OS externa (dual BRT)
 - [ ] RN-VIS-001 - Placeholder
 - [x] RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
 
@@ -131,7 +132,7 @@ Copie o bloco abaixo para cada regra nova.
   - Menu e rota de Tratamento exigem `irregularidade_tratamento:read`
   - Menu e rota de Manutencao exigem `irregularidade_manutencao:read`
   - Menu e rota de Validacao exigem `irregularidade_validacao_final:read`
-  - `GET /irregularidades` exige `:read` de cada etapa correspondente aos status consultados (REGISTRADA/CANCELADA → tratamento; EM_MANUTENCAO → manutencao; CONCLUIDA/NAO_PROCEDE/VALIDADA → validacao final)
+  - `GET /irregularidades` exige `:read` de cada etapa correspondente aos status consultados (REGISTRADA/RETRABALHO_GARANTIA/CANCELADA → tratamento; EM_MANUTENCAO → manutencao; CONCLUIDA/NAO_PROCEDE/VALIDADA → validacao final)
   - Consulta com multiplos status exige todas as permissoes `:read` envolvidas
 - **Acoes do sistema:**
   - Cadastro de perfis agrupa permissoes em «Irregularidades – Tratamento», «Irregularidades – Manutenção» e «Irregularidades – Validação»
@@ -206,6 +207,56 @@ Copie o bloco abaixo para cada regra nova.
 - **Origem da regra:** Simplificacao do fluxo mobile — desistencia com limpeza de dados, 2026-06-11
 - **Status:** Implementada
 
+### RN-VIS-006 - Envio para manutencao com integracao OS externa (dual BRT)
+- **Modulo:** Vistoria
+- **Fluxo:** Tratamento (`/irregularidades/tratamento`) → Manutencao → Validacao final; registro mobile e SOS inalterados na origem
+- **Descricao:** Ao enviar irregularidade para manutencao, o operador seleciona empresa de manutencao (mesmo fluxo atual). Se a empresa estiver configurada para integracao de OS (ex.: API Consorcio BRT), o sistema cria uma OS externa **sincrona** (1 irregularidade = 1 OS), persiste `os_orig` e `numOs` retornado, e so entao transiciona para `EM_MANUTENCAO`. Se a empresa **nao** usar API, mantem-se o fluxo atual (relatorio PDF/e-mail conforme parametros). Falhas de integracao mantem a irregularidade em `REGISTRADA` na tela Tratamento, com detalhes do erro para tratamento ou cancelamento. Reprovacao na validacao final move para `RETRABALHO_GARANTIA` (retrabalho/garantia) na mesma tela Tratamento; reenvio usa `os_orig` com sufixo (`numeroIrregularidade-2`, `-3`, …) para nova OS na BRT, preservando historico das tentativas anteriores. Irregularidades sob controle da API nao permitem conclusao manual na Manutencao — a saida de `EM_MANUTENCAO` para `CONCLUIDA` ocorrera por integracao de retorno (escopo v2, API ainda nao documentada). A validacao final permanece no OMNI; aprovacao marca irregularidade como corrigida no veiculo (`VALIDADA` / `resolvido` conforme regras de pendencia).
+- **Condicoes de entrada:**
+  - Envio: status `REGISTRADA` ou `RETRABALHO_GARANTIA`; empresa com `ehEmpresaManutencao`; permissao `irregularidade_manutencao:start`
+  - Integracao BRT: empresa com tipo de integracao OS configurado e credenciais validas (`ten_emp`, `token`, URL)
+  - Empresa sem API: mesmas pre-condicoes do fluxo legado (RN-VIS-003 e backlog epico 2)
+- **Validacoes:**
+  - Lote: cada irregularidade e processada individualmente na API; sucesso parcial e permitido (ex.: 3 em Manutencao, 2 permanecem em Tratamento com erro)
+  - Resposta BRT `201` ou `200` com `duplicada: true` conta como sucesso; persistir `numOs` informado
+  - Erros BRT (`credenciais_invalidas`, `tenant_divergente`, `veiculo_nao_encontrado`, `validacao`, `os_nao_encontrada`, `os_em_execucao` no cancelamento) mapeados para mensagens funcionais sem expor token
+  - `os_orig` enviado à API: `numeroIrregularidade` (ex.: `20267`) no 1º envio; após OS BRT criada com sucesso (incl. cancelada depois) ou em `RETRABALHO_GARANTIA`, `numeroIrregularidade-N` com N≥2; historico em `irregularidades_os_externas`
+  - Cancelamento OS BRT (`tpo_reg: 7`) na tela Manutencao: permissao `irregularidade_manutencao:cancel_os_brt`; somente irregularidade com OS ativa (`controleIntegracaoApi`, `osOrigAtual`, `numOsExternoAtual`); sucesso BRT → `REGISTRADA` (Tratamento); falha BRT → permanece `EM_MANUTENCAO`
+  - E-mail de relatorio PDF: somente se flag `enviar_email_relatorio` na empresa **e** SMTP global ativo; para trilha API, enviar apos OS criada com sucesso (itens do lote que falharam na API nao entram no anexo)
+  - Trilha API (`controle_integracao` / derivado da empresa no envio): bloquear `concluir-manutencao` e `marcar-nao-procede` manuais ate existir retorno integrado (v2)
+  - Trilha sem API: transicoes manuais de Manutencao inalteradas
+  - Reprovar validacao final: `CONCLUIDA` ou `NAO_PROCEDE` → `RETRABALHO_GARANTIA` (nao retornar direto a `EM_MANUTENCAO`)
+- **Acoes do sistema:**
+  - Ramificar `iniciar-manutencao` / lote por configuracao da empresa selecionada
+  - Client HTTP backend para POST `https://www.api.brtgo.com.br/v1/os` (`tpo_reg: 1` criar; `tpo_reg: 7` cancelar quando aplicavel)
+  - Mapear campos: `os_orig` (ver regra acima), `plc_vcl`, `tpo_srv` (ex.: SOS → socorro), `nom_sol`, `tel_ctt`, `loc_atd` (cadastro da empresa BRT), `comenta` (linha 1: area->componente->sintoma; linha 2: descricao do problema / observacao), `odo_vcl` opcional
+  - Registrar historico: `enviar_api_os`, `falha_api_os`, `cancelar_api_os`, `iniciar_manutencao`, `reprovar_validacao_final`
+  - Pendencias de veiculo (mobile): status `RETRABALHO_GARANTIA` continua pendente ate `VALIDADA` ou `CANCELADA` (mesma regra de exclusao de finais)
+- **Mensagens ao usuario:**
+  - Sucesso parcial de lote: resumo com quantidade enviada e lista de falhas com codigo/mensagem BRT
+  - `veiculo_nao_encontrado`: orientar regularizacao da placa no cadastro do consorcio
+  - Bloqueio de conclusao manual (trilha API): mensagem indicando aguardo de retorno da integracao
+- **Permissoes envolvidas:** RN-VIS-003; `RETRABALHO_GARANTIA` exige `irregularidade_tratamento:read`; acoes de reenvio exigem `irregularidade_manutencao:start`; cancelamento OS BRT exige `irregularidade_manutencao:cancel_os_brt`
+- **Dados impactados:** `empresasterceiras` (integracao, e-mail, credenciais BRT), `irregularidades` (status, flags de integracao, OS ativa), historico de OS externas (nova estrutura), `irregularidade_historico`
+- **Rastreabilidade:** Historico de transicoes; log de integracao (request/response sanitizado); multiplos pares `os_orig`/`numOs` por irregularidade ao longo do tempo
+- **Criterios de aceite:**
+  - [ ] Empresa sem API: comportamento equivalente ao fluxo pre-integracao; e-mail respeita flag da empresa
+  - [ ] Empresa BRT: OS criada → `EM_MANUTENCAO` + `numOs`; falha → permanece `REGISTRADA` com erro visivel no Tratamento
+  - [ ] Lote misto documentado na UI (sucesso/falha por item)
+  - [ ] Reprovar final → `RETRABALHO_GARANTIA`; reenvio gera novo `os_orig` e novo registro historico de OS
+  - [ ] Trilha API: botoes de conclusao manual desabilitados/bloqueados no backend
+  - [ ] Cancelamento OS BRT na Manutencao: sucesso → `REGISTRADA`; falha → permanece `EM_MANUTENCAO`; reenvio usa novo `os_orig` com sufixo
+  - [ ] Aprovacao na validacao final → `VALIDADA` e pendencia do veiculo atualizada
+- **Cenarios de excecao:**
+  - Credenciais BRT invalidas: nenhum item do lote avanca na trilha API
+  - Cancelamento de irregularidade sem OS criada: sem chamada BRT de cancelamento
+  - Cancelamento OS BRT na Manutencao: somente com resposta OK da API; `409 os_em_execucao` e demais erros mantem `EM_MANUTENCAO`
+  - Homologacao OMNI sem ambiente BRT: parametros de teste na empresa quando disponiveis
+- **Escopo de implementacao:**
+  - **v1:** envio BRT, historico OS, erros no Tratamento, status `RETRABALHO_GARANTIA`, bloqueio conclusao manual trilha API, cancelamento OS BRT na Manutencao, parametros empresa
+  - **v2:** retorno integrado BRT → `CONCLUIDA`; e-mail automatico para erros de placa
+- **Origem da regra:** Integracao Consorcio BRT e fluxo dual de manutencao, decisao de produto 2026-08-03
+- **Status:** Implementada (retorno automático BRT → `CONCLUIDA` previsto v2)
+
 ### 2. Ocorrencias
 #### Regras
 - [ ] RN-OCO-001 - Placeholder
@@ -225,6 +276,22 @@ Copie o bloco abaixo para cada regra nova.
 - [x] RN-DOC-007 - Responsavel vinculado a usuario
 - [x] RN-DOC-008 - Auditoria de documentos
 - [x] RN-DOC-009 - Preview Excel no link publico
+- [x] RN-PER-001 - Vincular e desvincular usuarios ao perfil (lista de perfis)
+
+### RN-PER-001 - Vincular e desvincular usuarios ao perfil (lista de perfis)
+- **Modulo:** Perfis / Usuarios
+- **Fluxo:** Lista de perfis → acao Vincular → modal de usuarios
+- **Descricao:** Na lista de perfis, e possivel adicionar usuarios ao perfil (merge, sem substituir outros perfis do usuario) e, com permissao adequada, remover o vinculo apenas com aquele perfil.
+- **Condicoes de entrada:** Usuario autenticado; `perfil:read` para listar perfis; acao Vincular visivel com `perfil:assign_users` e/ou `perfil:unassign_users`.
+- **Validacoes:** Vincular exige IDs de usuarios validos (UUID); desvincular exige que o usuario esteja vinculado ao perfil; apos desvincular, o usuario deve permanecer com ao menos um perfil no sistema.
+- **Acoes do sistema:** `POST /perfil/:id/vincular-usuarios` adiciona o perfil a cada usuario (idempotente se ja vinculado); `POST /perfil/:id/desvincular-usuarios` remove so este perfil; `GET /perfil` retorna `totalUsuarios` e `usuariosVinculados` por perfil.
+- **Mensagens ao usuario:** Erro de negocio ao remover ultimo perfil: `O usuario "{nome}" deve permanecer com ao menos um perfil` (exibida no modal, sem fechar o dialogo); demais erros HTTP com `message` da API no modal.
+- **Permissoes envolvidas:** `perfil:assign_users` (vincular na lista); `perfil:unassign_users` (desmarcar/remover vinculo na lista); grupo **Perfis** no catalogo de permissoes. Migration `1744600000000-grant-perfil-vincular-usuarios-permissions` concede as duas chaves a perfis `ADMIN` (nome) e a quem ja tem `perfil:duplicate`; demais perfis exigem inclusao manual no cadastro de perfil.
+- **Dados impactados:** Relacao N:N `usuarios` ↔ `perfis`
+- **Criterios de aceite:** Com so `assign_users`, novos vinculos sao criados e usuarios ja vinculados nao podem ser desmarcados; com `unassign_users`, remocao atualiza contagem na lista; tentativa de remover unico perfil bloqueia com mensagem no modal; catalogo e startup validam integridade das permissoes.
+- **Cenarios de excecao:** Alteracao mista (adicionar e remover na mesma confirmacao) executada em sequencia (desvincular, depois vincular) para reduzir inconsistencia; falha na primeira etapa impede a segunda.
+- **Origem da regra:** Fluxo espelhado OMNI / lista de perfis, 2026-08-04
+- **Status:** Implementada
 
 ### RN-DOC-001 - Metadados obrigatorios
 - **Modulo:** Documentos
@@ -316,6 +383,8 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-08-04: RN-PER-001 Vincular/desvincular usuarios ao perfil; migration concede assign/unassign a ADMIN e perfis com `perfil:duplicate`.
+- 2026-08-03: RN-VIS-006 Integracao OS externa (dual BRT), status RETRABALHO_GARANTIA, matriz de transicoes atualizada em BACKLOG; RN-VIS-003 ampliada para RETRABALHO_GARANTIA na etapa Tratamento.
 - 2026-06-23: RN-DOC-001 Campo opcional detalhesDocumento; correcao de edicao de tipo; nome de arquivo TIPO.NOME.DEPARTAMENTO.
 - 2026-06-23: RN-DOC-001 Listagem de departamentos no cadastro de documentos disponivel com permissoes de documento (sem exigir `departamento:read`).
 - 2026-06-17: RN-DOC-009 Preview Excel no link publico com cabecalho fixo, filtros por coluna e paginacao de 300 linhas.

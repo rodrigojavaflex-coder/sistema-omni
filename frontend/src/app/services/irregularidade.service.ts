@@ -66,6 +66,13 @@ export class IrregularidadeService {
     return this.http.post<IrregularidadeFluxoItem>(`${this.apiUrl}/${id}/cancelar`, payload);
   }
 
+  cancelarOsBrt(id: string, payload: CancelarPayload): Observable<IrregularidadeFluxoItem> {
+    return this.http.post<IrregularidadeFluxoItem>(
+      `${this.apiUrl}/${id}/cancelar-os-brt`,
+      payload,
+    );
+  }
+
   iniciarManutencao(
     id: string,
     payload: IniciarManutencaoPayload,

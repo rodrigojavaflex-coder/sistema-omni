@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, forwardRef, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { UserService } from '../../../services/user.service';
@@ -29,7 +29,11 @@ import { map } from 'rxjs/operators';
 })
 export class UsuarioAutocompleteComponent implements ControlValueAccessor, OnInit {
   @Input() isInvalid = false;
+  @Input() placeholder = 'Buscar vistoriador (mín. 2 caracteres)...';
   @Output() usuarioSelected = new EventEmitter<Usuario>();
+
+  @ViewChild(AutocompleteComponent)
+  private autocomplete?: AutocompleteComponent<Usuario>;
 
   value = '';
   autocompleteConfig!: AutocompleteConfig<Usuario>;
@@ -41,7 +45,7 @@ export class UsuarioAutocompleteComponent implements ControlValueAccessor, OnIni
 
   ngOnInit(): void {
     this.autocompleteConfig = {
-      placeholder: 'Buscar vistoriador (mín. 2 caracteres)...',
+      placeholder: this.placeholder,
       searchFn: (searchTerm: string) => {
         return this.userService.getUsers({
           page: 1,
@@ -94,5 +98,11 @@ export class UsuarioAutocompleteComponent implements ControlValueAccessor, OnIni
 
   registerOnTouched(fn: any): void {
     this.onTouched = fn;
+  }
+
+  clearSelection(): void {
+    this.value = '';
+    this.onChange('');
+    this.autocomplete?.clearSelection();
   }
 }

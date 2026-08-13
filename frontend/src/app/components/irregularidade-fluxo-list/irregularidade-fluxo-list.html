@@ -103,9 +103,17 @@
         Cancelar
       </button>
       <button
+        class="btn btn-danger"
+        *ngIf="modo === 'manutencao' && canManutencaoCancelOsBrt"
+        [disabled]="!manutencaoCancelOsBrtSelecionada"
+        (click)="openBulkActionModal('cancelar-os-brt')"
+      >
+        Cancelar OS BRT
+      </button>
+      <button
         class="btn btn-primary"
         *ngIf="modo === 'manutencao' && canManutencaoFinish"
-        [disabled]="!hasSelectedItems"
+        [disabled]="!hasSelectedItems || manutencaoIntegracaoSelecionada"
         (click)="openBulkActionModal('concluir')"
       >
         Concluir
@@ -113,7 +121,7 @@
       <button
         class="btn btn-warning"
         *ngIf="modo === 'manutencao' && canManutencaoNaoProcede"
-        [disabled]="!hasSelectedItems"
+        [disabled]="!hasSelectedItems || manutencaoIntegracaoSelecionada"
         (click)="openBulkActionModal('nao-procede')"
       >
         Não procede
@@ -235,12 +243,22 @@
               </svg>
               SOS
             </span>
-            {{ item.numeroIrregularidade || '-' }}
+            {{ formatOrdemServico(item) }}
           </div>
           <div class="col-irregularidade">
             <span class="irregularidade-main-line">
               {{ item.nomeArea || '-' }} - {{ item.nomeComponente || '-' }} - {{ item.descricaoSintoma || '-' }}
             </span>
+            <small
+              class="integracao-erro"
+              *ngIf="item.ultimoErroIntegracao && !item.numOsExternoAtual"
+            >
+              Falha envio OS: {{ item.ultimoErroIntegracao }}
+            </small>
+            <small class="integracao-os-externa" *ngIf="item.numOsExternoAtual && modo === 'manutencao'">
+              OS BRT: {{ item.numOsExternoAtual }}
+              <span *ngIf="item.osOrigAtual"> ({{ item.osOrigAtual }})</span>
+            </small>
           </div>
           <div class="col-gravidade">
             <span [class]="getGravidadeClass(item.gravidade)">
@@ -578,7 +596,7 @@
           </div>
         </div>
       </div>
-      <div class="form-group" *ngIf="modalAcao === 'cancelar'">
+      <div class="form-group" *ngIf="modalAcao === 'cancelar' || modalAcao === 'cancelar-os-brt'">
         <label>Motivo *</label>
         <textarea
           class="form-control"
@@ -586,6 +604,9 @@
           rows="3"
           maxlength="500"
         ></textarea>
+        <small class="field-description" *ngIf="modalAcao === 'cancelar-os-brt'">
+          A justificativa será enviada à API BRT. Em caso de sucesso, a irregularidade volta para Tratamento como registrada.
+        </small>
       </div>
       <div class="form-group" *ngIf="modalAcao === 'nao-procede'">
         <label>Motivo técnico (não procede) *</label>
@@ -596,7 +617,7 @@
           maxlength="500"
         ></textarea>
       </div>
-      <div class="form-group" *ngIf="modalAcao !== 'cancelar' && modalAcao !== 'iniciar-manutencao'">
+      <div class="form-group" *ngIf="modalAcao !== 'cancelar' && modalAcao !== 'cancelar-os-brt' && modalAcao !== 'iniciar-manutencao'">
         <label>
           {{
             modalAcao === 'validar-final'

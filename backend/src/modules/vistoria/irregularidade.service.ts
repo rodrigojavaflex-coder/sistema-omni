@@ -52,6 +52,11 @@ import {
   RelatorioManutencaoPreviewDto,
   RelatorioManutencaoResumoDto,
 } from './dto/relatorio-manutencao.dto';
+import {
+  IrregularidadeManutencaoEnvioService,
+  ManutencaoEnvioContext,
+  STATUS_ENVIO_MANUTENCAO,
+} from './irregularidade-manutencao-envio.service';
 
 @Injectable()
 export class IrregularidadeService {
@@ -80,6 +85,7 @@ export class IrregularidadeService {
     private readonly configuracaoRepository: Repository<Configuracao>,
     @InjectRepository(IrregularidadeHistorico)
     private readonly irregularidadeHistoricoRepository: Repository<IrregularidadeHistorico>,
+    private readonly manutencaoEnvioService: IrregularidadeManutencaoEnvioService,
   ) {}
 
   async create(
@@ -681,14 +687,18 @@ export class IrregularidadeService {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     this.assertStatus(
       irregularidade,
-      [StatusIrregularidade.REGISTRADA],
-      'Somente irregularidades registradas podem ser reclassificadas',
+      [
+        StatusIrregularidade.REGISTRADA,
+        StatusIrregularidade.RETRABALHO_GARANTIA,
+      ],
+      'Somente irregularidades registradas ou em retrabalho/garantia podem ser reclassificadas',
     );
     await this.ensureArea(dto.idarea);
     await this.ensureComponente(dto.idcomponente);
     await this.ensureSintoma(dto.idsintoma);
     await this.ensureComponenteNaArea(dto.idarea, dto.idcomponente);
     await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
+    const statusOrigemReclass = irregularidade.statusAtual;
 
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
@@ -703,8 +713,8 @@ export class IrregularidadeService {
           manager.getRepository(IrregularidadeHistorico),
           {
             idIrregularidade: saved.id,
-            statusOrigem: StatusIrregularidade.REGISTRADA,
-            statusDestino: StatusIrregularidade.REGISTRADA,
+            statusOrigem: statusOrigemReclass,
+            statusDestino: statusOrigemReclass,
             acao: 'reclassificar',
             idUsuario: actor?.id,
             idEmpresaEvento: actor?.idEmpresa,
@@ -724,9 +734,13 @@ export class IrregularidadeService {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     this.assertStatus(
       irregularidade,
-      [StatusIrregularidade.REGISTRADA],
-      'Somente irregularidades registradas podem ser canceladas',
+      [
+        StatusIrregularidade.REGISTRADA,
+        StatusIrregularidade.RETRABALHO_GARANTIA,
+      ],
+      'Somente irregularidades registradas ou em retrabalho/garantia podem ser canceladas',
     );
+    const statusOrigem = irregularidade.statusAtual;
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
         irregularidade.statusAtual = StatusIrregularidade.CANCELADA;
@@ -739,7 +753,7 @@ export class IrregularidadeService {
           manager.getRepository(IrregularidadeHistorico),
           {
             idIrregularidade: saved.id,
-            statusOrigem: StatusIrregularidade.REGISTRADA,
+            statusOrigem,
             statusDestino: StatusIrregularidade.CANCELADA,
             acao: 'cancelar',
             idUsuario: actor?.id,
@@ -752,41 +766,55 @@ export class IrregularidadeService {
     );
   }
 
-  async iniciarManutencao(
+  async cancelarOsBrt(
     id: string,
-    dto: IniciarManutencaoIrregularidadeDto,
+    dto: CancelarIrregularidadeDto,
     actor?: { id?: string; idEmpresa?: string },
   ): Promise<Irregularidade> {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     this.assertStatus(
       irregularidade,
-      [StatusIrregularidade.REGISTRADA],
-      'Somente irregularidades registradas podem ser enviadas para manutenção',
+      [StatusIrregularidade.EM_MANUTENCAO],
+      'Somente irregularidades em manutenção podem ter a OS cancelada na integração BRT',
     );
-    await this.ensureEmpresa(dto.idEmpresaManutencao);
+    this.assertEmpresaEscopo(irregularidade, actor?.idEmpresa);
+    return this.manutencaoEnvioService.executarCancelamentoOsBrt(
+      irregularidade,
+      dto.motivo,
+      this.buildManutencaoEnvioContext(actor),
+    );
+  }
 
-    return this.irregularidadeRepository.manager.transaction(
-      async (manager) => {
-        irregularidade.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
-        irregularidade.idEmpresaManutencao = dto.idEmpresaManutencao;
-        irregularidade.iniciadaManutencaoEm = new Date();
-        irregularidade.resolvido = false;
-        const saved = await manager
-          .getRepository(Irregularidade)
-          .save(irregularidade);
-        await this.registrarHistoricoTransicao(
-          manager.getRepository(IrregularidadeHistorico),
-          {
-            idIrregularidade: saved.id,
-            statusOrigem: StatusIrregularidade.REGISTRADA,
-            statusDestino: StatusIrregularidade.EM_MANUTENCAO,
-            acao: 'iniciar_manutencao',
-            idUsuario: actor?.id,
-            idEmpresaEvento: dto.idEmpresaManutencao,
-          },
-        );
-        return saved;
-      },
+  async iniciarManutencao(
+    id: string,
+    dto: IniciarManutencaoIrregularidadeDto,
+    actor?: { id?: string; idEmpresa?: string; nome?: string },
+  ): Promise<Irregularidade> {
+    const irregularidade = await this.irregularidadeRepository.findOne({
+      where: { id },
+      relations: [
+        'area',
+        'componente',
+        'sintoma',
+        'vistoria',
+        'vistoria.veiculo',
+        'midias',
+      ],
+    });
+    if (!irregularidade) {
+      throw new NotFoundException('Irregularidade não encontrada');
+    }
+    this.assertStatus(
+      irregularidade,
+      STATUS_ENVIO_MANUTENCAO,
+      'Somente irregularidades registradas ou em retrabalho/garantia podem ser enviadas para manutenção',
+    );
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    return this.manutencaoEnvioService.executarEnvioUnitario(
+      irregularidade,
+      dto.idEmpresaManutencao,
+      config,
+      this.buildManutencaoEnvioContext(actor),
     );
   }
 
@@ -830,55 +858,13 @@ export class IrregularidadeService {
   ): Promise<RelatorioManutencaoExecucaoDto> {
     const { empresa, irregularidades } =
       await this.loadIrregularidadesLoteParaManutencao(dto);
-    const emitidoEm = new Date();
-    const resumo = this.buildResumoRelatorioManutencao(
-      empresa,
-      irregularidades,
-      emitidoEm,
-      actor?.nome,
-    );
-    const html = this.buildHtmlRelatorioManutencao(resumo, irregularidades);
-
     const config = await this.configuracaoRepository.findOne({ where: {} });
-    this.assertEmailRelatorioConfigSeAtivo(empresa, config);
-
-    const emailOutcome = await this.sendRelatorioManutencaoEmail(
+    return this.manutencaoEnvioService.executarEnvioLote(
       empresa,
-      resumo,
       irregularidades,
       config,
+      this.buildManutencaoEnvioContext(actor),
     );
-
-    await this.irregularidadeRepository.manager.transaction(async (manager) => {
-      for (const irregularidade of irregularidades) {
-        irregularidade.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
-        irregularidade.idEmpresaManutencao = dto.idEmpresaManutencao;
-        irregularidade.iniciadaManutencaoEm = new Date();
-        irregularidade.resolvido = false;
-
-        const saved = await manager
-          .getRepository(Irregularidade)
-          .save(irregularidade);
-        await this.registrarHistoricoTransicao(
-          manager.getRepository(IrregularidadeHistorico),
-          {
-            idIrregularidade: saved.id,
-            statusOrigem: StatusIrregularidade.REGISTRADA,
-            statusDestino: StatusIrregularidade.EM_MANUTENCAO,
-            acao: 'iniciar_manutencao',
-            idUsuario: actor?.id,
-            idEmpresaEvento: dto.idEmpresaManutencao,
-          },
-        );
-      }
-    });
-
-    return {
-      resumo,
-      html,
-      totalEnviadas: irregularidades.length,
-      emailEnviado: emailOutcome.enviado,
-    };
   }
 
   async concluirManutencao(
@@ -893,6 +879,7 @@ export class IrregularidadeService {
       'Somente irregularidades em manutenção podem ser concluídas',
     );
     this.assertEmpresaEscopo(irregularidade, actor?.idEmpresa);
+    this.assertManutencaoManualPermitida(irregularidade);
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
         irregularidade.statusAtual = StatusIrregularidade.CONCLUIDA;
@@ -931,6 +918,7 @@ export class IrregularidadeService {
       'Somente irregularidades em manutenção podem ser marcadas como não procede',
     );
     this.assertEmpresaEscopo(irregularidade, actor?.idEmpresa);
+    this.assertManutencaoManualPermitida(irregularidade);
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
         irregularidade.statusAtual = StatusIrregularidade.NAO_PROCEDE;
@@ -1009,8 +997,9 @@ export class IrregularidadeService {
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
         const origem = irregularidade.statusAtual;
-        irregularidade.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
+        irregularidade.statusAtual = StatusIrregularidade.RETRABALHO_GARANTIA;
         irregularidade.resolvido = false;
+        irregularidade.controleIntegracaoApi = false;
         irregularidade.observacao = dto.observacao;
         const saved = await manager
           .getRepository(Irregularidade)
@@ -1020,7 +1009,7 @@ export class IrregularidadeService {
           {
             idIrregularidade: saved.id,
             statusOrigem: origem,
-            statusDestino: StatusIrregularidade.EM_MANUTENCAO,
+            statusDestino: StatusIrregularidade.RETRABALHO_GARANTIA,
             acao: 'reprovar_validacao_final',
             idUsuario: actor?.id,
             idEmpresaEvento: actor?.idEmpresa,
@@ -1305,11 +1294,11 @@ export class IrregularidadeService {
     }
 
     const invalidas = irregularidades.filter(
-      (item) => item.statusAtual !== StatusIrregularidade.REGISTRADA,
+      (item) => !STATUS_ENVIO_MANUTENCAO.includes(item.statusAtual),
     );
     if (invalidas.length > 0) {
       throw new BadRequestException(
-        'Somente irregularidades com status Registrada podem ser enviadas para manutenção.',
+        'Somente irregularidades registradas ou em retrabalho/garantia podem ser enviadas para manutenção.',
       );
     }
 
@@ -1909,6 +1898,9 @@ export class IrregularidadeService {
     empresa: EmpresaTerceira,
     configuracao: Configuracao | null,
   ): void {
+    if (!empresa.enviarEmailRelatorio) {
+      return;
+    }
     const emailConfig = configuracao?.emailEnvioConfig;
     if (!emailConfig?.ativo) {
       return;
@@ -1940,6 +1932,9 @@ export class IrregularidadeService {
     irregularidades: Irregularidade[],
     configuracao: Configuracao | null,
   ): Promise<{ enviado: boolean }> {
+    if (!empresa.enviarEmailRelatorio) {
+      return { enviado: false };
+    }
     const emailConfig = configuracao?.emailEnvioConfig;
     if (!emailConfig?.ativo) {
       return { enviado: false };
@@ -2091,6 +2086,19 @@ export class IrregularidadeService {
       fotos,
       audios,
       origemRegistro: item.origemRegistro ?? undefined,
+      controleIntegracaoApi: item.controleIntegracaoApi,
+      osOrigAtual: item.osOrigAtual ?? undefined,
+      numOsExternoAtual: item.numOsExternoAtual ?? undefined,
+      ultimoErroIntegracao:
+        item.numOsExternoAtual != null
+          ? undefined
+          : item.ultimoErroIntegracao ?? undefined,
+      ultimoErroIntegracaoEm:
+        item.numOsExternoAtual != null
+          ? undefined
+          : item.ultimoErroIntegracaoEm
+            ? item.ultimoErroIntegracaoEm.toISOString()
+            : undefined,
     };
   }
 
@@ -2138,6 +2146,48 @@ export class IrregularidadeService {
     if (!allowed.includes(irregularidade.statusAtual)) {
       throw new BadRequestException(message);
     }
+  }
+
+  private assertManutencaoManualPermitida(irregularidade: Irregularidade): void {
+    if (irregularidade.controleIntegracaoApi) {
+      throw new BadRequestException(
+        'Esta irregularidade é controlada pela integração de OS. A conclusão será registrada automaticamente quando o retorno da API estiver disponível.',
+      );
+    }
+  }
+
+  private buildManutencaoEnvioContext(actor?: {
+    id?: string;
+    idEmpresa?: string;
+    nome?: string;
+  }): ManutencaoEnvioContext {
+    return {
+      actor,
+      registrarHistorico: async (manager, data) => {
+        await this.registrarHistoricoTransicao(
+          manager.getRepository(IrregularidadeHistorico),
+          data,
+        );
+      },
+      buildResumoRelatorio: (empresa, irregularidades, emitidoEm, emitidoPor) =>
+        this.buildResumoRelatorioManutencao(
+          empresa,
+          irregularidades,
+          emitidoEm,
+          emitidoPor,
+        ),
+      buildHtmlRelatorio: (resumo, irregularidades) =>
+        this.buildHtmlRelatorioManutencao(resumo, irregularidades),
+      assertEmailConfigIfNeeded: (empresa, configuracao) =>
+        this.assertEmailRelatorioConfigSeAtivo(empresa, configuracao),
+      sendRelatorioEmail: (empresa, resumo, irregularidades, configuracao) =>
+        this.sendRelatorioManutencaoEmail(
+          empresa,
+          resumo,
+          irregularidades,
+          configuracao,
+        ),
+    };
   }
 
   private async ensureEmpresa(idEmpresa: string): Promise<void> {

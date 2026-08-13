@@ -28,6 +28,9 @@ export enum Permission {
   PROFILE_READ = 'perfil:read',
   PROFILE_UPDATE = 'perfil:update',
   PROFILE_DELETE = 'perfil:delete',
+  PROFILE_DUPLICATE = 'perfil:duplicate',
+  PROFILE_ASSIGN_USERS = 'perfil:assign_users',
+  PROFILE_UNASSIGN_USERS = 'perfil:unassign_users',
 
   // Veículos
   VEICULO_CREATE = 'veiculo:create',
@@ -75,6 +78,7 @@ export enum Permission {
   EMPRESATERCIRA_READ = 'empresaterceira:read',
   EMPRESATERCIRA_UPDATE = 'empresaterceira:update',
   EMPRESATERCIRA_DELETE = 'empresaterceira:delete',
+  EMPRESATERCIRA_INTEGRACAO_CONFIG = 'empresaterceira:integracao_config',
 
   // Trechos
   TRECHO_CREATE = 'trecho:create',
@@ -116,6 +120,7 @@ export enum Permission {
   IRREGULARIDADE_MANUTENCAO_START = 'irregularidade_manutencao:start',
   IRREGULARIDADE_MANUTENCAO_FINISH = 'irregularidade_manutencao:finish',
   IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING = 'irregularidade_manutencao:mark_not_proceeding',
+  IRREGULARIDADE_MANUTENCAO_CANCEL_OS_BRT = 'irregularidade_manutencao:cancel_os_brt',
   IRREGULARIDADE_VALIDACAO_FINAL_READ = 'irregularidade_validacao_final:read',
   IRREGULARIDADE_VALIDACAO_FINAL_UPDATE = 'irregularidade_validacao_final:update',
 
@@ -207,6 +212,15 @@ export const PERMISSION_GROUPS = {
     { key: Permission.PROFILE_READ, label: 'Visualizar perfis' },
     { key: Permission.PROFILE_UPDATE, label: 'Editar perfis' },
     { key: Permission.PROFILE_DELETE, label: 'Excluir perfis' },
+    { key: Permission.PROFILE_DUPLICATE, label: 'Duplicar perfis' },
+    {
+      key: Permission.PROFILE_ASSIGN_USERS,
+      label: 'Vincular usuários ao perfil (lista de perfis)',
+    },
+    {
+      key: Permission.PROFILE_UNASSIGN_USERS,
+      label: 'Remover vínculo de usuários ao perfil (lista de perfis)',
+    },
   ],
   Veículos: [
     { key: Permission.VEICULO_CREATE, label: 'Criar veículos' },
@@ -272,6 +286,10 @@ export const PERMISSION_GROUPS = {
     { key: Permission.EMPRESATERCIRA_READ, label: 'Visualizar empresas' },
     { key: Permission.EMPRESATERCIRA_UPDATE, label: 'Editar empresas' },
     { key: Permission.EMPRESATERCIRA_DELETE, label: 'Excluir empresas' },
+    {
+      key: Permission.EMPRESATERCIRA_INTEGRACAO_CONFIG,
+      label: 'Configurar integração de OS (API)',
+    },
   ],
   Trechos: [
     { key: Permission.TRECHO_CREATE, label: 'Criar trechos' },
@@ -356,6 +374,10 @@ export const PERMISSION_GROUPS = {
     {
       key: Permission.IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING,
       label: 'Manutenção: marcar como não procede',
+    },
+    {
+      key: Permission.IRREGULARIDADE_MANUTENCAO_CANCEL_OS_BRT,
+      label: 'Manutenção: cancelar OS na integração BRT',
     },
   ],
   'Irregularidades – Validação': [

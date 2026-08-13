@@ -20,6 +20,18 @@
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label checkbox-inline">
+          <input type="checkbox" formControlName="ehEmpresaManutencao" />
+          Empresa de manutenção
+        </label>
+      </div>
+      <div class="form-group" *ngIf="form.value.ehEmpresaManutencao">
+        <label class="form-label checkbox-inline">
+          <input type="checkbox" formControlName="enviarEmailRelatorio" />
+          Enviar relatório PDF por e-mail ao encaminhar
+        </label>
+      </div>
+      <div class="form-group">
         <label class="form-label">E-mails para relatório</label>
         <input
           type="text"
@@ -29,13 +41,84 @@
         />
         <small class="form-hint">Separe múltiplos e-mails por vírgula.</small>
       </div>
-      <div class="form-group">
-        <label class="form-label checkbox-inline">
-          <input type="checkbox" formControlName="ehEmpresaManutencao" />
-          Empresa de manutenção
-        </label>
-      </div>
     </div>
+
+    <div
+      class="form-section"
+      *ngIf="form.value.ehEmpresaManutencao && podeConfigurarIntegracao"
+    >
+      <h3>Integração</h3>
+      <div class="form-group">
+        <label class="form-label">Integração de OS</label>
+        <select class="form-select" formControlName="integracaoManutencao">
+          <option value="NENHUMA">Nenhuma (fluxo interno / e-mail)</option>
+          <option value="BRT_OS">Consórcio BRT — API de OS</option>
+        </select>
+      </div>
+      <ng-container *ngIf="form.value.integracaoManutencao === 'BRT_OS'">
+      <div class="form-group">
+        <label class="form-label">URL da API</label>
+        <input
+          type="text"
+          formControlName="brtUrlBase"
+          class="form-input"
+          placeholder="https://www.api.brtgo.com.br/v1/os"
+        />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tenant *</label>
+        <input type="text" formControlName="brtTenEmp" class="form-input" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Token BRT</label>
+        <div class="input-eye-wrapper">
+          <input
+            [type]="showBrtToken ? 'text' : 'password'"
+            formControlName="brtToken"
+            class="form-input"
+            autocomplete="new-password"
+            [disabled]="brtTokenLoading"
+            (focus)="onBrtTokenFocus()"
+          />
+          <button
+            type="button"
+            class="btn-eye"
+            (click)="toggleBrtTokenVisibility()"
+            [disabled]="brtTokenLoading"
+            tabindex="-1"
+            [attr.aria-label]="showBrtToken ? 'Ocultar token' : 'Mostrar token'"
+          >
+            <i class="fas" [ngClass]="showBrtToken ? 'fa-eye-slash' : 'fa-eye'"></i>
+          </button>
+        </div>
+        <small class="form-hint" *ngIf="editMode && brtTokenLoading">
+          Carregando token do banco…
+        </small>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Solicitante *</label>
+        <input type="text" formControlName="brtNomSol" class="form-input" maxlength="200" />
+        <small class="form-hint">Nome enviado à API BRT em toda criação de OS.</small>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Telefone</label>
+        <input type="text" formControlName="brtTelCtt" class="form-input" maxlength="40" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Local de atendimento</label>
+        <input type="text" formControlName="brtLocAtd" class="form-input" maxlength="500" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ambiente</label>
+        <select class="form-select" formControlName="brtAmbiente">
+          <option value="">Não informado</option>
+          <option value="HOMOLOG">Homologação</option>
+          <option value="PROD">Produção</option>
+        </select>
+      </div>
+      </ng-container>
+    </div>
+
     <div class="form-actions">
       <button type="submit" class="btn btn-primary" [disabled]="loading">
         <span *ngIf="loading" class="spinner"></span>

@@ -327,6 +327,10 @@ export class UserListComponent extends BaseListComponent<Usuario> {
       'perfil:read': 'Visualizar perfis',
       'perfil:update': 'Editar perfis',
       'perfil:delete': 'Excluir perfis',
+      'perfil:duplicate': 'Duplicar perfis',
+      'perfil:assign_users': 'Vincular usuários ao perfil (lista de perfis)',
+      'perfil:unassign_users':
+        'Remover vínculo de usuários ao perfil (lista de perfis)',
       'veiculo:create': 'Criar veículos',
       'veiculo:read': 'Visualizar veículos',
       'veiculo:update': 'Editar veículos',

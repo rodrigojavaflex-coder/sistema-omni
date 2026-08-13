@@ -278,3 +278,66 @@
     color: white;
   }
 }
+
+// ========================================
+// BOTÕES SEMÂNTICOS (ações por função)
+// Use: .btn .btn-sm .btn-editar (etc.)
+// ========================================
+
+.btn-novo,
+.btn-salvar,
+.btn-editar,
+.btn-filtrar,
+.btn-primario {
+  @extend .btn-primary;
+}
+
+.btn-cancelar,
+.btn-limpar,
+.btn-auditoria,
+.btn-duplicar {
+  @extend .btn-secondary;
+}
+
+.btn-vincular {
+  @extend .btn-primary;
+}
+
+.btn-imprimir,
+.btn-recibo {
+  @extend .btn-info;
+}
+
+.btn-excluir,
+.btn-remover {
+  @extend .btn-danger;
+}
+
+.btn-baixa,
+.btn-upload {
+  @extend .btn-success;
+}
+
+// Tamanho compacto em grids (Bootstrap .btn-sm + semânticos)
+.btn-sm.btn-novo,
+.btn-sm.btn-salvar,
+.btn-sm.btn-editar,
+.btn-sm.btn-cancelar,
+.btn-sm.btn-limpar,
+.btn-sm.btn-duplicar,
+.btn-sm.btn-vincular,
+.btn-sm.btn-secondary,
+.btn-sm.btn-imprimir,
+.btn-sm.btn-recibo,
+.btn-sm.btn-auditoria,
+.btn-sm.btn-excluir,
+.btn-sm.btn-remover,
+.btn-sm.btn-filtrar,
+.btn-sm.btn-baixa,
+.btn-sm.btn-upload,
+.btn-sm.btn-primario {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  border-radius: $radius-sm;
+}
