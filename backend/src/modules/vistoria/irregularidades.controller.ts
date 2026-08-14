@@ -9,14 +9,11 @@ import {
   Post,
   Query,
   Req,
-  Sse,
   StreamableFile,
   UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
-  MessageEvent,
-  Header,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -57,8 +54,6 @@ import {
   IRREGULARIDADE_FLUXO_READ_PERMISSIONS,
 } from '../../common/utils/irregularidade-permissions.util';
 import { Usuario } from '../usuarios/entities/usuario.entity';
-import { IrregularidadeFluxoEventsService } from './irregularidade-fluxo-events.service';
-import { Observable } from 'rxjs';
 
 @ApiTags('irregularidades')
 @ApiBearerAuth()
@@ -67,28 +62,7 @@ import { Observable } from 'rxjs';
 export class IrregularidadesController {
   constructor(
     private readonly irregularidadeService: IrregularidadeService,
-    private readonly fluxoEventsService: IrregularidadeFluxoEventsService,
   ) {}
-
-  @Sse('fluxo/events')
-  @Header('Cache-Control', 'no-cache, no-transform')
-  @Header('Connection', 'keep-alive')
-  @Header('X-Accel-Buffering', 'no')
-  @ApiOperation({
-    summary: 'Stream SSE de mudanças nas filas do fluxo de irregularidades',
-  })
-  @ApiQuery({
-    name: 'access_token',
-    required: false,
-    description:
-      'JWT alternativo ao header Authorization (necessário para EventSource no browser)',
-  })
-  @Permissions(...IRREGULARIDADE_FLUXO_READ_PERMISSIONS)
-  fluxoEvents(
-    @Req() req: Request & { user?: Usuario },
-  ): Observable<MessageEvent> {
-    return this.fluxoEventsService.streamForUser(req.user as Usuario);
-  }
 
   @Get()
   @ApiOperation({ summary: 'Listar irregularidades por status' })

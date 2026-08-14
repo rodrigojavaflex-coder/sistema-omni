@@ -45,8 +45,6 @@ import { VeiculoService } from '../../services/veiculo.service';
 import { AreaVistoriada, AreaComponente } from '../../models/area-vistoriada.model';
 import { MatrizCriticidade } from '../../models/matriz-criticidade.model';
 import { firstValueFrom } from 'rxjs';
-import { IrregularidadeFluxoEventsService } from '../../services/irregularidade-fluxo-events.service';
-import { IrregularidadeFluxoStreamEvent } from '../../models/irregularidade-fluxo-events.model';
 
 type FluxoModo = 'tratamento' | 'manutencao' | 'validacao-final';
 type ModalAcao =
@@ -85,19 +83,21 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   private readonly appRef = inject(ApplicationRef);
   private readonly environmentInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly fluxoEventsService = inject(IrregularidadeFluxoEventsService);
   private readonly document = inject(DOCUMENT);
   private sosModalRef: ComponentRef<IrregularidadeSosModalComponent> | null = null;
   private readonly onVisibilityChange = (): void => {
     if (this.document.visibilityState === 'visible') {
-      this.conectarFluxoEvents();
+      this.iniciarListPoll();
       if (!this.isAutoRefreshPausado()) {
         this.loadItems(undefined, true);
       }
     } else {
-      this.fluxoEventsService.disconnect();
+      this.pararListPoll();
     }
   };
+  private listPollTimer?: ReturnType<typeof setInterval>;
+  private readonly listPollIntervalMs = 45_000;
+  private pollingAtivo = false;
 
   loading = false;
   error = '';
@@ -198,12 +198,12 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (this.modo === 'tratamento') {
       this.loadEmpresas();
     }
-    this.conectarFluxoEvents();
+    this.iniciarListPoll();
     this.document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   ngOnDestroy(): void {
-    this.fluxoEventsService.disconnect();
+    this.pararListPoll();
     this.document.removeEventListener('visibilitychange', this.onVisibilityChange);
     if (this.ordemServicoFiltroDebounce) {
       clearTimeout(this.ordemServicoFiltroDebounce);
@@ -307,6 +307,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       }))
       .subscribe({
         next: (items) => {
+          this.pollingAtivo = true;
           this.items = this.sortItemsFluxo(items ?? []);
           if (silent && selecaoAnterior) {
             this.selectedIds = new Set(
@@ -331,60 +332,27 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       });
   }
 
-  private conectarFluxoEvents(): void {
-    if (this.document.visibilityState !== 'visible') {
-      return;
-    }
-    this.fluxoEventsService.connect((event) => this.onFluxoStreamEvent(event));
+  /** Refresh silencioso a cada 45s enquanto a aba estiver visível. */
+  private iniciarListPoll(): void {
+    this.pararListPoll();
+    this.listPollTimer = setInterval(() => {
+      if (
+        !this.pollingAtivo ||
+        this.document.visibilityState !== 'visible' ||
+        this.isAutoRefreshPausado()
+      ) {
+        return;
+      }
+      this.loadItems(undefined, true);
+    }, this.listPollIntervalMs);
   }
 
-  private onFluxoStreamEvent(event: IrregularidadeFluxoStreamEvent): void {
-    if (event.type === 'HEARTBEAT') {
+  private pararListPoll(): void {
+    if (!this.listPollTimer) {
       return;
     }
-    if (!this.eventoAfetaModoAtual(event)) {
-      return;
-    }
-    if (this.isAutoRefreshPausado()) {
-      return;
-    }
-    this.loadItems(undefined, true);
-  }
-
-  private eventoAfetaModoAtual(event: IrregularidadeFluxoStreamEvent): boolean {
-    if (event.type === 'VISTORIA_FINALIZADA') {
-      return this.modo === 'tratamento' && this.canTratamentoRead;
-    }
-    if (event.type !== 'FLUXO_CHANGED') {
-      return false;
-    }
-
-    const statusesInteresse = this.getStatusesInteresseModo();
-    const statusesEvento = [event.statusAnterior, event.statusNovo];
-    if (!statusesEvento.some((status) => statusesInteresse.includes(status))) {
-      return false;
-    }
-
-    if (
-      this.modo === 'manutencao' &&
-      event.idEmpresaManutencao &&
-      this.authService.getCurrentUser()?.idEmpresa &&
-      event.idEmpresaManutencao !== this.authService.getCurrentUser()?.idEmpresa
-    ) {
-      return false;
-    }
-
-    return true;
-  }
-
-  private getStatusesInteresseModo(): StatusIrregularidade[] {
-    if (this.modo === 'tratamento') {
-      return this.buildTratamentoStatusPorPermissao();
-    }
-    if (this.modo === 'manutencao') {
-      return [StatusIrregularidade.EM_MANUTENCAO];
-    }
-    return [StatusIrregularidade.CONCLUIDA, StatusIrregularidade.NAO_PROCEDE];
+    clearInterval(this.listPollTimer);
+    this.listPollTimer = undefined;
   }
 
   /** Pausa refresh automático enquanto modais ou carga manual estiverem ativos. */

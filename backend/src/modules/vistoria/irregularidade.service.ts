@@ -57,7 +57,6 @@ import {
   ManutencaoEnvioContext,
   STATUS_ENVIO_MANUTENCAO,
 } from './irregularidade-manutencao-envio.service';
-import { IrregularidadeFluxoEventsService } from './irregularidade-fluxo-events.service';
 
 @Injectable()
 export class IrregularidadeService {
@@ -87,7 +86,6 @@ export class IrregularidadeService {
     @InjectRepository(IrregularidadeHistorico)
     private readonly irregularidadeHistoricoRepository: Repository<IrregularidadeHistorico>,
     private readonly manutencaoEnvioService: IrregularidadeManutencaoEnvioService,
-    private readonly fluxoEventsService: IrregularidadeFluxoEventsService,
   ) {}
 
   async create(
@@ -2245,18 +2243,6 @@ export class IrregularidadeService {
       correlationId: data.correlationId,
     });
     await historicoRepository.save(evento);
-
-    if (
-      data.statusOrigem &&
-      data.statusOrigem !== data.statusDestino
-    ) {
-      this.fluxoEventsService.emitStatusChange({
-        irregularidadeId: data.idIrregularidade,
-        statusAnterior: data.statusOrigem,
-        statusNovo: data.statusDestino,
-        idEmpresaManutencao: data.idEmpresaEvento,
-      });
-    }
   }
 
   private async ensureArea(id: string): Promise<void> {
