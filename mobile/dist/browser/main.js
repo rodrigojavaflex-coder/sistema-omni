@@ -11,7 +11,7 @@ import {
 } from "./chunk-I75DQO4E.js";
 import {
   AuthService
-} from "./chunk-2D7MZDC7.js";
+} from "./chunk-V6FGZTLS.js";
 import "./chunk-3YNOEOQF.js";
 import {
   AlertController,
@@ -68,8 +68,10 @@ import "./chunk-T5LCTCQ6.js";
 import "./chunk-JCEFQURH.js";
 import "./chunk-PFHNU3CN.js";
 import {
-  Capacitor
-} from "./chunk-XS4INNGU.js";
+  Capacitor,
+  SystemBars,
+  SystemBarsStyle
+} from "./chunk-52UEIZVD.js";
 import "./chunk-AIZDI3X7.js";
 import "./chunk-NZVQSZKT.js";
 import "./chunk-CBDAGKSH.js";
@@ -131,60 +133,60 @@ var routes = [
   },
   {
     path: "login",
-    loadComponent: () => import("./chunk-VKFVS3CX.js").then((m) => m.LoginPage)
+    loadComponent: () => import("./chunk-CHW2VDB2.js").then((m) => m.LoginPage)
   },
   {
     path: "redefinir-senha",
-    loadComponent: () => import("./chunk-6RLU67QJ.js").then((m) => m.RedefinirSenhaPage)
+    loadComponent: () => import("./chunk-ZO6DHN3U.js").then((m) => m.RedefinirSenhaPage)
   },
   {
     path: "home",
-    loadComponent: () => import("./chunk-PD3NSL5G.js").then((m) => m.HomePage),
+    loadComponent: () => import("./chunk-7NJW4R3Z.js").then((m) => m.HomePage),
     canActivate: [authGuard]
   },
   {
     path: "configuracoes",
-    loadComponent: () => import("./chunk-QXB54GZR.js").then((m) => m.ConfiguracoesPage),
+    loadComponent: () => import("./chunk-5HHY4XGQ.js").then((m) => m.ConfiguracoesPage),
     canActivate: [authGuard]
   },
   {
     path: "sobre",
-    loadComponent: () => import("./chunk-LMMBGIHK.js").then((m) => m.SobrePage),
+    loadComponent: () => import("./chunk-THDDZXFE.js").then((m) => m.SobrePage),
     canActivate: [authGuard]
   },
   {
     path: "vistoria/inicio",
-    loadComponent: () => import("./chunk-5EIS3M2W.js").then((m) => m.VistoriaInicioPage),
+    loadComponent: () => import("./chunk-BSKIYEUR.js").then((m) => m.VistoriaInicioPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas",
-    loadComponent: () => import("./chunk-HATD2HKU.js").then((m) => m.VistoriaAreasPage),
+    loadComponent: () => import("./chunk-RU7U7BIC.js").then((m) => m.VistoriaAreasPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId",
-    loadComponent: () => import("./chunk-XRQLV3ZR.js").then((m) => m.VistoriaComponentesPage),
+    loadComponent: () => import("./chunk-7CIDY73A.js").then((m) => m.VistoriaComponentesPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/areas/:areaId/componentes/:componenteId",
-    loadComponent: () => import("./chunk-APU6VB4C.js").then((m) => m.VistoriaIrregularidadePage),
+    loadComponent: () => import("./chunk-4HDE4JPT.js").then((m) => m.VistoriaIrregularidadePage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/finalizar",
-    loadComponent: () => import("./chunk-BAR52QIT.js").then((m) => m.VistoriaFinalizarPage),
+    loadComponent: () => import("./chunk-6BSU6PDF.js").then((m) => m.VistoriaFinalizarPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_mobile:create"] }
   },
   {
     path: "vistoria/pendencias-veiculo",
-    loadComponent: () => import("./chunk-NG53FCOZ.js").then((m) => m.VistoriaHistoricoVeiculoPage),
+    loadComponent: () => import("./chunk-NPL4Q24S.js").then((m) => m.VistoriaHistoricoVeiculoPage),
     canActivate: [authGuard, permissionGuard],
     data: { permissions: ["vistoria_web_historico_veiculo:read"] }
   },
@@ -404,6 +406,15 @@ var AppComponent = class _AppComponent {
     this.authService.isAuthenticated$.subscribe((isAuthenticated) => {
       this.isAuthenticated = isAuthenticated;
     });
+    void this.configureSystemBars();
+  }
+  configureSystemBars() {
+    return __async(this, null, function* () {
+      if (!this.isNative) {
+        return;
+      }
+      yield SystemBars.setStyle({ style: SystemBarsStyle.Light });
+    });
   }
   goTo(route, state) {
     return __async(this, null, function* () {
@@ -480,7 +491,7 @@ var AppComponent = class _AppComponent {
     IonMenu,
     IonButton,
     IonIcon
-  ], styles: ["\n\n.menu-content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n}\n.profile-card[_ngcontent-%COMP%] {\n  background: #ffffff;\n  border-radius: 16px;\n  padding: 16px;\n  margin: 12px 12px 4px;\n  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);\n}\n.profile-header[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  margin-bottom: 12px;\n}\n.avatar[_ngcontent-%COMP%] {\n  width: 48px;\n  height: 48px;\n  border-radius: 14px;\n  background: #1d4ed8;\n  color: #ffffff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 20px;\n  font-weight: 700;\n}\n.profile-title[_ngcontent-%COMP%]   h1[_ngcontent-%COMP%] {\n  margin: 0 0 4px 0;\n  font-size: 18px;\n  color: #0f172a;\n}\n.profile-title[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0;\n  color: #64748b;\n  font-size: 13px;\n}\n.profile-details[_ngcontent-%COMP%] {\n  border-top: 1px solid #e2e8f0;\n  padding-top: 10px;\n}\n.detail-row[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 6px 0;\n}\n.detail-label[_ngcontent-%COMP%] {\n  color: #475569;\n  font-size: 13px;\n}\n.detail-value[_ngcontent-%COMP%] {\n  font-weight: 600;\n  color: #0f172a;\n}\n.detail-badge[_ngcontent-%COMP%] {\n  padding: 4px 10px;\n  border-radius: 999px;\n  font-size: 12px;\n  background: #e2e8f0;\n  color: #475569;\n}\n.detail-badge.active[_ngcontent-%COMP%] {\n  background: #dcfce7;\n  color: #15803d;\n}\n.menu-list[_ngcontent-%COMP%] {\n  flex: 1;\n  padding: 8px 10px 0;\n  border-top: 1px solid #e2e8f0;\n}\n.menu-item[_ngcontent-%COMP%] {\n  --background: #ffffff;\n  --border-radius: 12px;\n  --padding-start: 12px;\n  --inner-padding-end: 8px;\n  --min-height: 46px;\n  margin: 6px 0;\n  border: 1px solid #e2e8f0;\n}\n.menu-item.item-disabled[_ngcontent-%COMP%] {\n  opacity: 0.55;\n}\n.menu-item-icon[_ngcontent-%COMP%] {\n  color: #1d4ed8;\n  font-size: 18px;\n  margin-right: 8px;\n}\n.menu-item-label[_ngcontent-%COMP%] {\n  font-weight: 500;\n  color: #0f172a;\n}\n.menu-item.menu-item-disabled[_ngcontent-%COMP%] {\n  opacity: 0.45;\n  pointer-events: none;\n}\n.menu-footer[_ngcontent-%COMP%] {\n  padding: 16px;\n  margin-top: auto;\n  background:\n    linear-gradient(\n      to top,\n      #ffffff 75%,\n      rgba(255, 255, 255, 0));\n}\n/*# sourceMappingURL=app.component.css.map */"] });
+  ], styles: ["\n\n.menu-content[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n}\n.profile-card[_ngcontent-%COMP%] {\n  background: #ffffff;\n  border-radius: 16px;\n  padding: 16px;\n  margin: 12px 12px 4px;\n  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);\n}\n.profile-header[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  margin-bottom: 12px;\n}\n.avatar[_ngcontent-%COMP%] {\n  width: 48px;\n  height: 48px;\n  border-radius: 14px;\n  background: #1d4ed8;\n  color: #ffffff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 20px;\n  font-weight: 700;\n}\n.profile-title[_ngcontent-%COMP%]   h1[_ngcontent-%COMP%] {\n  margin: 0 0 4px 0;\n  font-size: 18px;\n  color: #0f172a;\n}\n.profile-title[_ngcontent-%COMP%]   p[_ngcontent-%COMP%] {\n  margin: 0;\n  color: #64748b;\n  font-size: 13px;\n}\n.profile-details[_ngcontent-%COMP%] {\n  border-top: 1px solid #e2e8f0;\n  padding-top: 10px;\n}\n.detail-row[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 6px 0;\n}\n.detail-label[_ngcontent-%COMP%] {\n  color: #475569;\n  font-size: 13px;\n}\n.detail-value[_ngcontent-%COMP%] {\n  font-weight: 600;\n  color: #0f172a;\n}\n.detail-badge[_ngcontent-%COMP%] {\n  padding: 4px 10px;\n  border-radius: 999px;\n  font-size: 12px;\n  background: #e2e8f0;\n  color: #475569;\n}\n.detail-badge.active[_ngcontent-%COMP%] {\n  background: #dcfce7;\n  color: #15803d;\n}\n.menu-list[_ngcontent-%COMP%] {\n  flex: 1;\n  padding: 8px 10px 0;\n  border-top: 1px solid #e2e8f0;\n}\n.menu-item[_ngcontent-%COMP%] {\n  --background: #ffffff;\n  --border-radius: 12px;\n  --padding-start: 12px;\n  --inner-padding-end: 8px;\n  --min-height: 46px;\n  margin: 6px 0;\n  border: 1px solid #e2e8f0;\n}\n.menu-item.item-disabled[_ngcontent-%COMP%] {\n  opacity: 0.55;\n}\n.menu-item-icon[_ngcontent-%COMP%] {\n  color: #1d4ed8;\n  font-size: 18px;\n  margin-right: 8px;\n}\n.menu-item-label[_ngcontent-%COMP%] {\n  font-weight: 500;\n  color: #0f172a;\n}\n.menu-item.menu-item-disabled[_ngcontent-%COMP%] {\n  opacity: 0.45;\n  pointer-events: none;\n}\n.menu-footer[_ngcontent-%COMP%] {\n  padding: 16px 16px calc(16px + var(--ion-safe-area-bottom, 0px));\n  margin-top: auto;\n  background:\n    linear-gradient(\n      to top,\n      #ffffff 75%,\n      rgba(255, 255, 255, 0));\n}\n/*# sourceMappingURL=app.component.css.map */"] });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(AppComponent, [{
@@ -609,11 +620,11 @@ var AppComponent = class _AppComponent {
 
   <ion-router-outlet id="main-content"></ion-router-outlet>
 </ion-app>
-`, styles: ["/* src/app/app.component.scss */\n.menu-content {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n}\n.profile-card {\n  background: #ffffff;\n  border-radius: 16px;\n  padding: 16px;\n  margin: 12px 12px 4px;\n  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);\n}\n.profile-header {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  margin-bottom: 12px;\n}\n.avatar {\n  width: 48px;\n  height: 48px;\n  border-radius: 14px;\n  background: #1d4ed8;\n  color: #ffffff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 20px;\n  font-weight: 700;\n}\n.profile-title h1 {\n  margin: 0 0 4px 0;\n  font-size: 18px;\n  color: #0f172a;\n}\n.profile-title p {\n  margin: 0;\n  color: #64748b;\n  font-size: 13px;\n}\n.profile-details {\n  border-top: 1px solid #e2e8f0;\n  padding-top: 10px;\n}\n.detail-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 6px 0;\n}\n.detail-label {\n  color: #475569;\n  font-size: 13px;\n}\n.detail-value {\n  font-weight: 600;\n  color: #0f172a;\n}\n.detail-badge {\n  padding: 4px 10px;\n  border-radius: 999px;\n  font-size: 12px;\n  background: #e2e8f0;\n  color: #475569;\n}\n.detail-badge.active {\n  background: #dcfce7;\n  color: #15803d;\n}\n.menu-list {\n  flex: 1;\n  padding: 8px 10px 0;\n  border-top: 1px solid #e2e8f0;\n}\n.menu-item {\n  --background: #ffffff;\n  --border-radius: 12px;\n  --padding-start: 12px;\n  --inner-padding-end: 8px;\n  --min-height: 46px;\n  margin: 6px 0;\n  border: 1px solid #e2e8f0;\n}\n.menu-item.item-disabled {\n  opacity: 0.55;\n}\n.menu-item-icon {\n  color: #1d4ed8;\n  font-size: 18px;\n  margin-right: 8px;\n}\n.menu-item-label {\n  font-weight: 500;\n  color: #0f172a;\n}\n.menu-item.menu-item-disabled {\n  opacity: 0.45;\n  pointer-events: none;\n}\n.menu-footer {\n  padding: 16px;\n  margin-top: auto;\n  background:\n    linear-gradient(\n      to top,\n      #ffffff 75%,\n      rgba(255, 255, 255, 0));\n}\n/*# sourceMappingURL=app.component.css.map */\n"] }]
+`, styles: ["/* src/app/app.component.scss */\n.menu-content {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n}\n.profile-card {\n  background: #ffffff;\n  border-radius: 16px;\n  padding: 16px;\n  margin: 12px 12px 4px;\n  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);\n}\n.profile-header {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  margin-bottom: 12px;\n}\n.avatar {\n  width: 48px;\n  height: 48px;\n  border-radius: 14px;\n  background: #1d4ed8;\n  color: #ffffff;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 20px;\n  font-weight: 700;\n}\n.profile-title h1 {\n  margin: 0 0 4px 0;\n  font-size: 18px;\n  color: #0f172a;\n}\n.profile-title p {\n  margin: 0;\n  color: #64748b;\n  font-size: 13px;\n}\n.profile-details {\n  border-top: 1px solid #e2e8f0;\n  padding-top: 10px;\n}\n.detail-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 6px 0;\n}\n.detail-label {\n  color: #475569;\n  font-size: 13px;\n}\n.detail-value {\n  font-weight: 600;\n  color: #0f172a;\n}\n.detail-badge {\n  padding: 4px 10px;\n  border-radius: 999px;\n  font-size: 12px;\n  background: #e2e8f0;\n  color: #475569;\n}\n.detail-badge.active {\n  background: #dcfce7;\n  color: #15803d;\n}\n.menu-list {\n  flex: 1;\n  padding: 8px 10px 0;\n  border-top: 1px solid #e2e8f0;\n}\n.menu-item {\n  --background: #ffffff;\n  --border-radius: 12px;\n  --padding-start: 12px;\n  --inner-padding-end: 8px;\n  --min-height: 46px;\n  margin: 6px 0;\n  border: 1px solid #e2e8f0;\n}\n.menu-item.item-disabled {\n  opacity: 0.55;\n}\n.menu-item-icon {\n  color: #1d4ed8;\n  font-size: 18px;\n  margin-right: 8px;\n}\n.menu-item-label {\n  font-weight: 500;\n  color: #0f172a;\n}\n.menu-item.menu-item-disabled {\n  opacity: 0.45;\n  pointer-events: none;\n}\n.menu-footer {\n  padding: 16px 16px calc(16px + var(--ion-safe-area-bottom, 0px));\n  margin-top: auto;\n  background:\n    linear-gradient(\n      to top,\n      #ffffff 75%,\n      rgba(255, 255, 255, 0));\n}\n/*# sourceMappingURL=app.component.css.map */\n"] }]
   }], () => [], null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "src/app/app.component.ts", lineNumber: 57 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "app/app.component.ts", lineNumber: 57 });
 })();
 
 // src/app/interceptors/auth.interceptor.ts

@@ -1,3 +1,5 @@
+@charset "UTF-8";
+
 /* node_modules/@ionic/angular/css/core.css */
 html.ios {
   --ion-default-font:
@@ -1131,6 +1133,12 @@ ion-modal.image-preview-modal {
 }
 * {
   box-sizing: border-box;
+}
+html {
+  --ion-safe-area-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --ion-safe-area-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  --ion-safe-area-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --ion-safe-area-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
 }
 body {
   margin: 0;
