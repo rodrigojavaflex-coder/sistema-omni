@@ -6,7 +6,9 @@
 param(
     [string]$Domain = "gestaodetransporte.com",
     [string]$ServiceName = "OMNI-Sistema",
-    [string]$Port = "80"
+    [string]$Port = "80",
+    [ValidateSet('patch','minor','major','none')]
+    [string]$VersionBump = 'patch'
 )
 
 Write-Host "DEPLOY SISTEMA OMNI PARA SERVIDOR" -ForegroundColor Green
@@ -14,6 +16,7 @@ Write-Host "=================================" -ForegroundColor Green
 Write-Host "Dominio: $Domain" -ForegroundColor Yellow
 Write-Host "Porta: $Port" -ForegroundColor Yellow
 Write-Host "Servico: $ServiceName" -ForegroundColor Yellow
+Write-Host "Bump versao frontend: $VersionBump" -ForegroundColor Yellow
 
 # Verificar se está na pasta correta
 if (!(Test-Path "backend\package.json") -or !(Test-Path "frontend\package.json")) {
@@ -79,6 +82,22 @@ if (Test-Path "node_modules\.cache") {
 Write-Host "   OK: Cache e builds anteriores removidos" -ForegroundColor Green
 
 npm install --silent
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Erro no npm install do frontend"
+    exit 1
+}
+
+if ($VersionBump -ne 'none') {
+    Write-Host "   Incrementando versao frontend ($VersionBump)..." -ForegroundColor Yellow
+    npm version $VersionBump --no-git-tag-version
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Falha ao incrementar versao do frontend"
+        exit 1
+    }
+    $newFrontendVersion = node -p "require('./package.json').version"
+    Write-Host "   OK: Frontend versao $newFrontendVersion" -ForegroundColor Green
+}
+
 npm run build -- --configuration production --base-href /omni/
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Erro no build do frontend"
@@ -326,6 +345,10 @@ Para atualizar o sistema com nova versão:
 cd C:\NovaVersao
 PowerShell -ExecutionPolicy Bypass .\atualizar-servidor.ps1
 ```
+
+O pacote gerado por deploy.ps1 incrementa o PATCH do frontend a cada execução
+(1.6.0 → 1.6.1). Minor/major: `.\deploy.ps1 -VersionBump minor` (ou major).
+Para manter a versão atual: `.\deploy.ps1 -VersionBump none`.
 
 ## Gerenciamento do Servico
 

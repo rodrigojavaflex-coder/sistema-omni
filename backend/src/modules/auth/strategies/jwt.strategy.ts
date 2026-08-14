@@ -3,8 +3,17 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Request } from 'express';
 import { Repository } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
+
+function extractJwtFromQueryParam(req: Request): string | null {
+  const raw = req.query?.access_token;
+  if (typeof raw === 'string' && raw.trim()) {
+    return raw.trim();
+  }
+  return null;
+}
 
 export interface JwtPayload {
   sub: string; // user id
@@ -21,7 +30,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly userRepository: Repository<Usuario>,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        extractJwtFromQueryParam,
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.get('JWT_SECRET', 'default-secret-key'),
     });

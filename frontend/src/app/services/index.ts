@@ -1,4 +1,5 @@
 export * from './auth.service';
+export * from './app-version.service';
 export * from './user.service';
 export * from './navigation.service';
 export * from './auditoria.service';

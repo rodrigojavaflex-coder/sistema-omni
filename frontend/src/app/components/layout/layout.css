@@ -3,6 +3,65 @@
   height: 100%;
 }
 
+.app-version-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-color);
+  color: #fff;
+  font-size: 0.875rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.app-version-banner__btn {
+  background-color: #fff;
+  color: var(--primary-color);
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.75rem;
+}
+
+.app-version-banner__btn:hover {
+  background-color: var(--bg-hover-secondary);
+}
+
+.app-version-banner__btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.app-version-banner__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+:host-context(body.theme-dark) .app-version-banner {
+  background-color: var(--primary-color);
+  color: var(--bg-primary);
+}
+
+:host-context(body.theme-dark) .app-version-banner__btn {
+  background-color: var(--bg-primary);
+  color: var(--primary-color);
+}
+
+:host-context(body.theme-dark) .app-version-banner__btn:hover {
+  background-color: var(--bg-secondary);
+}
+
+:host-context(body.theme-dark) .app-version-banner__btn:focus-visible {
+  outline-color: var(--bg-primary);
+}
+
 .layout-shell {
   min-height: 100vh;
   display: flex;

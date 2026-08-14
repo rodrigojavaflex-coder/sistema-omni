@@ -8,6 +8,17 @@
 <app-toast></app-toast>
 
 <div
+  class="app-version-banner"
+  *ngIf="updateAvailable"
+  role="status"
+  aria-live="polite">
+  <span>Nova versão disponível.</span>
+  <button type="button" class="app-version-banner__btn" (click)="atualizarVersao()">
+    Atualizar
+  </button>
+</div>
+
+<div
   class="layout-shell"
   *ngIf="isAuthenticated"
   [ngClass]="[

@@ -1,3 +1,4 @@
+import { CommonModule, DOCUMENT } from '@angular/common';
 import {
   ApplicationRef,
   Component,
@@ -10,7 +11,6 @@ import {
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Observable, forkJoin } from 'rxjs';
@@ -45,6 +45,8 @@ import { VeiculoService } from '../../services/veiculo.service';
 import { AreaVistoriada, AreaComponente } from '../../models/area-vistoriada.model';
 import { MatrizCriticidade } from '../../models/matriz-criticidade.model';
 import { firstValueFrom } from 'rxjs';
+import { IrregularidadeFluxoEventsService } from '../../services/irregularidade-fluxo-events.service';
+import { IrregularidadeFluxoStreamEvent } from '../../models/irregularidade-fluxo-events.model';
 
 type FluxoModo = 'tratamento' | 'manutencao' | 'validacao-final';
 type ModalAcao =
@@ -83,7 +85,19 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   private readonly appRef = inject(ApplicationRef);
   private readonly environmentInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly fluxoEventsService = inject(IrregularidadeFluxoEventsService);
+  private readonly document = inject(DOCUMENT);
   private sosModalRef: ComponentRef<IrregularidadeSosModalComponent> | null = null;
+  private readonly onVisibilityChange = (): void => {
+    if (this.document.visibilityState === 'visible') {
+      this.conectarFluxoEvents();
+      if (!this.isAutoRefreshPausado()) {
+        this.loadItems(undefined, true);
+      }
+    } else {
+      this.fluxoEventsService.disconnect();
+    }
+  };
 
   loading = false;
   error = '';
@@ -184,9 +198,13 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (this.modo === 'tratamento') {
       this.loadEmpresas();
     }
+    this.conectarFluxoEvents();
+    this.document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   ngOnDestroy(): void {
+    this.fluxoEventsService.disconnect();
+    this.document.removeEventListener('visibilitychange', this.onVisibilityChange);
     if (this.ordemServicoFiltroDebounce) {
       clearTimeout(this.ordemServicoFiltroDebounce);
     }
@@ -257,10 +275,19 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadItems(avisoPosEmail?: string): void {
-    this.loading = true;
-    this.error = '';
-    this.info = '';
+  loadItems(avisoPosEmail?: string, silent = false): void {
+    if (silent && (this.loading || this.isAutoRefreshPausado())) {
+      return;
+    }
+
+    const selecaoAnterior = silent ? new Set(this.selectedIds) : null;
+
+    if (!silent) {
+      this.loading = true;
+      this.error = '';
+      this.info = '';
+    }
+
     this.irregularidadeService
       .listarPorStatus(this.resolveStatusFiltro(), {
         ordemServico: this.ordemServicoParaApi(),
@@ -273,21 +300,106 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         referenciaPeriodo: this.referenciaPeriodoParaListagem(),
         origemRegistro: this.filtroOrigemRegistro || undefined,
       })
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(finalize(() => {
+        if (!silent) {
+          this.loading = false;
+        }
+      }))
       .subscribe({
         next: (items) => {
           this.items = this.sortItemsFluxo(items ?? []);
-          this.selectedIds.clear();
-          if (avisoPosEmail?.trim()) {
-            this.info = avisoPosEmail.trim();
-          } else if (this.items.length === 0) {
-            this.info = 'Nenhuma irregularidade encontrada com os filtros informados.';
+          if (silent && selecaoAnterior) {
+            this.selectedIds = new Set(
+              this.items.filter((item) => selecaoAnterior.has(item.id)).map((item) => item.id),
+            );
+          } else {
+            this.selectedIds.clear();
+          }
+          if (!silent) {
+            if (avisoPosEmail?.trim()) {
+              this.info = avisoPosEmail.trim();
+            } else if (this.items.length === 0) {
+              this.info = 'Nenhuma irregularidade encontrada com os filtros informados.';
+            }
           }
         },
         error: (err) => {
-          this.error = err?.error?.message || 'Erro ao carregar irregularidades.';
+          if (!silent) {
+            this.error = err?.error?.message || 'Erro ao carregar irregularidades.';
+          }
         },
       });
+  }
+
+  private conectarFluxoEvents(): void {
+    if (this.document.visibilityState !== 'visible') {
+      return;
+    }
+    this.fluxoEventsService.connect((event) => this.onFluxoStreamEvent(event));
+  }
+
+  private onFluxoStreamEvent(event: IrregularidadeFluxoStreamEvent): void {
+    if (event.type === 'HEARTBEAT') {
+      return;
+    }
+    if (!this.eventoAfetaModoAtual(event)) {
+      return;
+    }
+    if (this.isAutoRefreshPausado()) {
+      return;
+    }
+    this.loadItems(undefined, true);
+  }
+
+  private eventoAfetaModoAtual(event: IrregularidadeFluxoStreamEvent): boolean {
+    if (event.type === 'VISTORIA_FINALIZADA') {
+      return this.modo === 'tratamento' && this.canTratamentoRead;
+    }
+    if (event.type !== 'FLUXO_CHANGED') {
+      return false;
+    }
+
+    const statusesInteresse = this.getStatusesInteresseModo();
+    const statusesEvento = [event.statusAnterior, event.statusNovo];
+    if (!statusesEvento.some((status) => statusesInteresse.includes(status))) {
+      return false;
+    }
+
+    if (
+      this.modo === 'manutencao' &&
+      event.idEmpresaManutencao &&
+      this.authService.getCurrentUser()?.idEmpresa &&
+      event.idEmpresaManutencao !== this.authService.getCurrentUser()?.idEmpresa
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private getStatusesInteresseModo(): StatusIrregularidade[] {
+    if (this.modo === 'tratamento') {
+      return this.buildTratamentoStatusPorPermissao();
+    }
+    if (this.modo === 'manutencao') {
+      return [StatusIrregularidade.EM_MANUTENCAO];
+    }
+    return [StatusIrregularidade.CONCLUIDA, StatusIrregularidade.NAO_PROCEDE];
+  }
+
+  /** Pausa refresh automático enquanto modais ou carga manual estiverem ativos. */
+  private isAutoRefreshPausado(): boolean {
+    return (
+      this.loading ||
+      this.showActionModal ||
+      this.showHistoricoModal ||
+      !!this.imagemAmpliadaSrc ||
+      this.isSosModalOpen()
+    );
+  }
+
+  private isSosModalOpen(): boolean {
+    return this.sosModalRef?.instance.open === true;
   }
 
   /**
@@ -1327,10 +1439,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return item.entradaStatusEm ?? item.criadoEm;
   }
 
-  getTempoReferencia(item: IrregularidadeFluxoItem): string {
-    if (this.modo === 'tratamento') {
-      return item.criadoEm;
-    }
+  /** Tempo na etapa/status atual (faixas de cor aplicam-se aqui). */
+  getTempoEtapaAtual(item: IrregularidadeFluxoItem): string {
     return item.entradaStatusEm ?? item.criadoEm;
   }
 

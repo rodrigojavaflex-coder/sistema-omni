@@ -191,7 +191,8 @@
         <span>Irregularidade</span>
         <span>Gravidade</span>
         <span>Registrado</span>
-        <span>Tempo</span>
+        <span>Etapa atual</span>
+        <span>Tempo total</span>
         <span>Status</span>
         <span></span>
       </div>
@@ -267,10 +268,13 @@
           </div>
           <div class="col-data">{{ getDataRegistradoFluxo(item) | date: 'dd/MM/yyyy HH:mm' }}</div>
           <div class="col-tempo">
-            <div class="tempo-cell" [ngStyle]="getTempoStyle(getTempoReferencia(item))">
-              <span>{{ getTempoDesdeRegistro(getTempoReferencia(item)) }}</span>
-              <small *ngIf="getTempoRotulo(getTempoReferencia(item))">{{ getTempoRotulo(getTempoReferencia(item)) }}</small>
+            <div class="tempo-cell" [ngStyle]="getTempoStyle(getTempoEtapaAtual(item))">
+              <span>{{ getTempoDesdeRegistro(getTempoEtapaAtual(item)) }}</span>
+              <small *ngIf="getTempoRotulo(getTempoEtapaAtual(item))">{{ getTempoRotulo(getTempoEtapaAtual(item)) }}</small>
             </div>
+          </div>
+          <div class="col-tempo-total">
+            <span class="tempo-total-valor">{{ getTempoDesdeRegistro(item.criadoEm) }}</span>
           </div>
           <div class="col-status">
             <span [class]="getStatusClass(item.statusAtual)">

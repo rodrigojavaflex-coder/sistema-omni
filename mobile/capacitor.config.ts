@@ -6,6 +6,13 @@ const config: CapacitorConfig = {
   webDir: 'dist/browser',
   server: {
     androidScheme: 'https'
+  },
+  plugins: {
+    SystemBars: {
+      insetsHandling: 'css',
+      style: 'LIGHT',
+      hidden: false
+    }
   }
 };
 

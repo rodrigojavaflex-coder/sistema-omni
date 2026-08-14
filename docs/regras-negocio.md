@@ -71,6 +71,26 @@ Copie o bloco abaixo para cada regra nova.
 - **Origem da regra:** Alinhamento com NEST_ANGULAR (RN-014), 2026-05-20
 - **Status:** Implementada
 
+### RN-AUTH-003 - Versao do frontend e aviso de atualizacao
+- **Modulo:** Autenticacao / Layout
+- **Fluxo:** Usuario autenticado consulta a versao no menu do avatar; apos deploy, a aba aberta e avisada para recarregar
+- **Descricao:** A versao visivel e a do `frontend/package.json` gravada em `version.json` no build. PATCH incrementa automaticamente em cada `deploy.ps1`. MINOR e MAJOR sao indicados manualmente (`.\deploy.ps1 -VersionBump minor|major` ou `none` para nao alterar). A deteccao de nova versao compara o `buildId` (nao o semver). O recarregar mantem a sessao.
+- **Condicoes de entrada:** Frontend publicado em `/omni/`; `version.json` acessivel sem cache
+- **Validacoes:** Monitoramento ativo apenas em `environment.production`; consulta a cada 5 minutos e ao focar a aba
+- **Acoes do sistema:** Exibe versao/data/build no menu; botao "Atualizar sistema" recarrega a pagina; barra no topo "Nova versao disponivel" com botao Atualizar quando o `buildId` remoto muda
+- **Mensagens ao usuario:** "Nova versao disponivel." na barra; "Atualizar sistema" no menu
+- **Permissoes envolvidas:** Nenhuma (qualquer usuario autenticado)
+- **Dados impactados:** Nenhum dado de negocio; artefato `frontend/public/version.json`
+- **Rastreabilidade:** Nao exige auditoria
+- **Criterios de aceite:**
+  - Menu do usuario mostra Versao X.Y.Z abaixo de "Expira em" e acima de "Alterar Senha"
+  - "Atualizar sistema" recarrega a aplicacao sem deslogar
+  - Apos novo deploy, a barra no topo aparece (ate 5 min ou ao voltar para a aba)
+  - Cada `deploy.ps1` incrementa PATCH; MINOR/MAJOR so com `-VersionBump`
+- **Cenarios de excecao:** `version.json` indisponivel (menu omite a linha; recarregar ainda funciona); ambiente de desenvolvimento nao exibe a barra
+- **Origem da regra:** Alinhamento com NEST_ANGULAR (banner/version.json), 2026-08-13
+- **Status:** Implementada
+
 ### 1. Vistoria
 #### Regras
 - [x] RN-VIS-003 - Permissoes de acesso e acao por tela do fluxo de irregularidades
@@ -383,6 +403,7 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-08-13: RN-AUTH-003 Versao do frontend no menu do usuario, barra de nova versao e PATCH automatico no `deploy.ps1`.
 - 2026-08-04: RN-PER-001 Vincular/desvincular usuarios ao perfil; migration concede assign/unassign a ADMIN e perfis com `perfil:duplicate`.
 - 2026-08-03: RN-VIS-006 Integracao OS externa (dual BRT), status RETRABALHO_GARANTIA, matriz de transicoes atualizada em BACKLOG; RN-VIS-003 ampliada para RETRABALHO_GARANTIA na etapa Tratamento.
 - 2026-06-23: RN-DOC-001 Campo opcional detalhesDocumento; correcao de edicao de tipo; nome de arquivo TIPO.NOME.DEPARTAMENTO.

@@ -26,6 +26,7 @@ import { CreateVistoriaSosDto } from './dto/create-vistoria-sos.dto';
 import { SosSessaoAbertaDto } from './dto/sos-sessao-aberta.dto';
 import { IrregularidadeMidia } from './entities/irregularidade-midia.entity';
 import { IrregularidadeHistorico } from './entities/irregularidade-historico.entity';
+import { IrregularidadeFluxoEventsService } from './irregularidade-fluxo-events.service';
 
 @Injectable()
 export class VistoriaService {
@@ -46,6 +47,7 @@ export class VistoriaService {
     private readonly matrizRepository: Repository<MatrizCriticidade>,
     @InjectRepository(Irregularidade)
     private readonly irregularidadeRepository: Repository<Irregularidade>,
+    private readonly fluxoEventsService: IrregularidadeFluxoEventsService,
   ) {}
 
   async create(dto: CreateVistoriaDto): Promise<Vistoria> {
@@ -432,7 +434,18 @@ export class VistoriaService {
       vistoria.observacao = dto.observacao;
     }
     vistoria.status = StatusVistoria.FINALIZADA;
-    return this.vistoriaRepository.save(vistoria);
+    const saved = await this.vistoriaRepository.save(vistoria);
+
+    const irregularidades = await this.irregularidadeRepository.find({
+      where: { idVistoria: vistoriaId },
+      select: ['id'],
+    });
+    this.fluxoEventsService.emitVistoriaFinalizada(
+      vistoriaId,
+      irregularidades.map((item) => item.id),
+    );
+
+    return saved;
   }
 
   async cancel(vistoriaId: string): Promise<Vistoria> {

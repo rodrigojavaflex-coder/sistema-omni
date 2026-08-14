@@ -322,11 +322,12 @@ $webConfigPath = "$frontendPath\web.config"
 if (Test-Path $webConfigPath) {
     $currentWebConfig = Get-Content $webConfigPath -Raw
     
-    # Verificar se o web.config da aplicacao /omni esta no padrao SPA
+    # Verificar se o web.config da aplicacao /omni esta no padrao SPA + anti-cache de versao
     $hasAngularRule = $currentWebConfig -match 'name="Angular Routes"'
     $hasApiProxyRule = $currentWebConfig -match 'name="API Proxy"'
+    $hasVersionNoCache = $currentWebConfig -match 'path="version.json"'
     
-    if (-not ($hasAngularRule) -or $hasApiProxyRule) {
+    if (-not ($hasAngularRule) -or $hasApiProxyRule -or -not $hasVersionNoCache) {
         Write-Host "  Web.config desatualizado! Aplicando padrao SPA para /omni..." -ForegroundColor Yellow
         
         $webConfig = @"
@@ -354,6 +355,30 @@ if (Test-Path $webConfigPath) {
       </rules>
     </rewrite>
   </system.webServer>
+  <location path="version.json">
+    <system.webServer>
+      <httpProtocol>
+        <customHeaders>
+          <remove name="Cache-Control" />
+          <remove name="Pragma" />
+          <add name="Cache-Control" value="no-cache, no-store, must-revalidate" />
+          <add name="Pragma" value="no-cache" />
+        </customHeaders>
+      </httpProtocol>
+    </system.webServer>
+  </location>
+  <location path="index.html">
+    <system.webServer>
+      <httpProtocol>
+        <customHeaders>
+          <remove name="Cache-Control" />
+          <remove name="Pragma" />
+          <add name="Cache-Control" value="no-cache, no-store, must-revalidate" />
+          <add name="Pragma" value="no-cache" />
+        </customHeaders>
+      </httpProtocol>
+    </system.webServer>
+  </location>
 </configuration>
 "@
         

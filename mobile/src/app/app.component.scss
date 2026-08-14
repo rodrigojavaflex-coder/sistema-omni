@@ -118,7 +118,7 @@
 }
 
 .menu-footer {
-  padding: 16px;
+  padding: 16px 16px calc(16px + var(--ion-safe-area-bottom, 0px));
   margin-top: auto;
   background: linear-gradient(to top, #ffffff 75%, rgba(255, 255, 255, 0));
 }

@@ -37,6 +37,7 @@ import { BrtOsIntegrationService } from './brt-os-integration.service';
 import {
   IrregularidadeManutencaoEnvioService,
 } from './irregularidade-manutencao-envio.service';
+import { IrregularidadeFluxoEventsService } from './irregularidade-fluxo-events.service';
 
 @Module({
   imports: [
@@ -80,6 +81,8 @@ import {
     IrregularidadeService,
     BrtOsIntegrationService,
     IrregularidadeManutencaoEnvioService,
+    IrregularidadeFluxoEventsService,
   ],
+  exports: [IrregularidadeFluxoEventsService],
 })
 export class VistoriaModule {}

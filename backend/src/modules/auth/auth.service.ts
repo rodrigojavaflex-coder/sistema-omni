@@ -104,7 +104,7 @@ export class AuthService {
     // Buscar usuário pelo email (com perfis)
     const user = await this.userRepository.findOne({
       where: { email },
-      relations: ['perfis'],
+      relations: ['perfis', 'empresa'],
     });
     if (!user) {
       if (await this.shouldAuditAction(AuditAction.LOGIN_FAILED)) {
@@ -234,6 +234,10 @@ export class AuthService {
       criadoEm: user.criadoEm,
       atualizadoEm: user.atualizadoEm,
       departamentos: departamentosUsuario.map((du) => du.departamento),
+      idEmpresa: user.idEmpresa ?? null,
+      empresa: user.empresa
+        ? { id: user.empresa.id, descricao: user.empresa.descricao }
+        : null,
     } as unknown as Usuario;
 
     return {
@@ -259,7 +263,7 @@ export class AuthService {
   async getProfile(userId: string): Promise<Usuario> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['perfis'],
+      relations: ['perfis', 'empresa'],
     });
     if (!user) {
       // Auditar tentativa de acesso a perfil inexistente
@@ -292,6 +296,9 @@ export class AuthService {
     return {
       ...user,
       departamentos: departamentosUsuario.map((du) => du.departamento),
+      empresa: user.empresa
+        ? { id: user.empresa.id, descricao: user.empresa.descricao }
+        : null,
     } as Usuario;
   }
 

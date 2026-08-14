@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Request } from 'express';
 import { Repository } from 'typeorm';
 import { Permission } from '../enums/permission.enum';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
@@ -36,8 +37,8 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
+    const request = context.switchToHttp().getRequest<Request>();
+    const token = this.extractTokenFromRequest(request);
 
     if (!token) {
       throw new ForbiddenException('Token de acesso não fornecido');
@@ -104,9 +105,18 @@ export class PermissionsGuard implements CanActivate {
     }
   }
 
-  private extractTokenFromHeader(request: any): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+  private extractTokenFromRequest(request: Request): string | undefined {
+    const [type, bearerToken] = request.headers.authorization?.split(' ') ?? [];
+    if (type === 'Bearer' && bearerToken?.trim()) {
+      return bearerToken.trim();
+    }
+
+    const queryToken = request.query?.access_token;
+    if (typeof queryToken === 'string' && queryToken.trim()) {
+      return queryToken.trim();
+    }
+
+    return undefined;
   }
 
   private normalizePermission(permission?: string): string {

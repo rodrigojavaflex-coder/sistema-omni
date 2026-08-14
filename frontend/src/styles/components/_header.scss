@@ -222,6 +222,37 @@
   @include themed(color, $light-text-secondary, $dark-text-secondary);
 }
 
+.user-app-version {
+  margin-top: 0.35rem;
+  font-size: 11px;
+  line-height: 1.35;
+  
+  @include themed(color, $light-text-secondary, $dark-text-secondary);
+}
+
+.user-app-meta {
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+.atualizar-sistema-btn {
+  font-weight: 500;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--primary-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+
+  i {
+    color: var(--primary-color);
+  }
+}
+
 // Divisor do dropdown
 .dropdown-divider {
   height: 1px;

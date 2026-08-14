@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, OnDestroy, Renderer2 } from '@angular/core';
-import { ErrorModalService, AuthService, NavigationService } from '../../services';
+import { ErrorModalService, AuthService, NavigationService, AppVersionService } from '../../services';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { NavigationComponent } from '../navigation/navigation';
@@ -25,6 +25,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   private renderer = inject(Renderer2);
   private document = inject(DOCUMENT);
   public errorModalService = inject(ErrorModalService);
+  private appVersionService = inject(AppVersionService);
   private destroy$ = new Subject<void>();
   
   isAuthenticated = false;
@@ -32,8 +33,14 @@ export class LayoutComponent implements OnInit, OnDestroy {
   menuState: MenuState = 'hidden';
   isBiViewerRoute = false;
   isPublicDocumentRoute = false;
+  updateAvailable = false;
 
   ngOnInit() {
+    void this.appVersionService.start();
+    this.appVersionService.updateAvailable$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((available) => (this.updateAvailable = available));
+
     this.authService.isAuthenticated$
       .pipe(takeUntil(this.destroy$))
       .subscribe(authenticated => (this.isAuthenticated = authenticated));
@@ -71,6 +78,10 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   closeMenu() {
     this.navigationService.closeMenu();
+  }
+
+  atualizarVersao(): void {
+    this.appVersionService.applyUpdate();
   }
 
   ngOnDestroy(): void {

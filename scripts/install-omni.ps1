@@ -413,6 +413,30 @@ function Configure-IIS {
       </rules>
     </rewrite>
   </system.webServer>
+  <location path="version.json">
+    <system.webServer>
+      <httpProtocol>
+        <customHeaders>
+          <remove name="Cache-Control" />
+          <remove name="Pragma" />
+          <add name="Cache-Control" value="no-cache, no-store, must-revalidate" />
+          <add name="Pragma" value="no-cache" />
+        </customHeaders>
+      </httpProtocol>
+    </system.webServer>
+  </location>
+  <location path="index.html">
+    <system.webServer>
+      <httpProtocol>
+        <customHeaders>
+          <remove name="Cache-Control" />
+          <remove name="Pragma" />
+          <add name="Cache-Control" value="no-cache, no-store, must-revalidate" />
+          <add name="Pragma" value="no-cache" />
+        </customHeaders>
+      </httpProtocol>
+    </system.webServer>
+  </location>
 </configuration>
 "@
     
@@ -610,6 +634,30 @@ function Copy-FrontendFiles {
       </rules>
     </rewrite>
   </system.webServer>
+  <location path="version.json">
+    <system.webServer>
+      <httpProtocol>
+        <customHeaders>
+          <remove name="Cache-Control" />
+          <remove name="Pragma" />
+          <add name="Cache-Control" value="no-cache, no-store, must-revalidate" />
+          <add name="Pragma" value="no-cache" />
+        </customHeaders>
+      </httpProtocol>
+    </system.webServer>
+  </location>
+  <location path="index.html">
+    <system.webServer>
+      <httpProtocol>
+        <customHeaders>
+          <remove name="Cache-Control" />
+          <remove name="Pragma" />
+          <add name="Cache-Control" value="no-cache, no-store, must-revalidate" />
+          <add name="Pragma" value="no-cache" />
+        </customHeaders>
+      </httpProtocol>
+    </system.webServer>
+  </location>
 </configuration>
 '@
     $webConfig | Out-File -FilePath "$iisPath\web.config" -Encoding UTF8

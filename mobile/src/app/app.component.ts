@@ -1,6 +1,6 @@
 import { Component, inject, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core';
 import { Router } from '@angular/router';
 import {
   AlertController,
@@ -117,6 +117,16 @@ export class AppComponent {
     this.authService.isAuthenticated$.subscribe((isAuthenticated) => {
       this.isAuthenticated = isAuthenticated;
     });
+
+    void this.configureSystemBars();
+  }
+
+  private async configureSystemBars(): Promise<void> {
+    if (!this.isNative) {
+      return;
+    }
+
+    await SystemBars.setStyle({ style: SystemBarsStyle.Light });
   }
 
   async goTo(route: string, state?: Record<string, unknown>): Promise<void> {

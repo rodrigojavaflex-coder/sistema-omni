@@ -2,3 +2,40 @@
   display: contents;
 }
 
+.user-app-version {
+  margin-top: 0.35rem;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.user-app-meta {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.atualizar-sistema-btn {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.atualizar-sistema-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--primary-color);
+}
+
+.atualizar-sistema-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.atualizar-sistema-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.atualizar-sistema-btn i {
+  color: var(--primary-color);
+}
+
