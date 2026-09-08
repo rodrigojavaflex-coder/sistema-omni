@@ -46,6 +46,17 @@ async function bootstrap() {
     next();
   });
 
+  // Chrome/Cursor sondam GET /json/version (CDP) em localhost; não é rota da API
+  app.use((req: Request, res: Response, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      return next();
+    }
+    if (req.path !== '/json/version' && req.path !== '/json/list' && req.path !== '/json') {
+      return next();
+    }
+    res.status(404).end();
+  });
+
   const configService = app.get(ConfigService);
   const environment =
     configService.get<string>('app.environment') || 'development';

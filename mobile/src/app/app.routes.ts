@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
+import { guestGuard } from './guards/guest.guard';
 import { permissionGuard } from './guards/permission.guard';
 
 export const routes: Routes = [
@@ -10,7 +11,8 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    loadComponent: () => import('./pages/login/login.page').then(m => m.LoginPage)
+    loadComponent: () => import('./pages/login/login.page').then(m => m.LoginPage),
+    canActivate: [guestGuard],
   },
   {
     path: 'redefinir-senha',
@@ -26,6 +28,12 @@ export const routes: Routes = [
     path: 'configuracoes',
     loadComponent: () =>
       import('./pages/configuracoes/configuracoes.page').then(m => m.ConfiguracoesPage),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'alterar-senha',
+    loadComponent: () =>
+      import('./pages/alterar-senha/alterar-senha.page').then(m => m.AlterarSenhaPage),
     canActivate: [authGuard],
   },
   {

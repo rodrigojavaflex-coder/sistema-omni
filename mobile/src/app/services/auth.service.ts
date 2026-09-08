@@ -7,7 +7,7 @@ import { SecureStoragePlugin } from 'capacitor-secure-storage-plugin';
 import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Usuario, Perfil, AuthResponse } from '../models/usuario.model';
+import { Usuario, Perfil, AuthResponse, SavedLoginAccount, ChangePasswordDto } from '../models/usuario.model';
 import { ErrorMessageService } from './error-message.service';
 
 @Injectable({
@@ -25,6 +25,10 @@ export class AuthService {
   private readonly USER_KEY = 'current_user';
   private readonly BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
   private readonly BIOMETRIC_CREDENTIALS_KEY = 'biometric_credentials';
+  private readonly SAVED_LOGIN_ACCOUNTS_KEY = 'saved_login_accounts';
+  private readonly REMEMBER_EMAIL_PREF_KEY = 'remember_login_email';
+  private readonly BIOMETRIC_PROMPT_HIDDEN_PREFIX = 'biometric_prompt_hidden:';
+  private readonly MAX_SAVED_LOGIN_ACCOUNTS = 10;
 
   private biometricSessionVerified = false;
   private apiBaseUrlLogged = false;
@@ -70,7 +74,7 @@ export class AuthService {
       this.biometricSessionVerified = true;
       
       if (options?.navigate !== false) {
-        this.router.navigate(['/home']);
+        await this.router.navigate(['/home'], { replaceUrl: true });
       }
     } catch (error: any) {
       throw new Error(this.mapLoginError(error));
@@ -109,7 +113,7 @@ export class AuthService {
       this.currentUserSubject.next(null);
       this.isAuthenticatedSubject.next(false);
       this.biometricSessionVerified = false;
-      this.router.navigate(['/login']);
+      await this.router.navigate(['/login'], { replaceUrl: true });
     }
   }
 
@@ -295,6 +299,121 @@ export class AuthService {
     await Preferences.remove({ key: this.USER_KEY });
   }
 
+  normalizeLoginEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
+
+  async listSavedLoginAccounts(): Promise<SavedLoginAccount[]> {
+    const { value } = await Preferences.get({ key: this.SAVED_LOGIN_ACCOUNTS_KEY });
+    if (!value) {
+      return [];
+    }
+
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed
+        .map((item) => this.toSavedLoginAccount(item))
+        .filter((item): item is SavedLoginAccount => item !== null);
+    } catch {
+      return [];
+    }
+  }
+
+  async rememberLoginAccount(account: { email: string; nome: string }): Promise<void> {
+    const email = this.normalizeLoginEmail(account.email);
+    if (!email) {
+      return;
+    }
+
+    const nome = account.nome.trim() || email;
+    const current = await this.listSavedLoginAccounts();
+    const next: SavedLoginAccount[] = [
+      { email, nome, lastUsedAt: new Date().toISOString() },
+      ...current.filter((item) => item.email !== email),
+    ].slice(0, this.MAX_SAVED_LOGIN_ACCOUNTS);
+
+    await Preferences.set({
+      key: this.SAVED_LOGIN_ACCOUNTS_KEY,
+      value: JSON.stringify(next),
+    });
+  }
+
+  async removeSavedLoginAccount(email: string): Promise<SavedLoginAccount[]> {
+    const normalized = this.normalizeLoginEmail(email);
+    const next = (await this.listSavedLoginAccounts()).filter((item) => item.email !== normalized);
+    await Preferences.set({
+      key: this.SAVED_LOGIN_ACCOUNTS_KEY,
+      value: JSON.stringify(next),
+    });
+    return next;
+  }
+
+  async getRememberEmailPreference(): Promise<boolean> {
+    const { value } = await Preferences.get({ key: this.REMEMBER_EMAIL_PREF_KEY });
+    return value !== 'false';
+  }
+
+  async setRememberEmailPreference(remember: boolean): Promise<void> {
+    await Preferences.set({
+      key: this.REMEMBER_EMAIL_PREF_KEY,
+      value: remember ? 'true' : 'false',
+    });
+  }
+
+  async getBiometricEmail(): Promise<string | null> {
+    const credentials = await this.getBiometricCredentials();
+    return credentials ? this.normalizeLoginEmail(credentials.email) : null;
+  }
+
+  async isBiometricPromptHidden(email: string): Promise<boolean> {
+    const key = this.biometricPromptHiddenKey(email);
+    if (!key) {
+      return false;
+    }
+    const { value } = await Preferences.get({ key });
+    return value === 'true';
+  }
+
+  async hideBiometricPrompt(email: string): Promise<void> {
+    const key = this.biometricPromptHiddenKey(email);
+    if (!key) {
+      return;
+    }
+    await Preferences.set({ key, value: 'true' });
+  }
+
+  private biometricPromptHiddenKey(email: string): string | null {
+    const normalized = this.normalizeLoginEmail(email);
+    return normalized ? `${this.BIOMETRIC_PROMPT_HIDDEN_PREFIX}${normalized}` : null;
+  }
+
+  private toSavedLoginAccount(value: unknown): SavedLoginAccount | null {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+
+    const record = value as Record<string, unknown>;
+    const email = typeof record['email'] === 'string'
+      ? this.normalizeLoginEmail(record['email'])
+      : '';
+    if (!email) {
+      return null;
+    }
+
+    const nome = typeof record['nome'] === 'string' && record['nome'].trim()
+      ? record['nome'].trim()
+      : email;
+    const lastUsedAt = typeof record['lastUsedAt'] === 'string' && record['lastUsedAt']
+      ? record['lastUsedAt']
+      : new Date(0).toISOString();
+
+    return { email, nome, lastUsedAt };
+  }
+
   /**
    * Verifica se biometria está disponível no dispositivo
    */
@@ -475,6 +594,69 @@ export class AuthService {
     return firstValueFrom(
       this.http.post<{ message: string }>(`${this.apiUrl}/password-reset/confirm`, body),
     );
+  }
+
+  /**
+   * Altera a senha do usuário autenticado (mesmo contrato do web).
+   */
+  async changePassword(body: ChangePasswordDto): Promise<void> {
+    const user = this.getCurrentUser();
+    if (!user?.id) {
+      throw new Error('Não foi possível identificar o usuário atual.');
+    }
+
+    try {
+      await firstValueFrom(
+        this.http.post<void>(`${this.apiBaseUrl}/users/${user.id}/change-password`, body),
+      );
+    } catch (error: unknown) {
+      throw new Error(this.mapChangePasswordError(error));
+    }
+
+    await this.syncBiometricPasswordAfterChange(user.email, body.newPassword);
+  }
+
+  private mapChangePasswordError(error: unknown): string {
+    const status = Number((error as { status?: number })?.status ?? 0);
+    const raw = (error as { error?: { message?: string | string[] } })?.error?.message;
+    const backendDetail = Array.isArray(raw) ? raw[0] : raw;
+
+    if (status === 409) {
+      return backendDetail || 'Senha atual incorreta.';
+    }
+    if (status === 400 || status === 422) {
+      return backendDetail || 'Revise os dados da senha e tente novamente.';
+    }
+
+    return this.errorMessageService.fromApi(
+      error,
+      'Não foi possível alterar a senha. Tente novamente.',
+    );
+  }
+
+  private async syncBiometricPasswordAfterChange(
+    email: string,
+    newPassword: string,
+  ): Promise<void> {
+    const enabled = await this.isBiometricEnabled();
+    if (!enabled) {
+      return;
+    }
+
+    const credentials = await this.getBiometricCredentials();
+    const sameAccount =
+      credentials != null &&
+      this.normalizeLoginEmail(credentials.email) === this.normalizeLoginEmail(email);
+
+    if (!sameAccount) {
+      return;
+    }
+
+    try {
+      await this.setBiometricCredentials({ email: credentials.email, password: newPassword });
+    } catch {
+      await this.disableBiometricLogin();
+    }
   }
 
   private resolveApiBaseUrl(): string {

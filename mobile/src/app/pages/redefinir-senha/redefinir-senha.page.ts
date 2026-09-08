@@ -1,10 +1,10 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { IonContent, IonSpinner, ToastController } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
 import { ErrorMessageService } from '../../services/error-message.service';
+import { PasswordToggleButtonComponent } from '../../components/password-toggle-button.component';
 
 type Step = 1 | 2;
 
@@ -13,7 +13,13 @@ type Step = 1 | 2;
   templateUrl: './redefinir-senha.page.html',
   styleUrls: ['../login/login.page.scss', './redefinir-senha.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, IonContent, IonSpinner, RouterLink],
+  imports: [
+    ReactiveFormsModule,
+    IonContent,
+    IonSpinner,
+    RouterLink,
+    PasswordToggleButtonComponent,
+  ],
 })
 export class RedefinirSenhaPage {
   private formBuilder = inject(FormBuilder);
@@ -33,6 +39,8 @@ export class RedefinirSenhaPage {
   sucessoMensagem = '';
   /** Aviso após desativar credenciais do login por digital (troca de senha). */
   avisoDigital = '';
+  showNewPassword = false;
+  showConfirmPassword = false;
 
   formEmail: FormGroup = this.formBuilder.group({
     email: ['', [Validators.required, Validators.email]],
@@ -51,6 +59,16 @@ export class RedefinirSenhaPage {
     if (!this.sucesso) {
       this.errorMessage = '';
     }
+    this.showNewPassword = false;
+    this.showConfirmPassword = false;
+  }
+
+  toggleNewPasswordVisibility(): void {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 
   onCodeInput(e: Event): void {

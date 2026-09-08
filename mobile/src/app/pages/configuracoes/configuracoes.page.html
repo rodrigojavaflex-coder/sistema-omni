@@ -28,5 +28,18 @@
     <ion-text color="medium" *ngIf="!biometricAvailable">
       <p class="info">Biometria não disponível neste dispositivo.</p>
     </ion-text>
+
+    <ion-item
+      class="change-password-item"
+      lines="none"
+      button
+      detail="true"
+      (click)="irParaAlterarSenha()"
+    >
+      <ion-label>
+        Alterar senha
+        <p>Informe a senha atual e defina uma nova.</p>
+      </ion-label>
+    </ion-item>
   </div>
 </ion-content>

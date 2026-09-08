@@ -1,15 +1,18 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { Capacitor } from '@capacitor/core';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import {
+  AlertController,
   IonContent,
   IonHeader,
   IonTitle,
   IonToolbar,
   IonMenuButton,
   IonButtons,
-  IonButton
+  IonButton,
+  Platform,
 } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
 import { Perfil, Usuario } from '../../models/usuario.model';
@@ -31,14 +34,64 @@ import { Perfil, Usuario } from '../../models/usuario.model';
     IonButton
   ]
 })
-export class HomePage implements OnInit {
+export class HomePage implements OnInit, OnDestroy {
   private authService = inject(AuthService);
+  private alertController = inject(AlertController);
+  private platform = inject(Platform);
+  private backButtonSub?: Subscription;
+  private exitPromptOpen = false;
 
   user: Usuario | null = null;
   isNative = Capacitor.getPlatform() !== 'web';
 
   async ngOnInit() {
     this.user = this.authService.getCurrentUser();
+  }
+
+  ionViewWillEnter(): void {
+    this.registrarBotaoVoltarDispositivo();
+  }
+
+  ionViewWillLeave(): void {
+    this.backButtonSub?.unsubscribe();
+    this.backButtonSub = undefined;
+  }
+
+  ngOnDestroy(): void {
+    this.backButtonSub?.unsubscribe();
+  }
+
+  private registrarBotaoVoltarDispositivo(): void {
+    this.backButtonSub?.unsubscribe();
+    this.backButtonSub = this.platform.backButton.subscribeWithPriority(10, () => {
+      void this.confirmarSaidaDoSistema();
+    });
+  }
+
+  private async confirmarSaidaDoSistema(): Promise<void> {
+    if (this.exitPromptOpen) {
+      return;
+    }
+
+    this.exitPromptOpen = true;
+    const alert = await this.alertController.create({
+      header: 'Sair do sistema',
+      message: 'Deseja realmente sair?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Sair', role: 'confirm' },
+      ],
+    });
+
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    this.exitPromptOpen = false;
+
+    if (role !== 'confirm') {
+      return;
+    }
+
+    await this.authService.logout();
   }
 
   get canStartVistoria(): boolean {

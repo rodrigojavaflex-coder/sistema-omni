@@ -91,6 +91,68 @@ Copie o bloco abaixo para cada regra nova.
 - **Origem da regra:** Alinhamento com NEST_ANGULAR (banner/version.json), 2026-08-13
 - **Status:** Implementada
 
+### RN-AUTH-004 - E-mails salvos no login do aplicativo mobile
+- **Modulo:** Autenticacao / Mobile
+- **Fluxo:** Usuario reabre o app e escolhe um e-mail ja usado neste aparelho
+- **Descricao:** Apos login bem-sucedido com a opcao "Lembrar e-mail", o app persiste localmente nome e e-mail (sem senha). Varios e-mails podem ser salvos (maximo 10, o mais recente na frente) e aparecem em carrossel horizontal na tela de login. O toque no card preenche o e-mail; a senha continua digitada. A remocao nao e feita no card (sem botao X); o usuario abre "Gerenciar e-mails", ve a lista completa e remove com confirmacao. Login por digital so aparece se o e-mail selecionado for o da biometria habilitada. O convite para ativar a digital apos login com senha pode ser ocultado por e-mail ("Nao mostrar novamente"). Logout nao apaga a lista nem essa preferencia.
+- **Condicoes de entrada:** App mobile; login com credenciais validas ou biometria da conta correspondente
+- **Validacoes:** E-mail normalizado (trim + minusculas); duplicata atualiza nome e vai para o inicio; limite de 10 contas; remocao exige confirmacao
+- **Acoes do sistema:** Grava lista em `Preferences` (`saved_login_accounts`); preferencia do checkbox em `remember_login_email`; ocultar convite de digital em `biometric_prompt_hidden:{email}`; "Usar outro e-mail" mostra o form vazio sem apagar a lista; "Gerenciar e-mails" lista todos e permite remover
+- **Mensagens ao usuario:** Confirmacao ao remover em Gerenciar e-mails: "Remover e-mail salvo?"; convite de digital com "Agora nao", "Ativar" e "Nao mostrar novamente"
+- **Permissoes envolvidas:** Nenhuma (tela publica de login)
+- **Dados impactados:** Somente armazenamento local do aparelho; nenhuma tabela/API
+- **Rastreabilidade:** Nao exige auditoria
+- **Criterios de aceite:**
+  - [ ] Login com "lembrar" grava o e-mail; ao reabrir o app o card aparece
+  - [ ] Dois e-mails salvos permitem deslizar e o selecionado preenche o campo
+  - [ ] Remover em Gerenciar e-mails exclui so aquele; o outro permanece no carrossel
+  - [ ] Senha nao e persistida na lista; digital so na conta que ativou biometria
+  - [ ] Marcar "Nao mostrar novamente" e recusar o convite de digital nao exibe o alerta no proximo login daquele e-mail
+  - [ ] Recusar sem marcar continua exibindo o convite; Configuracoes ainda permite ativar a digital
+- **Cenarios de excecao:** Lista vazia exibe o form atual; checkbox desmarcado no "outro e-mail" nao adiciona a conta; falha de leitura do storage cai no form vazio; convite de digital oculto nao impede ativar em Configuracoes
+- **Origem da regra:** Requisicao de produto (login com contas salvas), 2026-09-04
+- **Status:** Implementada
+
+### RN-AUTH-005 - Voltar na tela inicial do aplicativo mobile
+- **Modulo:** Autenticacao / Mobile
+- **Fluxo:** Usuario autenticado na tela inicial pressiona o botao voltar do aparelho
+- **Descricao:** O voltar na home nao deve devolver o usuario autenticado a tela de login sem confirmacao. O sistema pergunta se deseja sair; cancelar mantem a sessao na home; confirmar encerra a sessao (mesmo efeito do Sair do menu) e abre o login.
+- **Condicoes de entrada:** App mobile; usuario autenticado na rota `/home`
+- **Validacoes:** O alerta so segue para logout se o usuario confirmar; um segundo voltar com o alerta aberto nao dispara outro logout
+- **Acoes do sistema:** Intercepta o botao voltar na home; apos login bem-sucedido substitui a rota de login no historico; usuario autenticado que cair em `/login` e redirecionado para `/home`
+- **Mensagens ao usuario:** Titulo "Sair do sistema"; texto "Deseja realmente sair?"; botoes "Cancelar" e "Sair"
+- **Permissoes envolvidas:** Nenhuma (usuario ja autenticado)
+- **Dados impactados:** Encerrar sessao no confirmar (tokens locais e chamada de logout); nenhum schema
+- **Rastreabilidade:** Mesma do logout existente
+- **Criterios de aceite:**
+  - [ ] Na home, voltar exibe o alerta e nao abre o login sozinho
+  - [ ] Cancelar permanece na home, ainda autenticado
+  - [ ] Confirmar vai para o login com a sessao encerrada
+  - [ ] O item Sair do menu usa a mesma pergunta
+- **Cenarios de excecao:** Em telas internas (vistoria, configuracoes, sobre) o voltar continua o fluxo daquela tela; menu aberto fecha o menu antes de perguntar sair
+- **Origem da regra:** Requisicao de produto (voltar na home), 2026-09-08
+- **Status:** Implementada
+
+### RN-AUTH-006 - Alterar senha no aplicativo mobile
+- **Modulo:** Autenticacao / Mobile
+- **Fluxo:** Usuario autenticado altera a propria senha pelo app
+- **Descricao:** O app oferece a tela Alterar senha (menu e Configuracoes) usando o mesmo contrato da web (`POST /users/:id/change-password`): senha atual, nova senha e confirmacao. Complexidade igual ao cadastro (minimo 6 caracteres, letra e numero). Se o login por digital estiver ativo para o mesmo e-mail, as credenciais locais sao atualizadas com a nova senha.
+- **Condicoes de entrada:** Usuario autenticado; sessao valida
+- **Validacoes:** Senha atual obrigatoria; nova senha com as regras de complexidade; confirmacao deve coincidir; senha atual incorreta e recusada pela API
+- **Acoes do sistema:** Chama a API com o id do usuario logado; em sucesso persiste o hash no servidor e sincroniza a senha da biometria local quando aplicavel
+- **Mensagens ao usuario:** Sucesso "Senha alterada com sucesso."; senha atual errada "Senha atual incorreta."; senhas diferentes "As senhas nao conferem."; complexidade "Min. 6 caracteres, com letra e numero"
+- **Permissoes envolvidas:** Nenhuma alem de estar autenticado (mesmo endpoint do web)
+- **Dados impactados:** `usuarios.senha`; armazenamento local da biometria (se habilitada); nenhuma migration
+- **Rastreabilidade:** Auditoria `CHANGE_PASSWORD` ja existente no interceptor da API
+- **Criterios de aceite:**
+  - [ ] Menu e Configuracoes abrem a tela Alterar senha
+  - [ ] Senha atual incorreta nao troca a senha e exibe erro
+  - [ ] Nova senha valida altera o login; a senha antiga deixa de funcionar
+  - [ ] Digital habilitada continua funcionando apos a troca (mesma conta)
+- **Cenarios de excecao:** Usuario sem id na sessao nao envia a requisicao; vistoria em andamento bloqueia o atalho do menu; "Esqueci minha senha" no login permanece no fluxo OTP (RN-AUTH-001)
+- **Origem da regra:** Requisicao de produto (alterar senha no app), 2026-09-08
+- **Status:** Implementada
+
 ### 1. Vistoria
 #### Regras
 - [x] RN-VIS-003 - Permissoes de acesso e acao por tela do fluxo de irregularidades
@@ -403,6 +465,12 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-09-08: RN-AUTH-004 Gerenciar e-mails no login (lista completa e remocao; sem X no card).
+- 2026-09-08: RN-AUTH-006 Alterar senha no aplicativo mobile (mesmo contrato da web).
+- 2026-09-08: RN-AUTH-004 Limite de e-mails salvos no login mobile de 5 para 10.
+- 2026-09-08: RN-AUTH-005 Voltar na home do mobile pergunta se deseja sair do sistema (nao retorna ao login sem confirmacao).
+- 2026-09-08: RN-AUTH-004 Convite de digital apos login pode ser ocultado por e-mail ("Nao mostrar novamente").
+- 2026-09-04: RN-AUTH-004 E-mails salvos no login mobile (carrossel local, sem senha).
 - 2026-08-13: RN-AUTH-003 Versao do frontend no menu do usuario, barra de nova versao e PATCH automatico no `deploy.ps1`.
 - 2026-08-04: RN-PER-001 Vincular/desvincular usuarios ao perfil; migration concede assign/unassign a ADMIN e perfis com `perfil:duplicate`.
 - 2026-08-03: RN-VIS-006 Integracao OS externa (dual BRT), status RETRABALHO_GARANTIA, matriz de transicoes atualizada em BACKLOG; RN-VIS-003 ampliada para RETRABALHO_GARANTIA na etapa Tratamento.

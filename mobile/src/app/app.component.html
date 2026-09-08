@@ -87,6 +87,17 @@
           detail="true"
           class="menu-item"
           [class.menu-item-disabled]="hasVistoriaEmAndamento"
+          (click)="goTo('/alterar-senha')"
+        >
+          <ion-icon name="key-outline" slot="start" class="menu-item-icon"></ion-icon>
+          <ion-label class="menu-item-label">Alterar senha</ion-label>
+        </ion-item>
+        <ion-item
+          lines="none"
+          button
+          detail="true"
+          class="menu-item"
+          [class.menu-item-disabled]="hasVistoriaEmAndamento"
           (click)="goTo('/sobre')"
         >
           <ion-icon name="information-circle-outline" slot="start" class="menu-item-icon"></ion-icon>

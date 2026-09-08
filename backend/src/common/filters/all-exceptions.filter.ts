@@ -27,24 +27,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Erro interno do servidor';
 
-    const errorPayload =
-      exception instanceof Error
-        ? exception.stack || exception.message
-        : JSON.stringify(exception);
-    this.logger.error(
-      `Erro na rota ${request.method} ${request.url}`,
-      errorPayload,
-    );
-
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const res = exception.getResponse();
       message =
         typeof res === 'string'
           ? res
-          : Array.isArray((res as any).message)
-            ? (res as any).message.join(', ')
-            : (res as any).message || message;
+          : Array.isArray((res as { message?: string | string[] }).message)
+            ? (res as { message: string[] }).message.join(', ')
+            : (res as { message?: string }).message || message;
     } else if (exception instanceof QueryFailedError) {
       const err = exception as any;
       const code = err.driverError.code;
@@ -79,6 +70,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       } else {
         message = `Violação de integridade de dados em ${entityName}.`;
       }
+    }
+
+    const errorPayload =
+      exception instanceof Error
+        ? exception.stack || exception.message
+        : JSON.stringify(exception);
+    const logLine = `Erro na rota ${request.method} ${request.url}`;
+    if (status >= 500) {
+      this.logger.error(logLine, errorPayload);
+    } else {
+      this.logger.warn(`${logLine} (${status}) ${message}`);
     }
 
     response.status(status).json({

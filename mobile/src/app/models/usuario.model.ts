@@ -23,3 +23,15 @@ export interface AuthResponse {
   access_token?: string;
   refresh_token?: string;
 }
+
+export interface SavedLoginAccount {
+  email: string;
+  nome: string;
+  lastUsedAt: string;
+}
+
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}

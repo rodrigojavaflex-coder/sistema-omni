@@ -56,6 +56,10 @@ export class ConfiguracoesPage implements OnInit {
     this.router.navigate(['/home']);
   }
 
+  irParaAlterarSenha(): void {
+    void this.router.navigate(['/alterar-senha']);
+  }
+
   async onBiometricToggle(event: CustomEvent): Promise<void> {
     if (this.biometricSaving) {
       return;

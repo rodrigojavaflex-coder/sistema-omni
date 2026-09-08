@@ -23,6 +23,7 @@ import { addIcons } from 'ionicons';
 import {
   clipboardOutline,
   informationCircleOutline,
+  keyOutline,
   logOutOutline,
   playCircleOutline,
   settingsOutline,
@@ -106,6 +107,7 @@ export class AppComponent {
       clipboardOutline,
       informationCircleOutline,
       playCircleOutline,
+      keyOutline,
     });
 
     this.authService.currentUser$.subscribe(user => {
@@ -132,7 +134,10 @@ export class AppComponent {
   async goTo(route: string, state?: Record<string, unknown>): Promise<void> {
     if (
       this.hasVistoriaEmAndamento &&
-      (route === '/vistoria/pendencias-veiculo' || route === '/configuracoes' || route === '/sobre')
+      (route === '/vistoria/pendencias-veiculo' ||
+        route === '/configuracoes' ||
+        route === '/alterar-senha' ||
+        route === '/sobre')
     ) {
       return;
     }
@@ -142,7 +147,7 @@ export class AppComponent {
 
   async logout(): Promise<void> {
     const alert = await this.alertController.create({
-      header: 'Sair do aplicativo',
+      header: 'Sair do sistema',
       message: 'Deseja realmente sair?',
       buttons: [
         {
