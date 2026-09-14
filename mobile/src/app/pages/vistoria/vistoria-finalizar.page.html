@@ -15,7 +15,7 @@
       <p><strong>Veículo vistoriado:</strong> {{ resumoVeiculo }}</p>
       <p><strong>Motorista:</strong> {{ resumoMotorista }}</p>
       <p><strong>Odômetro:</strong> {{ resumoOdometro }}</p>
-      <p><strong>% Bateria:</strong> {{ resumoBateria }}</p>
+      <p><strong>{{ resumoRotuloPercentual }}:</strong> {{ resumoBateria }}</p>
       <p><strong>Irregularidades identificadas:</strong> {{ resumoIrregularidades }}</p>
       <div *ngIf="resumoIrregularidadesDetalhes.length > 0" class="irregularidades-lista">
         <p><strong>Detalhes:</strong></p>
@@ -87,7 +87,7 @@
     <p><strong>Veículo:</strong> {{ resumoVeiculo }}</p>
     <p><strong>Motorista:</strong> {{ resumoMotorista }}</p>
     <p><strong>Odômetro:</strong> {{ resumoOdometro }}</p>
-    <p><strong>% Bateria:</strong> {{ resumoBateria }}</p>
+    <p><strong>{{ resumoRotuloPercentual }}:</strong> {{ resumoBateria }}</p>
     <p><strong>Irregularidades:</strong> {{ resumoIrregularidades }}</p>
 
     <div class="irregularidades-lista-overlay">

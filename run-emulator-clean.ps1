@@ -78,10 +78,12 @@ if (-not $NoLog) {
     $patterns = "com.omni.sistema|chromium|NetworkService|SIGTRAP|Fatal signal|ERR_|Http failure|Failed to load|net::"
     if ($ErrorOnly) {
       & $adbExe logcat "*:E" |
-        Select-String -Pattern $patterns -CaseSensitive:$false
+        Select-String -Pattern $patterns -CaseSensitive:$false |
+        Where-Object { $_.Line -notmatch 'too few uniforms or varyings' }
     } else {
       & $adbExe logcat |
-        Select-String -Pattern $patterns -CaseSensitive:$false
+        Select-String -Pattern $patterns -CaseSensitive:$false |
+        Where-Object { $_.Line -notmatch 'too few uniforms or varyings' }
     }
   }
 } else {

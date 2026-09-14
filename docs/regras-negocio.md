@@ -159,6 +159,7 @@ Copie o bloco abaixo para cada regra nova.
 - [x] RN-VIS-004 - Registrar irregularidade SOS na web (Tratamento)
 - [x] RN-VIS-005 - Desistencia da vistoria mobile com exclusao em cascata
 - [x] RN-VIS-006 - Envio para manutencao com integracao OS externa (dual BRT)
+- [x] RN-VIS-007 - Relatorio PDF de pendencias do veiculo
 - [ ] RN-VIS-001 - Placeholder
 - [x] RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
 
@@ -247,7 +248,7 @@ Copie o bloco abaixo para cada regra nova.
 - **Validacoes:**
   - Veiculo e motorista ativos via autocomplete
   - Odometro validado no frontend e backend (maior que ultimo quando existir); ultimo odometro considera apenas vistorias `FINALIZADA` (exclui `EM_ANDAMENTO` e `CANCELADA`)
-  - Bateria obrigatoria para veiculo eletrico
+  - Percentual obrigatorio (0–100) quando o combustivel do veiculo for Eletrico (`% Bateria`) ou GNV (Gas Natural) (`% GNV (Gas Natural)`); Diesel permanece opcional/oculto; mesma regra na inclusao da vistoria no aplicativo mobile; listagens e PDF usam o rotulo dinamico conforme o combustivel
   - Descricao da irregularidade obrigatoria (RN-VIS-002); observacao da vistoria opcional
   - Matriz: `exigeFoto` e `permiteAudio`
   - Concluir SOS exige ao menos uma irregularidade e fotos quando obrigatorias
@@ -338,6 +339,26 @@ Copie o bloco abaixo para cada regra nova.
   - **v2:** retorno integrado BRT → `CONCLUIDA`; e-mail automatico para erros de placa
 - **Origem da regra:** Integracao Consorcio BRT e fluxo dual de manutencao, decisao de produto 2026-08-03
 - **Status:** Implementada (retorno automático BRT → `CONCLUIDA` previsto v2)
+
+### RN-VIS-007 - Relatorio PDF de pendencias do veiculo
+- **Modulo:** Vistoria
+- **Fluxo:** App mobile — tela Pendencias do Veiculo
+- **Descricao:** Usuario com permissao de historico do veiculo gera PDF das irregularidades nao resolvidas do veiculo selecionado, no padrao de relatorio do sistema (logo, titulo, fotos das irregularidades, rodape com usuario e data).
+- **Condicoes de entrada:** Veiculo selecionado; permissao `vistoria_web_historico_veiculo:read`.
+- **Validacoes:**
+  - Sem veiculo, o botao permanece desabilitado
+  - Se Area e/ou Componente estiverem filtrados, o PDF lista esses filtros aplicados
+  - Sem filtro, o PDF traz todas as pendencias do veiculo
+- **Acoes do sistema:** `GET /vistoria/veiculo/:id/historico-irregularidades-nao-resolvidas/pdf`
+- **Permissoes envolvidas:** `vistoria_web_historico_veiculo:read`
+- **Dados impactados:** somente leitura (`irregularidades`, `irregularidades_midias`, `vistorias`, `veiculos`, `configuracao.logoRelatorio`)
+- **Criterios de aceite:**
+  - [ ] PDF com logo (quando cadastrada), veiculo/placa, lista de pendencias
+  - [ ] Fotos de cada irregularidade no PDF (grade 3 colunas); sem foto, texto "Sem imagens anexadas"
+  - [ ] Rodape com emissao, usuario e paginacao
+  - [ ] Filtros de area/componente visiveis no PDF quando aplicados
+- **Origem da regra:** Requisicao de produto — relatorio de pendencias no app, 2026-09-11
+- **Status:** Implementada
 
 ### 2. Ocorrencias
 #### Regras
@@ -465,7 +486,8 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
-- 2026-09-08: RN-AUTH-004 Gerenciar e-mails no login (lista completa e remocao; sem X no card).
+- 2026-09-11: RN-VIS-007 Relatorio PDF de pendencias do veiculo (app), com logo, fotos das irregularidades, filtros de area/componente e usuario no rodape.
+- 2026-09-11: RN-VIS-004 Percentual obrigatorio na vistoria (app e SOS) para combustivel Eletrico e GNV, com rotulo dinamico; Diesel permanece opcional.
 - 2026-09-08: RN-AUTH-006 Alterar senha no aplicativo mobile (mesmo contrato da web).
 - 2026-09-08: RN-AUTH-004 Limite de e-mails salvos no login mobile de 5 para 10.
 - 2026-09-08: RN-AUTH-005 Voltar na home do mobile pergunta se deseja sair do sistema (nao retorna ao login sem confirmacao).

@@ -50,7 +50,10 @@ export class Vistoria extends BaseEntity {
   })
   odometro: number;
 
-  @ApiProperty({ description: 'Percentual de bateria', example: 85 })
+  @ApiProperty({
+    description: 'Percentual de bateria ou GNV (0–100)',
+    example: 85,
+  })
   @Column({
     name: 'porcentagembateria',
     type: 'numeric',

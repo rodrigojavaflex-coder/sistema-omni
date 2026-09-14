@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, QueryFailedError, Repository } from 'typeorm';
+import { EntityManager, In, QueryFailedError, Repository } from 'typeorm';
 import { createTransport } from 'nodemailer';
 import { existsSync } from 'fs';
 import { join } from 'path';
@@ -46,6 +46,7 @@ import { GravidadeCriticidade } from '../../common/enums/gravidade-criticidade.e
 import { IrregularidadeHistorico } from './entities/irregularidade-historico.entity';
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 import { Configuracao } from '../configuracao/entities/configuracao.entity';
+import { Veiculo } from '../veiculo/entities/veiculo.entity';
 import { IniciarManutencaoLoteDto } from './dto/iniciar-manutencao-lote.dto';
 import {
   RelatorioManutencaoExecucaoDto,
@@ -83,6 +84,8 @@ export class IrregularidadeService {
     private readonly empresaTerceiraRepository: Repository<EmpresaTerceira>,
     @InjectRepository(Configuracao)
     private readonly configuracaoRepository: Repository<Configuracao>,
+    @InjectRepository(Veiculo)
+    private readonly veiculoRepository: Repository<Veiculo>,
     @InjectRepository(IrregularidadeHistorico)
     private readonly irregularidadeHistoricoRepository: Repository<IrregularidadeHistorico>,
     private readonly manutencaoEnvioService: IrregularidadeManutencaoEnvioService,
@@ -364,6 +367,62 @@ export class IrregularidadeService {
       total: mapped.length,
       itens: mapped,
     };
+  }
+
+  async gerarPdfPendenciasVeiculo(
+    idVeiculo: string,
+    emitidoPor?: string | null,
+    areaId?: string,
+    componenteId?: string,
+  ): Promise<Buffer> {
+    const veiculo = await this.veiculoRepository.findOne({
+      where: { id: idVeiculo },
+    });
+    if (!veiculo) {
+      throw new NotFoundException('Veículo não encontrado');
+    }
+
+    const historico = await this.listNaoResolvidasByVeiculo(
+      idVeiculo,
+      areaId,
+      componenteId,
+    );
+
+    let filtroArea: string | undefined;
+    if (areaId) {
+      const area = await this.areaRepository.findOne({ where: { id: areaId } });
+      filtroArea = area?.nome?.trim() || undefined;
+    }
+    let filtroComponente: string | undefined;
+    if (componenteId) {
+      const componente = await this.componenteRepository.findOne({
+        where: { id: componenteId },
+      });
+      filtroComponente = componente?.nome?.trim() || undefined;
+    }
+
+    const configuracao = await this.configuracaoRepository.findOne({
+      where: {},
+    });
+
+    const imagensPorIrregularidade =
+      await this.carregarImagensPdfPorIrregularidade(
+        historico.itens.map((item) => item.id),
+      );
+
+    return this.buildPdfPendenciasVeiculo({
+      veiculoDescricao: veiculo.descricao,
+      veiculoPlaca: veiculo.placa,
+      filtroArea,
+      filtroComponente,
+      itens: historico.itens.map((item) => ({
+        ...item,
+        imagens: imagensPorIrregularidade.get(item.id) ?? [],
+      })),
+      emitidoEm: new Date(),
+      emitidoPor: emitidoPor?.trim() || undefined,
+      logoRelatorio: configuracao?.logoRelatorio,
+    });
   }
 
   async update(
@@ -1490,6 +1549,369 @@ export class IrregularidadeService {
     }
     const abs = join(process.cwd(), 'uploads', rel);
     return existsSync(abs) ? abs : null;
+  }
+
+  private async carregarImagensPdfPorIrregularidade(
+    ids: string[],
+  ): Promise<Map<string, Buffer[]>> {
+    const resultado = new Map<string, Buffer[]>();
+    if (ids.length === 0) {
+      return resultado;
+    }
+    const midias = await this.midiaRepository.find({
+      where: {
+        idIrregularidade: In(ids),
+        tipo: 'imagem',
+      },
+      order: { criadoEm: 'ASC' },
+    });
+    for (const midia of midias) {
+      if (!midia.dadosBytea?.length) {
+        continue;
+      }
+      const atuais = resultado.get(midia.idIrregularidade) ?? [];
+      atuais.push(midia.dadosBytea);
+      resultado.set(midia.idIrregularidade, atuais);
+    }
+    return resultado;
+  }
+
+  private async buildPdfPendenciasVeiculo(params: {
+    veiculoDescricao: string;
+    veiculoPlaca: string;
+    filtroArea?: string;
+    filtroComponente?: string;
+    itens: Array<
+      IrregularidadeHistoricoVeiculoItemDto & { imagens: Buffer[] }
+    >;
+    emitidoEm: Date;
+    emitidoPor?: string;
+    logoRelatorio?: string | null;
+  }): Promise<Buffer> {
+    const dataEmissao = this.formatDateTimeBr(params.emitidoEm);
+    const logoPath = this.resolveLogoRelatorioPath(params.logoRelatorio);
+    const marginX = 50;
+    const contentTopY = 100;
+    const footerBandPt = 92;
+    const titulo = 'Relatório de Pendências do Veículo';
+
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        bufferPages: true,
+        autoFirstPage: false,
+        margins: {
+          top: marginX,
+          left: marginX,
+          right: marginX,
+          bottom: footerBandPt,
+        },
+      });
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk as Buffer));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const maxContentY = () => Math.floor(doc.page.maxY());
+      const breakPageBody = () => {
+        doc.addPage();
+        doc.x = marginX;
+        doc.y = contentTopY;
+      };
+      const normalizeCursorY = () => {
+        const lim = maxContentY();
+        if (doc.y > lim) {
+          doc.y = lim;
+        }
+      };
+      const ensureTextBlock = (minHeight: number) => {
+        normalizeCursorY();
+        const lim = maxContentY();
+        if (Math.ceil(doc.y + minHeight) > lim) {
+          breakPageBody();
+        }
+      };
+      const measureTextHeight = (
+        text: string,
+        fontName: string,
+        fontSize: number,
+        width: number,
+      ): number => {
+        doc.font(fontName).fontSize(fontSize);
+        return doc.heightOfString(text, { width });
+      };
+
+      const IMG_GAP_AFTER = 12;
+      const IMG_GRID_GAP_X = 10;
+      const IMG_GRID_GAP_Y = 10;
+      const IMG_GRID_CELL_H = 200;
+      const IMG_GRID_COLS = 3;
+      const getImageGridLayout = (count: number, contentWidth: number) => {
+        const rows = Math.ceil(count / IMG_GRID_COLS);
+        const cellW = Math.floor(
+          (contentWidth - IMG_GRID_GAP_X * (IMG_GRID_COLS - 1)) / IMG_GRID_COLS,
+        );
+        const gridH =
+          rows > 0 ? rows * IMG_GRID_CELL_H + (rows - 1) * IMG_GRID_GAP_Y : 0;
+        return { rows, cellW, gridH };
+      };
+
+      doc.addPage();
+      const innerW = doc.page.width - marginX * 2;
+      const headerRowTop = 42;
+      const logoBoxW = 132;
+      const logoBoxH = 48;
+
+      if (logoPath) {
+        try {
+          doc.image(logoPath, marginX, headerRowTop, {
+            fit: [logoBoxW, logoBoxH],
+          });
+        } catch {
+          // Ignora falha de logo
+        }
+      }
+
+      doc
+        .font('Helvetica')
+        .fontSize(17)
+        .fillColor('#0f172a')
+        .text(titulo, marginX, headerRowTop + 10, {
+          width: innerW,
+          align: 'center',
+        });
+      doc
+        .font('Helvetica')
+        .fontSize(11)
+        .fillColor('#475569')
+        .text(
+          `Veículo: ${params.veiculoDescricao} · Placa: ${params.veiculoPlaca}`,
+          marginX,
+          doc.y + 5,
+          { width: innerW, align: 'center' },
+        );
+      doc
+        .font('Helvetica')
+        .fontSize(10)
+        .fillColor('#64748b')
+        .text(`Emissão: ${dataEmissao}`, marginX, doc.y + 4, {
+          width: innerW,
+          align: 'center',
+        });
+
+      const headerTextosFimY = doc.y;
+      doc.x = marginX;
+      doc.y = Math.max(headerTextosFimY + 16, headerRowTop + logoBoxH + 12);
+
+      const filtros: string[] = [];
+      if (params.filtroArea) {
+        filtros.push(`Área: ${params.filtroArea}`);
+      }
+      if (params.filtroComponente) {
+        filtros.push(`Componente: ${params.filtroComponente}`);
+      }
+      if (filtros.length > 0) {
+        ensureTextBlock(28);
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(10)
+          .fillColor('#0f172a')
+          .text('Filtros aplicados', { width: innerW });
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .fillColor('#334155')
+          .text(filtros.join(' · '), { width: innerW });
+        doc.moveDown(0.6);
+      }
+
+      doc
+        .font('Helvetica')
+        .fontSize(10)
+        .fillColor('#334155')
+        .text(`Total de pendências: ${params.itens.length}`, { width: innerW });
+      doc.moveDown(0.8);
+
+      if (params.itens.length === 0) {
+        ensureTextBlock(24);
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .fillColor('#64748b')
+          .text(
+            'Nenhuma irregularidade pendente para os filtros informados.',
+            { width: innerW },
+          );
+      }
+
+      for (const item of params.itens) {
+        const tituloItem = `${item.nomeArea ?? 'Área'} - ${item.nomeComponente ?? 'Componente'} - ${item.descricaoSintoma ?? 'Sintoma'}`;
+        const vistoriaLinha = `Vistoria: ${item.numeroVistoria ?? '-'} (${this.formatDateTimeBr(item.datavistoria)})`;
+        const obsTxt = item.observacao?.trim() || 'Não informada.';
+        const imagens = item.imagens;
+        const cardPadX = 12;
+        const cardPadY = 10;
+        const cardInnerW = innerW - cardPadX * 2;
+        const imageLayout = getImageGridLayout(imagens.length, cardInnerW);
+        const imagemLinhaFallback = 'Sem imagens anexadas.';
+        const hTitulo = measureTextHeight(
+          tituloItem,
+          'Helvetica-Bold',
+          10,
+          cardInnerW,
+        );
+        const hVistoria = measureTextHeight(
+          vistoriaLinha,
+          'Helvetica',
+          9,
+          cardInnerW,
+        );
+        const hObs = measureTextHeight(
+          `Observação: ${obsTxt}`,
+          'Helvetica',
+          9,
+          cardInnerW,
+        );
+        const hImgs =
+          imagens.length > 0
+            ? imageLayout.gridH
+            : measureTextHeight(
+                imagemLinhaFallback,
+                'Helvetica',
+                9,
+                cardInnerW,
+              );
+        const requiredH =
+          cardPadY * 2 + hTitulo + 5 + hVistoria + 5 + hObs + 8 + hImgs;
+        ensureTextBlock(requiredH);
+
+        const cardX = marginX;
+        const cardY = doc.y;
+        const cardTextX = cardX + cardPadX;
+        doc.x = cardTextX;
+        doc.y = cardY + cardPadY;
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(10)
+          .fillColor('#0f172a')
+          .text(tituloItem, { width: cardInnerW });
+        doc.moveDown(0.15);
+        doc
+          .font('Helvetica')
+          .fontSize(9)
+          .fillColor('#475569')
+          .text(vistoriaLinha, { width: cardInnerW });
+        doc.moveDown(0.15);
+        doc
+          .font('Helvetica')
+          .fontSize(9)
+          .fillColor('#334155')
+          .text(`Observação: ${obsTxt}`, { width: cardInnerW });
+        doc.moveDown(0.35);
+
+        if (imagens.length === 0) {
+          doc
+            .font('Helvetica')
+            .fontSize(9)
+            .fillColor('#6b7280')
+            .text(imagemLinhaFallback, { width: cardInnerW });
+        } else {
+          const gridStartY = doc.y;
+          for (let idx = 0; idx < imagens.length; idx += 1) {
+            const row = Math.floor(idx / IMG_GRID_COLS);
+            const col = idx % IMG_GRID_COLS;
+            const x = cardTextX + col * (imageLayout.cellW + IMG_GRID_GAP_X);
+            const y = gridStartY + row * (IMG_GRID_CELL_H + IMG_GRID_GAP_Y);
+            try {
+              doc.image(imagens[idx], x, y, {
+                fit: [imageLayout.cellW, IMG_GRID_CELL_H],
+                align: 'center',
+                valign: 'center',
+              });
+            } catch {
+              doc
+                .fontSize(9)
+                .fillColor('#b91c1c')
+                .text(
+                  'Não foi possível renderizar uma das imagens anexadas.',
+                  cardTextX,
+                  y,
+                  { width: cardInnerW },
+                );
+            }
+          }
+          doc.y = gridStartY + imageLayout.gridH;
+        }
+
+        const cardEndY = doc.y + cardPadY;
+        doc
+          .save()
+          .lineWidth(0.8)
+          .strokeColor('#cbd5e1')
+          .roundedRect(cardX, cardY, innerW, Math.max(42, cardEndY - cardY), 6)
+          .stroke()
+          .restore();
+        doc.x = marginX;
+        doc.y = cardEndY + IMG_GAP_AFTER;
+        normalizeCursorY();
+      }
+
+      const range = doc.bufferedPageRange();
+      const totalPages = range.count;
+      for (let i = 0; i < totalPages; i += 1) {
+        doc.switchToPage(i);
+        const { width, height } = doc.page;
+        const pageNum = i + 1;
+        if (i > 0) {
+          doc.save();
+          doc.fontSize(8).fillColor('#475569');
+          const colW = (width - marginX * 2) / 2;
+          doc.text(titulo, marginX, 42, { width: colW, ellipsis: true });
+          doc.text(params.veiculoDescricao, marginX + colW, 42, {
+            width: colW,
+            align: 'right',
+            ellipsis: true,
+          });
+          doc
+            .moveTo(marginX, 62)
+            .lineTo(width - marginX, 62)
+            .strokeColor('#e2e8f0')
+            .lineWidth(0.6)
+            .stroke();
+          doc.restore();
+        }
+        doc.save();
+        doc.font('Helvetica').fontSize(8).fillColor('#64748b');
+        const footerY = height - 38;
+        const rodapeEmissor = params.emitidoPor?.trim();
+        const textoRodapeEsquerda = rodapeEmissor
+          ? `Emissão: ${dataEmissao} · Usuário: ${rodapeEmissor}`
+          : `Emissão: ${dataEmissao}`;
+        const larguraPagina = width - marginX * 2;
+        const pageStr = `Página ${pageNum} de ${totalPages}`;
+        const pageStrW = doc.widthOfString(pageStr);
+        const leftMaxW = Math.max(60, larguraPagina - pageStrW - 20);
+        const leftDraw = this.truncatePdfTextToWidth(
+          doc,
+          textoRodapeEsquerda,
+          leftMaxW,
+        );
+        doc.text(leftDraw, marginX, footerY, { lineBreak: false });
+        doc.text(pageStr, width - marginX - pageStrW, footerY, {
+          lineBreak: false,
+        });
+        doc
+          .moveTo(marginX, footerY - 8)
+          .lineTo(width - marginX, footerY - 8)
+          .strokeColor('#e2e8f0')
+          .lineWidth(0.5)
+          .stroke();
+        doc.restore();
+      }
+
+      doc.flushPages();
+      doc.end();
+    });
   }
 
   /**

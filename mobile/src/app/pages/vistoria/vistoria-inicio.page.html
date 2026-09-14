@@ -58,7 +58,11 @@
     </ion-list>
   </ion-card>
 
-  <ion-card class="card">
+  <ion-card
+    class="card"
+    id="vistoria-card-veiculo"
+    (focusin)="onCampoFocus('vistoria-card-veiculo')"
+  >
     <ion-item>
       <ion-label position="stacked">Veículo</ion-label>
       <ion-searchbar
@@ -67,6 +71,7 @@
         [value]="veiculoSearch"
         (ionInput)="onBuscarVeiculos($event)"
         (ionClear)="limparVeiculo()"
+        (ionFocus)="onCampoFocus('vistoria-card-veiculo')"
       ></ion-searchbar>
     </ion-item>
     <ion-list *ngIf="loadingVeiculos">
@@ -97,7 +102,11 @@
     </ion-item>
   </ion-card>
 
-  <ion-card class="card">
+  <ion-card
+    class="card"
+    id="vistoria-card-motorista"
+    (focusin)="onCampoFocus('vistoria-card-motorista')"
+  >
     <ion-item>
       <ion-label position="stacked">Motorista</ion-label>
       <ion-searchbar
@@ -106,6 +115,7 @@
         [value]="motoristaSearch"
         (ionInput)="onBuscarMotoristas($event)"
         (ionClear)="limparMotorista()"
+        (ionFocus)="onCampoFocus('vistoria-card-motorista')"
       ></ion-searchbar>
     </ion-item>
     <ion-list *ngIf="loadingMotoristas">
@@ -130,35 +140,42 @@
     </ion-list>
   </ion-card>
 
-  <ion-card class="card">
-    <ion-item>
-      <ion-label position="stacked" class="odometro-label">
-        Odômetro
-        <span class="ultimo-odometro-destaque" *ngIf="ultimoOdometro !== null">
-          Último odômetro: {{ formatarNumeroSemSeparador(ultimoOdometro) }}
-        </span>
-      </ion-label>
+  <ion-card
+    class="card"
+    id="vistoria-card-medidas"
+    (focusin)="onCampoFocus('vistoria-card-medidas')"
+  >
+    <div class="medida-row">
+      <span class="medida-label">Odômetro</span>
       <ion-input
         type="text"
         inputmode="numeric"
+        pattern="[0-9]*"
         placeholder="Ex: 12345"
         class="campo-destaque"
         [value]="odometroDisplay"
         (ionInput)="onOdometroInput($event.detail.value)"
+        (ionFocus)="onCampoFocus('vistoria-card-medidas')"
       ></ion-input>
-    </ion-item>
-    <ion-item>
-      <ion-label position="stacked">% Bateria</ion-label>
+    </div>
+    <div class="ultimo-odometro-linha" *ngIf="ultimoOdometro !== null">
+      Último odômetro: {{ formatarNumeroSemSeparador(ultimoOdometro) }}
+    </div>
+    <div class="medida-row medida-row-separada">
+      <span class="medida-label">{{ rotuloPercentualNivel }}</span>
       <ion-input
         type="number"
+        inputmode="numeric"
+        pattern="[0-9]*"
         [(ngModel)]="bateria"
         placeholder="0 a 100"
         min="0"
         max="100"
         [disabled]="!isBateriaObrigatoria()"
         class="campo-destaque"
+        (ionFocus)="onCampoFocus('vistoria-card-medidas')"
       ></ion-input>
-    </ion-item>
+    </div>
   </ion-card>
 
   <ion-text color="danger" *ngIf="!canStart && startValidationMessage">

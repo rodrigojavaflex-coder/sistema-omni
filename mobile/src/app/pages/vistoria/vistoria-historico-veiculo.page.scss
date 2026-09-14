@@ -2,6 +2,32 @@
   padding: 12px;
 }
 
+ion-toolbar ion-button[aria-label='Imprimir relatório PDF'] {
+  min-width: 44px;
+  min-height: 44px;
+  --color: var(--ion-color-danger);
+  --color-hover: var(--ion-color-danger-shade);
+  --color-focused: var(--ion-color-danger-shade);
+  --color-activated: var(--ion-color-danger-shade);
+}
+
+ion-toolbar ion-button[aria-label='Imprimir relatório PDF'] .pdf-mark {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+ion-toolbar ion-button[aria-label='Imprimir relatório PDF'] ion-spinner {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+ion-toolbar ion-button[aria-label='Imprimir relatório PDF'][disabled] {
+  opacity: 0.45;
+}
+
 .cards-container {
   margin-top: 12px;
   display: grid;

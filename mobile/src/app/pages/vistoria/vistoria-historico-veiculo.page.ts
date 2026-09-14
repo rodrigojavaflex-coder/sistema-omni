@@ -22,9 +22,13 @@ import {
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { FileOpener } from '@capacitor-community/file-opener';
 import { VistoriaFlowService } from '../../services/vistoria-flow.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { VeiculoService } from '../../services/veiculo.service';
+import { AuthService } from '../../services/auth.service';
 import { ErrorMessageService } from '../../services/error-message.service';
 import {
   IrregularidadeAudioResumo,
@@ -72,10 +76,13 @@ export class VistoriaHistoricoVeiculoPage implements OnInit {
   private flowService = inject(VistoriaFlowService);
   private vistoriaService = inject(VistoriaService);
   private veiculoService = inject(VeiculoService);
+  private authService = inject(AuthService);
   private errorMessageService = inject(ErrorMessageService);
 
   loading = false;
+  gerandoPdf = false;
   errorMessage = '';
+  pdfErrorMessage = '';
   veiculoDescricao = '-';
   total = 0;
   itens: IrregularidadeHistoricoVeiculoItem[] = [];
@@ -165,6 +172,129 @@ export class VistoriaHistoricoVeiculoPage implements OnInit {
 
   voltar(): void {
     this.router.navigate(['/vistoria/areas']);
+  }
+
+  async gerarRelatorioPdf(): Promise<void> {
+    if (!this.selectedVeiculoId || this.gerandoPdf) {
+      return;
+    }
+    this.gerandoPdf = true;
+    this.pdfErrorMessage = '';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await this.abrirPdfNativo();
+        return;
+      }
+      const blob = await this.vistoriaService.baixarPdfPendenciasVeiculo(
+        this.selectedVeiculoId,
+        {
+          areaId: this.areaFiltro || undefined,
+          componenteId: this.componenteFiltro || undefined,
+        },
+      );
+      if (!this.isPdfBlob(blob)) {
+        throw new Error('Relatório PDF não disponível neste ambiente.');
+      }
+      await this.abrirPdfWeb(blob);
+    } catch (error: unknown) {
+      this.pdfErrorMessage = this.mensagemErroGerarPdf(error);
+    } finally {
+      this.gerandoPdf = false;
+    }
+  }
+
+  private async abrirPdfNativo(): Promise<void> {
+    if (!this.selectedVeiculoId) {
+      return;
+    }
+    const token = await this.authService.getAccessToken();
+    if (!token) {
+      throw new Error('Sessão expirada. Faça login novamente.');
+    }
+    const fileName = `pendencias-veiculo-${this.sanitizeFilename(this.veiculoDescricao)}.pdf`;
+    const downloaded = await Filesystem.downloadFile({
+      url: this.vistoriaService.montarUrlPdfPendenciasVeiculo(this.selectedVeiculoId, {
+        areaId: this.areaFiltro || undefined,
+        componenteId: this.componenteFiltro || undefined,
+      }),
+      path: fileName,
+      directory: Directory.Cache,
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const filePath = downloaded.path;
+    if (!filePath) {
+      throw new Error('Não foi possível baixar o relatório PDF.');
+    }
+    try {
+      await FileOpener.open({
+        filePath,
+        contentType: 'application/pdf',
+        openWithDefault: true,
+      });
+    } catch (error: unknown) {
+      throw new Error(this.mensagemErroAbrirPdf(error));
+    }
+  }
+
+  private async abrirPdfWeb(blob: Blob): Promise<void> {
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
+
+  private isPdfBlob(blob: Blob): boolean {
+    const tipo = (blob.type || '').toLowerCase();
+    return !tipo || tipo.includes('pdf') || tipo === 'application/octet-stream';
+  }
+
+  private mensagemErroGerarPdf(error: unknown): string {
+    const raw =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as { message: unknown }).message)
+        : String(error ?? '');
+    if (/error downloading file/i.test(raw)) {
+      return 'Não foi possível baixar o relatório PDF. Tente novamente.';
+    }
+    const status = Number(
+      typeof error === 'object' && error !== null && 'status' in error
+        ? (error as { status?: number }).status
+        : 0,
+    );
+    if (status === 404) {
+      return 'Relatório PDF não disponível neste ambiente. Verifique se a API está atualizada.';
+    }
+    if (status === 403) {
+      return 'Você não tem permissão para gerar o relatório PDF.';
+    }
+    return this.errorMessageService.fromApi(
+      error,
+      'Não foi possível gerar o relatório PDF.',
+    );
+  }
+
+  private mensagemErroAbrirPdf(error: unknown): string {
+    const raw =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as { message: unknown }).message)
+        : String(error ?? '');
+    if (/activity not found|no app|unavailable|not found to handle/i.test(raw)) {
+      return 'Nenhum aplicativo para abrir PDF está instalado neste dispositivo.';
+    }
+    if (/error downloading file/i.test(raw)) {
+      return 'Não foi possível baixar o relatório PDF. Tente novamente.';
+    }
+    return this.errorMessageService.fromApi(
+      error,
+      'Não foi possível abrir o relatório PDF.',
+    );
+  }
+
+  private sanitizeFilename(value: string): string {
+    const cleaned = value.replace(/[<>:"/\\|?*]+/g, '').trim();
+    return cleaned.slice(0, 40) || 'veiculo';
   }
 
   onAreaChange(): void {

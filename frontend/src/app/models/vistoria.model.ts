@@ -19,6 +19,7 @@ export interface SosSessaoAberta {
   numeroVistoria?: number;
   veiculoDescricao?: string;
   veiculoPlaca?: string;
+  veiculoCombustivel?: string;
   motoristaNome?: string;
   irregularidades: SosSessaoIrregularidadeResumo[];
 }
@@ -35,7 +36,11 @@ export interface VistoriaResumo {
   observacao?: string;
   status?: string;
   origem?: string | null;
-  veiculo?: { descricao?: string; placa?: string };
+  veiculo?: {
+    descricao?: string;
+    placa?: string;
+    combustivel?: string;
+  };
   motorista?: { nome?: string; matricula?: string };
 }
 

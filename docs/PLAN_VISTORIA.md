@@ -60,7 +60,7 @@
 - idveiculo: obrigatório (uuid válido, FK → tabela de veículos existente)
 - idmotorista: obrigatório (uuid válido, FK → tabela de motoristas existente)
 - odometro: obrigatório, > 0
-- porcentagembateria: obrigatório, 0–100
+- porcentagembateria: obrigatório (0–100) se combustível elétrico ou GNV
 - idtipovistoria: obrigatório (uuid válido, FK → tipovistoria)
 - datavistoria: obrigatório (datetime ISO)
 - tempo: obrigatório, > 0
@@ -114,7 +114,7 @@
 
 ## Fluxo Mobile (detalhado)
 ### Tela 1 - Início
-- veículo, motorista, odometro, % bateria, tipo de vistoria
+- veículo, motorista, odometro, % bateria (elétrico) ou % GNV (Gás Natural), tipo de vistoria
 - `datavistoria` pré-preenchida via serverTime (sem edição)
 - iniciar cronômetro
 - buscar veículos/motoristas apenas com status ativo

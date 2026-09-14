@@ -8,6 +8,10 @@ import { UserService } from '../../services/user.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { AuthService } from '../../services/auth.service';
 import {
+  ROTULO_COLUNA_PERCENTUAL_NIVEL,
+  rotuloPercentualNivel,
+} from '../../models/combustivel.enum';
+import {
   IrregularidadeAudioItem,
   IrregularidadeAudioResumo,
   IrregularidadeImagemItem,
@@ -66,6 +70,7 @@ export class VistoriaListComponent implements OnInit {
   currentPage = 1;
   itemsPerPage = 100;
   totalPages = 0;
+  readonly rotuloColunaPercentualNivel = ROTULO_COLUNA_PERCENTUAL_NIVEL;
 
   filterForm = this.fb.group({
     veiculoId: [''],
@@ -336,6 +341,12 @@ export class VistoriaListComponent implements OnInit {
     this.selectedImage = null;
   }
 
+  rotuloPercentualVistoria(vistoria: VistoriaResumo | null | undefined): string {
+    return rotuloPercentualNivel(vistoria?.veiculo?.combustivel, {
+      prefixoPercentual: false,
+    });
+  }
+
   printVistoria(): void {
     if (!this.selectedVistoria) return;
     const doc = window.open('', '_blank', 'width=1024,height=768');
@@ -439,7 +450,7 @@ export class VistoriaListComponent implements OnInit {
             <div><strong>Matrícula:</strong> ${motoristaMatricula}</div>
             <div><strong>Vistoriador:</strong> ${usuario}</div>
             <div><strong>Odômetro:</strong> ${this.formatNumero(this.selectedVistoria.odometro)}</div>
-            <div><strong>Bateria:</strong> ${bateriaTexto}</div>
+            <div><strong>${this.rotuloPercentualVistoria(this.selectedVistoria)}:</strong> ${bateriaTexto}</div>
             <div><strong>Tempo:</strong> ${this.formatTempo(this.selectedVistoria.tempo)}</div>
             <div><strong>Observação:</strong> ${this.selectedVistoria.observacao ?? '-'}</div>
           </div>

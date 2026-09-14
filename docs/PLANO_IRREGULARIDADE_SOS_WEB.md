@@ -86,7 +86,7 @@ A fila web (`GET /irregularidades`) só lista irregularidades cuja vistoria est�
   - Veículo e motorista ativos, selecionados via autocomplete
   - Odômetro > 0, ≤ 9.999.999; se existir último odômetro do veículo, deve ser maior (backend e frontend)
   - Diferença > 200 km em relação ao último odômetro exige confirmação explícita no frontend
-  - Bateria obrigatória (0–100) para veículo elétrico
+  - Bateria obrigatória (0–100) para veículo elétrico; percentual de GNV obrigatório (0–100) para veículo GNV (Gás Natural); rótulo dinâmico (`% Bateria` ou `% GNV (Gás Natural)`)
   - Irregularidade: área, componente e sintoma válidos para o modelo do veículo; matriz deve existir
   - `observacao` da irregularidade obrigatória após `trim` (RN-VIS-002)
   - `observacao` da vistoria opcional
@@ -199,7 +199,7 @@ Cria vistoria pai `EM_ANDAMENTO`.
   idveiculo: string;      // uuid
   idmotorista: string;    // uuid
   odometro: number;       // min 0.01, max 9999999
-  porcentagembateria?: number; // obrigatório se elétrico
+  porcentagembateria?: number; // obrigatório se elétrico ou GNV
   observacao?: string;    // opcional
 }
 ```
@@ -333,7 +333,7 @@ Modal na tela **Tratamento** (`irregularidade-fluxo-list`), padrão visual dos m
 | Veículo | `app-veiculo-autocomplete` |
 | Motorista | `app-motorista-autocomplete` (após veículo) |
 | Odômetro | Pré-preenchido via `GET /vistoria/veiculo/:id/ultimo-odometro`; editável |
-| % Bateria | Visível/obrigatório se `combustivel === eletrico` |
+| % Bateria / % GNV | Visível/obrigatório se `combustivel` for `Eletrico` (`% Bateria`) ou `GNV (Gás Natural)` (`% GNV (Gás Natural)`) |
 | Observação vistoria | Textarea opcional |
 
 **Banners:**
@@ -520,7 +520,7 @@ Falha de upload após criar irregularidade: botão **Tentar novamente** na Etapa
 5. [ ] Filtro "Somente SOS" funciona nas três telas.
 5b. [ ] Irregularidades SOS aparecem **antes** das demais na listagem das três telas; dentro de cada grupo, mais antiga primeiro.
 6. [ ] Histórico exibe usuário, data, tempo de etapa; observação *"Irregularidade registrada por SOS"*.
-7. [ ] Vistoria pai criada com veículo/motorista (autocomplete), odômetro e bateria (se elétrico); vistoriador = usuário logado; data = servidor.
+7. [ ] Vistoria pai criada com veículo/motorista (autocomplete), odômetro e percentual (bateria se elétrico, GNV se Gás Natural); vistoriador = usuário logado; data = servidor.
 8. [ ] Observação da vistoria opcional; observação da irregularidade obrigatória (RN-VIS-002).
 9. [ ] Múltiplas irregularidades na mesma sessão SOS antes de concluir.
 10. [ ] Mídias em `irregularidades_midias`; `exigeFoto` e `permiteAudio` respeitados.
@@ -584,7 +584,7 @@ Falha de upload após criar irregularidade: botão **Tentar novamente** na Etapa
 4. Cancelar sessão com 1 irregularidade salva; nada na fila.
 5. Pendente duplicada: aviso + confirmação + registro permitido.
 6. `exigeFoto` sem foto: bloqueio ao concluir.
-7. Veículo elétrico sem bateria: erro na Etapa 1.
+7. Veículo elétrico sem bateria ou GNV sem percentual: erro na Etapa 1.
 8. Odômetro ≤ último: erro backend e frontend.
 9. Tema escuro: modal, badge, filtros, erros.
 10. Vistoria SOS na listagem web.

@@ -55,6 +55,9 @@ export class SosSessaoAbertaDto {
   veiculoPlaca?: string;
 
   @ApiProperty({ required: false })
+  veiculoCombustivel?: string;
+
+  @ApiProperty({ required: false })
   motoristaNome?: string;
 
   @ApiProperty({ type: [SosSessaoIrregularidadeDto] })

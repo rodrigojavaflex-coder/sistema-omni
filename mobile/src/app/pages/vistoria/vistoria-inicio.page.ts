@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -36,6 +36,11 @@ import { Vistoria } from '../../models/vistoria.model';
 import { SystemService } from '../../services/system.service';
 import { AuthService } from '../../services/auth.service';
 import { ErrorMessageService } from '../../services/error-message.service';
+import {
+  exigePercentualNivel,
+  mensagemPercentualNivelObrigatorio,
+  rotuloPercentualNivel as rotuloPercentualNivelCombustivel,
+} from '../../models/combustivel.enum';
 
 @Component({
   selector: 'app-vistoria-inicio',
@@ -65,7 +70,7 @@ import { ErrorMessageService } from '../../services/error-message.service';
     IonText,
   ],
 })
-export class VistoriaInicioPage implements OnInit {
+export class VistoriaInicioPage implements OnInit, OnDestroy {
   private veiculoService = inject(VeiculoService);
   private motoristaService = inject(MotoristaService);
   private vistoriaService = inject(VistoriaService);
@@ -100,6 +105,8 @@ export class VistoriaInicioPage implements OnInit {
   loadingAndamento = false;
   errorMessage = '';
   isNative = Capacitor.getPlatform() !== 'web';
+  private scrollFocusTimeout: number | null = null;
+  private keyboardFocusListener: (() => void) | null = null;
 
   constructor() {
     addIcons({ refreshOutline });
@@ -121,6 +128,10 @@ export class VistoriaInicioPage implements OnInit {
       this.loadingAndamento = false;
     }
 
+  }
+
+  ngOnDestroy(): void {
+    this.limparScrollFocusPendente();
   }
 
   async ionViewWillEnter(): Promise<void> {
@@ -359,7 +370,7 @@ export class VistoriaInicioPage implements OnInit {
       return 'Odômetro não pode ser maior que 9.999.999.';
     }
     if (this.isBateriaObrigatoria() && (this.bateria === null || this.bateria < 0 || this.bateria > 100)) {
-      return 'Informe a bateria (0 a 100) para veículo elétrico.';
+      return mensagemPercentualNivelObrigatorio(this.selectedVeiculo?.combustivel);
     }
     return null;
   }
@@ -412,8 +423,85 @@ export class VistoriaInicioPage implements OnInit {
   }
 
   isBateriaObrigatoria(): boolean {
-    const combustivel = this.selectedVeiculo?.combustivel ?? '';
-    return combustivel.toLowerCase() === 'eletrico';
+    return exigePercentualNivel(this.selectedVeiculo?.combustivel);
+  }
+
+  get rotuloPercentualNivel(): string {
+    return rotuloPercentualNivelCombustivel(this.selectedVeiculo?.combustivel);
+  }
+
+  async onCampoFocus(cardId: string): Promise<void> {
+    const card = document.getElementById(cardId);
+    if (!card) {
+      return;
+    }
+    this.limparScrollFocusPendente();
+    await this.rolarCardParaTopo(card);
+    this.scrollFocusTimeout = window.setTimeout(() => {
+      void this.rolarCardParaTopo(card);
+    }, 350);
+
+    this.keyboardFocusListener = () => {
+      this.limparScrollFocusPendente();
+      window.setTimeout(() => {
+        void this.rolarCardParaTopo(card);
+      }, 50);
+    };
+    window.addEventListener('ionKeyboardDidShow', this.keyboardFocusListener, {
+      once: true,
+    });
+  }
+
+  private async rolarCardParaTopo(card: HTMLElement): Promise<void> {
+    const contentEl = card.closest('ion-content');
+    if (!contentEl || !this.isConteudoRolavel(contentEl)) {
+      return;
+    }
+
+    const scrollEl = await contentEl.getScrollElement();
+    const pagina = card.closest('.ion-page');
+    const header = (pagina ?? document).querySelector('ion-header');
+    const topoVisivel = header
+      ? header.getBoundingClientRect().bottom
+      : scrollEl.getBoundingClientRect().top;
+    const y =
+      scrollEl.scrollTop + card.getBoundingClientRect().top - topoVisivel - 8;
+    await contentEl.scrollToPoint(0, Math.max(0, y), 250);
+  }
+
+  private isConteudoRolavel(
+    el: Element,
+  ): el is HTMLElement & {
+    getScrollElement: () => Promise<HTMLElement>;
+    scrollToPoint: (
+      x: number | undefined,
+      y: number,
+      duration?: number,
+    ) => Promise<void>;
+  } {
+    const candidato = el as HTMLElement & {
+      getScrollElement?: () => Promise<HTMLElement>;
+      scrollToPoint?: (
+        x: number | undefined,
+        y: number,
+        duration?: number,
+      ) => Promise<void>;
+    };
+    return (
+      typeof candidato.getScrollElement === 'function' &&
+      typeof candidato.scrollToPoint === 'function'
+    );
+  }
+
+  private limparScrollFocusPendente(): void {
+    if (this.scrollFocusTimeout !== null) {
+      window.clearTimeout(this.scrollFocusTimeout);
+      this.scrollFocusTimeout = null;
+    }
+    if (this.keyboardFocusListener) {
+      window.removeEventListener('ionKeyboardDidShow', this.keyboardFocusListener);
+      this.keyboardFocusListener = null;
+    }
   }
 
   private parseOdometroValue(value: string | number | null | undefined): number | null {

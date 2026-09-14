@@ -18,6 +18,10 @@ import { MatrizCriticidadeService } from '../../services/matriz-criticidade.serv
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
 import { MotoristaAutocompleteComponent } from '../shared/motorista-autocomplete/motorista-autocomplete.component';
 import { Veiculo, StatusVeiculo } from '../../models/veiculo.model';
+import {
+  exigePercentualNivel as combustivelExigePercentualNivel,
+  rotuloPercentualNivel as rotuloPercentualNivelCombustivel,
+} from '../../models/combustivel.enum';
 import { Motorista } from '../../models/motorista.model';
 import { StatusMotorista } from '../../models/status-motorista.enum';
 import { AreaVistoriada, AreaComponente } from '../../models/area-vistoriada.model';
@@ -257,8 +261,16 @@ export class IrregularidadeSosModalComponent implements OnChanges {
       : (sessao.veiculoDescricao ?? 'Veículo');
   }
 
-  get isEletrico(): boolean {
-    return (this.selectedVeiculo?.combustivel ?? '').toLowerCase() === 'eletrico';
+  get exigePercentualNivel(): boolean {
+    return combustivelExigePercentualNivel(this.selectedVeiculo?.combustivel);
+  }
+
+  get rotuloPercentualNivel(): string {
+    return rotuloPercentualNivelCombustivel(this.selectedVeiculo?.combustivel);
+  }
+
+  rotuloSessaoPercentual(combustivel?: string | null): string {
+    return rotuloPercentualNivelCombustivel(combustivel);
   }
 
   get tempoMinutos(): number {
@@ -289,7 +301,7 @@ export class IrregularidadeSosModalComponent implements OnChanges {
   get canAvancarEtapa1(): boolean {
     if (!this.selectedVeiculo || !this.selectedMotorista) return false;
     if (this.odometro === null || this.odometro <= 0) return false;
-    if (this.isEletrico && (this.bateria === null || this.bateria < 0 || this.bateria > 100)) {
+    if (this.exigePercentualNivel && (this.bateria === null || this.bateria < 0 || this.bateria > 100)) {
       return false;
     }
     return true;
@@ -326,7 +338,7 @@ export class IrregularidadeSosModalComponent implements OnChanges {
   get bateriaInvalida(): boolean {
     return (
       this.validacaoEtapa1 &&
-      this.isEletrico &&
+      this.exigePercentualNivel &&
       (this.bateria === null || this.bateria < 0 || this.bateria > 100)
     );
   }
@@ -417,6 +429,9 @@ export class IrregularidadeSosModalComponent implements OnChanges {
 
   onVeiculoSelected(veiculo: Veiculo): void {
     this.selectedVeiculo = veiculo;
+    if (!combustivelExigePercentualNivel(veiculo.combustivel)) {
+      this.bateria = null;
+    }
     void this.onVeiculoChange();
   }
 

@@ -9,6 +9,7 @@ import {
   Post,
   Patch,
   Req,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -226,6 +227,31 @@ export class VistoriaController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<IrregularidadeResumoDto[]> {
     return this.irregularidadeService.listPendentesByVeiculo(id);
+  }
+
+  @Get('veiculo/:id/historico-irregularidades-nao-resolvidas/pdf')
+  @Permissions(Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ)
+  @ApiOperation({
+    summary: 'Gerar PDF das pendências do veículo (filtros opcionais)',
+  })
+  @ApiResponse({ status: 200, description: 'Arquivo PDF' })
+  async pdfHistoricoIrregularidadesNaoResolvidas(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: Request & { user?: Usuario },
+    @Query('areaId', new ParseUUIDPipe({ optional: true })) areaId?: string,
+    @Query('componenteId', new ParseUUIDPipe({ optional: true }))
+    componenteId?: string,
+  ): Promise<StreamableFile> {
+    const pdf = await this.irregularidadeService.gerarPdfPendenciasVeiculo(
+      id,
+      req.user?.nome,
+      areaId?.trim() || undefined,
+      componenteId?.trim() || undefined,
+    );
+    return new StreamableFile(pdf, {
+      type: 'application/pdf',
+      disposition: 'inline; filename="pendencias-veiculo.pdf"',
+    });
   }
 
   @Get('veiculo/:id/historico-irregularidades-nao-resolvidas')

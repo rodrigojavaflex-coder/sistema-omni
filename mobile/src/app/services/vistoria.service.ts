@@ -85,6 +85,34 @@ export class VistoriaService {
     );
   }
 
+  async baixarPdfPendenciasVeiculo(
+    idVeiculo: string,
+    filtros?: { areaId?: string; componenteId?: string },
+  ): Promise<Blob> {
+    return firstValueFrom(
+      this.http.get(this.montarUrlPdfPendenciasVeiculo(idVeiculo, filtros), {
+        responseType: 'blob',
+      }),
+    );
+  }
+
+  montarUrlPdfPendenciasVeiculo(
+    idVeiculo: string,
+    filtros?: { areaId?: string; componenteId?: string },
+  ): string {
+    const params = new URLSearchParams();
+    if (filtros?.areaId) {
+      params.set('areaId', filtros.areaId);
+    }
+    if (filtros?.componenteId) {
+      params.set('componenteId', filtros.componenteId);
+    }
+    const query = params.toString();
+    return `${this.apiBaseUrl}/vistoria/veiculo/${idVeiculo}/historico-irregularidades-nao-resolvidas/pdf${
+      query ? `?${query}` : ''
+    }`;
+  }
+
   async getUltimoOdometro(
     idveiculo: string,
     ignorarVistoriaId?: string,

@@ -30,6 +30,7 @@ import { IrregularidadeResumo } from '../../models/irregularidade.model';
 import { VistoriaBootstrap } from '../../models/vistoria-bootstrap.model';
 import { ErrorMessageService } from '../../services/error-message.service';
 import { AuthService } from '../../services/auth.service';
+import { rotuloPercentualNivel } from '../../models/combustivel.enum';
 
 @Component({
   selector: 'app-vistoria-areas',
@@ -449,7 +450,7 @@ export class VistoriaAreasPage implements OnInit {
           `<strong>Veiculo:</strong> ${this.escapeHtml(veiculo)}<br>` +
           `<strong>Motorista:</strong> ${this.escapeHtml(motorista)}<br>` +
           `<strong>Odometro:</strong> ${this.escapeHtml(odometro)}<br>` +
-          `<strong>% Bateria:</strong> ${this.escapeHtml(bateria)}<br>` +
+          `<strong>${this.escapeHtml(rotuloPercentualNivel(vistoria.veiculo?.combustivel))}:</strong> ${this.escapeHtml(bateria)}<br>` +
           `<strong>Irregularidades:</strong> ${irregularidades.length}<br><br>` +
           `<strong>Resumo:</strong><br>${detalhes}`,
         buttons: [{ text: 'OK', cssClass: 'alert-ok-voltar' }],

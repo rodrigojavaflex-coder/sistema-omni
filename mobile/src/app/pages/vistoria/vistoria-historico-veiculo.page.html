@@ -4,8 +4,18 @@
       <ion-menu-button menu="main-menu"></ion-menu-button>
     </ion-buttons>
     <ion-title>Pendências do Veículo</ion-title>
-    <ion-buttons slot="end" *ngIf="!openedFromMenu">
-      <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
+    <ion-buttons slot="end">
+      <ion-button
+        fill="clear"
+        color="danger"
+        [disabled]="!selectedVeiculoId || gerandoPdf"
+        (click)="gerarRelatorioPdf()"
+        aria-label="Imprimir relatório PDF"
+      >
+        <ion-spinner *ngIf="gerandoPdf" name="crescent"></ion-spinner>
+        <span *ngIf="!gerandoPdf" class="pdf-mark" aria-hidden="true">PDF</span>
+      </ion-button>
+      <ion-button fill="solid" *ngIf="!openedFromMenu" (click)="voltar()">Voltar</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -21,6 +31,9 @@
   </div>
 
   <div class="content" *ngIf="!loading && !errorMessage">
+    <ion-text color="danger" *ngIf="pdfErrorMessage">
+      <p class="error-message">{{ pdfErrorMessage }}</p>
+    </ion-text>
     <ion-item *ngIf="openedFromMenu">
       <ion-label position="stacked">Selecionar veículo</ion-label>
       <ion-searchbar

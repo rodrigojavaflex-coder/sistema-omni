@@ -29,7 +29,11 @@ export class CreateVistoriaDto {
   @Max(9999999)
   odometro: number;
 
-  @ApiProperty({ description: 'Percentual de bateria', example: 85 })
+  @ApiProperty({
+    description:
+      'Percentual de bateria ou GNV (0–100); obrigatório se combustível elétrico ou GNV',
+    example: 85,
+  })
   @Type(() => Number)
   @IsNumber()
   @Min(0)

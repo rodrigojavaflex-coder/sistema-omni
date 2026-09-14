@@ -42,4 +42,14 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/pdf" />
+        </intent>
+        <package android:name="com.adobe.reader" />
+        <package android:name="com.android.chrome" />
+        <package android:name="com.google.android.apps.docs" />
+    </queries>
 </manifest>

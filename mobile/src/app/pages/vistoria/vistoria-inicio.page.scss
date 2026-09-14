@@ -89,24 +89,42 @@ ion-select::part(text) {
   font-size: 0.9rem;
 }
 
-.campo-destaque::part(native) {
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.odometro-label {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.ultimo-odometro-destaque {
-  color: #1d4ed8;
+.campo-destaque {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 1.5rem;
   font-weight: 700;
+  text-align: end;
+}
+
+.campo-destaque::part(native) {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: end;
+}
+
+.medida-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 16px;
+}
+
+.medida-row-separada {
+  border-top: 1px solid var(--ion-item-border-color, var(--ion-color-step-150, #e2e8f0));
+}
+
+.medida-label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: var(--ion-text-color);
+  font-size: 1rem;
+}
+
+.ultimo-odometro-linha {
+  margin: 0 16px 8px;
   font-size: 0.92rem;
-  background: #e8f1ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
-  padding: 2px 8px;
+  font-weight: 700;
+  color: var(--ion-color-primary);
 }

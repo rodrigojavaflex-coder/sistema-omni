@@ -19,7 +19,10 @@ import { UpdateVistoriaDto } from './dto/update-vistoria.dto';
 import { StatusVeiculo } from '../../common/enums/status-veiculo.enum';
 import { StatusMotorista } from '../../common/enums/status-motorista.enum';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
-import { Combustivel } from '../../common/enums/combustivel.enum';
+import {
+  exigePercentualNivel,
+  mensagemPercentualNivelObrigatorio,
+} from '../../common/enums/combustivel.enum';
 import { StatusIrregularidade } from '../../common/enums/status-irregularidade.enum';
 import { OrigemVistoria } from '../../common/enums/origem-vistoria.enum';
 import { CreateVistoriaSosDto } from './dto/create-vistoria-sos.dto';
@@ -68,13 +71,13 @@ export class VistoriaService {
     if (veiculo.status !== StatusVeiculo.ATIVO) {
       throw new BadRequestException('Veículo inativo');
     }
-    if (veiculo.combustivel === Combustivel.ELETRICO) {
+    if (exigePercentualNivel(veiculo.combustivel)) {
       if (
         dto.porcentagembateria === null ||
         dto.porcentagembateria === undefined
       ) {
         throw new BadRequestException(
-          'Percentual de bateria é obrigatório para veículo elétrico',
+          mensagemPercentualNivelObrigatorio(veiculo.combustivel),
         );
       }
     }
@@ -144,13 +147,13 @@ export class VistoriaService {
     if (veiculo.status !== StatusVeiculo.ATIVO) {
       throw new BadRequestException('Veículo inativo');
     }
-    if (veiculo.combustivel === Combustivel.ELETRICO) {
+    if (exigePercentualNivel(veiculo.combustivel)) {
       if (
         dto.porcentagembateria === null ||
         dto.porcentagembateria === undefined
       ) {
         throw new BadRequestException(
-          'Percentual de bateria é obrigatório para veículo elétrico',
+          mensagemPercentualNivelObrigatorio(veiculo.combustivel),
         );
       }
     }
@@ -261,20 +264,19 @@ export class VistoriaService {
       dto.porcentagembateria !== undefined
         ? dto.porcentagembateria
         : vistoria.porcentagembateria;
-    if (veiculo.combustivel === Combustivel.ELETRICO) {
+    if (exigePercentualNivel(veiculo.combustivel)) {
       if (bateriaAtual === null || bateriaAtual === undefined) {
         throw new BadRequestException(
-          'Percentual de bateria é obrigatório para veículo elétrico',
+          mensagemPercentualNivelObrigatorio(veiculo.combustivel),
         );
       }
     }
 
-    const bateriaFinal =
-      veiculo.combustivel === Combustivel.ELETRICO
-        ? bateriaAtual
-        : dto.porcentagembateria !== undefined
-          ? dto.porcentagembateria
-          : null;
+    const bateriaFinal = exigePercentualNivel(veiculo.combustivel)
+      ? bateriaAtual
+      : dto.porcentagembateria !== undefined
+        ? dto.porcentagembateria
+        : null;
 
     const updated = this.vistoriaRepository.merge(vistoria, {
       idVeiculo: dto.idveiculo ?? vistoria.idVeiculo,
@@ -411,6 +413,7 @@ export class VistoriaService {
       numeroVistoria: vistoria.numeroVistoria,
       veiculoDescricao: vistoria.veiculo?.descricao,
       veiculoPlaca: vistoria.veiculo?.placa,
+      veiculoCombustivel: vistoria.veiculo?.combustivel,
       motoristaNome: vistoria.motorista?.nome,
       irregularidades: irregularidadesResumo,
     };

@@ -21,6 +21,7 @@ import { VistoriaFlowService } from '../../services/vistoria-flow.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { AuthService } from '../../services/auth.service';
 import { ErrorMessageService } from '../../services/error-message.service';
+import { rotuloPercentualNivel } from '../../models/combustivel.enum';
 
 @Component({
   selector: 'app-vistoria-finalizar',
@@ -60,6 +61,7 @@ export class VistoriaFinalizarPage implements OnInit {
   resumoVeiculo = '-';
   resumoMotorista = '-';
   resumoOdometro = '-';
+  resumoRotuloPercentual = '% Bateria';
   resumoBateria = '-';
   resumoIrregularidades = 0;
   resumoIrregularidadesDetalhes: string[] = [];
@@ -142,6 +144,7 @@ export class VistoriaFinalizarPage implements OnInit {
       this.resumoVeiculo = vistoria.veiculo?.descricao ?? '-';
       this.resumoMotorista = vistoria.motorista?.nome ?? '-';
       this.resumoOdometro = vistoria.odometro != null ? `${vistoria.odometro}` : '-';
+      this.resumoRotuloPercentual = rotuloPercentualNivel(vistoria.veiculo?.combustivel);
       this.resumoBateria =
         vistoria.porcentagembateria == null ? '-' : `${vistoria.porcentagembateria}%`;
       this.resumoIrregularidades = irregularidades.length;

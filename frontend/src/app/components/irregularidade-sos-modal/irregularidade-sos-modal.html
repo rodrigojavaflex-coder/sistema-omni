@@ -55,7 +55,7 @@
             <dd>{{ sessao.odometro }}</dd>
           </div>
           <div class="sos-sessao-detalhe" *ngIf="sessao.porcentagembateria !== null">
-            <dt>% Bateria</dt>
+            <dt>{{ rotuloSessaoPercentual(sessao.veiculoCombustivel) }}</dt>
             <dd>{{ sessao.porcentagembateria }}</dd>
           </div>
           <div class="sos-sessao-detalhe">
@@ -130,8 +130,8 @@
               <div class="sos-field-error" *ngIf="mensagemErroOdometro">{{ mensagemErroOdometro }}</div>
             </div>
 
-            <div class="form-group sos-etapa1-bateria" *ngIf="isEletrico">
-              <label [class.form-label-invalid]="bateriaInvalida">% Bateria *</label>
+            <div class="form-group sos-etapa1-bateria" *ngIf="exigePercentualNivel">
+              <label [class.form-label-invalid]="bateriaInvalida">{{ rotuloPercentualNivel }} *</label>
               <input
                 type="number"
                 class="form-input"
@@ -221,7 +221,7 @@
       <p *ngIf="selectedVeiculo as veiculo"><strong>Veículo:</strong> {{ veiculo.descricao }}</p>
       <p *ngIf="selectedMotorista as motorista"><strong>Motorista:</strong> {{ motorista.nome }}</p>
       <p><strong>Odômetro:</strong> {{ odometro }}</p>
-      <p *ngIf="isEletrico"><strong>Bateria:</strong> {{ bateria }}%</p>
+      <p *ngIf="exigePercentualNivel"><strong>{{ rotuloPercentualNivel }}:</strong> {{ bateria }}%</p>
       <p><strong>Tempo da vistoria:</strong> {{ tempoMinutos }} min</p>
       <table class="sos-revisao-table">
         <thead>

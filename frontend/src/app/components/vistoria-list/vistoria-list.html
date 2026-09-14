@@ -44,7 +44,7 @@
         <span>Data</span>
         <span>Status</span>
         <span>Odômetro</span>
-        <span>Bateria</span>
+        <span>{{ rotuloColunaPercentualNivel }}</span>
         <span>Vistoriador</span>
         <span>Tempo</span>
         <span>Observação</span>
@@ -140,7 +140,7 @@
           <div><strong>Vistoriador:</strong> {{ getUsuarioNome(selectedVistoria.idUsuario) }}</div>
           <div><strong>Odômetro:</strong> {{ formatNumero(selectedVistoria.odometro) }}</div>
           <div>
-            <strong>Bateria:</strong>
+            <strong>{{ rotuloPercentualVistoria(selectedVistoria) }}:</strong>
             {{ selectedVistoria.porcentagembateria === undefined ? '-' : (selectedVistoria.porcentagembateria + '%') }}
           </div>
           <div><strong>Tempo:</strong> {{ formatTempo(selectedVistoria.tempo) }}</div>
