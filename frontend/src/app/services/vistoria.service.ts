@@ -3,6 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
+  EnviarErpVistoriaResposta,
+  ErpVistoriaStatus,
   IrregularidadeAudioResumo,
   IrregularidadeImagemResumo,
   IrregularidadeResumo,
@@ -97,6 +99,16 @@ export class VistoriaService {
 
   cancelarVistoria(vistoriaId: string): Observable<VistoriaResumo> {
     return this.http.post<VistoriaResumo>(`${this.apiUrl}/${vistoriaId}/cancelar`, {});
+  }
+
+  getErpStatus(): Observable<ErpVistoriaStatus> {
+    return this.http.get<ErpVistoriaStatus>(`${this.apiUrl}/erp/status`);
+  }
+
+  enviarAoErp(ids: string[]): Observable<EnviarErpVistoriaResposta> {
+    return this.http.post<EnviarErpVistoriaResposta>(`${this.apiUrl}/erp/enviar`, {
+      ids,
+    });
   }
 
   criarIrregularidade(

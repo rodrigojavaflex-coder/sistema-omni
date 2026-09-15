@@ -29,6 +29,18 @@ export interface EmailEnvioConfig {
   assuntoPadrao?: string;
 }
 
+export interface ErpVistoriaConfig {
+  ativo: boolean;
+  url: string;
+  tenant: string;
+  apiKey?: string;
+  apiKeyConfigured?: boolean;
+  localAbertura: number;
+  tipoPedido: number;
+  mensagemErroPadrao?: string;
+  timeoutMs?: number;
+}
+
 @Entity('configuracoes')
 export class Configuracao extends BaseEntity {
   /**
@@ -68,4 +80,7 @@ export class Configuracao extends BaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   emailEnvioConfig?: EmailEnvioConfig;
+
+  @Column({ type: 'jsonb', nullable: true })
+  erpVistoriaConfig?: ErpVistoriaConfig;
 }

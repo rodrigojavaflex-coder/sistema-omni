@@ -8,26 +8,231 @@
 .vistoria-row {
   display: grid;
   grid-template-columns:
-    minmax(160px, 2fr)
-    minmax(140px, 1.5fr)
-    minmax(140px, 1.2fr)
-    minmax(140px, 1fr)
-    minmax(120px, 0.8fr)
-    minmax(120px, 0.8fr)
-    minmax(100px, 0.7fr)
-    minmax(140px, 1fr)
-    minmax(90px, 0.7fr)
-    minmax(180px, 2fr)
-    minmax(120px, 0.8fr);
+    minmax(140px, 1.3fr)
+    minmax(210px, 1.8fr)
+    minmax(140px, 1.4fr)
+    minmax(130px, 1.1fr)
+    minmax(120px, 0.9fr)
+    minmax(100px, 0.8fr)
+    minmax(100px, 0.8fr)
+    minmax(130px, 1fr)
+    minmax(80px, 0.7fr)
+    minmax(140px, 1.4fr)
+    8.75rem;
   align-items: center;
   gap: 12px;
 }
 
 .vistoria-list-header {
   font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #6b7280;
-  padding: 8px 12px;
+  color: var(--text-secondary, #64748b);
+  padding: 0 12px;
+}
+
+.vistoria-list-header--erp,
+.vistoria-row--erp {
+  grid-template-columns:
+    36px
+    minmax(140px, 1.3fr)
+    minmax(210px, 1.8fr)
+    minmax(140px, 1.4fr)
+    minmax(130px, 1.1fr)
+    minmax(120px, 0.9fr)
+    minmax(100px, 0.8fr)
+    minmax(100px, 0.8fr)
+    minmax(130px, 1fr)
+    minmax(80px, 0.7fr)
+    minmax(140px, 1.4fr)
+    8.75rem;
+}
+
+.erp-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  background: var(--bg-secondary, #f8fafc);
+  color: var(--text-primary, #1f2937);
+}
+
+.erp-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.erp-toolbar-warn {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.erp-enviar-btn {
+  width: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.erp-enviar-btn:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+.erp-enviar-btn:focus-visible {
+  outline: 2px solid var(--success-color, #28a745);
+  outline-offset: 2px;
+}
+
+.erp-enviar-btn:disabled,
+.btn.btn-success.erp-enviar-btn:disabled {
+  background: var(--bg-secondary, #e5e7eb);
+  background-image: none;
+  border-color: var(--border-color, #cbd5e1);
+  color: #9ca3af !important;
+  opacity: 1;
+  cursor: not-allowed;
+  filter: none;
+  box-shadow: none;
+}
+
+.erp-enviar-btn:disabled .btn-action-icon {
+  color: #9ca3af;
+  stroke: currentColor;
+}
+
+.erp-enviar-btn:disabled:hover,
+.btn.btn-success.erp-enviar-btn:disabled:hover {
+  background: var(--bg-secondary, #e5e7eb);
+  background-image: none;
+  color: #9ca3af !important;
+  filter: none;
+}
+
+.btn-action-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-right: 0.35rem;
+  vertical-align: -0.1rem;
+}
+
+.erp-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.erp-select-all input:focus-visible,
+.erp-checkbox:focus-visible {
+  outline: 2px solid var(--accent, #3b82f6);
+  outline-offset: 2px;
+}
+
+.erp-select-all input:disabled,
+.erp-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.erp-counter {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.erp-meta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  overflow-wrap: anywhere;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.col-vistoria {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.erp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.3;
+  border: 1px solid var(--border-color, #e5e7eb);
+  color: var(--text-primary, #374151);
+  background: var(--bg-secondary, #f3f4f6);
+}
+
+.erp-status-pendente {
+  background: var(--warning-bg, #fef3c7);
+  color: var(--warning, #92400e);
+  border-color: transparent;
+}
+
+.erp-status-enviado {
+  background: var(--success-bg, #dcfce7);
+  color: var(--success, #166534);
+  border-color: transparent;
+}
+
+.erp-status-falha {
+  background: var(--danger-bg, #fee2e2);
+  color: var(--danger, #991b1b);
+  border-color: transparent;
+}
+
+.erp-status-nao-aplica {
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-secondary, #6b7280);
+}
+
+.erp-erro,
+.erp-erro-drawer {
+  font-size: 0.75rem;
+  color: var(--danger, #b91c1c);
+}
+
+.erp-erro {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+.erp-erro-drawer {
+  white-space: normal;
+}
+
+.success-message {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: var(--success-bg, #dcfce7);
+  color: var(--success, #166534);
+}
+
+.error-message {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: var(--danger-bg, #fee2e2);
+  color: var(--danger, #991b1b);
 }
 
 .vistoria-row {
@@ -37,11 +242,50 @@
   padding: 10px 12px;
   font-size: 0.9rem;
   color: #1f2937;
+  align-items: start;
+}
+
+.vistoria-row > div {
+  min-width: 0;
+}
+
+.acoes-col {
+  width: 8.75rem;
+  min-width: 8.75rem;
+}
+
+.vistoria-actions.table-actions {
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.vistoria-actions .btn-sm {
+  width: 100%;
+  margin: 0;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.vistoria-actions .btn-sm:focus-visible {
+  outline: 2px solid var(--accent, #3b82f6);
+  outline-offset: 2px;
+}
+
+.vistoria-actions .btn-sm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vistoria-actions .btn-sm.erp-enviar-btn:disabled {
+  opacity: 1;
 }
 
 .row-title {
   font-weight: 600;
   color: #111827;
+  overflow-wrap: anywhere;
 }
 
 .row-subtitle {
@@ -61,6 +305,12 @@
 
 .filters app-usuario-autocomplete.filter-vistoriador {
   min-width: 260px;
+}
+
+.filters .filter-input:focus-visible,
+.filters .filter-select:focus-visible {
+  outline: 2px solid var(--accent, #3b82f6);
+  outline-offset: 2px;
 }
 
 .badge-origem-sos {
@@ -338,6 +588,21 @@
   color: var(--text-primary, #f8fafc);
 }
 
+:host-context(body.theme-dark) .erp-enviar-btn:disabled,
+:host-context(body.theme-dark) .btn.btn-success.erp-enviar-btn:disabled,
+:host-context(body.theme-dark) .erp-enviar-btn:disabled:hover,
+:host-context(body.theme-dark) .btn.btn-success.erp-enviar-btn:disabled:hover {
+  background: var(--bg-secondary, #374151);
+  background-image: none;
+  border-color: var(--border-color, #4b5563);
+  color: #94a3b8 !important;
+}
+
+:host-context(body.theme-dark) .erp-enviar-btn:disabled .btn-action-icon {
+  color: #94a3b8;
+  stroke: currentColor;
+}
+
 :host-context(body.theme-dark) .row-title,
 :host-context(body.theme-dark) .irregularidade-title,
 :host-context(body.theme-dark) .irregularidade-audios,
@@ -389,6 +654,57 @@
 /* Mantem controles nativos sincronizados com o tema do app */
 :host-context(body.theme-light) .audio-player {
   color-scheme: light;
+}
+
+:host-context(body.theme-dark) .erp-toolbar {
+  background: var(--bg-secondary, #1f2937);
+  border-color: var(--border-color, #334155);
+  color: var(--text-primary, #f8fafc);
+}
+
+:host-context(body.theme-dark) .erp-meta {
+  color: var(--text-primary, #f8fafc);
+}
+
+:host-context(body.theme-dark) .erp-counter,
+:host-context(body.theme-dark) .erp-toolbar-warn {
+  color: var(--text-secondary, #94a3b8);
+}
+
+:host-context(body.theme-dark) .erp-status-pendente {
+  background: rgba(146, 64, 14, 0.28);
+  color: #fcd34d;
+}
+
+:host-context(body.theme-dark) .erp-status-enviado {
+  background: rgba(22, 101, 52, 0.28);
+  color: #bbf7d0;
+}
+
+:host-context(body.theme-dark) .erp-status-falha {
+  background: rgba(153, 27, 27, 0.3);
+  color: #fecaca;
+}
+
+:host-context(body.theme-dark) .erp-status-nao-aplica {
+  background: var(--bg-primary, #111827);
+  color: var(--text-secondary, #94a3b8);
+  border-color: var(--border-color, #334155);
+}
+
+:host-context(body.theme-dark) .erp-erro,
+:host-context(body.theme-dark) .erp-erro-drawer {
+  color: var(--danger, #fca5a5);
+}
+
+:host-context(body.theme-dark) .success-message {
+  background: rgba(22, 101, 52, 0.25);
+  color: #bbf7d0;
+}
+
+:host-context(body.theme-dark) .error-message {
+  background: rgba(153, 27, 27, 0.3);
+  color: #fecaca;
 }
 
 :host-context(body.theme-dark) .audio-player {

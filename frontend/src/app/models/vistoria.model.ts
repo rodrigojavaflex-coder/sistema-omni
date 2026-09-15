@@ -42,6 +42,12 @@ export interface VistoriaResumo {
     combustivel?: string;
   };
   motorista?: { nome?: string; matricula?: string };
+  numeroVistoria?: number;
+  erpStatus?: StatusErpVistoria;
+  erpNumeroVistoria?: string | null;
+  erpEnviadoEm?: string | null;
+  erpUltimoErro?: string | null;
+  erpElegivel?: boolean;
 }
 
 /** Resumo de irregularidade (GET /vistoria/:id/irregularidades) */
@@ -86,4 +92,24 @@ export interface IrregularidadeAudioItem {
 export interface IrregularidadeAudioResumo {
   idirregularidade: string;
   audios: IrregularidadeAudioItem[];
+}
+
+export type StatusErpVistoria = 'NAO_APLICA' | 'PENDENTE' | 'ENVIADO' | 'FALHA';
+
+export interface ErpVistoriaStatus {
+  ativo: boolean;
+}
+
+export interface EnviarErpVistoriaItem {
+  id: string;
+  resultado: 'ENVIADO' | 'FALHA' | 'IGNORADA';
+  erpNumeroVistoria?: string;
+  erro?: string;
+}
+
+export interface EnviarErpVistoriaResposta {
+  enviadas: number;
+  falhas: number;
+  ignoradas: number;
+  itens: EnviarErpVistoriaItem[];
 }

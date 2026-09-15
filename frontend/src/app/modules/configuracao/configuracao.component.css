@@ -24,12 +24,27 @@
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 600;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.tab-btn:hover:not(:disabled) {
+  border-color: var(--accent, #3b82f6);
+}
+
+.tab-btn:focus-visible {
+  outline: 2px solid var(--accent, #3b82f6);
+  outline-offset: 2px;
+}
+
+.tab-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .tab-btn--active {
-  border-color: #3b82f6;
-  color: #1d4ed8;
-  background: #eff6ff;
+  border-color: var(--accent, #3b82f6);
+  color: var(--accent, #1d4ed8);
+  background: var(--bg-secondary, #eff6ff);
 }
 
 .tempo-grid-header,
@@ -133,10 +148,79 @@
   transition: all 0.3s ease;
 }
 
+.form-input:hover:not(:disabled) {
+  border-color: var(--accent, #3b82f6);
+}
+
 .form-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--accent, #3b82f6);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+select.form-input {
+  cursor: pointer;
+  appearance: auto;
+}
+
+.form-textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.input-eye-wrapper {
+  position: relative;
+}
+
+.input-eye-wrapper .form-input {
+  padding-right: 2.75rem;
+}
+
+.btn-eye {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+}
+
+.btn-eye:hover:not(:disabled) {
+  color: var(--text-primary, #333);
+  background: var(--bg-secondary, #f3f4f6);
+}
+
+.btn-eye:focus-visible {
+  outline: 2px solid var(--accent, #3b82f6);
+  outline-offset: 2px;
+}
+
+.btn-eye:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.field-description--flush {
+  margin-left: 0;
+  margin-top: 0.35rem;
+}
+
+.erp-mensagem-group {
+  grid-column: 1 / -1;
 }
 
 .form-input::placeholder {
@@ -184,6 +268,11 @@
   background: #2563eb;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 2px;
 }
 
 .btn-primary:disabled {
@@ -269,8 +358,13 @@
 }
 
 .checkbox-label:hover {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.02);
+  border-color: var(--accent, #3b82f6);
+  background: var(--bg-secondary, rgba(59, 130, 246, 0.02));
+}
+
+.checkbox-label:focus-within {
+  border-color: var(--accent, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .checkbox-input {

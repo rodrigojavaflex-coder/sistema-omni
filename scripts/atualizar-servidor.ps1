@@ -405,10 +405,11 @@ if (Test-Path $rootWebConfigPath) {
     # Verificar se possui o padrao esperado no web.config global (raiz)
     $hasCanonicalHostRule = $currentRootConfig -match 'name="Canonical host only"'
     $hasApiProxyRule = $currentRootConfig -match 'name="API Proxy"'
+    $hasUploadsProxyRule = $currentRootConfig -match 'name="Uploads Proxy"'
     $hasRootRedirectRule = $currentRootConfig -match 'name="Redirect root to /omni"'
     $hasPublicDocumentosRedirectRule = $currentRootConfig -match 'name="Public documentos redirect to omni"'
     
-    if (-not ($hasCanonicalHostRule -and $hasApiProxyRule -and $hasRootRedirectRule -and $hasPublicDocumentosRedirectRule)) {
+    if (-not ($hasCanonicalHostRule -and $hasApiProxyRule -and $hasUploadsProxyRule -and $hasRootRedirectRule -and $hasPublicDocumentosRedirectRule)) {
         Write-Host "  Web.config global desatualizado! Aplicando padrao da raiz..." -ForegroundColor Yellow
         
         $rootWebConfig = @"
@@ -445,6 +446,12 @@ if (Test-Path $rootWebConfigPath) {
           <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
         </rule>
 
+        <!-- 4) Uploads (logo e arquivos estaticos do Nest, fora do prefixo /api) -->
+        <rule name="Uploads Proxy" stopProcessing="true">
+          <match url="^uploads/(.*)" />
+          <action type="Rewrite" url="http://localhost:8080/uploads/{R:1}" />
+        </rule>
+
       </rules>
     </rewrite>
   </system.webServer>
@@ -453,7 +460,7 @@ if (Test-Path $rootWebConfigPath) {
         
         $rootWebConfig | Out-File -FilePath $rootWebConfigPath -Encoding UTF8 -Force
         Write-Host "  OK: Web.config GLOBAL atualizado com padrao da raiz!" -ForegroundColor Green
-        Write-Host "  -> Host canonico + redirect / + link publico documentos + proxy /api" -ForegroundColor Gray
+        Write-Host "  -> Host canonico + redirect / + link publico documentos + proxy /api + proxy /uploads" -ForegroundColor Gray
     } else {
         Write-Host "  OK: Web.config global ja configurado (padrao da raiz)" -ForegroundColor Green
     }
@@ -492,6 +499,12 @@ if (Test-Path $rootWebConfigPath) {
         <rule name="API Proxy" stopProcessing="true">
           <match url="^api/(.*)" />
           <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
+        </rule>
+
+        <!-- 4) Uploads (logo e arquivos estaticos do Nest, fora do prefixo /api) -->
+        <rule name="Uploads Proxy" stopProcessing="true">
+          <match url="^uploads/(.*)" />
+          <action type="Rewrite" url="http://localhost:8080/uploads/{R:1}" />
         </rule>
 
       </rules>

@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'fs';
+import { extname, join } from 'path';
 import {
   BadRequestException,
   Injectable,
@@ -12,6 +14,7 @@ import { AuditoriaService } from '../../common/services/auditoria.service';
 import { AuditAction } from '../../common/enums/auditoria.enum';
 import {
   EmailEnvioConfig,
+  ErpVistoriaConfig,
   TempoFaixaConfig,
   TempoFluxoConfig,
 } from './entities/configuracao.entity';
@@ -188,6 +191,89 @@ export class ConfiguracaoService {
     };
   }
 
+  private isApiKeyMascarada(valor?: string): boolean {
+    const texto = (valor ?? '').trim();
+    return !texto || /^\*+$/.test(texto);
+  }
+
+  private chaveErpValida(valor?: string): string {
+    const texto = (valor ?? '').trim();
+    if (this.isApiKeyMascarada(texto)) {
+      return '';
+    }
+    return texto;
+  }
+
+  private normalizeErpVistoriaConfig(
+    input: unknown,
+    anterior?: ErpVistoriaConfig,
+  ): ErpVistoriaConfig | undefined {
+    if (!input) {
+      return undefined;
+    }
+    const source = input as Partial<ErpVistoriaConfig>;
+    const ativo = !!source.ativo;
+    const url = (source.url ?? '').toString().trim();
+    const tenant =
+      (source.tenant ?? '').toString().trim() || 'SISTEMA_VISTORIA';
+    const apiKeyInformada = this.chaveErpValida(
+      (source.apiKey ?? '').toString(),
+    );
+    const apiKeyAnterior = this.chaveErpValida(anterior?.apiKey);
+    const apiKey = apiKeyInformada || apiKeyAnterior;
+    const localAbertura = Number(source.localAbertura);
+    const tipoPedido = Number(source.tipoPedido);
+    const timeoutMs = Number(source.timeoutMs);
+    const mensagemErroPadrao = (source.mensagemErroPadrao ?? '')
+      .toString()
+      .trim();
+
+    if (ativo) {
+      if (!url) {
+        throw new BadRequestException(
+          'URL do ERP é obrigatória quando o envio está ativo.',
+        );
+      }
+      if (!tenant) {
+        throw new BadRequestException(
+          'Tenant do ERP é obrigatório quando o envio está ativo.',
+        );
+      }
+      if (!apiKey) {
+        throw new BadRequestException(
+          'API Key do ERP é obrigatória quando o envio está ativo.',
+        );
+      }
+    }
+
+    return {
+      ativo,
+      url,
+      tenant,
+      apiKey: apiKey || undefined,
+      localAbertura: localAbertura === 0 ? 0 : 1,
+      tipoPedido: tipoPedido === 1 ? 1 : 0,
+      mensagemErroPadrao: mensagemErroPadrao || undefined,
+      timeoutMs:
+        Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 30000,
+    };
+  }
+
+  private mascararConfig(config: Configuracao): Configuracao {
+    if (!config.erpVistoriaConfig) {
+      return config;
+    }
+    const apiKey = this.chaveErpValida(config.erpVistoriaConfig.apiKey);
+    return {
+      ...config,
+      erpVistoriaConfig: {
+        ...config.erpVistoriaConfig,
+        apiKey: '',
+        apiKeyConfigured: !!apiKey,
+      },
+    };
+  }
+
   async create(
     dto: CreateConfiguracaoDto,
     userId?: string,
@@ -200,18 +286,25 @@ export class ConfiguracaoService {
         defaultTempoFluxo,
       emailEnvioConfig: this.normalizeEmailEnvioConfig(dto.emailEnvioConfig),
     };
+    if (dto.erpVistoriaConfig === undefined) {
+      delete normalizedDto.erpVistoriaConfig;
+    }
 
     // Busca se já existe configuração (só pode haver uma)
     let config = await this.configuracaoRepository.findOne({ where: {} });
     if (config) {
-      // Atualiza existente
-      const dadosAnteriores = { ...config };
+      if (dto.erpVistoriaConfig !== undefined) {
+        normalizedDto.erpVistoriaConfig = this.normalizeErpVistoriaConfig(
+          dto.erpVistoriaConfig,
+          config.erpVistoriaConfig,
+        );
+      }
+      const dadosAnteriores = this.mascararConfig({ ...config });
       Object.assign(config, normalizedDto);
 
       const configuracaoAtualizada =
         await this.configuracaoRepository.save(config);
 
-      // Auditar atualização
       await this.auditoriaService.createLog({
         acao: AuditAction.UPDATE,
         descricao: `Configuração do sistema atualizada`,
@@ -219,26 +312,33 @@ export class ConfiguracaoService {
         entidade: 'configuracoes',
         entidadeId: config.id,
         dadosAnteriores,
-        dadosNovos: normalizedDto,
+        dadosNovos: this.mascararConfig({
+          ...normalizedDto,
+        } as Configuracao),
       });
 
-      return configuracaoAtualizada;
+      return this.mascararConfig(configuracaoAtualizada);
     } else {
-      // Cria nova
+      if (dto.erpVistoriaConfig !== undefined) {
+        normalizedDto.erpVistoriaConfig = this.normalizeErpVistoriaConfig(
+          dto.erpVistoriaConfig,
+        );
+      }
       config = this.configuracaoRepository.create(normalizedDto);
       const novaConfig = await this.configuracaoRepository.save(config);
 
-      // Auditar criação
       await this.auditoriaService.createLog({
         acao: AuditAction.CREATE,
         descricao: `Nova configuração do sistema criada`,
         usuarioId: userId,
         entidade: 'configuracoes',
         entidadeId: config.id,
-        dadosNovos: normalizedDto,
+        dadosNovos: this.mascararConfig({
+          ...normalizedDto,
+        } as Configuracao),
       });
 
-      return novaConfig;
+      return this.mascararConfig(novaConfig);
     }
   }
 
@@ -249,7 +349,28 @@ export class ConfiguracaoService {
       config.tempoFluxoConfig = this.buildDefaultTempoFluxoConfig();
       await this.configuracaoRepository.save(config);
     }
-    return config;
+    return this.mascararConfig(config);
+  }
+
+  async findLogoRelatorio(): Promise<{
+    logoRelatorio: string | null;
+    dataUrl: string | null;
+  }> {
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    const logoRelatorio = config?.logoRelatorio?.trim() || null;
+    return {
+      logoRelatorio,
+      dataUrl: this.buildLogoDataUrl(logoRelatorio),
+    };
+  }
+
+  async findErpApiKey(): Promise<{ configurada: boolean; apiKey: string }> {
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    const apiKey = this.chaveErpValida(config?.erpVistoriaConfig?.apiKey);
+    return {
+      configurada: !!apiKey,
+      apiKey,
+    };
   }
 
   async findTempoFluxoConfig(): Promise<TempoFluxoConfig> {
@@ -315,6 +436,9 @@ export class ConfiguracaoService {
     dto: UpdateConfiguracaoDto,
     userId?: string,
   ): Promise<Configuracao> {
+    const config = await this.configuracaoRepository.findOne({ where: { id } });
+    if (!config) throw new NotFoundException('Configuração não encontrada');
+
     const normalizedDto: UpdateConfiguracaoDto = {
       ...dto,
       tempoFluxoConfig:
@@ -325,12 +449,16 @@ export class ConfiguracaoService {
         dto.emailEnvioConfig === undefined
           ? undefined
           : this.normalizeEmailEnvioConfig(dto.emailEnvioConfig),
+      erpVistoriaConfig:
+        dto.erpVistoriaConfig === undefined
+          ? undefined
+          : this.normalizeErpVistoriaConfig(
+              dto.erpVistoriaConfig,
+              config.erpVistoriaConfig,
+            ),
     };
 
-    const config = await this.configuracaoRepository.findOne({ where: { id } });
-    if (!config) throw new NotFoundException('Configuração não encontrada');
-
-    const dadosAnteriores = { ...config };
+    const dadosAnteriores = this.mascararConfig({ ...config });
     Object.assign(config, normalizedDto);
     const configuracaoAtualizada =
       await this.configuracaoRepository.save(config);
@@ -343,9 +471,49 @@ export class ConfiguracaoService {
       entidade: 'configuracoes',
       entidadeId: id,
       dadosAnteriores,
-      dadosNovos: normalizedDto,
+      dadosNovos: this.mascararConfig({
+        ...configuracaoAtualizada,
+        ...normalizedDto,
+      } as Configuracao),
     });
 
-    return configuracaoAtualizada;
+    return this.mascararConfig(configuracaoAtualizada);
+  }
+
+  private buildLogoDataUrl(logoRelatorio?: string | null): string | null {
+    const abs = this.resolveLogoRelatorioPath(logoRelatorio);
+    if (!abs) {
+      return null;
+    }
+    try {
+      const buf = readFileSync(abs);
+      const ext = extname(abs).toLowerCase();
+      const mime =
+        ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
+      return `data:${mime};base64,${buf.toString('base64')}`;
+    } catch {
+      return null;
+    }
+  }
+
+  private resolveLogoRelatorioPath(
+    logoRelatorio?: string | null,
+  ): string | null {
+    if (!logoRelatorio?.trim()) {
+      return null;
+    }
+    const raw = logoRelatorio.trim();
+    if (/^https?:\/\//i.test(raw)) {
+      return null;
+    }
+    let rel = raw.replace(/^\/+/, '');
+    if (rel.toLowerCase().startsWith('uploads/')) {
+      rel = rel.slice('uploads/'.length);
+    }
+    if (!rel) {
+      return null;
+    }
+    const abs = join(process.cwd(), 'uploads', rel);
+    return existsSync(abs) ? abs : null;
   }
 }

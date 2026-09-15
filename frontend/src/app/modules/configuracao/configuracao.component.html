@@ -17,6 +17,14 @@
     >
       Envio de E-mail
     </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab === 'erp'"
+      (click)="activeTab = 'erp'"
+    >
+      Integração ERP
+    </button>
   </div>
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="form-group" *ngIf="activeTab === 'sistema'">
@@ -140,6 +148,116 @@
         <div class="form-group">
           <label class="form-label">Assunto padrão</label>
           <input type="text" class="form-input" formControlName="emailAssuntoPadrao" placeholder="Relatório de Ordem de Serviço" />
+        </div>
+      </div>
+    </div>
+
+    <div class="audit-section" *ngIf="activeTab === 'erp'">
+      <h3 class="section-title">Integração ERP de vistoria</h3>
+      <p class="section-description">
+        Ao finalizar uma vistoria com irregularidade, o OMNI envia a capa ao ERP de forma assíncrona.
+        Desative para não enfileirar nem permitir reenvio na tela Vistorias.
+      </p>
+
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="erpAtivo" class="checkbox-input" />
+          <span class="checkbox-text">Habilitar envio ao ERP</span>
+        </label>
+      </div>
+
+      <div class="audit-grid">
+        <div class="form-group">
+          <label class="form-label" for="erpUrl">URL base</label>
+          <input
+            id="erpUrl"
+            type="text"
+            class="form-input"
+            formControlName="erpUrl"
+            placeholder="https://erp.exemplo.com"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="erpTenant">Tenant (X-Tenant)</label>
+          <input
+            id="erpTenant"
+            type="text"
+            class="form-input"
+            formControlName="erpTenant"
+            placeholder="SISTEMA_VISTORIA"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="erpApiKey">API Key (X-API-Key)</label>
+          <div class="input-eye-wrapper">
+            <input
+              id="erpApiKey"
+              [type]="showErpApiKey ? 'text' : 'password'"
+              class="form-input"
+              formControlName="erpApiKey"
+              placeholder="********"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="btn-eye"
+              (click)="toggleErpApiKeyVisibility()"
+              [disabled]="loading || erpApiKeyLoading"
+              [attr.aria-label]="showErpApiKey ? 'Ocultar API Key' : 'Mostrar API Key'"
+              [attr.aria-pressed]="showErpApiKey"
+            >
+              <i class="fas" [class.fa-eye-slash]="showErpApiKey" [class.fa-eye]="!showErpApiKey" aria-hidden="true"></i>
+            </button>
+          </div>
+          <small class="field-description field-description--flush">
+            Deixe em branco para manter a chave já salva. Use o olho para ver a chave gravada.
+          </small>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="erpLocalAbertura">Local de abertura</label>
+          <select
+            id="erpLocalAbertura"
+            class="form-input"
+            formControlName="erpLocalAbertura"
+          >
+            <option [ngValue]="0">0 - Oficina</option>
+            <option [ngValue]="1">1 - Portaria</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="erpTipoPedido">Tipo de pedido</label>
+          <select
+            id="erpTipoPedido"
+            class="form-input"
+            formControlName="erpTipoPedido"
+          >
+            <option [ngValue]="0">0 - Entrada</option>
+            <option [ngValue]="1">1 - Saída</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="erpTimeoutMs">Timeout (ms)</label>
+          <input
+            id="erpTimeoutMs"
+            type="number"
+            class="form-input"
+            formControlName="erpTimeoutMs"
+            min="1000"
+          />
+        </div>
+        <div class="form-group erp-mensagem-group">
+          <label class="form-label" for="erpMensagemErroPadrao">Mensagem de erro padrão</label>
+          <textarea
+            id="erpMensagemErroPadrao"
+            class="form-input form-textarea"
+            formControlName="erpMensagemErroPadrao"
+            rows="3"
+            placeholder="Erro ao gravar Vistoria no OMNI"
+          ></textarea>
+          <small class="field-description field-description--flush">
+            Usada se a API do ERP não devolver texto de erro. Sem preenchimento, vale
+            “Erro ao gravar Vistoria no OMNI”.
+          </small>
         </div>
       </div>
     </div>

@@ -112,6 +112,7 @@ export enum Permission {
   // Vistoria Web
   VISTORIA_WEB_READ = 'vistoria_web:read',
   VISTORIA_WEB_HISTORICO_VEICULO_READ = 'vistoria_web_historico_veiculo:read',
+  VISTORIA_WEB_REPROCESSAR_ERP = 'vistoria_web:reprocessar_erp',
   // Fluxo de Irregularidades
   IRREGULARIDADE_TRATAMENTO_READ = 'irregularidade_tratamento:read',
   IRREGULARIDADE_TRATAMENTO_UPDATE = 'irregularidade_tratamento:update',
@@ -342,6 +343,10 @@ export const PERMISSION_GROUPS = {
   ],
   'Vistoria Web': [
     { key: Permission.VISTORIA_WEB_READ, label: 'Visualizar vistorias (web)' },
+    {
+      key: Permission.VISTORIA_WEB_REPROCESSAR_ERP,
+      label: 'Enviar / reenviar vistorias ao ERP',
+    },
   ],
   'Irregularidades – Tratamento': [
     {

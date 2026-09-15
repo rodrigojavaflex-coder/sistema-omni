@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/services/matriz-criticidade.service.ts"],
+  "sourcesContent": ["import { Injectable, inject } from '@angular/core';\r\nimport { HttpClient } from '@angular/common/http';\r\nimport { firstValueFrom } from 'rxjs';\r\nimport { environment } from '../../environments/environment';\r\nimport { Capacitor } from '@capacitor/core';\r\nimport { MatrizCriticidade } from '../models/matriz-criticidade.model';\r\n\r\n@Injectable({ providedIn: 'root' })\r\nexport class MatrizCriticidadeService {\r\n  private http = inject(HttpClient);\r\n  private apiBaseUrl = Capacitor.getPlatform() !== 'web'\r\n    ? environment.apiUrlNative || environment.apiUrl\r\n    : environment.apiUrl;\r\n\r\n  async listarPorComponente(componenteId: string): Promise<MatrizCriticidade[]> {\r\n    const matriz = await firstValueFrom(\r\n      this.http.get<MatrizCriticidade[]>(`${this.apiBaseUrl}/matriz-criticidade`, {\r\n        params: { idcomponente: componenteId },\r\n      }),\r\n    );\r\n    return matriz ?? [];\r\n  }\r\n}\r\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;;AAQM,IAAO,2BAAP,MAAO,0BAAwB;EAC3B,OAAO,OAAO,UAAU;EACxB,aAAa,UAAU,YAAW,MAAO,QAC7C,YAAY,gBAAgB,YAAY,SACxC,YAAY;EAEV,oBAAoB,cAAoB;;AAC5C,YAAM,SAAS,MAAM,eACnB,KAAK,KAAK,IAAyB,GAAG,KAAK,UAAU,uBAAuB;QAC1E,QAAQ,EAAE,cAAc,aAAY;OACrC,CAAC;AAEJ,aAAO,UAAU,CAAA;IACnB;;;qCAbW,2BAAwB;EAAA;4EAAxB,2BAAwB,SAAxB,0BAAwB,WAAA,YADX,OAAM,CAAA;;;sEACnB,0BAAwB,CAAA;UADpC;WAAW,EAAE,YAAY,OAAM,CAAE;;;",
+  "names": []
+}

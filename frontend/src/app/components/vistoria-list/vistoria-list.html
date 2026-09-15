@@ -15,10 +15,29 @@
         <option [value]="status.value">{{ status.label }}</option>
       }
     </select>
+    <select formControlName="erpStatus" class="filter-select" aria-label="Status ERP">
+      @for (status of erpStatusOptions; track status.value) {
+        <option [value]="status.value">{{ status.label }}</option>
+      }
+    </select>
     <app-usuario-autocomplete
       formControlName="usuarioId"
       class="filter-vistoriador"
     ></app-usuario-autocomplete>
+    <input
+      type="text"
+      formControlName="numeroVistoria"
+      class="filter-input"
+      placeholder="Vistoria"
+      aria-label="Filtrar por número da vistoria"
+    />
+    <input
+      type="text"
+      formControlName="erpNumeroVistoria"
+      class="filter-input"
+      placeholder="Vistoria OMNI"
+      aria-label="Filtrar por código da vistoria OMNI"
+    />
     <input type="date" formControlName="dataInicio" class="filter-input">
     <input type="date" formControlName="dataFim" class="filter-input">
     <button class="btn btn-secondary" (click)="clearFilters()">Limpar</button>
@@ -36,10 +55,54 @@
     </div>
   }
 
-  @if (!loading && !error) {
+  @if (success) {
+    <div class="success-message">
+      {{ success }}
+    </div>
+  }
+
+  @if (canReprocessarErp) {
+    <div class="erp-toolbar">
+      @if (!erpIntegracaoAtiva) {
+        <span class="erp-toolbar-warn">
+          Envio ao ERP desabilitado na configuração do sistema.
+        </span>
+      }
+      <div class="erp-toolbar-actions">
+        <label class="erp-select-all">
+          <input
+            type="checkbox"
+            [checked]="allVisibleSelected"
+            [disabled]="enviandoErp || visiveisElegiveis.length === 0"
+            (change)="onToggleSelectVisible($event)"
+          />
+          Selecionar visíveis elegíveis
+        </label>
+        <span class="erp-counter">{{ selectedCount }} selecionada(s)</span>
+        <button
+          type="button"
+          class="btn btn-success erp-enviar-btn"
+          [disabled]="enviandoErp || selectedCount === 0 || !erpIntegracaoAtiva"
+          (click)="enviarSelecionadas()"
+        >
+          <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+          {{ enviandoErp ? 'Enviando...' : 'Enviar OMNI' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (!loading) {
     <div class="vistoria-list">
-      <div class="vistoria-list-header">
+      <div class="vistoria-list-header" [class.vistoria-list-header--erp]="canReprocessarErp">
+        @if (canReprocessarErp) {
+          <span></span>
+        }
         <span>Veículo</span>
+        <span>Vistoria</span>
         <span>Motorista</span>
         <span>Data</span>
         <span>Status</span>
@@ -48,14 +111,44 @@
         <span>Vistoriador</span>
         <span>Tempo</span>
         <span>Observação</span>
-        <span></span>
+        <span>Ações</span>
       </div>
 
       @for (vistoria of paged; track vistoria.id) {
-        <div class="vistoria-row">
+        <div class="vistoria-row" [class.vistoria-row--erp]="canReprocessarErp">
+          @if (canReprocessarErp) {
+            <div>
+              <input
+                type="checkbox"
+                class="erp-checkbox"
+                [checked]="isSelected(vistoria.id)"
+                [disabled]="!podeSelecionar(vistoria) || enviandoErp"
+                [attr.aria-label]="'Selecionar vistoria ' + formatNumeroVistoria(vistoria.numeroVistoria)"
+                (click)="$event.stopPropagation()"
+                (change)="onToggleSelecao(vistoria, $event)"
+              />
+            </div>
+          }
           <div>
             <div class="row-title">{{ vistoria.veiculo?.descricao || 'Veículo' }}</div>
             <div class="row-subtitle">{{ vistoria.veiculo?.placa || '-' }}</div>
+          </div>
+          <div class="col-vistoria">
+            <div class="erp-meta">
+              <div>Vistoria: {{ formatNumeroVistoria(vistoria.numeroVistoria) }}</div>
+              <div>Vistoria OMNI {{ formatErpNumero(vistoria.erpNumeroVistoria) }}</div>
+            </div>
+            <span
+              class="erp-status-badge"
+              [ngClass]="getErpStatusClass(vistoria.erpStatus)"
+            >
+              {{ getErpStatusLabel(vistoria.erpStatus) }}
+            </span>
+            @if (vistoria.erpUltimoErro) {
+              <div class="erp-erro" [title]="vistoria.erpUltimoErro">
+                {{ vistoria.erpUltimoErro }}
+              </div>
+            }
           </div>
           <div>{{ vistoria.motorista?.nome || '-' }}</div>
           <div>{{ vistoria.datavistoria | date: 'dd/MM/yyyy HH:mm' }}</div>
@@ -78,10 +171,34 @@
           <div>{{ getUsuarioNome(vistoria.idUsuario) }}</div>
           <div>{{ formatTempo(vistoria.tempo) }}</div>
           <div class="text-ellipsis">{{ vistoria.observacao || '-' }}</div>
-          <div>
-            <button class="btn btn-primary btn-small" (click)="openDrawer(vistoria)">
-              Detalhar
-            </button>
+          <div class="acoes-col">
+            <div class="table-actions vistoria-actions">
+              <button
+                type="button"
+                class="btn btn-sm btn-imprimir"
+                [disabled]="imprimindoId === vistoria.id"
+                (click)="printVistoria(vistoria)"
+              >
+                {{ imprimindoId === vistoria.id ? 'Imprimindo...' : 'Imprimir' }}
+              </button>
+              @if (canReprocessarErp) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-success erp-enviar-btn"
+                  [disabled]="!podeSelecionar(vistoria) || enviandoErp"
+                  (click)="enviarVistoria(vistoria)"
+                >
+                  {{ enviandoErp ? 'Enviando...' : 'Enviar OMNI' }}
+                </button>
+              }
+              <button
+                type="button"
+                class="btn btn-sm btn-editar"
+                (click)="openDrawer(vistoria)"
+              >
+                Detalhes
+              </button>
+            </div>
           </div>
         </div>
       }
@@ -125,8 +242,22 @@
           <h3>Vistoria</h3>
         </div>
         <div class="modal-header-actions">
-          <button class="btn btn-secondary" (click)="printVistoria()">Imprimir</button>
+          <button class="btn btn-secondary" (click)="printVistoria(selectedVistoria)">Imprimir</button>
           <button class="btn btn-primary" (click)="downloadImages()">Baixar imagens</button>
+          @if (canReprocessarErp) {
+            <button
+              class="btn btn-success erp-enviar-btn"
+              type="button"
+              [disabled]="!podeSelecionar(selectedVistoria) || enviandoErp"
+              (click)="enviarVistoria(selectedVistoria)"
+            >
+              <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+              {{ enviandoErp ? 'Enviando...' : 'Enviar OMNI' }}
+            </button>
+          }
         </div>
         <button class="modal-close" (click)="closeDrawer()">×</button>
       </div>
@@ -145,6 +276,14 @@
           </div>
           <div><strong>Tempo:</strong> {{ formatTempo(selectedVistoria.tempo) }}</div>
           <div><strong>Observação:</strong> {{ selectedVistoria.observacao || '-' }}</div>
+          <div><strong>Vistoria:</strong> {{ formatNumeroVistoria(selectedVistoria.numeroVistoria) }}</div>
+          <div><strong>Vistoria OMNI:</strong> {{ formatErpNumero(selectedVistoria.erpNumeroVistoria) }}</div>
+          <div><strong>Status ERP:</strong> {{ getErpStatusLabel(selectedVistoria.erpStatus) }}</div>
+          @if (selectedVistoria.erpUltimoErro) {
+            <div class="erp-erro-drawer">
+              <strong>Erro ERP:</strong> {{ selectedVistoria.erpUltimoErro }}
+            </div>
+          }
         </div>
         <div class="irregularidades-list">
           @for (ir of irregularidades; track ir.id) {

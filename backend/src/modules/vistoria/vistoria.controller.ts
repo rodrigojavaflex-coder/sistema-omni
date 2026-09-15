@@ -39,6 +39,11 @@ import { IrregularidadeHistoricoVeiculoDto } from './dto/irregularidade-historic
 import { SosSessaoAbertaDto } from './dto/sos-sessao-aberta.dto';
 import { IrregularidadeService } from './irregularidade.service';
 import { Request } from 'express';
+import { EnviarErpVistoriaDto } from './dto/enviar-erp-vistoria.dto';
+import {
+  EnviarErpVistoriaRespostaDto,
+  ErpVistoriaStatusDto,
+} from './dto/enviar-erp-vistoria-resultado.dto';
 
 @ApiTags('vistorias')
 @ApiBearerAuth()
@@ -89,6 +94,24 @@ export class VistoriaController {
       throw new BadRequestException('Usuário não autenticado');
     }
     return this.vistoriaService.getSosSessaoAberta(userId);
+  }
+
+  @Get('erp/status')
+  @Permissions(Permission.VISTORIA_WEB_READ, Permission.VISTORIA_READ)
+  @ApiOperation({ summary: 'Indica se a integração ERP de vistoria está ativa' })
+  @ApiResponse({ status: 200, type: ErpVistoriaStatusDto })
+  getErpStatus(): Promise<ErpVistoriaStatusDto> {
+    return this.vistoriaService.getErpStatus();
+  }
+
+  @Post('erp/enviar')
+  @Permissions(Permission.VISTORIA_WEB_REPROCESSAR_ERP)
+  @ApiOperation({ summary: 'Enviar ou reenviar capas de vistoria ao ERP' })
+  @ApiResponse({ status: 201, type: EnviarErpVistoriaRespostaDto })
+  enviarErp(
+    @Body() dto: EnviarErpVistoriaDto,
+  ): Promise<EnviarErpVistoriaRespostaDto> {
+    return this.vistoriaService.enviarAoErp(dto.ids);
   }
 
   @Post(':id/irregularidades')

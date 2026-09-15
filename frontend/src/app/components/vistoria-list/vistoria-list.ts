@@ -1,12 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, from, map, of, switchMap } from 'rxjs';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { UserService } from '../../services/user.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { AuthService } from '../../services/auth.service';
+import { ConfiguracaoService } from '../../services/configuracao.service';
 import {
   ROTULO_COLUNA_PERCENTUAL_NIVEL,
   rotuloPercentualNivel,
@@ -17,9 +18,10 @@ import {
   IrregularidadeImagemItem,
   IrregularidadeImagemResumo,
   IrregularidadeResumo,
+  StatusErpVistoria,
   VistoriaResumo,
 } from '../../models/vistoria.model';
-import { Usuario } from '../../models/usuario.model';
+import { Permission, Usuario } from '../../models/usuario.model';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
 import { MotoristaAutocompleteComponent } from '../shared/motorista-autocomplete/motorista-autocomplete.component';
 import { UsuarioAutocompleteComponent } from '../shared/usuario-autocomplete/usuario-autocomplete.component';
@@ -41,13 +43,22 @@ export class VistoriaListComponent implements OnInit {
   private vistoriaService = inject(VistoriaService);
   private userService = inject(UserService);
   private authService = inject(AuthService);
+  private configuracaoService = inject(ConfiguracaoService);
   private fb = inject(FormBuilder);
 
   loading = false;
   error = '';
+  success = '';
   drawerOpen = false;
   loadingFilters = false;
   usuariosLoaded = false;
+  enviandoErp = false;
+  imprimindoId: string | null = null;
+  erpIntegracaoAtiva = false;
+  selectedIds = new Set<string>();
+  readonly canReprocessarErp = this.authService.hasPermission(
+    Permission.VISTORIA_WEB_REPROCESSAR_ERP,
+  );
 
   vistorias: VistoriaResumo[] = [];
   filtered: VistoriaResumo[] = [];
@@ -67,6 +78,14 @@ export class VistoriaListComponent implements OnInit {
     { value: 'CANCELADA', label: 'Cancelada' },
   ];
 
+  erpStatusOptions: { value: StatusErpVistoria | ''; label: string }[] = [
+    { value: '', label: 'ERP: todos' },
+    { value: 'PENDENTE', label: 'ERP: pendente' },
+    { value: 'ENVIADO', label: 'ERP: enviado' },
+    { value: 'FALHA', label: 'ERP: falha' },
+    { value: 'NAO_APLICA', label: 'ERP: não aplica' },
+  ];
+
   currentPage = 1;
   itemsPerPage = 100;
   totalPages = 0;
@@ -76,7 +95,10 @@ export class VistoriaListComponent implements OnInit {
     veiculoId: [''],
     motoristaId: [''],
     status: [''],
+    erpStatus: [''],
     usuarioId: [''],
+    numeroVistoria: [''],
+    erpNumeroVistoria: [''],
     dataInicio: [''],
     dataFim: [''],
   });
@@ -87,6 +109,14 @@ export class VistoriaListComponent implements OnInit {
     this.loadUsuarios();
 
     this.filterForm.valueChanges.subscribe(() => this.applyFilters());
+    this.vistoriaService.getErpStatus().subscribe({
+      next: (status) => {
+        this.erpIntegracaoAtiva = !!status?.ativo;
+      },
+      error: () => {
+        this.erpIntegracaoAtiva = false;
+      },
+    });
   }
 
   private loadUsuarios(): void {
@@ -134,6 +164,7 @@ export class VistoriaListComponent implements OnInit {
           this.vistorias = items ?? [];
           this.applyFilters();
           this.loading = false;
+          this.error = this.error === 'Erro ao carregar vistorias.' ? '' : this.error;
         },
         error: () => {
           this.error = 'Erro ao carregar vistorias.';
@@ -147,22 +178,38 @@ export class VistoriaListComponent implements OnInit {
       veiculoId,
       motoristaId,
       status,
+      erpStatus,
       usuarioId,
+      numeroVistoria,
+      erpNumeroVistoria,
       dataInicio,
       dataFim,
     } = this.filterForm.value;
+
+    const numeroFiltro = this.somenteDigitos(numeroVistoria);
+    const erpFiltro = this.normalizeText(erpNumeroVistoria);
 
     const filtered = (this.vistorias ?? []).filter((vistoria) => {
       const matchesVeiculo = !veiculoId || vistoria.idVeiculo === veiculoId;
       const matchesMotorista = !motoristaId || vistoria.idMotorista === motoristaId;
       const matchesStatus = !status || vistoria.status === status;
+      const matchesErpStatus = !erpStatus || vistoria.erpStatus === erpStatus;
       const matchesUsuario = !usuarioId || vistoria.idUsuario === usuarioId;
+      const matchesNumero =
+        !numeroFiltro ||
+        this.somenteDigitos(vistoria.numeroVistoria).includes(numeroFiltro);
+      const matchesErpNumero =
+        !erpFiltro ||
+        this.normalizeText(vistoria.erpNumeroVistoria).includes(erpFiltro);
       const matchesData = this.matchesDateRange(vistoria.datavistoria, dataInicio, dataFim);
       return (
         matchesVeiculo &&
         matchesMotorista &&
         matchesStatus &&
+        matchesErpStatus &&
         matchesUsuario &&
+        matchesNumero &&
+        matchesErpNumero &&
         matchesData
       );
     });
@@ -192,10 +239,156 @@ export class VistoriaListComponent implements OnInit {
       veiculoId: '',
       motoristaId: '',
       status: '',
+      erpStatus: '',
       usuarioId: '',
+      numeroVistoria: '',
+      erpNumeroVistoria: '',
       dataInicio: '',
       dataFim: '',
     });
+  }
+
+  podeSelecionar(vistoria: VistoriaResumo): boolean {
+    return (
+      this.canReprocessarErp &&
+      this.erpIntegracaoAtiva &&
+      !!vistoria.erpElegivel
+    );
+  }
+
+  isSelected(id: string): boolean {
+    return this.selectedIds.has(id);
+  }
+
+  toggleSelecao(vistoria: VistoriaResumo, checked: boolean): void {
+    if (!this.podeSelecionar(vistoria)) {
+      this.selectedIds.delete(vistoria.id);
+      return;
+    }
+    if (checked) {
+      this.selectedIds.add(vistoria.id);
+    } else {
+      this.selectedIds.delete(vistoria.id);
+    }
+  }
+
+  get visiveisElegiveis(): VistoriaResumo[] {
+    return this.paged.filter((item) => this.podeSelecionar(item));
+  }
+
+  get allVisibleSelected(): boolean {
+    const visiveis = this.visiveisElegiveis;
+    return visiveis.length > 0 && visiveis.every((item) => this.selectedIds.has(item.id));
+  }
+
+  toggleSelectVisible(checked: boolean): void {
+    this.visiveisElegiveis.forEach((item) => {
+      if (checked) {
+        this.selectedIds.add(item.id);
+      } else {
+        this.selectedIds.delete(item.id);
+      }
+    });
+  }
+
+  onToggleSelectVisible(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.toggleSelectVisible(!!target?.checked);
+  }
+
+  onToggleSelecao(vistoria: VistoriaResumo, event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.toggleSelecao(vistoria, !!target?.checked);
+  }
+
+  get selectedCount(): number {
+    return this.selectedIds.size;
+  }
+
+  enviarSelecionadas(): void {
+    const ids = [...this.selectedIds].filter((id) => {
+      const item = this.vistorias.find((vistoria) => vistoria.id === id);
+      return !!item && this.podeSelecionar(item);
+    });
+    this.enviarAoErp(ids);
+  }
+
+  enviarVistoria(vistoria: VistoriaResumo): void {
+    if (!this.podeSelecionar(vistoria)) {
+      return;
+    }
+    this.enviarAoErp([vistoria.id]);
+  }
+
+  private enviarAoErp(ids: string[]): void {
+    if (ids.length === 0 || this.enviandoErp) {
+      return;
+    }
+    if (!this.erpIntegracaoAtiva) {
+      this.error = 'Envio ao ERP desabilitado na configuração do sistema.';
+      this.success = '';
+      return;
+    }
+    this.enviandoErp = true;
+    this.error = '';
+    this.success = '';
+    this.vistoriaService.enviarAoErp(ids).subscribe({
+      next: (resposta) => {
+        this.enviandoErp = false;
+        this.selectedIds.clear();
+        this.success = `Envio ao ERP: ${resposta.enviadas} enviada(s), ${resposta.falhas} falha(s), ${resposta.ignoradas} ignorada(s).`;
+        this.loading = true;
+        this.loadVistorias();
+      },
+      error: (err: { error?: { message?: string }; message?: string }) => {
+        this.enviandoErp = false;
+        this.success = '';
+        this.error =
+          err?.error?.message ||
+          err?.message ||
+          'Erro ao enviar vistorias ao ERP.';
+      },
+    });
+  }
+
+  formatNumeroVistoria(value?: number): string {
+    if (value === null || value === undefined) return '—';
+    return String(value);
+  }
+
+  formatErpNumero(value?: string | null): string {
+    const texto = value?.trim();
+    return texto ? texto : '—';
+  }
+
+  getErpStatusLabel(status?: StatusErpVistoria | string | null): string {
+    switch (status) {
+      case 'PENDENTE':
+        return 'Pendente';
+      case 'ENVIADO':
+        return 'Enviado';
+      case 'FALHA':
+        return 'Falha';
+      case 'NAO_APLICA':
+        return 'Não aplica';
+      default:
+        return status?.trim() ? String(status) : '—';
+    }
+  }
+
+  getErpStatusClass(status?: StatusErpVistoria | string | null): string {
+    switch (status) {
+      case 'PENDENTE':
+        return 'erp-status-pendente';
+      case 'ENVIADO':
+        return 'erp-status-enviado';
+      case 'FALHA':
+        return 'erp-status-falha';
+      case 'NAO_APLICA':
+        return 'erp-status-nao-aplica';
+      default:
+        return 'erp-status-nao-aplica';
+    }
   }
 
   openDrawer(vistoria: VistoriaResumo): void {
@@ -215,7 +408,20 @@ export class VistoriaListComponent implements OnInit {
   }
 
   private carregarDetalheIrregularidades(vistoriaId: string): void {
-    forkJoin({
+    this.carregarDetalheIrregularidades$(vistoriaId).subscribe({
+      next: (detalhe) => {
+        if (this.selectedVistoria?.id !== vistoriaId) {
+          return;
+        }
+        this.irregularidades = detalhe.irregularidades;
+        this.imagensPorIrregularidade = detalhe.imagensPorIrregularidade;
+        this.audiosPorIrregularidade = detalhe.audiosPorIrregularidade;
+      },
+    });
+  }
+
+  private carregarDetalheIrregularidades$(vistoriaId: string) {
+    return forkJoin({
       irregularidades: this.vistoriaService.listarIrregularidades(vistoriaId).pipe(
         catchError(() => of([] as IrregularidadeResumo[])),
       ),
@@ -225,25 +431,25 @@ export class VistoriaListComponent implements OnInit {
       audios: this.vistoriaService.listarIrregularidadesAudios(vistoriaId).pipe(
         catchError(() => of([] as IrregularidadeAudioResumo[])),
       ),
-    }).subscribe({
-      next: ({ irregularidades, imagens, audios }) => {
-        this.irregularidades = this.sortIrregularidades(irregularidades ?? []);
-        this.imagensPorIrregularidade = (imagens ?? []).reduce(
+    }).pipe(
+      map(({ irregularidades, imagens, audios }) => ({
+        irregularidades: this.sortIrregularidades(irregularidades ?? []),
+        imagensPorIrregularidade: (imagens ?? []).reduce(
           (acc, g) => {
             acc[g.idirregularidade] = g.imagens ?? [];
             return acc;
           },
           {} as Record<string, IrregularidadeImagemItem[]>,
-        );
-        this.audiosPorIrregularidade = (audios ?? []).reduce(
+        ),
+        audiosPorIrregularidade: (audios ?? []).reduce(
           (acc, g) => {
             acc[g.idirregularidade] = g.audios ?? [];
             return acc;
           },
           {} as Record<string, IrregularidadeAudioItem[]>,
-        );
-      },
-    });
+        ),
+      })),
+    );
   }
 
   private sortIrregularidades(items: IrregularidadeResumo[]): IrregularidadeResumo[] {
@@ -306,6 +512,13 @@ export class VistoriaListComponent implements OnInit {
     return `${area} · ${comp} · ${sint}`;
   }
 
+  private getIrregularidadeLinhaRelatorio(ir: IrregularidadeResumo): string {
+    const area = ir.nomeArea?.trim() || 'Área';
+    const comp = ir.nomeComponente?.trim() || 'Componente';
+    const sint = ir.descricaoSintoma?.trim() || 'Sintoma';
+    return `${area} - ${comp} - ${sint}`;
+  }
+
   formatDuracaoAudio(ms?: number | null): string {
     if (ms == null || Number.isNaN(ms)) return '';
     const s = Math.round(ms / 1000);
@@ -347,119 +560,310 @@ export class VistoriaListComponent implements OnInit {
     });
   }
 
-  printVistoria(): void {
-    if (!this.selectedVistoria) return;
-    const doc = window.open('', '_blank', 'width=1024,height=768');
-    if (!doc) return;
+  printVistoria(vistoria?: VistoriaResumo | null): void {
+    const alvo = vistoria ?? this.selectedVistoria;
+    if (!alvo || this.imprimindoId === alvo.id) {
+      return;
+    }
 
+    const doc = window.open('', '_blank', 'width=1024,height=768');
+    if (!doc) {
+      return;
+    }
+
+    const usarCache = this.drawerOpen && this.selectedVistoria?.id === alvo.id;
+    const detalhe$ = usarCache
+      ? of({
+          irregularidades: this.irregularidades,
+          imagensPorIrregularidade: this.imagensPorIrregularidade,
+          audiosPorIrregularidade: this.audiosPorIrregularidade,
+        })
+      : this.carregarDetalheIrregularidades$(alvo.id);
+
+    this.imprimindoId = alvo.id;
+    doc.document.write(
+      '<html><body><p>Carregando relatório da vistoria...</p></body></html>',
+    );
+    forkJoin({
+      detalhe: detalhe$,
+      logoUrl: this.carregarLogoRelatorio$(),
+    }).subscribe({
+      next: ({ detalhe, logoUrl }) => {
+        this.gerarImpressao(
+          doc,
+          alvo,
+          detalhe.irregularidades,
+          detalhe.imagensPorIrregularidade,
+          detalhe.audiosPorIrregularidade,
+          logoUrl,
+        );
+        this.imprimindoId = null;
+      },
+      error: () => {
+        doc.close();
+        this.imprimindoId = null;
+      },
+    });
+  }
+
+  private carregarLogoRelatorio$() {
+    return this.configuracaoService.getLogoRelatorio().pipe(
+      switchMap((res) => {
+        if (res.dataUrl) {
+          return of(res.dataUrl);
+        }
+        const url = this.montarUrlLogo(res.logoRelatorio);
+        if (!url) {
+          return of(null as string | null);
+        }
+        return from(
+          fetch(url)
+            .then(async (response) => {
+              if (!response.ok) {
+                return url;
+              }
+              const blob = await response.blob();
+              return await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result ?? url));
+                reader.onerror = () => resolve(url);
+                reader.readAsDataURL(blob);
+              });
+            })
+            .catch(() => url),
+        );
+      }),
+      catchError(() => of(null as string | null)),
+    );
+  }
+
+  private montarUrlLogo(path?: string | null): string | null {
+    const raw = path?.trim();
+    if (!raw) {
+      return null;
+    }
+    if (/^https?:\/\//i.test(raw)) {
+      return raw;
+    }
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const rel = raw.startsWith('/') ? raw : `/${raw}`;
+    return `${origin}${rel}`;
+  }
+
+  private gerarImpressao(
+    doc: Window,
+    vistoria: VistoriaResumo,
+    irregularidades: IrregularidadeResumo[],
+    imagensPorIrregularidade: Record<string, IrregularidadeImagemItem[]>,
+    audiosPorIrregularidade: Record<string, IrregularidadeAudioItem[]>,
+    logoUrl: string | null,
+  ): void {
     const printDate = new Date().toLocaleString('pt-BR');
-    const dataVistoria = new Date(this.selectedVistoria.datavistoria).toLocaleString('pt-BR');
-    const usuario = this.getUsuarioNome(this.selectedVistoria.idUsuario);
+    const dataVistoria = new Date(vistoria.datavistoria).toLocaleString('pt-BR');
+    const usuario = this.getUsuarioNome(vistoria.idUsuario);
     const usuarioImpressao =
       this.authService.getCurrentUser()?.nome ||
       this.authService.getCurrentUser()?.email ||
       usuario;
-    const veiculoDescricao = this.selectedVistoria.veiculo?.descricao ?? '-';
-    const placa = this.selectedVistoria.veiculo?.placa ?? '-';
-    const motoristaNome = this.selectedVistoria.motorista?.nome ?? '-';
-    const motoristaMatricula = this.selectedVistoria.motorista?.matricula ?? '-';
+    const veiculoDescricao = vistoria.veiculo?.descricao ?? '-';
+    const placa = vistoria.veiculo?.placa ?? '-';
+    const motoristaNome = vistoria.motorista?.nome ?? '-';
+    const motoristaMatricula = vistoria.motorista?.matricula ?? '-';
     const bateriaTexto =
-      this.selectedVistoria.porcentagembateria === null ||
-      this.selectedVistoria.porcentagembateria === undefined
+      vistoria.porcentagembateria === null ||
+      vistoria.porcentagembateria === undefined
         ? '-'
-        : `${this.selectedVistoria.porcentagembateria}%`;
+        : `${vistoria.porcentagembateria}%`;
+    const tituloRelatorio = 'Relatório de Vistoria';
+    const logoHtml = logoUrl
+      ? `<img class="logo" src="${logoUrl}" alt="Logo" />`
+      : '<span class="logo-placeholder"></span>';
+    const rodapeEsquerda = usuarioImpressao
+      ? `Emissão: ${printDate} · Usuário: ${this.escapeHtml(usuarioImpressao)}`
+      : `Emissão: ${printDate}`;
 
-    const irregularidadesHtml = this.irregularidades.map((ir) => {
-      const imagens = (this.imagensPorIrregularidade[ir.id] ?? [])
-        .map((img) =>
-          `<img src="${this.getImagemPreview(img.dadosBase64)}" alt="${this.escapeHtml(img.nomeArquivo)}" />`,
-        )
-        .join('');
-      const audios = this.audiosPorIrregularidade[ir.id] ?? [];
-      const audiosHtml =
-        audios.length > 0
-          ? `<ul class="item-audios">${audios
-              .map(
-                (a) =>
-                  `<li>${this.escapeHtml(a.nomeArquivo)}${
-                    a.duracaoMs != null ? ` (${this.formatDuracaoAudio(a.duracaoMs)})` : ''
-                  }</li>`,
-              )
-              .join('')}</ul>`
-          : '';
-      const titulo = this.escapeHtml(this.getIrregularidadeLinhaPrincipal(ir));
-      const obs = ir.observacao
-        ? `<div class="item-obs">${this.escapeHtml(ir.observacao)}</div>`
-        : '';
-      const statusLabel = ir.resolvido ? 'Resolvida' : 'Pendente';
-      const statusClass = ir.resolvido ? 'ok' : 'nok';
-      return `
+    const irregularidadesHtml =
+      irregularidades.length === 0
+        ? '<p class="muted">Nenhuma irregularidade registrada nesta vistoria.</p>'
+        : irregularidades
+            .map((ir) => {
+              const imagens = imagensPorIrregularidade[ir.id] ?? [];
+              const imagensHtml =
+                imagens.length > 0
+                  ? `<div class="item-images">${imagens
+                      .map(
+                        (img) =>
+                          `<div class="img-cell"><img src="${this.getImagemPreview(img.dadosBase64)}" alt="${this.escapeHtml(img.nomeArquivo)}" /></div>`,
+                      )
+                      .join('')}</div>`
+                  : '<div class="muted">Sem imagens anexadas.</div>';
+              const audios = audiosPorIrregularidade[ir.id] ?? [];
+              const audiosHtml =
+                audios.length > 0
+                  ? `<div class="item-audios-wrap"><strong>Áudios:</strong><ul class="item-audios">${audios
+                      .map(
+                        (a) =>
+                          `<li>${this.escapeHtml(a.nomeArquivo)}${
+                            a.duracaoMs != null
+                              ? ` (${this.formatDuracaoAudio(a.duracaoMs)})`
+                              : ''
+                          }</li>`,
+                      )
+                      .join('')}</ul></div>`
+                  : '';
+              const tituloItem = this.escapeHtml(
+                this.getIrregularidadeLinhaRelatorio(ir),
+              );
+              const obsTxt = ir.observacao?.trim() || 'Não informada.';
+              return `
         <div class="item">
-          <div class="item-title">
-            <span>${titulo}</span>
-            <span class="item-status ${statusClass}">${statusLabel}</span>
-          </div>
-          ${obs}
-          ${audiosHtml ? `<div class="item-audios-wrap"><strong>Áudios:</strong>${audiosHtml}</div>` : ''}
-          <div class="item-images">${imagens || '<span class="muted">Sem fotos</span>'}</div>
+          <div class="item-title">${tituloItem}</div>
+          <div class="item-meta">Observação: ${this.escapeHtml(obsTxt)}</div>
+          ${audiosHtml}
+          ${imagensHtml}
         </div>
       `;
-    }).join('');
+            })
+            .join('');
 
+    doc.document.open();
     doc.document.write(`
       <html>
         <head>
-          <title>Vistoria</title>
+          <title>${this.escapeHtml(tituloRelatorio)}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 16px; color: #111827; }
-            h1 { margin: 0; font-size: 22px; }
-            .header { border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 12px; }
-            .header-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-            .header-meta { display: flex; gap: 12px; font-size: 13px; color: #6b7280; margin-top: 6px; flex-wrap: wrap; }
-            .cover { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px; font-size: 14px; color: #374151; margin-bottom: 12px; }
-            .item { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-            .item-title { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-            .item-status { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; margin-bottom: 6px; }
-            .item-status.ok { background: #dcfce7; color: #166534; }
-            .item-status.nok { background: #fee2e2; color: #991b1b; }
-            .item-obs { color: #6b7280; margin-bottom: 8px; }
-            .item-audios-wrap { margin-bottom: 8px; font-size: 13px; color: #374151; }
-            .item-audios { margin: 4px 0 0 18px; padding: 0; }
-            .item-images { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
-            .item-images img { width: 100%; height: auto; border-radius: 6px; border: 1px solid #e5e7eb; }
-            .muted { color: #9ca3af; }
-            .footer { position: fixed; bottom: 12px; left: 16px; right: 16px; font-size: 12px; color: #6b7280; display: flex; justify-content: space-between; }
-            @media print { body { padding-bottom: 40px; } }
+            @page {
+              size: A4;
+              margin: 10mm 12mm 14mm 12mm;
+              @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 8pt;
+                color: #64748b;
+              }
+            }
+            * { box-sizing: border-box; }
+            body { font-family: Helvetica, Arial, sans-serif; margin: 0; color: #0f172a; }
+            .header-brand {
+              display: grid;
+              grid-template-columns: 96pt 1fr 96pt;
+              align-items: center;
+              column-gap: 6pt;
+              margin-bottom: 0;
+            }
+            .logo, .logo-placeholder {
+              width: 96pt;
+              height: 32pt;
+              object-fit: contain;
+              object-position: left center;
+            }
+            .header-brand h1 {
+              margin: 0;
+              font-size: 13pt;
+              font-weight: 400;
+              text-align: center;
+              color: #0f172a;
+            }
+            .header-sub {
+              text-align: center;
+              font-size: 9pt;
+              color: #475569;
+              margin: 1pt 0 0;
+            }
+            .header-emissao {
+              text-align: center;
+              font-size: 8pt;
+              color: #64748b;
+              margin: 1pt 0 6pt;
+            }
+            .cover {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 1pt 12pt;
+              font-size: 8pt;
+              color: #334155;
+              margin-bottom: 8pt;
+            }
+            .item {
+              border: 0.8pt solid #cbd5e1;
+              border-radius: 6pt;
+              padding: 6pt 8pt;
+              margin-bottom: 8pt;
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            .item-title { font-weight: 700; font-size: 9pt; color: #0f172a; margin-bottom: 2pt; }
+            .item-meta { font-size: 8pt; color: #334155; margin-bottom: 4pt; }
+            .item-audios-wrap { margin-bottom: 6pt; font-size: 8pt; color: #334155; }
+            .item-audios { margin: 3pt 0 0 16pt; padding: 0; }
+            .item-images {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 8pt;
+            }
+            .img-cell {
+              height: 200pt;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              overflow: hidden;
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            .img-cell img {
+              max-width: 100%;
+              max-height: 200pt;
+              width: auto;
+              height: auto;
+              object-fit: contain;
+            }
+            .muted { color: #6b7280; font-size: 8pt; }
+            .footer {
+              position: fixed;
+              bottom: 6mm;
+              left: 12mm;
+              right: 26mm;
+              font-size: 8pt;
+              color: #64748b;
+              border-top: 0.5pt solid #e2e8f0;
+              padding-top: 3pt;
+            }
+            @media print {
+              body { padding-bottom: 18pt; }
+              .footer { position: fixed; }
+              .item, .img-cell {
+                break-inside: avoid;
+                page-break-inside: avoid;
+              }
+            }
           </style>
         </head>
         <body>
-          <div class="header">
-            <div class="header-top">
-              <h1>Relatório de Vistoria</h1>
-              <strong>${this.getStatusLabel(this.selectedVistoria.status)}</strong>
-            </div>
-            <div class="header-meta">
-              <span>ID: ${this.selectedVistoria.id}</span>
-              <span>Data da vistoria: ${dataVistoria}</span>
-            </div>
+          <div class="header-brand">
+            ${logoHtml}
+            <h1>${this.escapeHtml(tituloRelatorio)}</h1>
+            <span></span>
           </div>
+          <div class="header-sub">Veículo: ${this.escapeHtml(veiculoDescricao)} · Placa: ${this.escapeHtml(placa)}</div>
+          <div class="header-emissao">Emissão: ${printDate}</div>
           <div class="cover">
-            <div><strong>Veículo:</strong> ${veiculoDescricao}</div>
-            <div><strong>Placa:</strong> ${placa}</div>
-            <div><strong>Motorista:</strong> ${motoristaNome}</div>
-            <div><strong>Matrícula:</strong> ${motoristaMatricula}</div>
-            <div><strong>Vistoriador:</strong> ${usuario}</div>
-            <div><strong>Odômetro:</strong> ${this.formatNumero(this.selectedVistoria.odometro)}</div>
-            <div><strong>${this.rotuloPercentualVistoria(this.selectedVistoria)}:</strong> ${bateriaTexto}</div>
-            <div><strong>Tempo:</strong> ${this.formatTempo(this.selectedVistoria.tempo)}</div>
-            <div><strong>Observação:</strong> ${this.selectedVistoria.observacao ?? '-'}</div>
+            <div><strong>Status:</strong> ${this.escapeHtml(this.getStatusLabel(vistoria.status))}</div>
+            <div><strong>Data da vistoria:</strong> ${dataVistoria}</div>
+            <div><strong>Motorista:</strong> ${this.escapeHtml(motoristaNome)}</div>
+            <div><strong>Matrícula:</strong> ${this.escapeHtml(motoristaMatricula)}</div>
+            <div><strong>Vistoriador:</strong> ${this.escapeHtml(usuario)}</div>
+            <div><strong>Odômetro:</strong> ${this.formatNumero(vistoria.odometro)}</div>
+            <div><strong>${this.escapeHtml(this.rotuloPercentualVistoria(vistoria))}:</strong> ${bateriaTexto}</div>
+            <div><strong>Tempo:</strong> ${this.formatTempo(vistoria.tempo)}</div>
+            <div><strong>Observação:</strong> ${this.escapeHtml(vistoria.observacao ?? '-')}</div>
+            <div><strong>Vistoria:</strong> ${this.formatNumeroVistoria(vistoria.numeroVistoria)}</div>
+            <div><strong>Vistoria OMNI:</strong> ${this.formatErpNumero(vistoria.erpNumeroVistoria)}</div>
+            <div><strong>Erro ERP:</strong> ${this.escapeHtml(vistoria.erpUltimoErro ?? '-')}</div>
           </div>
           ${irregularidadesHtml}
-          <div class="footer">
-            <span>Impresso por: ${usuarioImpressao}</span>
-            <span>Impresso em: ${printDate}</span>
-          </div>
-          <script>window.onload = () => window.print();</script>
+          <div class="footer">${rodapeEsquerda}</div>
+          <script>
+            window.onload = () => setTimeout(() => window.print(), 250);
+          </script>
         </body>
       </html>
     `);
@@ -540,5 +944,9 @@ export class VistoriaListComponent implements OnInit {
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .trim();
+  }
+
+  private somenteDigitos(value?: string | number | null): string {
+    return String(value ?? '').replace(/\D+/g, '');
   }
 }

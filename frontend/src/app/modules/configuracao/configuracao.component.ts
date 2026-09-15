@@ -1,5 +1,4 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { environment } from '../../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -23,7 +22,10 @@ export class ConfiguracaoComponent implements OnInit {
   error: string | null = null;
   success: string | null = null;
   logoPreview: string | null = null;
-  activeTab: 'sistema' | 'email' = 'sistema';
+  activeTab: 'sistema' | 'email' | 'erp' = 'sistema';
+  showErpApiKey = false;
+  erpApiKeyConfigured = false;
+  erpApiKeyLoading = false;
 
   constructor() {
     this.form = this.fb.group({
@@ -45,6 +47,14 @@ export class ConfiguracaoComponent implements OnInit {
       emailRemetenteNome: [''],
       emailRemetenteEmail: [''],
       emailAssuntoPadrao: ['Relatório de Ordem de Serviço'],
+      erpAtivo: [false],
+      erpUrl: [''],
+      erpTenant: ['SISTEMA_VISTORIA'],
+      erpApiKey: [''],
+      erpLocalAbertura: [1],
+      erpTipoPedido: [0],
+      erpMensagemErroPadrao: [''],
+      erpTimeoutMs: [30000],
     });
   }
 
@@ -72,15 +82,18 @@ export class ConfiguracaoComponent implements OnInit {
           emailRemetenteEmail: config.emailEnvioConfig?.remetenteEmail ?? '',
           emailAssuntoPadrao:
             config.emailEnvioConfig?.assuntoPadrao ?? 'Relatório de Ordem de Serviço',
+          erpAtivo: config.erpVistoriaConfig?.ativo ?? false,
+          erpUrl: config.erpVistoriaConfig?.url ?? '',
+          erpTenant: config.erpVistoriaConfig?.tenant ?? 'SISTEMA_VISTORIA',
+          erpApiKey: '',
+          erpLocalAbertura: config.erpVistoriaConfig?.localAbertura ?? 1,
+          erpTipoPedido: config.erpVistoriaConfig?.tipoPedido ?? 0,
+          erpMensagemErroPadrao: config.erpVistoriaConfig?.mensagemErroPadrao ?? '',
+          erpTimeoutMs: config.erpVistoriaConfig?.timeoutMs ?? 30000,
         });
-        if (config.logoRelatorio) {
-          const backendUrl = environment.apiUrl.replace(/\/api$/, '');
-          this.logoPreview = config.logoRelatorio.startsWith('http')
-            ? config.logoRelatorio
-            : `${backendUrl}${config.logoRelatorio}`;
-        } else {
-          this.logoPreview = null;
-        }
+        this.showErpApiKey = false;
+        this.erpApiKeyConfigured = !!config.erpVistoriaConfig?.apiKeyConfigured;
+        this.aplicarLogoPreview(config.logoRelatorio);
         this.loading = false;
       },
       error: () => {
@@ -89,8 +102,9 @@ export class ConfiguracaoComponent implements OnInit {
     });
   }
 
-  onLogoChange(event: any) {
-    const file = event.target.files[0];
+  onLogoChange(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
     if (file) {
       this.form.patchValue({ logoRelatorio: file });
       const reader = new FileReader();
@@ -104,6 +118,15 @@ export class ConfiguracaoComponent implements OnInit {
     this.success = null;
     if (this.form.invalid) {
       this.error = 'Formulário inválido. Preencha todos os campos obrigatórios.';
+      return;
+    }
+    const erpAtivo = !!this.form.value.erpAtivo;
+    const erpUrl = (this.form.value.erpUrl ?? '').trim();
+    const erpTenant = (this.form.value.erpTenant ?? '').trim();
+    const erpApiKey = this.chaveErpInformada(this.form.value.erpApiKey);
+    if (erpAtivo && (!erpUrl || !erpTenant || (!erpApiKey && !this.erpApiKeyConfigured))) {
+      this.error =
+        'Com o envio ao ERP ativo, preencha URL, tenant e API Key.';
       return;
     }
     this.loading = true;
@@ -133,6 +156,20 @@ export class ConfiguracaoComponent implements OnInit {
         assuntoPadrao: (this.form.value.emailAssuntoPadrao ?? '').trim() || undefined,
       }),
     );
+    formData.append(
+      'erpVistoriaConfig',
+      JSON.stringify({
+        ativo: erpAtivo,
+        url: erpUrl,
+        tenant: erpTenant || 'SISTEMA_VISTORIA',
+        apiKey: erpApiKey || undefined,
+        localAbertura: Number(this.form.value.erpLocalAbertura ?? 1),
+        tipoPedido: Number(this.form.value.erpTipoPedido ?? 0),
+        mensagemErroPadrao:
+          (this.form.value.erpMensagemErroPadrao ?? '').trim() || undefined,
+        timeoutMs: Number(this.form.value.erpTimeoutMs ?? 30000),
+      }),
+    );
     const handleError = (err: any) => {
       this.loading = false;
       this.success = null;
@@ -140,14 +177,12 @@ export class ConfiguracaoComponent implements OnInit {
     };
     const handleSuccess = (config: Configuracao) => {
       this.configuracao = config;
-      if (config.logoRelatorio) {
-        const backendUrl = environment.apiUrl.replace(/\/api$/, '');
-        this.logoPreview = config.logoRelatorio.startsWith('http')
-          ? config.logoRelatorio
-          : `${backendUrl}${config.logoRelatorio}`;
-      } else {
-        this.logoPreview = null;
-      }
+      this.form.patchValue({
+        erpApiKey: '',
+      });
+      this.showErpApiKey = false;
+      this.erpApiKeyConfigured = !!config.erpVistoriaConfig?.apiKeyConfigured;
+      this.aplicarLogoPreview(config.logoRelatorio);
       this.loading = false;
       this.error = null;
       this.success = 'Configuração salva com sucesso!';
@@ -163,6 +198,61 @@ export class ConfiguracaoComponent implements OnInit {
         error: handleError
       });
     }
+  }
+
+  toggleErpApiKeyVisibility(): void {
+    if (this.showErpApiKey) {
+      this.showErpApiKey = false;
+      return;
+    }
+    const atual = this.chaveErpInformada(this.form.value.erpApiKey);
+    if (atual) {
+      this.showErpApiKey = true;
+      return;
+    }
+    if (!this.erpApiKeyConfigured) {
+      this.showErpApiKey = true;
+      return;
+    }
+    this.erpApiKeyLoading = true;
+    this.configuracaoService.getErpApiKey().subscribe({
+      next: (resposta) => {
+        this.erpApiKeyConfigured = !!resposta.configurada;
+        if (resposta.apiKey) {
+          this.form.patchValue({ erpApiKey: resposta.apiKey });
+        }
+        this.showErpApiKey = true;
+        this.erpApiKeyLoading = false;
+      },
+      error: () => {
+        this.erpApiKeyLoading = false;
+        this.error = 'Não foi possível carregar a API Key salva.';
+        this.showErpApiKey = true;
+      },
+    });
+  }
+
+  private chaveErpInformada(valor?: string | null): string {
+    const texto = (valor ?? '').trim();
+    if (!texto || /^\*+$/.test(texto)) {
+      return '';
+    }
+    return texto;
+  }
+
+  private aplicarLogoPreview(logoRelatorio?: string | null): void {
+    if (!logoRelatorio?.trim()) {
+      this.logoPreview = null;
+      return;
+    }
+    this.configuracaoService.getLogoRelatorio().subscribe({
+      next: (resposta) => {
+        this.logoPreview = resposta.dataUrl || logoRelatorio;
+      },
+      error: () => {
+        this.logoPreview = logoRelatorio;
+      },
+    });
   }
 
 }

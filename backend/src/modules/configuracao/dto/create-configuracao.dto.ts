@@ -1,5 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsBoolean, IsObject } from 'class-validator';
+import {
+  EmailEnvioConfig,
+  ErpVistoriaConfig,
+} from '../entities/configuracao.entity';
 
 export class CreateConfiguracaoDto {
   @ApiPropertyOptional({
@@ -111,5 +115,12 @@ export class CreateConfiguracaoDto {
   })
   @IsOptional()
   @IsObject()
-  emailEnvioConfig?: any;
+  emailEnvioConfig?: EmailEnvioConfig;
+
+  @ApiPropertyOptional({
+    description: 'Configuração da integração ERP de vistoria',
+  })
+  @IsOptional()
+  @IsObject()
+  erpVistoriaConfig?: ErpVistoriaConfig;
 }

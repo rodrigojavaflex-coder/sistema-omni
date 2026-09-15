@@ -494,6 +494,12 @@ function Configure-IIS {
                     <action type="Rewrite" url="http://localhost:8080/api/{R:1}" />
                 </rule>
 
+                <!-- 4) Uploads (logo e arquivos estaticos do Nest, fora do prefixo /api) -->
+                <rule name="Uploads Proxy" stopProcessing="true">
+                    <match url="^uploads/(.*)" />
+                    <action type="Rewrite" url="http://localhost:8080/uploads/{R:1}" />
+                </rule>
+
             </rules>
         </rewrite>
     </system.webServer>
@@ -504,7 +510,7 @@ function Configure-IIS {
         $rootIisPath = "C:\inetpub\wwwroot"
         $rootWebConfig | Out-File -FilePath "$rootIisPath\web.config" -Encoding UTF8 -Force
         Write-Host "  OK: web.config GLOBAL criado em $rootIisPath!" -ForegroundColor Green
-        Write-Host "  -> Host canonico + redirect / + proxy /api" -ForegroundColor Gray
+        Write-Host "  -> Host canonico + redirect / + proxy /api + proxy /uploads" -ForegroundColor Gray
     } catch {
         Write-Host "  AVISO: Falha ao criar web.config global: $($_.Exception.Message)" -ForegroundColor Yellow
         Write-Host "  O proxy ainda funcionara via /omni/api/*" -ForegroundColor Yellow

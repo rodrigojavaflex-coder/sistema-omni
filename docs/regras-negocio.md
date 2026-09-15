@@ -160,6 +160,7 @@ Copie o bloco abaixo para cada regra nova.
 - [x] RN-VIS-005 - Desistencia da vistoria mobile com exclusao em cascata
 - [x] RN-VIS-006 - Envio para manutencao com integracao OS externa (dual BRT)
 - [x] RN-VIS-007 - Relatorio PDF de pendencias do veiculo
+- [x] RN-VIS-008 - Integracao assincrona da capa da vistoria com ERP legado
 - [ ] RN-VIS-001 - Placeholder
 - [x] RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
 
@@ -343,7 +344,7 @@ Copie o bloco abaixo para cada regra nova.
 ### RN-VIS-007 - Relatorio PDF de pendencias do veiculo
 - **Modulo:** Vistoria
 - **Fluxo:** App mobile — tela Pendencias do Veiculo
-- **Descricao:** Usuario com permissao de historico do veiculo gera PDF das irregularidades nao resolvidas do veiculo selecionado, no padrao de relatorio do sistema (logo, titulo, fotos das irregularidades, rodape com usuario e data).
+- **Descricao:** Usuario com permissao de historico do veiculo gera PDF das irregularidades nao resolvidas do veiculo selecionado, no padrao de relatorio do sistema (logo, titulo, fotos das irregularidades, rodape com usuario e data). O relatorio impresso da vistoria na web (tela Vistorias) segue o mesmo padrao visual.
 - **Condicoes de entrada:** Veiculo selecionado; permissao `vistoria_web_historico_veiculo:read`.
 - **Validacoes:**
   - Sem veiculo, o botao permanece desabilitado
@@ -354,10 +355,27 @@ Copie o bloco abaixo para cada regra nova.
 - **Dados impactados:** somente leitura (`irregularidades`, `irregularidades_midias`, `vistorias`, `veiculos`, `configuracao.logoRelatorio`)
 - **Criterios de aceite:**
   - [ ] PDF com logo (quando cadastrada), veiculo/placa, lista de pendencias
-  - [ ] Fotos de cada irregularidade no PDF (grade 3 colunas); sem foto, texto "Sem imagens anexadas"
+  - [ ] Fotos de cada irregularidade no PDF (grade 3 colunas, celula 200pt); sem foto, texto "Sem imagens anexadas"
   - [ ] Rodape com emissao, usuario e paginacao
   - [ ] Filtros de area/componente visiveis no PDF quando aplicados
+  - [ ] Impressao da vistoria na web com logo, titulo, grade 3 colunas 200pt e rodape no mesmo padrao
 - **Origem da regra:** Requisicao de produto — relatorio de pendencias no app, 2026-09-11
+- **Status:** Implementada
+
+### RN-VIS-008 - Integracao assincrona da capa da vistoria com ERP legado
+- **Modulo:** Vistoria
+- **Fluxo:** Finalizar vistoria (mobile/SOS) → fila ERP; reenvio na tela Vistorias
+- **Descricao:** Com a integracao habilitada em Configuracao do Sistema, ao finalizar vistoria com pelo menos uma irregularidade o OMNI enfileira a capa e envia `POST /api/v1/vistorias/lote` de forma assincrona (o usuario nao espera). O legado devolve `pedido.codigo_pedido`, gravado em `vistorias.erp_numero_vistoria`. Vistorias sem esse numero podem ser (re)enviadas na tela Vistorias (unitario ou massa, um POST com array). Vistoria que ja possui numero ERP nao reenvia.
+- **Condicoes de entrada:** Enfileirar: `FINALIZADA`, ≥1 irregularidade, flag ativo, URL, tenant (`X-Tenant`) e API Key (`X-API-Key`). Reenviar: mesma elegibilidade, `erp_numero_vistoria` nulo, permissao de reenvio.
+- **Validacoes:** Integracao desabilitada nao enfileira e desabilita envio na tela; sem irregularidade = `NAO_APLICA`; com nr ERP = recusar reenvio; `EM_ANDAMENTO`/`CANCELADA` nao enviam. Campo `veiculo` do legado: 2 primeiros caracteres da descricao do veiculo (≥12 → prefixo `1:`; <12 → prefixo `5:`); descricao invalida → `FALHA`. `condicao`: mobile = `1`, SOS = `5`. Sintomas ERP: `AREA-COMPONENTE-SINTOMA - (observacao)` por irregularidade (observacao = descricao do problema, RN-VIS-002; se vazia, envia so `AREA-COMPONENTE-SINTOMA`). Local de abertura: `0` Oficina / `1` Portaria. Tipo de pedido: `0` Entrada / `1` Saida.
+- **Acoes do sistema:** `finalizar` persiste mesmo se o ERP falhar depois; worker grava nr ou erro na capa; lote admite sucesso parcial.
+- **Mensagens ao usuario:** Erro no card na ordem: texto da API, senao mensagem padrao da aba Configuracao, senao `Erro ao gravar Vistoria no OMNI` (sem vazar API Key). Resumo de lote; aviso se envio estiver desabilitado.
+- **Permissoes envolvidas:** `configuracao:access` (aba); `vistoria_web:read` (consulta); `vistoria_web:reprocessar_erp` (enviar/reenviar, grupo Vistoria Web). Concessao **manual** em Perfis, sem migration de perfil.
+- **Dados impactados:** `configuracoes.erp_vistoria_config`; `vistorias.erp_status`, `erp_numero_vistoria`, `erp_enviado_em`, `erp_ultimo_erro`
+- **Rastreabilidade:** Auditoria da config; log sanitizado do worker
+- **Criterios de aceite:** Detalhados em `docs/PLANO_INTEGRACAO_ERP_VISTORIA.md`
+- **Cenarios de excecao:** ERP fora; config incompleta; resposta sem nr; lote misto
+- **Origem da regra:** Decisao de produto — integracao capa ERP legado, 2026-09-15
 - **Status:** Implementada
 
 ### 2. Ocorrencias
@@ -486,6 +504,10 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-09-15: Logo do relatorio em producao via data URL da API; proxy IIS/nginx de `/uploads` (Nest serve fora de `/api`).
+- 2026-09-15: RN-VIS-007 Impressao da vistoria na web alinhada ao PDF de pendencias (logo, titulo, fotos 3x200pt, rodape).
+- 2026-09-15: RN-VIS-008 Sintomas ERP passam a incluir observacao: `AREA-COMPONENTE-SINTOMA - (observacao)`.
+- 2026-09-15: Ajustes ERP: botao compacto na lista; combos Local (Oficina/Portaria) e Tipo (Entrada/Saida); `condicao` 1 mobile / 5 SOS; sintomas `AREA-COMPONENTE-SINTOMA`.
 - 2026-09-11: RN-VIS-007 Relatorio PDF de pendencias do veiculo (app), com logo, fotos das irregularidades, filtros de area/componente e usuario no rodape.
 - 2026-09-11: RN-VIS-004 Percentual obrigatorio na vistoria (app e SOS) para combustivel Eletrico e GNV, com rotulo dinamico; Diesel permanece opcional.
 - 2026-09-08: RN-AUTH-006 Alterar senha no aplicativo mobile (mesmo contrato da web).

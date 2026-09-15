@@ -1,4 +1,28 @@
 
+export interface EmailEnvioConfig {
+  ativo: boolean;
+  host: string;
+  porta: number;
+  usuario?: string;
+  senha?: string;
+  usarTls: boolean;
+  remetenteNome?: string;
+  remetenteEmail?: string;
+  assuntoPadrao?: string;
+}
+
+export interface ErpVistoriaConfig {
+  ativo: boolean;
+  url: string;
+  tenant: string;
+  apiKey?: string;
+  apiKeyConfigured?: boolean;
+  localAbertura: number;
+  tipoPedido: number;
+  mensagemErroPadrao?: string;
+  timeoutMs?: number;
+}
+
 export interface Configuracao {
   id: string;
   nomeCliente?: string;
@@ -12,6 +36,7 @@ export interface Configuracao {
   auditarSenhaAlterada: boolean;
   tempoFluxoConfig?: TempoFluxoConfig;
   emailEnvioConfig?: EmailEnvioConfig;
+  erpVistoriaConfig?: ErpVistoriaConfig;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -46,18 +71,7 @@ export interface CreateConfiguracaoDto {
   auditarSenhaAlterada?: boolean;
   tempoFluxoConfig?: TempoFluxoConfig;
   emailEnvioConfig?: EmailEnvioConfig;
-}
-
-export interface EmailEnvioConfig {
-  ativo: boolean;
-  host: string;
-  porta: number;
-  usuario?: string;
-  senha?: string;
-  usarTls: boolean;
-  remetenteNome?: string;
-  remetenteEmail?: string;
-  assuntoPadrao?: string;
+  erpVistoriaConfig?: ErpVistoriaConfig;
 }
 
 export interface UpdateConfiguracaoDto extends Partial<CreateConfiguracaoDto> {}

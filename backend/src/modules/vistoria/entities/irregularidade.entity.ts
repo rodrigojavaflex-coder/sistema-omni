@@ -27,7 +27,10 @@ export class Irregularidade extends BaseEntity {
   }
 
   @ApiProperty({ description: 'Vistoria vinculada', type: () => Vistoria })
-  @ManyToOne(() => Vistoria, { nullable: false, onDelete: 'CASCADE' })
+  @ManyToOne(() => Vistoria, (vistoria) => vistoria.irregularidades, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'idvistoria' })
   vistoria: Vistoria;
 

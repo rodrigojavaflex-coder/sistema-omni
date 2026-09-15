@@ -1,11 +1,13 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Veiculo } from '../../veiculo/entities/veiculo.entity';
 import { Motorista } from '../../motorista/entities/motorista.entity';
 import { StatusVistoria } from '../../../common/enums/status-vistoria.enum';
+import { StatusErpVistoria } from '../../../common/enums/status-erp-vistoria.enum';
 import { OrigemVistoria } from '../../../common/enums/origem-vistoria.enum';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { Irregularidade } from './irregularidade.entity';
 
 @Entity('vistorias')
 @Index('IDX_VISTORIA_DATA', ['datavistoria'])
@@ -40,6 +42,9 @@ export class Vistoria extends BaseEntity {
   @ApiProperty({ description: 'ID do usuário', format: 'uuid' })
   @Column({ name: 'idusuario', type: 'uuid' })
   idUsuario: string;
+
+  @OneToMany(() => Irregularidade, (irregularidade) => irregularidade.vistoria)
+  irregularidades?: Irregularidade[];
 
   @ApiProperty({ description: 'Odômetro informado', example: 12345.6 })
   @Column({
@@ -101,4 +106,38 @@ export class Vistoria extends BaseEntity {
   })
   @Column({ name: 'origem', type: 'varchar', length: 20, nullable: true })
   origem?: OrigemVistoria | null;
+
+  @ApiProperty({
+    description: 'Status da integração ERP da capa',
+    enum: StatusErpVistoria,
+    default: StatusErpVistoria.NAO_APLICA,
+  })
+  @Column({
+    name: 'erp_status',
+    type: 'varchar',
+    length: 20,
+    default: StatusErpVistoria.NAO_APLICA,
+  })
+  erpStatus: StatusErpVistoria;
+
+  @ApiProperty({
+    description: 'Número da vistoria devolvido pelo ERP (codigo_pedido)',
+    required: false,
+  })
+  @Column({ name: 'erp_numero_vistoria', type: 'varchar', length: 50, nullable: true })
+  erpNumeroVistoria?: string | null;
+
+  @ApiProperty({ description: 'Data/hora do último envio com sucesso', required: false })
+  @Column({ name: 'erp_enviado_em', type: 'timestamp', nullable: true })
+  erpEnviadoEm?: Date | null;
+
+  @ApiProperty({ description: 'Último erro funcional do envio ERP', required: false })
+  @Column({ name: 'erp_ultimo_erro', type: 'text', nullable: true })
+  erpUltimoErro?: string | null;
+
+  @ApiProperty({
+    description: 'Elegível para envio/reenvio ao ERP (não persistido)',
+    required: false,
+  })
+  erpElegivel?: boolean;
 }

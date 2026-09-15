@@ -9,10 +9,12 @@ import {
   UploadedFile,
   Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { ConfiguracaoService } from './configuracao.service';
 import { CreateConfiguracaoDto } from './dto/create-configuracao.dto';
 import { UpdateConfiguracaoDto } from './dto/update-configuracao.dto';
+import { ErpApiKeyDto } from './dto/erp-api-key.dto';
+import { LogoRelatorioDto } from './dto/logo-relatorio.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -39,6 +41,20 @@ export class ConfiguracaoController {
   }
 
   private parseEmailEnvioConfig(raw: unknown) {
+    if (!raw) {
+      return undefined;
+    }
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return undefined;
+      }
+    }
+    return raw;
+  }
+
+  private parseErpVistoriaConfig(raw: unknown) {
     if (!raw) {
       return undefined;
     }
@@ -94,6 +110,7 @@ export class ConfiguracaoController {
         : true,
       tempoFluxoConfig: this.parseTempoFluxoConfig(req.body.tempoFluxoConfig),
       emailEnvioConfig: this.parseEmailEnvioConfig(req.body.emailEnvioConfig),
+      erpVistoriaConfig: this.parseErpVistoriaConfig(req.body.erpVistoriaConfig),
     };
 
     return this.configuracaoService.create(body, req?.user?.id);
@@ -104,6 +121,22 @@ export class ConfiguracaoController {
   @ApiOperation({ summary: 'Buscar configuração' })
   async findOne() {
     return this.configuracaoService.findOne();
+  }
+
+  @Get('logo-relatorio')
+  @Permissions(Permission.VISTORIA_WEB_READ, Permission.CONFIGURACAO_ACCESS)
+  @ApiOperation({ summary: 'Obter caminho da logo usada nos relatórios' })
+  @ApiResponse({ status: 200, type: LogoRelatorioDto })
+  findLogoRelatorio(): Promise<LogoRelatorioDto> {
+    return this.configuracaoService.findLogoRelatorio();
+  }
+
+  @Get('erp-api-key')
+  @Permissions(Permission.CONFIGURACAO_ACCESS)
+  @ApiOperation({ summary: 'Obter API Key do ERP em claro (aba Integração ERP)' })
+  @ApiResponse({ status: 200, type: ErpApiKeyDto })
+  findErpApiKey(): Promise<ErpApiKeyDto> {
+    return this.configuracaoService.findErpApiKey();
   }
 
   @Get('tempo-fluxo')
@@ -180,6 +213,7 @@ export class ConfiguracaoController {
         : undefined,
       tempoFluxoConfig: this.parseTempoFluxoConfig(req.body.tempoFluxoConfig),
       emailEnvioConfig: this.parseEmailEnvioConfig(req.body.emailEnvioConfig),
+      erpVistoriaConfig: this.parseErpVistoriaConfig(req.body.erpVistoriaConfig),
     };
 
     return this.configuracaoService.update(id, body, req?.user?.id);

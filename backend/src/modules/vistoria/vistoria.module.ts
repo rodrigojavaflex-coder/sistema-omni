@@ -34,6 +34,7 @@ import { Configuracao } from '../configuracao/entities/configuracao.entity';
 import { EmpresaTerceiraModule } from '../empresa-terceira/empresa-terceira.module';
 import { IrregularidadeOsExterna } from './entities/irregularidade-os-externa.entity';
 import { BrtOsIntegrationService } from './brt-os-integration.service';
+import { ErpVistoriaIntegrationService } from './erp-vistoria-integration.service';
 import {
   IrregularidadeManutencaoEnvioService,
 } from './irregularidade-manutencao-envio.service';
@@ -80,6 +81,7 @@ import {
     IrregularidadeService,
     BrtOsIntegrationService,
     IrregularidadeManutencaoEnvioService,
+    ErpVistoriaIntegrationService,
   ],
 })
 export class VistoriaModule {}

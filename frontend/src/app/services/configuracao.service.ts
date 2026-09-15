@@ -19,12 +19,27 @@ export class ConfiguracaoService {
     return this.http.get<Configuracao>(this.apiUrl);
   }
 
+  getLogoRelatorio(): Observable<{
+    logoRelatorio: string | null;
+    dataUrl: string | null;
+  }> {
+    return this.http.get<{ logoRelatorio: string | null; dataUrl: string | null }>(
+      `${this.apiUrl}/logo-relatorio`,
+    );
+  }
+
   createConfiguracao(data: FormData): Observable<Configuracao> {
     return this.http.post<Configuracao>(this.apiUrl, data);
   }
 
   updateConfiguracao(id: string, data: FormData): Observable<Configuracao> {
     return this.http.put<Configuracao>(`${this.apiUrl}/${id}`, data);
+  }
+
+  getErpApiKey(): Observable<{ configurada: boolean; apiKey: string }> {
+    return this.http.get<{ configurada: boolean; apiKey: string }>(
+      `${this.apiUrl}/erp-api-key`,
+    );
   }
 
   getTempoFluxoConfig(): Observable<TempoFluxoConfig> {
