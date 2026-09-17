@@ -46,4 +46,18 @@ export class MatrizCriticidade extends BaseEntity {
   @ApiProperty({ description: 'Permite áudio', default: false })
   @Column({ name: 'permite_audio', type: 'boolean', default: false })
   permiteAudio: boolean;
+
+  @ApiProperty({
+    description:
+      'IDs do catálogo de vistas permitidas no mapa. Vazio = todas as vistas do modelo',
+    type: [String],
+    format: 'uuid',
+  })
+  @Column({
+    name: 'id_vistas',
+    type: 'uuid',
+    array: true,
+    default: () => "'{}'",
+  })
+  idVistas: string[];
 }

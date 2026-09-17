@@ -11,12 +11,32 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="content">
-    <ion-card>
+  <div class="sobre-page">
+    <div class="sobre-hero">
+      <div class="sobre-logo" aria-hidden="true">{{ inicialApp() }}</div>
+      <h1>{{ appName() }}</h1>
+      <p class="sobre-tag">Informações do aplicativo</p>
+      <span class="sobre-badge">Versão {{ appVersion() }}</span>
+    </div>
+
+    <ion-card class="sobre-card">
       <ion-card-content>
-        <p><strong>Aplicativo:</strong> {{ appName }}</p>
-        <p><strong>Versão:</strong> {{ appVersion }}</p>
-        <p><strong>Build:</strong> {{ buildVersion }}</p>
+        <div class="info-row">
+          <span class="info-label">Aplicativo</span>
+          <span class="info-value">{{ appName() }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Versão</span>
+          <span class="info-value">{{ appVersion() }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Build</span>
+          <span class="info-value">{{ buildVersion() }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Data da versão</span>
+          <span class="info-value">{{ versaoDataExibicao() }}</span>
+        </div>
       </ion-card-content>
     </ion-card>
   </div>

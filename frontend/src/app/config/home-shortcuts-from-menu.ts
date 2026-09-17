@@ -27,6 +27,7 @@ const ROUTE_TO_SHORTCUT_ID: Record<string, string> = {
   '/areas-vistoriadas': 'areas-vistoriadas',
   '/componentes': 'componentes',
   '/sintomas': 'sintomas',
+  '/vistas-veiculo': 'vistas-veiculo',
   '/matriz-criticidade': 'matriz-criticidade',
   '/meta': 'metas',
   '/vistorias': 'vistorias',

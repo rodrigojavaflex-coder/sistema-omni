@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, QueryFailedError, Repository } from 'typeorm';
@@ -11,6 +12,7 @@ import { createTransport } from 'nodemailer';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import PDFDocument from 'pdfkit';
+import { decode as decodeJpeg } from 'jpeg-js';
 import { Irregularidade } from './entities/irregularidade.entity';
 import { IrregularidadeMidia } from './entities/irregularidade-midia.entity';
 import { Vistoria } from './entities/vistoria.entity';
@@ -53,11 +55,39 @@ import {
   RelatorioManutencaoPreviewDto,
   RelatorioManutencaoResumoDto,
 } from './dto/relatorio-manutencao.dto';
-import {
-  IrregularidadeManutencaoEnvioService,
+import { IrregularidadeManutencaoEnvioService,
   ManutencaoEnvioContext,
   STATUS_ENVIO_MANUTENCAO,
 } from './irregularidade-manutencao-envio.service';
+import { ModeloVeiculoVistaService } from '../veiculo/modelo-veiculo-vista.service';
+import {
+  IrregularidadeMarcacaoDto,
+  VistaMarcacaoItemDto,
+} from './dto/irregularidade-marcacao.dto';
+
+type RecorteJpegPdf = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  origW: number;
+  origH: number;
+};
+
+type CirculoMapaPdf = {
+  posXPct: number;
+  posYPct: number;
+  rotulo: string;
+  indice: number;
+};
+
+type MapaPdfVista = {
+  idVista: string;
+  descricao: string;
+  buffer: Buffer;
+  circulos: CirculoMapaPdf[];
+  recorte?: RecorteJpegPdf;
+};
 
 @Injectable()
 export class IrregularidadeService {
@@ -89,6 +119,7 @@ export class IrregularidadeService {
     @InjectRepository(IrregularidadeHistorico)
     private readonly irregularidadeHistoricoRepository: Repository<IrregularidadeHistorico>,
     private readonly manutencaoEnvioService: IrregularidadeManutencaoEnvioService,
+    private readonly vistaService: ModeloVeiculoVistaService,
   ) {}
 
   async create(
@@ -111,6 +142,16 @@ export class IrregularidadeService {
     await this.ensureSintoma(dto.idsintoma);
     await this.ensureComponenteNaArea(dto.idarea, dto.idcomponente);
     await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
+    const marcacao = await this.resolveMarcacao(
+      vistoria,
+      dto.idcomponente,
+      dto.idsintoma,
+      {
+        idVista: dto.idVista,
+        posXPct: dto.posXPct,
+        posYPct: dto.posYPct,
+      },
+    );
 
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
@@ -132,6 +173,9 @@ export class IrregularidadeService {
             origemRegistro: isSosVistoria
               ? OrigemRegistroIrregularidade.SOS_WEB
               : null,
+            idVista: marcacao.idVista,
+            posXPct: marcacao.posXPct,
+            posYPct: marcacao.posYPct,
           });
 
           try {
@@ -180,6 +224,7 @@ export class IrregularidadeService {
       .leftJoinAndSelect('i.area', 'area')
       .leftJoinAndSelect('i.componente', 'componente')
       .leftJoinAndSelect('i.sintoma', 'sintoma')
+      .leftJoinAndSelect('i.vista', 'vista')
       .where('v.idVeiculo = :idVeiculo', { idVeiculo })
       .andWhere('v.status = :statusVistoriaFinalizada', {
         statusVistoriaFinalizada: StatusVistoria.FINALIZADA,
@@ -208,6 +253,8 @@ export class IrregularidadeService {
       statusAtual: item.statusAtual,
       criadoEm: item.criadoEm.toISOString(),
       atualizadoEm: item.atualizadoEm.toISOString(),
+      marcacao: this.mapMarcacao(item),
+      exigeMarcacaoMapa: item.sintoma?.exigeMarcacaoMapa ?? false,
     }));
   }
 
@@ -215,7 +262,7 @@ export class IrregularidadeService {
     await this.getVistoriaOrFail(vistoriaId);
     const itens = await this.irregularidadeRepository.find({
       where: { idVistoria: vistoriaId },
-      relations: ['area', 'componente', 'sintoma'],
+      relations: ['area', 'componente', 'sintoma', 'vista'],
       order: { atualizadoEm: 'DESC' },
     });
 
@@ -234,6 +281,39 @@ export class IrregularidadeService {
       statusAtual: item.statusAtual,
       criadoEm: item.criadoEm.toISOString(),
       atualizadoEm: item.atualizadoEm.toISOString(),
+      marcacao: this.mapMarcacao(item),
+      exigeMarcacaoMapa: item.sintoma?.exigeMarcacaoMapa ?? false,
+    }));
+  }
+
+  async listMarcacoesByVista(
+    idVeiculo: string,
+    idVista: string,
+    somenteAbertas = true,
+  ): Promise<VistaMarcacaoItemDto[]> {
+    const qb = this.irregularidadeRepository
+      .createQueryBuilder('i')
+      .innerJoinAndSelect('i.vistoria', 'v')
+      .leftJoinAndSelect('i.sintoma', 'sintoma')
+      .where('v.idVeiculo = :idVeiculo', { idVeiculo })
+      .andWhere('i.idVista = :idVista', { idVista })
+      .andWhere('i.posXPct IS NOT NULL')
+      .andWhere('i.posYPct IS NOT NULL');
+
+    if (somenteAbertas) {
+      qb.andWhere('i.resolvido = false');
+    }
+
+    const itens = await qb.orderBy('i.criadoEm', 'ASC').getMany();
+    return itens.map((item) => ({
+      idIrregularidade: item.id,
+      numeroIrregularidade: item.numeroIrregularidade,
+      idsintoma: item.idSintoma,
+      descricaoSintoma: item.sintoma?.descricao,
+      statusAtual: item.statusAtual,
+      resolvido: item.resolvido,
+      posXPct: Number(item.posXPct),
+      posYPct: Number(item.posYPct),
     }));
   }
 
@@ -278,6 +358,7 @@ export class IrregularidadeService {
       .leftJoinAndSelect('i.area', 'area')
       .leftJoinAndSelect('i.componente', 'componente')
       .leftJoinAndSelect('i.sintoma', 'sintoma')
+      .leftJoinAndSelect('i.vista', 'vista')
       .where('v.idVeiculo = :idVeiculo', { idVeiculo })
       .andWhere('v.status = :statusFinalizada', {
         statusFinalizada: StatusVistoria.FINALIZADA,
@@ -343,6 +424,7 @@ export class IrregularidadeService {
     const mapped: IrregularidadeHistoricoVeiculoItemDto[] = itens.map(
       (item) => ({
         id: item.id,
+        numeroIrregularidade: item.numeroIrregularidade,
         idvistoria: item.idVistoria,
         numeroVistoria: item.vistoria?.numeroVistoria,
         datavistoria: item.vistoria?.datavistoria?.toISOString?.() ?? '',
@@ -358,6 +440,7 @@ export class IrregularidadeService {
         statusAtual: item.statusAtual,
         atualizadoEm: item.atualizadoEm.toISOString(),
         midias: midiasPorIrregularidade.get(item.id) ?? [],
+        marcacao: this.mapMarcacao(item),
       }),
     );
 
@@ -409,6 +492,7 @@ export class IrregularidadeService {
       await this.carregarImagensPdfPorIrregularidade(
         historico.itens.map((item) => item.id),
       );
+    const mapas = await this.carregarMapasPdf(veiculo.idModelo, historico.itens);
 
     return this.buildPdfPendenciasVeiculo({
       veiculoDescricao: veiculo.descricao,
@@ -419,6 +503,7 @@ export class IrregularidadeService {
         ...item,
         imagens: imagensPorIrregularidade.get(item.id) ?? [],
       })),
+      mapas,
       emitidoEm: new Date(),
       emitidoPor: emitidoPor?.trim() || undefined,
       logoRelatorio: configuracao?.logoRelatorio,
@@ -431,9 +516,24 @@ export class IrregularidadeService {
   ): Promise<Irregularidade> {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     await this.ensureVistoriaAberta(irregularidade.idVistoria);
+    const vistoria = await this.getVistoriaOrFail(irregularidade.idVistoria);
+    const marcacao = await this.resolveMarcacao(
+      vistoria,
+      irregularidade.idComponente,
+      irregularidade.idSintoma,
+      {
+        idVista: dto.idVista,
+        posXPct: dto.posXPct,
+        posYPct: dto.posYPct,
+      },
+      irregularidade,
+    );
 
     const updated = this.irregularidadeRepository.merge(irregularidade, {
       observacao: dto.observacao ?? irregularidade.observacao,
+      idVista: marcacao.idVista,
+      posXPct: marcacao.posXPct,
+      posYPct: marcacao.posYPct,
     });
     return this.irregularidadeRepository.save(updated);
   }
@@ -459,6 +559,7 @@ export class IrregularidadeService {
       .leftJoinAndSelect('i.area', 'area')
       .leftJoinAndSelect('i.componente', 'componente')
       .leftJoinAndSelect('i.sintoma', 'sintoma')
+      .leftJoinAndSelect('i.vista', 'vista')
       .leftJoinAndSelect('i.vistoria', 'v')
       .leftJoinAndSelect('v.veiculo', 'veiculo')
       .leftJoinAndSelect('v.usuario', 'vistoriador')
@@ -757,6 +858,18 @@ export class IrregularidadeService {
     await this.ensureSintoma(dto.idsintoma);
     await this.ensureComponenteNaArea(dto.idarea, dto.idcomponente);
     await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
+    const vistoria = await this.getVistoriaOrFail(irregularidade.idVistoria);
+    const marcacao = await this.resolveMarcacao(
+      vistoria,
+      dto.idcomponente,
+      dto.idsintoma,
+      {
+        idVista: dto.idVista,
+        posXPct: dto.posXPct,
+        posYPct: dto.posYPct,
+      },
+      irregularidade,
+    );
     const statusOrigemReclass = irregularidade.statusAtual;
 
     return this.irregularidadeRepository.manager.transaction(
@@ -765,6 +878,9 @@ export class IrregularidadeService {
         irregularidade.idComponente = dto.idcomponente;
         irregularidade.idSintoma = dto.idsintoma;
         irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
+        irregularidade.idVista = marcacao.idVista;
+        irregularidade.posXPct = marcacao.posXPct;
+        irregularidade.posYPct = marcacao.posYPct;
         const saved = await manager
           .getRepository(Irregularidade)
           .save(irregularidade);
@@ -855,6 +971,7 @@ export class IrregularidadeService {
         'area',
         'componente',
         'sintoma',
+        'vista',
         'vistoria',
         'vistoria.veiculo',
         'midias',
@@ -1337,6 +1454,7 @@ export class IrregularidadeService {
         'area',
         'componente',
         'sintoma',
+        'vista',
         'vistoria',
         'vistoria.veiculo',
         'midias',
@@ -1576,6 +1694,80 @@ export class IrregularidadeService {
     return resultado;
   }
 
+  private async carregarMapasPdf(
+    idModelo: string | null,
+    itens: IrregularidadeHistoricoVeiculoItemDto[],
+  ): Promise<MapaPdfVista[]> {
+    if (!idModelo) {
+      return [];
+    }
+    const porVista = new Map<
+      string,
+      {
+        descricao: string;
+        circulos: CirculoMapaPdf[];
+      }
+    >();
+    for (const item of itens) {
+      const marca = item.marcacao;
+      if (!marca) {
+        continue;
+      }
+      const atual = porVista.get(marca.idVista) ?? {
+        descricao: marca.descricaoVista || 'Vista',
+        circulos: [],
+      };
+      atual.circulos.push({
+        posXPct: marca.posXPct,
+        posYPct: marca.posYPct,
+        rotulo: String(item.numeroIrregularidade ?? ''),
+        indice: 0,
+      });
+      porVista.set(marca.idVista, atual);
+    }
+
+    const mapas: MapaPdfVista[] = [];
+    const usados = new Set<string>();
+    const vistas = await this.vistaService.listAtivasComImagem(idModelo);
+    for (const vista of vistas) {
+      usados.add(vista.id);
+      mapas.push({
+        idVista: vista.id,
+        descricao: vista.descricao,
+        buffer: vista.buffer,
+        circulos: porVista.get(vista.id)?.circulos ?? [],
+      });
+    }
+    for (const [idVista, grupo] of porVista.entries()) {
+      if (usados.has(idVista)) {
+        continue;
+      }
+      try {
+        const imagem = await this.vistaService.getImagem(idModelo, idVista);
+        mapas.push({
+          idVista,
+          descricao: grupo.descricao,
+          buffer: imagem.buffer,
+          circulos: grupo.circulos,
+        });
+      } catch {
+        // Vista removida ou sem imagem: ignora no PDF
+      }
+    }
+    let indiceGlobal = 1;
+    for (const mapa of mapas) {
+      const recorte = this.detectarRecorteConteudoJpeg(mapa.buffer);
+      if (recorte) {
+        mapa.recorte = recorte;
+      }
+      for (const circulo of mapa.circulos) {
+        circulo.indice = indiceGlobal;
+        indiceGlobal += 1;
+      }
+    }
+    return mapas;
+  }
+
   private async buildPdfPendenciasVeiculo(params: {
     veiculoDescricao: string;
     veiculoPlaca: string;
@@ -1584,6 +1776,7 @@ export class IrregularidadeService {
     itens: Array<
       IrregularidadeHistoricoVeiculoItemDto & { imagens: Buffer[] }
     >;
+    mapas?: MapaPdfVista[];
     emitidoEm: Date;
     emitidoPor?: string;
     logoRelatorio?: string | null;
@@ -1730,7 +1923,224 @@ export class IrregularidadeService {
         .fontSize(10)
         .fillColor('#334155')
         .text(`Total de pendências: ${params.itens.length}`, { width: innerW });
-      doc.moveDown(0.8);
+      doc.moveDown(0.6);
+
+      const mapas = params.mapas ?? [];
+      const MAPAS_POR_PAGINA = 4;
+      const ASPECT_BAIXA = 0.55;
+      const TITLE_H = 12;
+      const LEGEND_LINE_H = 11;
+      const CELL_PAD = 4;
+      const GAP_X = 8;
+      const GAP_Y = 6;
+      const MAX_ALTA_H = 158;
+      const MIN_LATERAL_H = 58;
+
+      const dimensoesUteis = (mapa: MapaPdfVista): { width: number; height: number } => {
+        if (mapa.recorte) {
+          return { width: mapa.recorte.width, height: mapa.recorte.height };
+        }
+        const size = this.lerDimensoesJpeg(mapa.buffer);
+        return {
+          width: size?.width || 1,
+          height: size?.height || 1,
+        };
+      };
+      const ehImagemBaixa = (mapa: MapaPdfVista): boolean => {
+        const dim = dimensoesUteis(mapa);
+        return dim.height / dim.width < ASPECT_BAIXA;
+      };
+      const alturaNatural = (mapa: MapaPdfVista, boxW: number): number => {
+        const dim = dimensoesUteis(mapa);
+        return Math.max(36, boxW * (dim.height / dim.width));
+      };
+      const montarLinhas = (lote: MapaPdfVista[]) => {
+        const linhas: Array<{
+          kind: 'full' | 'pair' | 'single';
+          items: MapaPdfVista[];
+        }> = [];
+        let pendenteAlta: MapaPdfVista | null = null;
+        for (const mapa of lote) {
+          if (ehImagemBaixa(mapa)) {
+            if (pendenteAlta) {
+              linhas.push({ kind: 'single', items: [pendenteAlta] });
+              pendenteAlta = null;
+            }
+            linhas.push({ kind: 'full', items: [mapa] });
+          } else if (pendenteAlta) {
+            linhas.push({ kind: 'pair', items: [pendenteAlta, mapa] });
+            pendenteAlta = null;
+          } else {
+            pendenteAlta = mapa;
+          }
+        }
+        if (pendenteAlta) {
+          linhas.push({ kind: 'single', items: [pendenteAlta] });
+        }
+        return linhas;
+      };
+      const desenharCelulaMapa = (
+        mapa: MapaPdfVista,
+        x: number,
+        y: number,
+        cellW: number,
+        cellH: number,
+      ) => {
+        const hasLegend = mapa.circulos.length > 0;
+        const legendH = hasLegend ? LEGEND_LINE_H : 0;
+        doc.save();
+        doc
+          .lineWidth(0.7)
+          .strokeColor('#cbd5e1')
+          .roundedRect(x, y, cellW, cellH, 5)
+          .stroke();
+        doc.restore();
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a');
+        const tituloVista = this.truncatePdfTextToWidth(
+          doc,
+          mapa.descricao,
+          cellW - CELL_PAD * 2,
+        );
+        doc.text(tituloVista, x + CELL_PAD, y + 4, { lineBreak: false });
+        const imgBoxY = y + TITLE_H + 2;
+        const imgBoxH = Math.max(
+          24,
+          cellH - TITLE_H - legendH - CELL_PAD - 4,
+        );
+        this.desenharMapaVistaNoPdf(doc, {
+          buffer: mapa.buffer,
+          recorte: mapa.recorte,
+          x: x + CELL_PAD,
+          y: imgBoxY,
+          boxW: cellW - CELL_PAD * 2,
+          boxH: imgBoxH,
+          circulos: mapa.circulos,
+        });
+        if (hasLegend) {
+          doc.font('Helvetica').fontSize(7).fillColor('#334155');
+          const legend = this.truncatePdfTextToWidth(
+            doc,
+            this.formatarLegendaOsPdf(mapa.circulos),
+            cellW - CELL_PAD * 2,
+          );
+          doc.text(legend, x + CELL_PAD, y + cellH - legendH - 3, {
+            lineBreak: false,
+          });
+        }
+      };
+      const desenharGradeMapas = (lote: MapaPdfVista[]) => {
+        const linhas = montarLinhas(lote);
+        const gridTop = doc.y;
+        const availableH = Math.max(160, maxContentY() - gridTop);
+        const halfW = (innerW - GAP_X) / 2;
+        const desejadas = linhas.map((linha) => {
+          if (linha.kind === 'full') {
+            const imgH = alturaNatural(
+              linha.items[0],
+              innerW - CELL_PAD * 2,
+            );
+            const legendH = linha.items[0].circulos.length ? LEGEND_LINE_H : 0;
+            return Math.max(
+              MIN_LATERAL_H,
+              TITLE_H + imgH + legendH + CELL_PAD + 4,
+            );
+          }
+          const boxW = halfW - CELL_PAD * 2;
+          const imgH = Math.max(
+            ...linha.items.map((item) => alturaNatural(item, boxW)),
+          );
+          const legendH = linha.items.some((item) => item.circulos.length)
+            ? LEGEND_LINE_H
+            : 0;
+          return Math.min(
+            MAX_ALTA_H,
+            TITLE_H + imgH + legendH + CELL_PAD + 4,
+          );
+        });
+        const gaps = GAP_Y * Math.max(0, linhas.length - 1);
+        const disponivel = Math.max(120, availableH - gaps);
+        const alturas = desejadas.slice();
+        const isLateral = (idx: number) => linhas[idx].kind === 'full';
+        const soma = () => alturas.reduce((acc, h) => acc + h, 0);
+        if (soma() > disponivel) {
+          const idxLat = alturas
+            .map((_, i) => i)
+            .filter((i) => isLateral(i));
+          const idxOutras = alturas
+            .map((_, i) => i)
+            .filter((i) => !isLateral(i));
+          const somaLat = idxLat.reduce((acc, i) => acc + alturas[i], 0);
+          const somaOutras = idxOutras.reduce((acc, i) => acc + alturas[i], 0);
+          const restoParaOutras = disponivel - somaLat;
+          if (idxOutras.length > 0 && restoParaOutras >= 72 * idxOutras.length) {
+            const fator = restoParaOutras / somaOutras;
+            for (const i of idxOutras) {
+              alturas[i] *= fator;
+            }
+          } else {
+            const fator = disponivel / soma();
+            for (let i = 0; i < alturas.length; i += 1) {
+              alturas[i] *= isLateral(i)
+                ? Math.max(fator, 0.72)
+                : fator;
+            }
+            const extra = soma() - disponivel;
+            if (extra > 0 && idxOutras.length > 0) {
+              const corte = extra / idxOutras.length;
+              for (const i of idxOutras) {
+                alturas[i] = Math.max(64, alturas[i] - corte);
+              }
+            }
+          }
+        }
+        let y = gridTop;
+        linhas.forEach((linha, idx) => {
+          const rowH = alturas[idx];
+          if (linha.kind === 'full') {
+            desenharCelulaMapa(linha.items[0], marginX, y, innerW, rowH);
+          } else if (linha.kind === 'pair') {
+            desenharCelulaMapa(linha.items[0], marginX, y, halfW, rowH);
+            desenharCelulaMapa(
+              linha.items[1],
+              marginX + halfW + GAP_X,
+              y,
+              halfW,
+              rowH,
+            );
+          } else {
+            desenharCelulaMapa(linha.items[0], marginX, y, halfW, rowH);
+          }
+          y += rowH + GAP_Y;
+        });
+        doc.x = marginX;
+        doc.y = y;
+        normalizeCursorY();
+      };
+
+      if (mapas.length > 0) {
+        ensureTextBlock(36);
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(12)
+          .fillColor('#0f172a')
+          .text('Mapa de avaria', { width: innerW });
+        doc.moveDown(0.3);
+        for (let i = 0; i < mapas.length; i += MAPAS_POR_PAGINA) {
+          if (i > 0) {
+            breakPageBody();
+            doc
+              .font('Helvetica-Bold')
+              .fontSize(12)
+              .fillColor('#0f172a')
+              .text('Mapa de avaria', { width: innerW });
+            doc.moveDown(0.3);
+          }
+          desenharGradeMapas(mapas.slice(i, i + MAPAS_POR_PAGINA));
+        }
+        if (params.itens.length > 0) {
+          breakPageBody();
+        }
+      }
 
       if (params.itens.length === 0) {
         ensureTextBlock(24);
@@ -1914,6 +2324,174 @@ export class IrregularidadeService {
     });
   }
 
+  private detectarRecorteConteudoJpeg(buffer: Buffer): RecorteJpegPdf | null {
+    try {
+      const decoded = decodeJpeg(buffer, {
+        formatAsRGBA: true,
+        maxMemoryUsageInMB: 48,
+      });
+      const width = decoded.width;
+      const height = decoded.height;
+      const pixels = decoded.data;
+      if (!width || !height || !pixels?.length) {
+        return null;
+      }
+      const stepX = Math.max(1, Math.floor(width / 480));
+      const stepY = Math.max(1, Math.floor(height / 240));
+      const limite = 246;
+      let minX = width;
+      let minY = height;
+      let maxX = 0;
+      let maxY = 0;
+      for (let y = 0; y < height; y += stepY) {
+        for (let x = 0; x < width; x += stepX) {
+          const i = (y * width + x) * 4;
+          const r = pixels[i] ?? 255;
+          const g = pixels[i + 1] ?? 255;
+          const b = pixels[i + 2] ?? 255;
+          if (r < limite || g < limite || b < limite) {
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if (maxX <= minX || maxY <= minY) {
+        return null;
+      }
+      const padX = Math.max(4, Math.round(width * 0.012));
+      const padY = Math.max(4, Math.round(height * 0.012));
+      const left = Math.max(0, minX - padX);
+      const top = Math.max(0, minY - padY);
+      const right = Math.min(width, maxX + padX);
+      const bottom = Math.min(height, maxY + padY);
+      const cropW = right - left;
+      const cropH = bottom - top;
+      if (cropW / width > 0.96 && cropH / height > 0.96) {
+        return null;
+      }
+      return { left, top, width: cropW, height: cropH, origW: width, origH: height };
+    } catch {
+      return null;
+    }
+  }
+
+  private formatarLegendaOsPdf(circulos: CirculoMapaPdf[]): string {
+    if (circulos.length === 0) {
+      return '';
+    }
+    const partes = circulos.map((circulo) => `${circulo.indice}:${circulo.rotulo}`);
+    if (partes.length === 1) {
+      return `OS: ${partes[0]}`;
+    }
+    const ultimo = partes[partes.length - 1];
+    const anteriores = partes.slice(0, -1).join(', ');
+    return `OS: ${anteriores} e ${ultimo}`;
+  }
+
+  private desenharMapaVistaNoPdf(
+    doc: InstanceType<typeof PDFDocument>,
+    params: {
+      buffer: Buffer;
+      recorte?: RecorteJpegPdf;
+      x: number;
+      y: number;
+      boxW: number;
+      boxH: number;
+      circulos: CirculoMapaPdf[];
+    },
+  ): void {
+    try {
+      const jpegSize = this.lerDimensoesJpeg(params.buffer);
+      const origW = params.recorte?.origW || jpegSize?.width || params.boxW;
+      const origH = params.recorte?.origH || jpegSize?.height || params.boxH;
+      const cropLeft = params.recorte?.left ?? 0;
+      const cropTop = params.recorte?.top ?? 0;
+      const cropW = params.recorte?.width ?? origW;
+      const cropH = params.recorte?.height ?? origH;
+      const aspectCrop = cropH / cropW;
+      const imagemBaixa = aspectCrop < 0.55;
+      let scale = Math.min(params.boxW / cropW, params.boxH / cropH);
+      if (imagemBaixa && cropH * (params.boxW / cropW) <= params.boxH + 0.5) {
+        scale = params.boxW / cropW;
+      }
+      const dw = Math.max(1, origW * scale);
+      const dh = Math.max(1, origH * scale);
+      const contentW = cropW * scale;
+      const contentH = cropH * scale;
+      const ix =
+        params.x + (params.boxW - contentW) / 2 - cropLeft * scale;
+      const iy = imagemBaixa
+        ? params.y - cropTop * scale
+        : params.y + (params.boxH - contentH) / 2 - cropTop * scale;
+      doc.save();
+      if (params.recorte) {
+        doc.rect(params.x, params.y, params.boxW, params.boxH).clip();
+      }
+      doc.image(params.buffer, ix, iy, { width: dw, height: dh });
+      for (const circulo of params.circulos) {
+        const cx = ix + (circulo.posXPct / 100) * dw;
+        const cy = iy + (circulo.posYPct / 100) * dh;
+        const raio = Math.max(5, Math.min(9, Math.min(contentH, contentW) * 0.09));
+        doc.save();
+        doc.fillOpacity(1).strokeOpacity(1);
+        doc.fillColor('#2563eb').strokeColor('#1e40af').lineWidth(0.8);
+        doc.circle(cx, cy, raio).fillAndStroke();
+        doc.restore();
+        if (circulo.indice > 0) {
+          const rotuloCirculo = String(circulo.indice);
+          const fontSize = rotuloCirculo.length > 1 ? 6 : 7;
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(fontSize)
+            .fillColor('#ffffff')
+            .text(rotuloCirculo, cx - raio, cy - fontSize / 2, {
+              width: raio * 2,
+              align: 'center',
+              lineBreak: false,
+            });
+        }
+      }
+      doc.restore();
+    } catch {
+      doc
+        .font('Helvetica')
+        .fontSize(8)
+        .fillColor('#b91c1c')
+        .text('Não foi possível renderizar esta vista.', params.x, params.y, {
+          width: params.boxW,
+        });
+    }
+  }
+
+  private lerDimensoesJpeg(
+    buffer: Buffer,
+  ): { width: number; height: number } | null {
+    if (buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8) {
+      return null;
+    }
+    let offset = 2;
+    while (offset + 9 < buffer.length) {
+      if (buffer[offset] !== 0xff) {
+        offset += 1;
+        continue;
+      }
+      const marker = buffer[offset + 1];
+      if (marker === 0xc0 || marker === 0xc1 || marker === 0xc2) {
+        const height = buffer.readUInt16BE(offset + 5);
+        const width = buffer.readUInt16BE(offset + 7);
+        if (width > 0 && height > 0) {
+          return { width, height };
+        }
+        return null;
+      }
+      const size = buffer.readUInt16BE(offset + 2);
+      offset += 2 + size;
+    }
+    return null;
+  }
+
   /**
    * PDFKit: `doc.text` com `width` usa LineWrapper, que compara `y` com `page.maxY()`.
    * Texto na faixa do rodapé (y > maxY) dispara `continueOnNewPage()` e páginas em branco.
@@ -1941,6 +2519,60 @@ export class IrregularidadeService {
     return ellipsis;
   }
 
+  private async carregarMapasPdfManutencao(
+    irregularidades: Irregularidade[],
+  ): Promise<
+    Map<
+      string,
+      {
+        descricao: string;
+        buffer: Buffer;
+        recorte?: RecorteJpegPdf;
+        posXPct: number;
+        posYPct: number;
+      }
+    >
+  > {
+    const mapas = new Map<
+      string,
+      {
+        descricao: string;
+        buffer: Buffer;
+        recorte?: RecorteJpegPdf;
+        posXPct: number;
+        posYPct: number;
+      }
+    >();
+    for (const item of irregularidades) {
+      const idVista = item.idVista;
+      const idModelo = item.vistoria?.veiculo?.idModelo;
+      if (
+        !idVista ||
+        !idModelo ||
+        item.posXPct === null ||
+        item.posXPct === undefined ||
+        item.posYPct === null ||
+        item.posYPct === undefined
+      ) {
+        continue;
+      }
+      try {
+        const imagem = await this.vistaService.getImagem(idModelo, idVista);
+        const recorte = this.detectarRecorteConteudoJpeg(imagem.buffer);
+        mapas.set(item.id, {
+          descricao: item.vista?.descricao?.trim() || 'Local no veículo',
+          buffer: imagem.buffer,
+          recorte: recorte ?? undefined,
+          posXPct: item.posXPct,
+          posYPct: item.posYPct,
+        });
+      } catch {
+        // Sem imagem da vista: o card segue só com as fotos da irregularidade
+      }
+    }
+    return mapas;
+  }
+
   private async buildPdfRelatorioManutencao(
     resumo: RelatorioManutencaoResumoDto,
     irregularidades: Irregularidade[],
@@ -1948,6 +2580,8 @@ export class IrregularidadeService {
   ): Promise<Buffer> {
     const dataEmissao = this.formatDateTimeBr(resumo.emitidoEm);
     const logoPath = this.resolveLogoRelatorioPath(configuracao?.logoRelatorio);
+    const mapasPorItem =
+      await this.carregarMapasPdfManutencao(irregularidades);
 
     const marginX = 50;
     const contentTopY = 100;
@@ -2110,13 +2744,12 @@ export class IrregularidadeService {
           const imagens = (irregularidade?.midias ?? []).filter(
             (m) => m.tipo === 'imagem',
           );
+          const mapaLocal = mapasPorItem.get(itemResumo.id);
           const obsTxt = itemResumo.observacao?.trim() || 'Não informada.';
 
           const cardPadX = 12;
           const cardPadY = 10;
           const cardInnerW = innerW - cardPadX * 2;
-          const imageLayout = getImageGridLayout(imagens.length, cardInnerW);
-          const imagemLinhaFallback = 'Sem imagens anexadas.';
 
           const hVeiculoCard = measureTextHeight(
             veiculoHeader,
@@ -2142,17 +2775,77 @@ export class IrregularidadeService {
             9,
             cardInnerW,
           );
+          const jpegMapa = mapaLocal
+            ? this.lerDimensoesJpeg(mapaLocal.buffer)
+            : null;
+          const jpegW = jpegMapa?.width || cardInnerW;
+          const jpegH = jpegMapa?.height || 80;
+          const recorte = mapaLocal?.recorte;
+          const recorteBaixa = !!(
+            recorte && recorte.height / recorte.width < 0.55
+          );
+          const mapaBaixa =
+            recorteBaixa || jpegH / jpegW < 0.55;
+          const mapaUtilW = mapaBaixa
+            ? recorte?.width || jpegW
+            : jpegW;
+          const mapaUtilH = mapaBaixa
+            ? recorte?.height || jpegH
+            : jpegH;
+          let mapaBoxW = 0;
+          let mapaBoxH = 0;
+          if (mapaLocal) {
+            if (mapaBaixa) {
+              mapaBoxW = cardInnerW;
+              mapaBoxH = Math.min(
+                100,
+                Math.max(56, mapaBoxW * (mapaUtilH / mapaUtilW)),
+              );
+            } else {
+              const maxW = 210;
+              const maxH = 210;
+              const escala = Math.min(
+                maxW / mapaUtilW,
+                maxH / mapaUtilH,
+              );
+              mapaBoxW = Math.max(96, mapaUtilW * escala);
+              mapaBoxH = Math.max(96, mapaUtilH * escala);
+            }
+          }
+          const fotosAoLado =
+            !!mapaLocal && !mapaBaixa && imagens.length > 0;
+          const imageLayout = getImageGridLayout(
+            imagens.length,
+            fotosAoLado
+              ? Math.max(120, cardInnerW - mapaBoxW - 12)
+              : cardInnerW,
+          );
+          const imagemLinhaFallback = 'Sem imagens anexadas.';
           const hImgs =
             imagens.length > 0
-              ? imageLayout.gridH
+              ? fotosAoLado
+                ? 0
+                : imageLayout.gridH
               : measureTextHeight(
                   imagemLinhaFallback,
                   'Helvetica',
                   9,
                   cardInnerW,
                 );
+          const hMapa = mapaLocal ? 14 + mapaBoxH + 8 : 0;
+          const hMidia = fotosAoLado
+            ? Math.max(hMapa, mapaBoxH + 14)
+            : hMapa + hImgs;
           const cardContentH =
-            hOs + 6 + hVeiculoCard + 5 + hIrreg + 5 + hObsLine + 8 + hImgs;
+            hOs +
+            6 +
+            hVeiculoCard +
+            5 +
+            hIrreg +
+            5 +
+            hObsLine +
+            8 +
+            hMidia;
           const requiredCardH = cardPadY * 2 + cardContentH + 6;
 
           ensureTextBlock(requiredCardH + 8);
@@ -2196,7 +2889,74 @@ export class IrregularidadeService {
             .text(obsLine, { width: cardInnerW });
           doc.moveDown(0.35);
 
-          if (imagens.length === 0) {
+          if (mapaLocal) {
+            doc
+              .font('Helvetica-Bold')
+              .fontSize(8)
+              .fillColor('#334155')
+              .text(`Local: ${mapaLocal.descricao}`, { width: cardInnerW });
+            const mapY = doc.y + 3;
+            this.desenharMapaVistaNoPdf(doc, {
+              buffer: mapaLocal.buffer,
+              recorte: mapaBaixa ? mapaLocal.recorte : undefined,
+              x: cardTextX,
+              y: mapY,
+              boxW: mapaBoxW,
+              boxH: mapaBoxH,
+              circulos: [
+                {
+                  posXPct: mapaLocal.posXPct,
+                  posYPct: mapaLocal.posYPct,
+                  rotulo: '',
+                  indice: 0,
+                },
+              ],
+            });
+            doc.save();
+            doc
+              .lineWidth(0.6)
+              .strokeColor('#e2e8f0')
+              .roundedRect(cardTextX, mapY, mapaBoxW, mapaBoxH, 4)
+              .stroke();
+            doc.restore();
+
+            if (fotosAoLado) {
+              const gapMapa = 12;
+              const fotoAreaX = cardTextX + mapaBoxW + gapMapa;
+              const fotoAreaW = Math.max(80, cardInnerW - mapaBoxW - gapMapa);
+              const cols = Math.min(2, imagens.length);
+              const rows = Math.ceil(imagens.length / cols);
+              const cellW = Math.floor((fotoAreaW - 8 * (cols - 1)) / cols);
+              const cellH = Math.floor((mapaBoxH - 8 * (rows - 1)) / rows);
+              for (let idx = 0; idx < imagens.length; idx += 1) {
+                const row = Math.floor(idx / cols);
+                const col = idx % cols;
+                const x = fotoAreaX + col * (cellW + 8);
+                const y = mapY + row * (cellH + 8);
+                try {
+                  doc.image(imagens[idx].dadosBytea, x, y, {
+                    fit: [cellW, cellH],
+                    align: 'center',
+                    valign: 'center',
+                  });
+                } catch {
+                  doc
+                    .fontSize(8)
+                    .fillColor('#b91c1c')
+                    .text('Falha na imagem.', x, y, { width: cellW });
+                }
+              }
+              doc.x = cardTextX;
+              doc.y = mapY + mapaBoxH + 8;
+            } else {
+              doc.x = cardTextX;
+              doc.y = mapY + mapaBoxH + 8;
+            }
+          }
+
+          if (fotosAoLado) {
+            // Fotos já desenhadas ao lado do mapa.
+          } else if (imagens.length === 0) {
             doc
               .font('Helvetica')
               .fontSize(9)
@@ -2501,6 +3261,7 @@ export class IrregularidadeService {
       veiculoPlaca: veiculoPlacaRaw ?? item.vistoria?.veiculo?.placa,
       veiculoModelo:
         veiculoModeloRaw ?? item.vistoria?.veiculo?.modeloVeiculo?.nome,
+      veiculoModeloId: item.vistoria?.veiculo?.idModelo ?? undefined,
       vistoriadorNome: vistoriadorNomeRaw ?? item.vistoria?.usuario?.nome,
       motoristaNome: motoristaNomeRaw ?? item.vistoria?.motorista?.nome,
       quantidadeFotos,
@@ -2521,7 +3282,140 @@ export class IrregularidadeService {
           : item.ultimoErroIntegracaoEm
             ? item.ultimoErroIntegracaoEm.toISOString()
             : undefined,
+      marcacao: this.mapMarcacao(item),
+      exigeMarcacaoMapa: item.sintoma?.exigeMarcacaoMapa ?? false,
     };
+  }
+
+  private mapMarcacao(item: Irregularidade): IrregularidadeMarcacaoDto | null {
+    if (
+      !item.idVista ||
+      item.posXPct === null ||
+      item.posXPct === undefined ||
+      item.posYPct === null ||
+      item.posYPct === undefined
+    ) {
+      return null;
+    }
+    return {
+      idVista: item.idVista,
+      descricaoVista: item.vista?.descricao ?? '',
+      posXPct: Number(item.posXPct),
+      posYPct: Number(item.posYPct),
+    };
+  }
+
+  private async resolveMarcacao(
+    vistoria: Vistoria,
+    idComponente: string,
+    idSintoma: string,
+    dto: { idVista?: string; posXPct?: number; posYPct?: number },
+    existente?: Irregularidade,
+  ): Promise<{
+    idVista: string | null;
+    posXPct: number | null;
+    posYPct: number | null;
+  }> {
+    const sintoma = await this.sintomaRepository.findOne({
+      where: { id: idSintoma },
+    });
+    if (!sintoma) {
+      throw new NotFoundException('Sintoma não encontrado');
+    }
+
+    const existenteCompleta = Boolean(
+      existente?.idVista &&
+        existente.posXPct !== null &&
+        existente.posXPct !== undefined &&
+        existente.posYPct !== null &&
+        existente.posYPct !== undefined,
+    );
+    const enviouMarcacao = Boolean(
+      dto.idVista && dto.posXPct !== undefined && dto.posYPct !== undefined,
+    );
+
+    if (!sintoma.exigeMarcacaoMapa) {
+      if (enviouMarcacao) {
+        const idModelo = vistoria.veiculo?.idModelo;
+        if (!idModelo) {
+          throw new UnprocessableEntityException(
+            'Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.',
+          );
+        }
+        await this.vistaService.assertVistaDoModelo(idModelo, dto.idVista!);
+        return {
+          idVista: dto.idVista!,
+          posXPct: dto.posXPct!,
+          posYPct: dto.posYPct!,
+        };
+      }
+      return {
+        idVista: existente?.idVista ?? null,
+        posXPct: existente?.posXPct ?? null,
+        posYPct: existente?.posYPct ?? null,
+      };
+    }
+
+    const idModelo = vistoria.veiculo?.idModelo;
+    if (!idModelo) {
+      throw new UnprocessableEntityException(
+        'Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.',
+      );
+    }
+    const ativas = await this.vistaService.countAtivas(idModelo);
+    if (ativas === 0) {
+      throw new UnprocessableEntityException(
+        'Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.',
+      );
+    }
+
+    if (enviouMarcacao) {
+      const vista = await this.vistaService.assertVistaDoModelo(
+        idModelo,
+        dto.idVista!,
+      );
+      await this.assertVistaPermitidaNaMatriz(
+        idComponente,
+        idSintoma,
+        vista.idCatalogo,
+      );
+      return {
+        idVista: dto.idVista!,
+        posXPct: dto.posXPct!,
+        posYPct: dto.posYPct!,
+      };
+    }
+
+    if (existenteCompleta && existente?.idVista) {
+      return {
+        idVista: existente.idVista,
+        posXPct: existente.posXPct ?? null,
+        posYPct: existente.posYPct ?? null,
+      };
+    }
+
+    throw new UnprocessableEntityException(
+      'Marque o local da irregularidade no desenho do veículo.',
+    );
+  }
+
+  private async assertVistaPermitidaNaMatriz(
+    idComponente: string,
+    idSintoma: string,
+    idCatalogo: string,
+  ): Promise<void> {
+    const matriz = await this.matrizRepository.findOne({
+      where: { idComponente, idSintoma },
+    });
+    const permitidas = (matriz?.idVistas ?? []).filter(Boolean);
+    if (permitidas.length === 0) {
+      return;
+    }
+    if (!permitidas.includes(idCatalogo)) {
+      throw new UnprocessableEntityException(
+        'A vista marcada não está entre as permitidas para este sintoma.',
+      );
+    }
   }
 
   private assertIrregularidadeCreatePermission(
@@ -2716,7 +3610,10 @@ export class IrregularidadeService {
   }
 
   private async getVistoriaOrFail(id: string): Promise<Vistoria> {
-    const vistoria = await this.vistoriaRepository.findOne({ where: { id } });
+    const vistoria = await this.vistoriaRepository.findOne({
+      where: { id },
+      relations: ['veiculo'],
+    });
     if (!vistoria) {
       throw new NotFoundException('Vistoria não encontrada');
     }

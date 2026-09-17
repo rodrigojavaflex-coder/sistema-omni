@@ -6,6 +6,7 @@ import {
   Sintoma,
   CreateSintomaDto,
   UpdateSintomaDto,
+  SintomaModeloResumo,
 } from '../models/sintoma.model';
 
 @Injectable({
@@ -26,6 +27,10 @@ export class SintomaService {
 
   getById(id: string): Observable<Sintoma> {
     return this.http.get<Sintoma>(`${this.apiUrl}/${id}`);
+  }
+
+  getCatalogoModelos(): Observable<SintomaModeloResumo[]> {
+    return this.http.get<SintomaModeloResumo[]>(`${this.apiUrl}/catalogo-modelos`);
   }
 
   create(dto: CreateSintomaDto): Observable<Sintoma> {

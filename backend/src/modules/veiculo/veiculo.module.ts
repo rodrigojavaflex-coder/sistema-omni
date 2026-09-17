@@ -6,17 +6,45 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { Veiculo } from './entities/veiculo.entity';
 import { ModeloVeiculo } from './entities/modelo-veiculo.entity';
+import { ModeloVeiculoVista } from './entities/modelo-veiculo-vista.entity';
+import { VistaVeiculo } from './entities/vista-veiculo.entity';
 import { ModeloVeiculoService } from './modelo-veiculo.service';
 import { ModeloVeiculoController } from './modelo-veiculo.controller';
+import { ModeloVeiculoVistaService } from './modelo-veiculo-vista.service';
+import { VistaVeiculoService } from './vista-veiculo.service';
+import { VistasVeiculoController } from './vistas-veiculo.controller';
+import { Irregularidade } from '../vistoria/entities/irregularidade.entity';
+import { MatrizCriticidade } from '../vistoria/entities/matriz-criticidade.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Veiculo, ModeloVeiculo]),
+    TypeOrmModule.forFeature([
+      Veiculo,
+      ModeloVeiculo,
+      ModeloVeiculoVista,
+      VistaVeiculo,
+      Irregularidade,
+      MatrizCriticidade,
+    ]),
     JwtModule,
     ConfigModule,
   ],
-  providers: [VeiculoService, ModeloVeiculoService],
-  controllers: [VeiculoController, ModeloVeiculoController],
-  exports: [VeiculoService, ModeloVeiculoService],
+  providers: [
+    VeiculoService,
+    ModeloVeiculoService,
+    ModeloVeiculoVistaService,
+    VistaVeiculoService,
+  ],
+  controllers: [
+    VeiculoController,
+    ModeloVeiculoController,
+    VistasVeiculoController,
+  ],
+  exports: [
+    VeiculoService,
+    ModeloVeiculoService,
+    ModeloVeiculoVistaService,
+    VistaVeiculoService,
+  ],
 })
 export class VeiculoModule {}

@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class ReclassificarIrregularidadeDto {
   @ApiProperty({ description: 'ID da área de destino', format: 'uuid' })
@@ -21,4 +29,29 @@ export class ReclassificarIrregularidadeDto {
   @IsOptional()
   @IsString()
   observacao?: string;
+
+  @ApiProperty({
+    description: 'Vista do modelo (obrigatória se o sintoma destino exige mapa e não há marcação)',
+    format: 'uuid',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID('4')
+  idVista?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  posXPct?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  posYPct?: number;
 }

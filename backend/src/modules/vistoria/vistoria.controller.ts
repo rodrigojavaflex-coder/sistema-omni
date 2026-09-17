@@ -36,6 +36,7 @@ import { IrregularidadeResumoDto } from './dto/irregularidade-resumo.dto';
 import { IrregularidadeImagemResumoDto } from './dto/irregularidade-imagem-resumo.dto';
 import { IrregularidadeAudioResumoDto } from './dto/irregularidade-audio-resumo.dto';
 import { IrregularidadeHistoricoVeiculoDto } from './dto/irregularidade-historico-veiculo.dto';
+import { VistaMarcacaoItemDto } from './dto/irregularidade-marcacao.dto';
 import { SosSessaoAbertaDto } from './dto/sos-sessao-aberta.dto';
 import { IrregularidadeService } from './irregularidade.service';
 import { Request } from 'express';
@@ -250,6 +251,29 @@ export class VistoriaController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<IrregularidadeResumoDto[]> {
     return this.irregularidadeService.listPendentesByVeiculo(id);
+  }
+
+  @Get('veiculo/:id/vistas/:vistaId/marcacoes')
+  @Permissions(
+    Permission.VISTORIA_READ,
+    Permission.VISTORIA_WEB_READ,
+    Permission.IRREGULARIDADE_TRATAMENTO_READ,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
+  @ApiOperation({
+    summary: 'Listar marcações de uma vista do modelo no veículo',
+  })
+  @ApiResponse({ status: 200, type: [VistaMarcacaoItemDto] })
+  listMarcacoesVista(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('vistaId', new ParseUUIDPipe()) vistaId: string,
+    @Query('somenteAbertas') somenteAbertas?: string,
+  ): Promise<VistaMarcacaoItemDto[]> {
+    const abertas =
+      somenteAbertas === undefined
+        ? true
+        : somenteAbertas === 'true' || somenteAbertas === '1';
+    return this.irregularidadeService.listMarcacoesByVista(id, vistaId, abertas);
   }
 
   @Get('veiculo/:id/historico-irregularidades-nao-resolvidas/pdf')

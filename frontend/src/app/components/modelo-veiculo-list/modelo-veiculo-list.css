@@ -1,1 +1,36 @@
-/* Nenhuma customização necessária - usando 100% classes globais do design system */
+.vistas-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vista-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  background: var(--surface-muted, #f8fafc);
+  color: var(--text-primary, #111827);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.vista-chip.is-inativa {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+.vistas-empty {
+  color: var(--text-secondary, #64748b);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

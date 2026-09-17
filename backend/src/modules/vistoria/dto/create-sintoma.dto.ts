@@ -18,4 +18,14 @@ export class CreateSintomaDto {
   @IsOptional()
   @IsBoolean()
   ativo?: boolean;
+
+  @ApiProperty({
+    description:
+      'Exige marcação no mapa do veículo para qualquer componente que use este sintoma',
+    required: false,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  exigeMarcacaoMapa?: boolean;
 }

@@ -1,1 +1,68 @@
-/* Nenhuma customização necessária - usando 100% classes globais do design system */
+.chip-mapa {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-muted, #e2e8f0);
+  color: var(--text-primary, #0f172a);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.field-hint {
+  margin: 8px 0 0;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.9rem;
+}
+
+.vistas-matriz-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 240px;
+  overflow: auto;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  background: var(--surface-muted, #f8fafc);
+}
+
+.vistas-matriz-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-primary, #0f172a);
+  font-weight: 500;
+}
+
+.vistas-matriz-item:hover {
+  background: rgba(56, 128, 255, 0.08);
+}
+
+.vistas-matriz-item:focus-within {
+  outline: 2px solid var(--color-primary, #3880ff);
+  outline-offset: 1px;
+}
+
+.vistas-matriz-item input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary, #3880ff);
+}
+
+.vistas-matriz-item input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (prefers-color-scheme: dark) {
+  .vistas-matriz-grid {
+    background: #1e293b;
+    border-color: #334155;
+  }
+}

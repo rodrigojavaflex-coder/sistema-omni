@@ -1,0 +1,49 @@
+<div class="form-container">
+  <h2>{{ getFormTitle() }} Vista / parte do veículo</h2>
+
+  <div class="form-actions form-actions-top">
+    <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+      <span *ngIf="loading" class="spinner"></span>
+      {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-section">
+      <h3>Informações da vista</h3>
+      <p class="field-hint">
+        Cadastro padrão usado nos modelos e na matriz. No modelo, escolha a vista e anexe o JPEG.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label" for="vista-descricao">Descrição *</label>
+        <input id="vista-descricao" type="text" formControlName="descricao" class="form-input" maxlength="80" />
+        <div class="form-error" *ngIf="isFieldInvalid('descricao')">
+          {{ getFieldError('descricao') }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="vista-ordem">Ordem</label>
+        <input id="vista-ordem" type="number" formControlName="ordem" class="form-input" min="0" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="vista-ativo">Status</label>
+        <select id="vista-ativo" formControlName="ativo" class="form-select">
+          <option [value]="true">Ativo</option>
+          <option [value]="false">Inativo</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </form>
+</div>

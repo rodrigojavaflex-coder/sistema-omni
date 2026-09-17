@@ -30,6 +30,7 @@ export interface IrregularidadeFluxoItem {
   veiculoDescricao?: string;
   veiculoPlaca?: string;
   veiculoModelo?: string;
+  veiculoModeloId?: string;
   vistoriadorNome?: string;
   motoristaNome?: string;
   gravidade?: GravidadeCriticidade;
@@ -46,6 +47,13 @@ export interface IrregularidadeFluxoItem {
   numOsExternoAtual?: number | null;
   ultimoErroIntegracao?: string;
   ultimoErroIntegracaoEm?: string;
+  marcacao?: {
+    idVista: string;
+    descricaoVista: string;
+    posXPct: number;
+    posYPct: number;
+  } | null;
+  exigeMarcacaoMapa?: boolean;
 }
 
 export interface IrregularidadeMidiaFluxoItem {
@@ -141,6 +149,9 @@ export interface ReclassificarPayload {
   idcomponente: string;
   idsintoma: string;
   observacao?: string;
+  idVista?: string;
+  posXPct?: number;
+  posYPct?: number;
 }
 
 export interface CancelarPayload {

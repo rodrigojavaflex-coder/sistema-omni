@@ -8,6 +8,7 @@ import {
   Sintoma,
   CreateSintomaDto,
   UpdateSintomaDto,
+  SintomaModeloResumo,
 } from '../../models/sintoma.model';
 import { SintomaService } from '../../services/sintoma.service';
 
@@ -22,6 +23,8 @@ export class SintomaFormComponent
   extends BaseFormComponent<CreateSintomaDto | UpdateSintomaDto>
   implements OnInit
 {
+  modelos: SintomaModeloResumo[] = [];
+
   constructor(
     private fb: FormBuilder,
     private sintomaService: SintomaService,
@@ -44,7 +47,22 @@ export class SintomaFormComponent
     this.form = this.fb.group({
       descricao: ['', [Validators.required, Validators.maxLength(150)]],
       ativo: [true],
+      exigeMarcacaoMapa: [false],
     });
+  }
+
+  protected override async loadData(): Promise<void> {
+    this.loading = true;
+    try {
+      this.modelos = await firstValueFrom(this.sintomaService.getCatalogoModelos());
+      if (this.editMode && this.entityId) {
+        await this.loadEntityById(this.entityId);
+      }
+    } catch (error) {
+      this.handleError(error, 'Erro ao carregar dados');
+    } finally {
+      this.loading = false;
+    }
   }
 
   protected buildFormData(): CreateSintomaDto | UpdateSintomaDto {
@@ -52,6 +70,7 @@ export class SintomaFormComponent
     return {
       descricao: formValue.descricao,
       ativo: formValue.ativo,
+      exigeMarcacaoMapa: !!formValue.exigeMarcacaoMapa,
     };
   }
 
@@ -68,7 +87,11 @@ export class SintomaFormComponent
     this.form.patchValue({
       descricao: sintoma.descricao,
       ativo: sintoma.ativo,
+      exigeMarcacaoMapa: !!sintoma.exigeMarcacaoMapa,
     });
+    if (sintoma.modelos?.length) {
+      this.modelos = sintoma.modelos;
+    }
   }
 
   protected override getListRoute(): string {

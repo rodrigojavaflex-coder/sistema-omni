@@ -24,6 +24,7 @@ import { Sintoma } from './entities/sintoma.entity';
 import { SintomaService } from './sintoma.service';
 import { CreateSintomaDto } from './dto/create-sintoma.dto';
 import { UpdateSintomaDto } from './dto/update-sintoma.dto';
+import { SintomaModeloResumoDto } from './dto/sintoma-modelo.dto';
 
 @ApiTags('sintomas')
 @ApiBearerAuth()
@@ -48,6 +49,19 @@ export class SintomasController {
     const ativoParsed =
       ativo === undefined ? undefined : ativo === 'true' || ativo === '1';
     return this.sintomaService.findAll(ativoParsed);
+  }
+
+  @Get('catalogo-modelos')
+  @ApiOperation({ summary: 'Modelos e vistas para o cadastro de sintoma' })
+  @ApiResponse({ status: 200, type: [SintomaModeloResumoDto] })
+  @Permissions(
+    Permission.SINTOMA_READ,
+    Permission.SINTOMA_CREATE,
+    Permission.SINTOMA_UPDATE,
+    Permission.VISTORIA_READ,
+  )
+  listModelos(): Promise<SintomaModeloResumoDto[]> {
+    return this.sintomaService.listModelos();
   }
 
   @Get(':id')

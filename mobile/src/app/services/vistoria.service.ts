@@ -10,6 +10,10 @@ import {
   IrregularidadeResumo,
   IrregularidadeImagemResumo,
 } from '../models/irregularidade.model';
+import {
+  ModeloVeiculoVista,
+  VistaMarcacaoApi,
+} from '../models/mapa-avaria.model';
 
 export interface CriarIrregularidadeResponse {
   id: string;
@@ -131,7 +135,15 @@ export class VistoriaService {
 
   async criarIrregularidade(
     vistoriaId: string,
-    payload: { idarea: string; idcomponente: string; idsintoma: string; observacao: string },
+    payload: {
+      idarea: string;
+      idcomponente: string;
+      idsintoma: string;
+      observacao: string;
+      idVista?: string;
+      posXPct?: number;
+      posYPct?: number;
+    },
   ): Promise<CriarIrregularidadeResponse> {
     return firstValueFrom(
       this.http.post<CriarIrregularidadeResponse>(
@@ -143,7 +155,13 @@ export class VistoriaService {
 
   async atualizarIrregularidade(
     irregularidadeId: string,
-    payload: { observacao: string; resolvido?: boolean },
+    payload: {
+      observacao: string;
+      resolvido?: boolean;
+      idVista?: string;
+      posXPct?: number;
+      posYPct?: number;
+    },
   ): Promise<{ id: string }> {
     return firstValueFrom(
       this.http.patch<{ id: string }>(
@@ -268,6 +286,39 @@ export class VistoriaService {
           ...(ignorarVistoriaId ? { ignorarVistoriaId } : {}),
         },
       }),
+    );
+  }
+
+  async listarVistasModelo(
+    idModelo: string,
+    ativo = true,
+  ): Promise<ModeloVeiculoVista[]> {
+    return firstValueFrom(
+      this.http.get<ModeloVeiculoVista[]>(
+        `${this.apiBaseUrl}/modelos-veiculo/${idModelo}/vistas`,
+        { params: { ativo: ativo ? 'true' : 'false' } },
+      ),
+    );
+  }
+
+  async obterImagemVista(idModelo: string, vistaId: string): Promise<Blob> {
+    return firstValueFrom(
+      this.http.get(`${this.apiBaseUrl}/modelos-veiculo/${idModelo}/vistas/${vistaId}/imagem`, {
+        responseType: 'blob',
+      }),
+    );
+  }
+
+  async listarMarcacoesVista(
+    idVeiculo: string,
+    idVista: string,
+    somenteAbertas = true,
+  ): Promise<VistaMarcacaoApi[]> {
+    return firstValueFrom(
+      this.http.get<VistaMarcacaoApi[]>(
+        `${this.apiBaseUrl}/vistoria/veiculo/${idVeiculo}/vistas/${idVista}/marcacoes`,
+        { params: { somenteAbertas: somenteAbertas ? 'true' : 'false' } },
+      ),
     );
   }
 }

@@ -340,6 +340,18 @@
             <p class="descricao-problema-texto">{{ item.observacao || '-' }}</p>
           </div>
 
+          <div class="mapa-fluxo" *ngIf="item.marcacao && item.veiculoModeloId && item.idVeiculo">
+            <span class="detail-label">Mapa de avaria</span>
+            <app-mapa-avaria
+              [modeloId]="item.veiculoModeloId"
+              [veiculoId]="item.idVeiculo"
+              [somenteAbertas]="false"
+              [readonly]="true"
+              [destaqueId]="item.id"
+              [marcaInicial]="item.marcacao"
+            ></app-mapa-avaria>
+          </div>
+
           <div class="media-section">
             <div class="media-block">
               <strong>Fotos: {{ item.quantidadeFotos ?? (item.fotos ?? []).length }}</strong>
@@ -599,6 +611,21 @@
             Nenhum sintoma encontrado.
           </div>
         </div>
+      </div>
+      <div
+        class="form-group"
+        *ngIf="modalAcao === 'reclassificar' && reclassDestinoExigeMapa && reclassModeloId && selectedItemForAction.idVeiculo"
+      >
+        <label>Local no veículo *</label>
+        <app-mapa-avaria
+          [modeloId]="reclassModeloId"
+          [veiculoId]="selectedItemForAction.idVeiculo"
+          [somenteAbertas]="true"
+          [destaqueId]="selectedItemForAction.id"
+          [marcaInicial]="reclassMarca"
+          [idsCatalogoPermitidos]="reclassIdVistas"
+          (marcaChange)="onReclassMarca($event)"
+        ></app-mapa-avaria>
       </div>
       <div class="form-group" *ngIf="modalAcao === 'cancelar' || modalAcao === 'cancelar-os-brt'">
         <label>Motivo *</label>

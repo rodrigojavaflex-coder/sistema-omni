@@ -118,6 +118,9 @@ export class VistoriaService {
       idcomponente: string;
       idsintoma: string;
       observacao: string;
+      idVista?: string;
+      posXPct?: number;
+      posYPct?: number;
     },
   ): Observable<IrregularidadeResumo & { id: string; numeroIrregularidade?: number }> {
     return this.http.post<IrregularidadeResumo & { id: string; numeroIrregularidade?: number }>(

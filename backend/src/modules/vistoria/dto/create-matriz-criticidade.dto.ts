@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 import { GravidadeCriticidade } from '../../../common/enums/gravidade-criticidade.enum';
 
 export class CreateMatrizCriticidadeDto {
@@ -28,4 +34,16 @@ export class CreateMatrizCriticidadeDto {
   @IsOptional()
   @IsBoolean()
   permite_audio?: boolean;
+
+  @ApiProperty({
+    description:
+      'IDs do catálogo de vistas permitidas. Vazio = todas as vistas do modelo',
+    required: false,
+    type: [String],
+    format: 'uuid',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  id_vistas?: string[];
 }

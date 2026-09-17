@@ -31,9 +31,29 @@ export const RoutePermissions = {
       Permission.MODELOVEICULO_READ,
       Permission.MODELOVEICULO_UPDATE,
       Permission.MODELOVEICULO_DELETE,
+      Permission.MODELOVEICULO_VISTAS,
+      Permission.MODELOVEICULO_VISTAS_IMAGEM,
+      Permission.MODELOVEICULO_VISTAS_INATIVAR,
+      Permission.MODELOVEICULO_VISTAS_EXCLUIR,
     ],
     create: [Permission.MODELOVEICULO_CREATE],
-    update: [Permission.MODELOVEICULO_UPDATE],
+    update: [
+      Permission.MODELOVEICULO_UPDATE,
+      Permission.MODELOVEICULO_VISTAS,
+      Permission.MODELOVEICULO_VISTAS_IMAGEM,
+      Permission.MODELOVEICULO_VISTAS_INATIVAR,
+      Permission.MODELOVEICULO_VISTAS_EXCLUIR,
+    ],
+  },
+  vistaVeiculo: {
+    list: [
+      Permission.VISTAVEICULO_CREATE,
+      Permission.VISTAVEICULO_READ,
+      Permission.VISTAVEICULO_UPDATE,
+      Permission.VISTAVEICULO_DELETE,
+    ],
+    create: [Permission.VISTAVEICULO_CREATE],
+    update: [Permission.VISTAVEICULO_UPDATE],
   },
   motorista: {
     list: [

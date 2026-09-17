@@ -17,6 +17,7 @@ import { Irregularidade } from './entities/irregularidade.entity';
 import { IrregularidadeMidia } from './entities/irregularidade-midia.entity';
 import { IrregularidadeHistorico } from './entities/irregularidade-historico.entity';
 import { ModeloVeiculo } from '../veiculo/entities/modelo-veiculo.entity';
+import { VistaVeiculo } from '../veiculo/entities/vista-veiculo.entity';
 import { AreaVistoriadaService } from './area-vistoriada.service';
 import { AreaComponenteService } from './area-componente.service';
 import { ComponenteService } from './componente.service';
@@ -32,6 +33,8 @@ import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.e
 import { Configuracao } from '../configuracao/entities/configuracao.entity';
 
 import { EmpresaTerceiraModule } from '../empresa-terceira/empresa-terceira.module';
+import { VeiculoModule } from '../veiculo/veiculo.module';
+import { ModeloVeiculoVista } from '../veiculo/entities/modelo-veiculo-vista.entity';
 import { IrregularidadeOsExterna } from './entities/irregularidade-os-externa.entity';
 import { BrtOsIntegrationService } from './brt-os-integration.service';
 import { ErpVistoriaIntegrationService } from './erp-vistoria-integration.service';
@@ -54,6 +57,8 @@ import {
       IrregularidadeHistorico,
       IrregularidadeOsExterna,
       ModeloVeiculo,
+      ModeloVeiculoVista,
+      VistaVeiculo,
       Veiculo,
       Motorista,
       Usuario,
@@ -62,6 +67,7 @@ import {
     ]),
     AuthModule,
     EmpresaTerceiraModule,
+    VeiculoModule,
   ],
   controllers: [
     VistoriaController,

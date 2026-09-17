@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { StatusIrregularidade } from '../../../common/enums/status-irregularidade.enum';
 import { GravidadeCriticidade } from '../../../common/enums/gravidade-criticidade.enum';
 import { OrigemRegistroIrregularidade } from '../../../common/enums/origem-vistoria.enum';
+import { IrregularidadeMarcacaoDto } from './irregularidade-marcacao.dto';
 
 export class IrregularidadeMidiaResumoDto {
   @ApiProperty({ description: 'ID da mídia', format: 'uuid' })
@@ -99,6 +100,9 @@ export class IrregularidadeResumoDto {
   @ApiProperty({ description: 'Modelo do veículo', required: false })
   veiculoModelo?: string;
 
+  @ApiProperty({ description: 'ID do modelo do veículo', required: false })
+  veiculoModeloId?: string;
+
   @ApiProperty({ description: 'Nome do vistoriador', required: false })
   vistoriadorNome?: string;
 
@@ -146,4 +150,18 @@ export class IrregularidadeResumoDto {
 
   @ApiProperty({ required: false })
   ultimoErroIntegracaoEm?: string;
+
+  @ApiProperty({
+    description: 'Marcação no mapa do modelo',
+    required: false,
+    type: () => IrregularidadeMarcacaoDto,
+    nullable: true,
+  })
+  marcacao?: IrregularidadeMarcacaoDto | null;
+
+  @ApiProperty({
+    description: 'Sintoma exige marcação no mapa',
+    required: false,
+  })
+  exigeMarcacaoMapa?: boolean;
 }

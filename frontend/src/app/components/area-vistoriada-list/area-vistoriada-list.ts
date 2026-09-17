@@ -33,6 +33,8 @@ import {
   UpdateMatrizCriticidadeDto,
   GravidadeCriticidade,
 } from '../../models/matriz-criticidade.model';
+import { VistaVeiculo } from '../../models/vista-veiculo.model';
+import { VistaVeiculoService } from '../../services/vista-veiculo.service';
 import { Sintoma } from '../../models/sintoma.model';
 
 @Component({
@@ -55,6 +57,7 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
   private componenteService = inject(ComponenteService);
   private matrizService = inject(MatrizCriticidadeService);
   private sintomaService = inject(SintomaService);
+  private vistaVeiculoService = inject(VistaVeiculoService);
   private configuracaoService = inject(ConfiguracaoService);
   private notificationService = inject(NotificationService);
 
@@ -160,6 +163,7 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
   novoMatrizGravidade: GravidadeCriticidade = 'VERDE';
   novoMatrizExigeFoto = true;
   novoMatrizPermiteAudio = true;
+  novoMatrizVistas: string[] = [];
   savingNovoMatriz = false;
   showEditarMatrizModal = false;
   matrizToEdit: MatrizCriticidade | null = null;
@@ -167,7 +171,9 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
   editMatrizGravidade: GravidadeCriticidade = 'VERDE';
   editMatrizExigeFoto = false;
   editMatrizPermiteAudio = false;
+  editMatrizVistas: string[] = [];
   savingEditarMatriz = false;
+  vistasCatalogo: VistaVeiculo[] = [];
   showDeleteMatrizModal = false;
   matrizToDelete: MatrizCriticidade | null = null;
 
@@ -859,13 +865,46 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
     );
   }
 
+  get novoSintomaExigeMapa(): boolean {
+    return !!this.sintomas.find((s) => s.id === this.novoMatrizIdsintoma)?.exigeMarcacaoMapa;
+  }
+
+  get editSintomaExigeMapa(): boolean {
+    return !!this.sintomas.find((s) => s.id === this.editMatrizIdsintoma)?.exigeMarcacaoMapa;
+  }
+
+  isMatrizVistaSelected(alvo: 'novo' | 'edit', id: string): boolean {
+    const lista = alvo === 'novo' ? this.novoMatrizVistas : this.editMatrizVistas;
+    return lista.includes(id);
+  }
+
+  toggleMatrizVista(alvo: 'novo' | 'edit', id: string): void {
+    const lista = alvo === 'novo' ? this.novoMatrizVistas : this.editMatrizVistas;
+    const idx = lista.indexOf(id);
+    if (idx >= 0) {
+      lista.splice(idx, 1);
+    } else {
+      lista.push(id);
+    }
+  }
+
+  private async loadVistasCatalogo(): Promise<void> {
+    try {
+      this.vistasCatalogo = await firstValueFrom(this.vistaVeiculoService.getAll(true));
+    } catch {
+      this.vistasCatalogo = [];
+    }
+  }
+
   openNovaMatrizModal(): void {
     this.novoMatrizIdsintoma = '';
     this.novoMatrizGravidade = 'VERDE';
     this.novoMatrizExigeFoto = true;
     this.novoMatrizPermiteAudio = true;
+    this.novoMatrizVistas = [];
     this.showNovaMatrizModal = true;
     this.loadSintomas();
+    void this.loadVistasCatalogo();
   }
 
   closeNovaMatrizModal(): void {
@@ -885,6 +924,7 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
         gravidade: this.novoMatrizGravidade,
         exige_foto: !!this.novoMatrizExigeFoto,
         permite_audio: !!this.novoMatrizPermiteAudio,
+        id_vistas: this.novoSintomaExigeMapa ? [...this.novoMatrizVistas] : [],
       };
       await firstValueFrom(this.matrizService.create(dto));
       this.notificationService.success('Matriz adicionada.');
@@ -904,7 +944,9 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
     this.editMatrizGravidade = matriz.gravidade;
     this.editMatrizExigeFoto = matriz.exigeFoto;
     this.editMatrizPermiteAudio = matriz.permiteAudio;
+    this.editMatrizVistas = [...(matriz.idVistas ?? [])];
     this.showEditarMatrizModal = true;
+    void this.loadVistasCatalogo();
   }
 
   closeEditarMatrizModal(): void {
@@ -924,6 +966,7 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
         gravidade: this.editMatrizGravidade,
         exige_foto: !!this.editMatrizExigeFoto,
         permite_audio: !!this.editMatrizPermiteAudio,
+        id_vistas: this.editSintomaExigeMapa ? [...this.editMatrizVistas] : [],
       };
       await firstValueFrom(this.matrizService.update(this.matrizToEdit.id, dto));
       this.notificationService.success('Matriz atualizada.');

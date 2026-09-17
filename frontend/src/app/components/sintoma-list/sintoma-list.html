@@ -51,6 +51,8 @@
       <thead>
         <tr>
           <th>Descrição</th>
+          <th>Exige mapa</th>
+          <th>Modelos e vistas</th>
           <th>Status</th>
           <th>Ações</th>
         </tr>
@@ -58,6 +60,24 @@
       <tbody>
         <tr *ngFor="let item of items">
           <td>{{ item.descricao }}</td>
+          <td>{{ item.exigeMarcacaoMapa ? 'Sim' : 'Não' }}</td>
+          <td class="modelos-cell-wrap">
+            <div class="modelos-cell">
+              <span class="modelo-count">{{ getModelosCount(item) }}</span>
+              @if (getModelosComVistas(item).length) {
+                <ul class="modelos-lista">
+                  @for (modelo of getModelosComVistas(item); track modelo.id) {
+                    <li [class.modelo-inativo]="!modelo.ativo">
+                      <span class="modelo-nome">{{ modelo.nome }}</span>
+                      <span class="modelo-qtd">{{ modelo.total }}</span>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <span class="modelos-vazio">{{ getModelosVazioLabel(item) }}</span>
+              }
+            </div>
+          </td>
           <td>{{ getStatusLabel(item) }}</td>
           <td>
             <div class="table-actions">
@@ -74,7 +94,7 @@
           </td>
         </tr>
         <tr *ngIf="items.length === 0">
-          <td colspan="3" class="table-empty-cell" style="text-align: center; padding: 2rem;">
+          <td colspan="5" class="table-empty-cell" style="text-align: center; padding: 2rem;">
             Nenhum sintoma encontrado
           </td>
         </tr>
@@ -97,7 +117,8 @@
   [entityDisplayName]="'Sintoma'"
   [fieldLabels]="{
     descricao: 'Descrição',
-    ativo: 'Status'
+    ativo: 'Status',
+    exigeMarcacaoMapa: 'Exige mapa'
   }"
   [showModal]="showAuditModal"
   (modalClosed)="closeAuditModal()">

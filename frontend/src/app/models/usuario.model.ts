@@ -42,6 +42,14 @@ export enum Permission {
   MODELOVEICULO_READ = 'modelo_veiculo:read',
   MODELOVEICULO_UPDATE = 'modelo_veiculo:update',
   MODELOVEICULO_DELETE = 'modelo_veiculo:delete',
+  MODELOVEICULO_VISTAS = 'modelo_veiculo:vistas',
+  MODELOVEICULO_VISTAS_IMAGEM = 'modelo_veiculo:vistas_imagem',
+  MODELOVEICULO_VISTAS_INATIVAR = 'modelo_veiculo:vistas_inativar',
+  MODELOVEICULO_VISTAS_EXCLUIR = 'modelo_veiculo:vistas_excluir',
+  VISTAVEICULO_CREATE = 'vista_veiculo:create',
+  VISTAVEICULO_READ = 'vista_veiculo:read',
+  VISTAVEICULO_UPDATE = 'vista_veiculo:update',
+  VISTAVEICULO_DELETE = 'vista_veiculo:delete',
   
   // Motoristas
   MOTORISTA_CREATE = 'motorista:create',

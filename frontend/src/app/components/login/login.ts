@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, AbstractControl, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/index';
 
@@ -19,6 +19,7 @@ export class LoginComponent {
   loginForm: FormGroup;
   isLoading = false;
   errorMessage = '';
+  showPassword = false;
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -35,8 +36,8 @@ export class LoginComponent {
     this.errorMessage = '';
 
     try {
-      const email = this.loginForm.get('email')!.value.trim();
-      const password = this.loginForm.get('password')!.value;
+      const email = String(this.email.value ?? '').trim();
+      const password = String(this.password.value ?? '');
       await this.authService.login(email, password);
       await this.router.navigate(['/']);
     } catch (error: any) {
@@ -46,11 +47,15 @@ export class LoginComponent {
     }
   }
 
-  get email() {
-    return this.loginForm.get('email');
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 
-  get password() {
-    return this.loginForm.get('password');
+  get email(): AbstractControl {
+    return this.loginForm.controls['email'];
+  }
+
+  get password(): AbstractControl {
+    return this.loginForm.controls['password'];
   }
 }

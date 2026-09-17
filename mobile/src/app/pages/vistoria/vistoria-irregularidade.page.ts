@@ -17,7 +17,6 @@ import {
   IonMenuButton,
   IonItem,
   IonLabel,
-  IonList,
   IonTextarea,
   IonText,
   IonTitle,
@@ -28,6 +27,9 @@ import { addIcons } from 'ionicons';
 import {
   arrowBack,
   cameraOutline,
+  checkmarkCircleOutline,
+  locationOutline,
+  micOutline,
   trashOutline,
 } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -47,6 +49,8 @@ import {
   IrregularidadeImagemResumo,
   IrregularidadeResumo,
 } from '../../models/irregularidade.model';
+import { MapaAvariaComponent } from '../../components/mapa-avaria/mapa-avaria.component';
+import { MarcaMapa } from '../../models/mapa-avaria.model';
 
 interface FotoIrregularidade {
   nomeArquivo: string;
@@ -100,7 +104,6 @@ interface RegistroVisualizacao {
     IonCardHeader,
     IonCardTitle,
     IonCardContent,
-    IonList,
     IonItem,
     IonLabel,
     IonButton,
@@ -108,6 +111,7 @@ interface RegistroVisualizacao {
     IonText,
     IonTextarea,
     IonSpinner,
+    MapaAvariaComponent,
   ],
 })
 export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
@@ -124,6 +128,8 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
 
   @ViewChild('observacaoInput', { read: IonTextarea })
   observacaoInput?: IonTextarea;
+  @ViewChild(MapaAvariaComponent)
+  mapaAvaria?: MapaAvariaComponent;
 
   areaId = '';
   componenteId = '';
@@ -133,6 +139,10 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
   matriz: MatrizCriticidade[] = [];
   pendentesParaComponente: IrregularidadeResumo[] = [];
   selectedMatriz: MatrizCriticidade | null = null;
+  etapaMapa = false;
+  marcaMapa: MarcaMapa | null = null;
+  marcaMapaRascunho: MarcaMapa | null = null;
+  vistaDescricao = '';
   irregularidadeEmEdicaoId: string | null = null;
   irregularidadeEmEdicaoNumero: number | null = null;
   observacao = '';
@@ -198,6 +208,26 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
     return 'Selecione o Sintoma:';
   }
 
+  get localDefinido(): boolean {
+    return !!this.marcaMapa;
+  }
+
+  get textoLocal(): string {
+    if (!this.modeloId) {
+      return 'Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.';
+    }
+    if (!this.marcaMapa) {
+      return 'Obrigatório. Toque para marcar no desenho do veículo.';
+    }
+    return this.vistaDescricao
+      ? `${this.vistaDescricao} • local marcado`
+      : 'Local marcado no desenho';
+  }
+
+  get rotuloBotaoLocal(): string {
+    return this.marcaMapa ? 'Alterar local' : 'Definir local';
+  }
+
   get tempoGravacaoFormatado(): string {
     const s = this.tempoGravacaoSegundos;
     const m = Math.floor(s / 60);
@@ -209,11 +239,18 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
     addIcons({
       arrowBack,
       cameraOutline,
+      checkmarkCircleOutline,
+      locationOutline,
+      micOutline,
       trashOutline,
     });
   }
 
   async voltar(): Promise<void> {
+    if (this.etapaMapa) {
+      this.fecharMapaSemConfirmar();
+      return;
+    }
     if (this.selectedMatriz !== null) {
       if (!(await this.validarSemGravacaoAtiva('voltar'))) {
         return;
@@ -225,6 +262,10 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
         }
       }
       this.selectedMatriz = null;
+      this.etapaMapa = false;
+      this.marcaMapa = null;
+      this.marcaMapaRascunho = null;
+      this.vistaDescricao = '';
       this.irregularidadeEmEdicaoId = null;
       this.irregularidadeEmEdicaoNumero = null;
       this.limparMidiasEmMemoria();
@@ -311,7 +352,68 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
 
   async selecionarSintoma(item: MatrizCriticidade): Promise<void> {
     this.selectedMatriz = item;
+    this.marcaMapa = null;
+    this.marcaMapaRascunho = null;
+    this.vistaDescricao = '';
+    this.etapaMapa = false;
     await this.carregarIrregularidadeExistente(item);
+    if (this.irregularidadeEmEdicaoId) {
+      const existente = this.irregularidadesDaVistoria.find(
+        (ir) => ir.id === this.irregularidadeEmEdicaoId,
+      );
+      if (existente?.marcacao) {
+        this.marcaMapa = {
+          idVista: existente.marcacao.idVista,
+          posXPct: existente.marcacao.posXPct,
+          posYPct: existente.marcacao.posYPct,
+        };
+        this.vistaDescricao = existente.marcacao.descricaoVista ?? '';
+      }
+    }
+  }
+
+  get exigeMapa(): boolean {
+    return !!this.selectedMatriz?.sintoma?.exigeMarcacaoMapa;
+  }
+
+  get modeloId(): string {
+    return this.flowService.getVeiculoModeloId() ?? '';
+  }
+
+  get veiculoId(): string {
+    return this.flowService.getVeiculoId() ?? '';
+  }
+
+  onMarcaMapa(marca: MarcaMapa | null): void {
+    this.marcaMapaRascunho = marca;
+  }
+
+  abrirMapa(): void {
+    if (!this.exigeMapa) {
+      return;
+    }
+    this.errorMessage = '';
+    this.marcaMapaRascunho = this.marcaMapa;
+    this.etapaMapa = true;
+  }
+
+  confirmarMapa(): void {
+    if (!this.marcaMapaRascunho) {
+      this.errorMessage = 'Marque o local da irregularidade no desenho do veículo.';
+      return;
+    }
+    this.marcaMapa = this.marcaMapaRascunho;
+    this.vistaDescricao =
+      this.mapaAvaria?.vistas().find((vista) => vista.id === this.marcaMapa?.idVista)?.descricao
+      ?? this.vistaDescricao;
+    this.errorMessage = '';
+    this.etapaMapa = false;
+  }
+
+  private fecharMapaSemConfirmar(): void {
+    this.marcaMapaRascunho = this.marcaMapa;
+    this.etapaMapa = false;
+    this.errorMessage = '';
   }
 
   async abrirResumoVistoria(): Promise<void> {
@@ -749,7 +851,7 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
   }
 
   private temDadosNaoSalvos(): boolean {
-    return this.fotos.length > 0 || this.audios.length > 0 || (this.observacao?.trim()?.length ?? 0) > 0;
+    return this.fotos.length > 0 || this.audios.length > 0 || (this.observacao?.trim()?.length ?? 0) > 0 || !!this.marcaMapa;
   }
 
   private async confirmarPerdaAlteracoes(): Promise<boolean> {
@@ -796,6 +898,11 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
       this.errorMessage = 'Foto obrigatória para este sintoma.';
       return;
     }
+    if (this.exigeMapa && !this.marcaMapa) {
+      this.errorMessage = 'Marque o local da irregularidade no desenho do veículo.';
+      this.abrirMapa();
+      return;
+    }
 
     this.saving = true;
     this.errorMessage = '';
@@ -809,6 +916,9 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
       if (irregularidadeId) {
         await this.vistoriaService.atualizarIrregularidade(irregularidadeId, {
           observacao: observacaoTrim,
+          idVista: this.marcaMapa?.idVista,
+          posXPct: this.marcaMapa?.posXPct,
+          posYPct: this.marcaMapa?.posYPct,
         });
       } else {
         const irregularidade = await this.vistoriaService.criarIrregularidade(vistoriaId, {
@@ -816,6 +926,9 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
           idcomponente: this.componenteId,
           idsintoma: this.selectedMatriz.idSintoma,
           observacao: observacaoTrim,
+          idVista: this.marcaMapa?.idVista,
+          posXPct: this.marcaMapa?.posXPct,
+          posYPct: this.marcaMapa?.posYPct,
         });
         irregularidadeId = irregularidade.id;
         numeroIrregularidade = irregularidade.numeroIrregularidade ?? null;
@@ -1040,6 +1153,9 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
     this.audioBase64 = undefined;
     this.audioMimeType = undefined;
     this.audioDurationMs = undefined;
+    this.marcaMapa = null;
+    this.marcaMapaRascunho = null;
+    this.vistaDescricao = '';
     this.registroVisualizacao = null;
     this.exibirRegistroVisualizacao = false;
     this.revogarPreviewsRegistroVisualizacao();

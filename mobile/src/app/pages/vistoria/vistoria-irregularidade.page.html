@@ -128,7 +128,7 @@
     <p>Nenhum sintoma configurado para este componente.</p>
   </div>
 
-  <div class="content" *ngIf="selectedMatriz">
+  <div class="content form-sintoma" *ngIf="selectedMatriz">
     <ion-text color="primary" *ngIf="irregularidadeEmEdicaoId">
       <p class="error-message">Irregularidade já registrada nesta vistoria. Você pode editar a observação e adicionar novas mídias.</p>
     </ion-text>
@@ -162,62 +162,100 @@
       <p class="campo-descricao-erro">{{ observacaoFieldError }}</p>
     </ion-text>
 
-    <ion-item lines="none">
-      <ion-label>Fotos ({{ fotos.length }})</ion-label>
-      <ion-button fill="outline" (click)="adicionarFoto()">
-        <ion-icon slot="start" name="camera-outline"></ion-icon>
-        Adicionar
-      </ion-button>
-    </ion-item>
-
-    <ion-list *ngIf="fotos.length > 0">
-      <ion-item *ngFor="let foto of fotos; let i = index">
-        <img [src]="'data:image/jpeg;base64,' + foto.dadosBase64" alt="Foto" />
-        <ion-label>
+    <section class="midia-bloco">
+      <div class="midia-bloco-cabecalho">
+        <div class="midia-bloco-titulo">
+          <ion-icon name="camera-outline" aria-hidden="true"></ion-icon>
+          <div>
+            <strong>Fotos</strong>
+            <span>{{ fotos.length === 1 ? '1 anexo' : fotos.length + ' anexos' }}</span>
+          </div>
+        </div>
+        <ion-button fill="outline" (click)="adicionarFoto()">
+          Adicionar
+        </ion-button>
+      </div>
+      <p class="midia-bloco-vazio" *ngIf="fotos.length === 0">Nenhuma foto adicionada.</p>
+      <ul class="midia-lista" *ngIf="fotos.length > 0">
+        <li *ngFor="let foto of fotos; let i = index">
+          <img [src]="'data:image/jpeg;base64,' + foto.dadosBase64" alt="Foto" />
           <p>{{ foto.nomeArquivo }}</p>
-        </ion-label>
-        <ion-button slot="end" fill="clear" color="danger" (click)="removerFoto(i)">
-          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          <ion-button fill="clear" color="danger" (click)="removerFoto(i)" aria-label="Excluir foto">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </li>
+      </ul>
+    </section>
+
+    <section class="midia-bloco" *ngIf="selectedMatriz.permiteAudio">
+      <div class="midia-bloco-cabecalho">
+        <div class="midia-bloco-titulo">
+          <ion-icon name="mic-outline" aria-hidden="true"></ion-icon>
+          <div>
+            <strong>Áudios</strong>
+            <span>
+              {{ audios.length === 1 ? '1 novo' : audios.length + ' novos' }}
+              <ng-container *ngIf="audiosExistentesCount > 0">
+                · {{ audiosExistentesCount }} já salvos
+              </ng-container>
+            </span>
+          </div>
+        </div>
+        <ion-button
+          fill="outline"
+          (click)="abrirGravacaoAudio()"
+          [disabled]="gravandoAudio || gravacaoPreparando || !podeGravarAudio"
+        >
+          Gravar
         </ion-button>
-      </ion-item>
-    </ion-list>
+      </div>
+      <p class="midia-bloco-vazio" *ngIf="audios.length === 0">Nenhum áudio gravado nesta edição.</p>
+      <ul class="midia-lista midia-lista--audio" *ngIf="audios.length > 0">
+        <li *ngFor="let a of audios; let i = index">
+          <div class="midia-audio-info">
+            <p>{{ a.nomeArquivo }}</p>
+            <audio class="audio-player" [src]="a.previewUrl" controls preload="none"></audio>
+          </div>
+          <ion-button fill="clear" color="danger" (click)="removerAudio(i)" aria-label="Excluir áudio">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </li>
+      </ul>
+      <ion-text *ngIf="!podeGravarAudio" color="danger">
+        <p class="midia-bloco-alerta">Dispositivo não suporta gravação de áudio.</p>
+      </ion-text>
+    </section>
 
-    <ion-item lines="none" *ngIf="selectedMatriz.permiteAudio">
-      <ion-label>
-        Áudios novos ({{ audios.length }})
-        <p *ngIf="audiosExistentesCount > 0">Já salvos: {{ audiosExistentesCount }}</p>
-      </ion-label>
-      <ion-button
-        slot="end"
-        fill="outline"
-        (click)="abrirGravacaoAudio()"
-        [disabled]="gravandoAudio || gravacaoPreparando || !podeGravarAudio"
-      >
-        Gravar áudio
-      </ion-button>
-    </ion-item>
-
-    <ion-list *ngIf="selectedMatriz.permiteAudio && audios.length > 0">
-      <ion-item *ngFor="let a of audios; let i = index">
-        <ion-label>
-          <p>{{ a.nomeArquivo }}</p>
-          <audio class="audio-player" [src]="a.previewUrl" controls preload="none"></audio>
-        </ion-label>
-        <ion-button slot="end" fill="clear" color="danger" (click)="removerAudio(i)">
-          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+    <section
+      class="midia-bloco midia-bloco--local"
+      *ngIf="exigeMapa"
+      [class.midia-bloco--ok]="localDefinido"
+      [class.midia-bloco--pendente]="!localDefinido"
+      (click)="abrirMapa()"
+    >
+      <div class="midia-bloco-cabecalho">
+        <div class="midia-bloco-titulo">
+          <ion-icon name="location-outline" aria-hidden="true"></ion-icon>
+          <div>
+            <strong>Local no veículo <span class="label-required">*</span></strong>
+            <span>{{ textoLocal }}</span>
+          </div>
+        </div>
+        <ion-button fill="outline" (click)="abrirMapa()" [disabled]="!modeloId">
+          {{ rotuloBotaoLocal }}
         </ion-button>
-      </ion-item>
-    </ion-list>
-
-    <ion-text *ngIf="selectedMatriz.permiteAudio && !podeGravarAudio" color="danger">
-      <p class="error-message">Dispositivo não suporta gravação de áudio.</p>
-    </ion-text>
+      </div>
+      <p class="midia-bloco-status" *ngIf="localDefinido">
+        <ion-icon name="checkmark-circle-outline" aria-hidden="true"></ion-icon>
+        Pronto para salvar com o ponto marcado.
+      </p>
+    </section>
 
   </div>
 
 </ion-content>
 
-<ion-footer *ngIf="!loading">
+<ion-footer *ngIf="!loading && !etapaMapa">
   <ion-toolbar>
     <div class="footer-actions">
       <ion-button
@@ -293,6 +331,40 @@
       class="preview-imagem-full"
       (click)="$event.stopPropagation()"
     />
+  </div>
+</div>
+
+<div
+  *ngIf="etapaMapa"
+  class="mapa-fullscreen-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="mapa-fullscreen-titulo"
+>
+  <div class="mapa-fullscreen-header">
+    <h1 id="mapa-fullscreen-titulo">Local no veículo</h1>
+    <p>Toque no desenho para marcar. Pinça ou +/− para zoom. Depois confirme para voltar ao sintoma.</p>
+  </div>
+  <div class="mapa-fullscreen-body">
+    <app-mapa-avaria
+      *ngIf="modeloId"
+      [modeloId]="modeloId"
+      [veiculoId]="veiculoId"
+      [marcaInicial]="marcaMapa"
+      [idsCatalogoPermitidos]="selectedMatriz?.idVistas ?? []"
+      (marcaChange)="onMarcaMapa($event)"
+    ></app-mapa-avaria>
+    <p *ngIf="!modeloId" class="mapa-fullscreen-erro" role="alert">
+      Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.
+    </p>
+  </div>
+  <div class="mapa-fullscreen-footer">
+    <ion-button class="btn-main" (click)="confirmarMapa()" [disabled]="!marcaMapaRascunho">
+      Confirmar local
+    </ion-button>
+    <ion-button class="btn-voltar" fill="solid" (click)="voltar()">
+      Voltar
+    </ion-button>
   </div>
 </div>
 

@@ -10,4 +10,5 @@ export interface MatrizCriticidade {
   exigeFoto: boolean;
   permiteAudio: boolean;
   sintoma?: Sintoma;
+  idVistas?: string[];
 }

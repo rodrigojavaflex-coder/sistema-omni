@@ -13,6 +13,13 @@ export interface IrregularidadeResumo {
   observacao?: string;
   resolvido: boolean;
   atualizadoEm: string;
+  marcacao?: {
+    idVista: string;
+    descricaoVista: string;
+    posXPct: number;
+    posYPct: number;
+  } | null;
+  exigeMarcacaoMapa?: boolean;
 }
 
 export interface IrregularidadeImagemResumoItem {

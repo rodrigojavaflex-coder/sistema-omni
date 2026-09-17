@@ -40,6 +40,7 @@ export interface VistoriaResumo {
     descricao?: string;
     placa?: string;
     combustivel?: string;
+    idModelo?: string | null;
   };
   motorista?: { nome?: string; matricula?: string };
   numeroVistoria?: number;
@@ -66,6 +67,13 @@ export interface IrregularidadeResumo {
   statusAtual?: string;
   idEmpresaManutencao?: string;
   atualizadoEm: string;
+  marcacao?: {
+    idVista: string;
+    descricaoVista: string;
+    posXPct: number;
+    posYPct: number;
+  } | null;
+  exigeMarcacaoMapa?: boolean;
 }
 
 export interface IrregularidadeImagemItem {

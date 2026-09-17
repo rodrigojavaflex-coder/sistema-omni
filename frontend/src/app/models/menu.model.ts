@@ -145,7 +145,11 @@ export const MENU_CONFIGURATION: MenuConfig = {
                 Permission.MODELOVEICULO_CREATE,
                 Permission.MODELOVEICULO_READ,
                 Permission.MODELOVEICULO_UPDATE,
-                Permission.MODELOVEICULO_DELETE
+                Permission.MODELOVEICULO_DELETE,
+                Permission.MODELOVEICULO_VISTAS,
+                Permission.MODELOVEICULO_VISTAS_IMAGEM,
+                Permission.MODELOVEICULO_VISTAS_INATIVAR,
+                Permission.MODELOVEICULO_VISTAS_EXCLUIR
               ],
               parentMenu: 'Cadastros'
             },
@@ -297,6 +301,19 @@ export const MENU_CONFIGURATION: MenuConfig = {
                 Permission.SINTOMA_READ,
                 Permission.SINTOMA_UPDATE,
                 Permission.SINTOMA_DELETE
+              ],
+              parentMenu: 'Cadastros'
+            },
+            {
+              label: 'Vistas / partes',
+              title: 'Vistas do veículo',
+              route: '/vistas-veiculo',
+              icon: 'feather-layers',
+              requiredPermissions: [
+                Permission.VISTAVEICULO_CREATE,
+                Permission.VISTAVEICULO_READ,
+                Permission.VISTAVEICULO_UPDATE,
+                Permission.VISTAVEICULO_DELETE
               ],
               parentMenu: 'Cadastros'
             },

@@ -70,6 +70,31 @@ erDiagram
     timestamp atualizadoEm
     varchar descricao
     boolean ativo
+    boolean exige_marcacao_mapa
+  }
+
+  vistas_veiculo {
+    uuid id PK
+    timestamp criadoEm
+    timestamp atualizadoEm
+    varchar descricao
+    boolean ativo
+    integer ordem
+  }
+
+  modelo_veiculo_vistas {
+    uuid id PK
+    timestamp criadoEm
+    timestamp atualizadoEm
+    uuid idmodelo FK
+    uuid id_catalogo FK
+    varchar descricao
+    integer ordem
+    varchar mime_type
+    varchar nome_arquivo
+    bigint tamanho
+    bytea dados_bytea
+    boolean ativo
   }
 
   matriz_criticidade {
@@ -82,6 +107,7 @@ erDiagram
     enum gravidade "VERDE,AMARELO,VERMELHO"
     boolean exige_foto
     boolean permite_audio
+    uuid[] id_vistas "vazio = todas as vistas do modelo"
   }
 
   irregularidades {
@@ -99,6 +125,9 @@ erDiagram
     bigint audio_tamanho "nullable"
     integer audio_duracao_ms "nullable"
     bytea audio_dados_bytea "nullable"
+    uuid id_vista FK "nullable"
+    numeric pos_x_pct "nullable 0-100"
+    numeric pos_y_pct "nullable 0-100"
   }
 
   irregularidades_imagens {
@@ -150,6 +179,8 @@ erDiagram
 
   modelos_veiculo ||--o{ areas_modelos : "idmodelo"
   modelos_veiculo ||--o{ veiculos : "idmodelo"
+  modelos_veiculo ||--o{ modelo_veiculo_vistas : "idmodelo"
+  vistas_veiculo ||--o{ modelo_veiculo_vistas : "id_catalogo"
 
   componentes ||--o{ areas_componentes : "idcomponente"
   componentes ||--o{ matriz_criticidade : "idcomponente"
@@ -157,6 +188,8 @@ erDiagram
 
   sintomas ||--o{ matriz_criticidade : "idsintoma"
   sintomas }o--o{ irregularidades : "idsintoma"
+
+  modelo_veiculo_vistas ||--o{ irregularidades : "id_vista"
 
   irregularidades ||--o{ irregularidades_imagens : "idirregularidade"
 ```
@@ -171,9 +204,11 @@ erDiagram
 | **areas_modelos** | Quais modelos de veículo cada área atende (área ↔ modelo). |
 | **areas_componentes** | Quais componentes são vistoriados em cada área (1 componente → 1 área). |
 | **componentes** | Catálogo de componentes (ex.: Pneu, Farol). |
-| **sintomas** | Catálogo de sintomas/defeitos (ex.: Desgaste, Quebrado). |
-| **matriz_criticidade** | Regras por (tipo vistoria + componente + sintoma): gravidade, exige foto, permite áudio. |
-| **irregularidades** | Registro de irregularidade na vistoria: área, componente, sintoma, observação, áudio. |
+| **sintomas** | Catálogo de sintomas/defeitos (ex.: Desgaste, Quebrado). Flag `exige_marcacao_mapa`. |
+| **vistas_veiculo** | Catálogo de vistas/partes (ex.: Lado Esquerdo, Frente). Sem imagem. |
+| **modelo_veiculo_vistas** | Desenho JPEG do modelo para um item do catálogo (único por modelo + vista). |
+| **matriz_criticidade** | Regras por (tipo vistoria + componente + sintoma): gravidade, exige foto, permite áudio, vistas do mapa (`id_vistas`; vazio = todas). |
+| **irregularidades** | Registro de irregularidade na vistoria: área, componente, sintoma, observação, áudio, marcação no mapa. |
 | **irregularidades_imagens** | Fotos anexadas à irregularidade. |
 
 ## Regras de negócio refletidas no MER

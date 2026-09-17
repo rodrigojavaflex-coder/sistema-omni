@@ -1,0 +1,150 @@
+:host {
+  --mapa-surface: var(--surface, #ffffff);
+  --mapa-border: var(--border-color, #e2e8f0);
+  --mapa-text: var(--text-primary, #0f172a);
+  --mapa-muted: var(--text-secondary, #64748b);
+  --mapa-avaria-atual: var(--danger, #dc2626);
+  --mapa-avaria-pendente: var(--primary, #2563eb);
+  --mapa-overlay-bg: var(--surface-muted, #f8fafc);
+  display: block;
+}
+
+.mapa-avaria {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.mapa-error {
+  margin: 0;
+  color: var(--danger, #dc2626);
+}
+
+.mapa-loading,
+.mapa-hint {
+  margin: 0;
+  color: var(--mapa-muted);
+  font-size: 0.9rem;
+}
+
+.mapa-chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mapa-vistas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mapa-vista-btn {
+  border: 1px solid var(--mapa-border);
+  background: var(--mapa-surface);
+  color: var(--mapa-text);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.mapa-vista-btn:hover,
+.mapa-vista-btn:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.mapa-vista-btn.is-active {
+  border-color: var(--primary, #2563eb);
+  font-weight: 700;
+}
+
+.mapa-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.mapa-zoom-label {
+  min-width: 3rem;
+  text-align: center;
+  font-weight: 700;
+  color: var(--mapa-text);
+}
+
+.mapa-viewport {
+  min-height: 280px;
+  max-height: 52vh;
+  overflow: hidden;
+  border: 1px solid var(--mapa-border);
+  border-radius: 12px;
+  background: var(--mapa-overlay-bg);
+  touch-action: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mapa-frame {
+  position: relative;
+  width: 100%;
+  transform-origin: center center;
+}
+
+.mapa-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.mapa-overlay {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+}
+
+.mapa-overlay:focus-visible {
+  outline: 3px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.mapa-mark {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--mapa-surface);
+}
+
+.mapa-mark-hidden {
+  display: none;
+}
+
+.mapa-mark-current {
+  background: var(--mapa-avaria-atual);
+}
+
+.mapa-mark-pending {
+  background: var(--mapa-avaria-pendente);
+}
+
+.mapa-mark-resolvida {
+  background: var(--text-secondary, #64748b);
+}
+
+.mapa-mark-label {
+  font-weight: 700;
+  color: var(--mapa-surface);
+  line-height: 1;
+}
+
+.mapa-toolbar .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

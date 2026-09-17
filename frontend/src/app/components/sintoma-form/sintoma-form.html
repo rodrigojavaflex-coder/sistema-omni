@@ -28,6 +28,42 @@
           <option [value]="false">Inativo</option>
         </select>
       </div>
+
+      <div class="form-group">
+        <label class="checkbox-field">
+          <input type="checkbox" formControlName="exigeMarcacaoMapa" />
+          Exige marcação no mapa do veículo
+        </label>
+        <p class="field-hint">
+          Vale para todos os componentes que usarem este sintoma. Quais vistas aparecem no mapa se definem na matriz (componente + sintoma).
+        </p>
+      </div>
+
+      <div class="form-group modelos-vistas-group">
+        <label class="form-label">Modelos e vistas</label>
+        <p class="field-hint">
+          Informativo: desenhos já cadastrados em cada modelo. A restrição de vistas é feita na matriz de criticidade.
+        </p>
+        <p class="field-hint" *ngIf="modelos.length === 0">
+          Cadastre modelos em Cadastros → Veículos → Modelos e vincule vistas com JPEG.
+        </p>
+
+        <div class="modelos-grid" *ngIf="modelos.length > 0">
+          <article class="modelo-card" *ngFor="let modelo of modelos" [class.is-inativo]="!modelo.ativo">
+            <header class="modelo-card-header">
+              <span class="modelo-card-nome">{{ modelo.nome }}</span>
+              <span class="modelo-card-qtd">{{ modelo.total }}</span>
+            </header>
+            <p class="modelo-card-empty" *ngIf="modelo.vistas.length === 0">Nenhuma vista cadastrada</p>
+            <ul class="vistas-info-lista" *ngIf="modelo.vistas.length > 0">
+              <li *ngFor="let vista of modelo.vistas" [class.is-inativa]="!vista.ativo">
+                {{ vista.descricao }}
+                <ng-container *ngIf="!vista.ativo"> (inativa)</ng-container>
+              </li>
+            </ul>
+          </article>
+        </div>
+      </div>
     </div>
 
     <div class="form-actions">

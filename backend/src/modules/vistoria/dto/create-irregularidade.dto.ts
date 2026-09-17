@@ -1,6 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 
 /** Normaliza entrada de texto antes de validar obrigatoriedade (espaços não contam). */
 function trimLeadingTrailingWhitespace(value: unknown): unknown {
@@ -29,4 +37,35 @@ export class CreateIrregularidadeDto {
   @IsString({ message: 'A descrição do problema deve ser um texto válido.' })
   @IsNotEmpty({ message: 'A descrição do problema é obrigatória.' })
   observacao: string;
+
+  @ApiProperty({
+    description: 'Vista do modelo (obrigatória se o sintoma exige mapa)',
+    format: 'uuid',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  idVista?: string;
+
+  @ApiProperty({
+    description: 'Posição X percentual (0-100)',
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  posXPct?: number;
+
+  @ApiProperty({
+    description: 'Posição Y percentual (0-100)',
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  posYPct?: number;
 }

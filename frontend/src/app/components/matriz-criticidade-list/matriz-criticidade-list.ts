@@ -112,6 +112,13 @@ export class MatrizCriticidadeListComponent extends BaseListComponent<MatrizCrit
     return this.sintomas.find((item) => item.id === id)?.descricao || id;
   }
 
+  itemExigeMapa(item: MatrizCriticidade): boolean {
+    if (item.sintoma?.exigeMarcacaoMapa !== undefined) {
+      return !!item.sintoma.exigeMarcacaoMapa;
+    }
+    return !!this.sintomas.find((s) => s.id === item.idSintoma)?.exigeMarcacaoMapa;
+  }
+
   getBooleanLabel(value: boolean): string {
     return value ? 'Sim' : 'Não';
   }
@@ -122,12 +129,13 @@ export class MatrizCriticidadeListComponent extends BaseListComponent<MatrizCrit
 
   protected getExportDataExcel(items: MatrizCriticidade[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Componente', 'Sintoma', 'Gravidade', 'Exige Foto', 'Permite Áudio'],
+      headers: ['Componente', 'Sintoma', 'Gravidade', 'Exige Foto', 'Exige mapa', 'Permite Áudio'],
       data: items.map((item) => [
         this.getComponenteLabel(item.idComponente),
         this.getSintomaLabel(item.idSintoma),
         item.gravidade,
         this.getBooleanLabel(item.exigeFoto),
+        this.getBooleanLabel(this.itemExigeMapa(item)),
         this.getBooleanLabel(item.permiteAudio),
       ]),
     };
@@ -135,12 +143,13 @@ export class MatrizCriticidadeListComponent extends BaseListComponent<MatrizCrit
 
   protected getExportDataPDF(items: MatrizCriticidade[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Componente', 'Sintoma', 'Gravidade', 'Exige Foto', 'Permite Áudio'],
+      headers: ['Componente', 'Sintoma', 'Gravidade', 'Exige Foto', 'Exige mapa', 'Permite Áudio'],
       data: items.map((item) => [
         this.getComponenteLabel(item.idComponente),
         this.getSintomaLabel(item.idSintoma),
         item.gravidade,
         this.getBooleanLabel(item.exigeFoto),
+        this.getBooleanLabel(this.itemExigeMapa(item)),
         this.getBooleanLabel(item.permiteAudio),
       ]),
     };

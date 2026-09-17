@@ -174,7 +174,8 @@ ion-footer ion-button {
   --highlight-color-invalid: var(--ion-color-danger);
 }
 
-.item-descricao-problema ion-label .label-required {
+.item-descricao-problema ion-label .label-required,
+.midia-bloco .label-required {
   color: var(--ion-color-medium);
   font-weight: 500;
   font-size: 0.85em;
@@ -191,12 +192,178 @@ ion-item.is-selected {
   --background: #e7f2ff;
 }
 
-img {
+.form-sintoma {
+  gap: 14px;
+}
+
+.midia-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--ion-card-background, var(--ion-item-background, #ffffff));
+  border: 1px solid var(--ion-item-border-color, var(--ion-color-step-150, #e2e8f0));
+}
+
+.midia-bloco-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.midia-bloco-titulo {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.midia-bloco-titulo ion-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-size: 1.35rem;
+  color: var(--ion-color-primary, #3880ff);
+}
+
+.midia-bloco-titulo strong,
+.midia-bloco-titulo span {
+  display: block;
+}
+
+.midia-bloco-titulo strong {
+  color: var(--ion-text-color, #0f172a);
+  font-size: 0.98rem;
+}
+
+.midia-bloco-titulo span {
+  color: var(--ion-color-medium, #64748b);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.midia-bloco-cabecalho ion-button {
+  flex-shrink: 0;
+  margin: 0;
+  min-height: 36px;
+  --border-radius: 10px;
+}
+
+.midia-bloco-cabecalho ion-button:focus-visible,
+.midia-bloco-cabecalho ion-button:focus {
+  outline: 2px solid var(--ion-color-primary, #3880ff);
+  outline-offset: 2px;
+}
+
+.midia-bloco-vazio,
+.midia-bloco-alerta {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ion-color-medium, #64748b);
+}
+
+.midia-bloco-alerta {
+  color: var(--ion-color-danger, #eb445a);
+}
+
+.midia-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.midia-lista li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--ion-color-step-50, #f8fafc);
+  border: 1px solid var(--ion-item-border-color, var(--ion-color-step-150, #e2e8f0));
+}
+
+.midia-lista img {
   width: 64px;
   height: 64px;
   object-fit: cover;
   border-radius: 8px;
-  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.midia-lista p {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--ion-text-color, #0f172a);
+  font-size: 0.88rem;
+  word-break: break-word;
+}
+
+.midia-lista ion-button {
+  margin: 0;
+}
+
+.midia-audio-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.midia-bloco--local {
+  cursor: pointer;
+}
+
+.midia-bloco--local:focus-visible {
+  outline: 2px solid var(--ion-color-primary, #3880ff);
+  outline-offset: 2px;
+}
+
+.midia-bloco--local ion-button:hover,
+.midia-bloco-cabecalho ion-button:hover {
+  filter: brightness(0.97);
+}
+
+.midia-bloco-cabecalho ion-button[disabled] {
+  opacity: 0.55;
+}
+
+.midia-bloco--pendente {
+  border-color: var(--ion-color-warning, #ffc409);
+}
+
+.midia-bloco--ok {
+  border-color: var(--ion-color-success, #2dd36f);
+}
+
+.midia-bloco-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--ion-color-success-shade, #28ba62);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.midia-bloco-status ion-icon {
+  font-size: 1.1rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .midia-lista li {
+    background: var(--ion-color-step-100, #1e293b);
+  }
+
+  .midia-bloco--pendente {
+    background: rgba(var(--ion-color-warning-rgb, 255, 196, 9), 0.08);
+  }
+
+  .midia-bloco--ok {
+    background: rgba(var(--ion-color-success-rgb, 45, 211, 111), 0.08);
+  }
 }
 
 .audio-actions {
@@ -428,3 +595,84 @@ img {
   margin: 12px auto 0;
   color: #93c5fd;
 }
+
+.mapa-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483645;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: calc(10px + var(--ion-safe-area-top, 0px)) calc(12px + var(--ion-safe-area-right, 0px))
+    calc(10px + var(--ion-safe-area-bottom, 0px)) calc(12px + var(--ion-safe-area-left, 0px));
+  background: var(--ion-background-color, #ffffff);
+}
+
+.mapa-fullscreen-header {
+  flex: 0 0 auto;
+}
+
+.mapa-fullscreen-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--ion-text-color, #0f172a);
+}
+
+.mapa-fullscreen-header p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--ion-color-medium, #64748b);
+}
+
+.mapa-fullscreen-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  touch-action: none;
+}
+
+.mapa-fullscreen-body app-mapa-avaria {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mapa-fullscreen-erro {
+  margin: 12px 0;
+  color: var(--ion-color-danger, #eb445a);
+}
+
+.mapa-fullscreen-footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.mapa-fullscreen-footer ion-button {
+  margin: 0;
+  min-height: 46px;
+  font-weight: 700;
+  text-transform: none;
+  --border-radius: 12px;
+}
+
+.mapa-fullscreen-footer ion-button:focus-visible {
+  outline: 2px solid var(--ion-color-primary, #3880ff);
+  outline-offset: 2px;
+}
+
+.mapa-fullscreen-footer .btn-main {
+  flex: 1 1 70%;
+}
+
+.mapa-fullscreen-footer .btn-voltar {
+  flex: 0 0 30%;
+}
+

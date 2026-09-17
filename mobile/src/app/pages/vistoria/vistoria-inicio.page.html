@@ -68,6 +68,9 @@
       <ion-searchbar
         [debounce]="350"
         placeholder="Buscar por descrição ou placa"
+        type="tel"
+        inputmode="numeric"
+        enterkeyhint="search"
         [value]="veiculoSearch"
         (ionInput)="onBuscarVeiculos($event)"
         (ionClear)="limparVeiculo()"

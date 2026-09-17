@@ -2,6 +2,7 @@ import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Veiculo } from './veiculo.entity';
+import { ModeloVeiculoVista } from './modelo-veiculo-vista.entity';
 
 @Entity('modelos_veiculo')
 @Index('IDX_MODELO_VEICULO_NOME', ['nome'], { unique: true })
@@ -20,4 +21,12 @@ export class ModeloVeiculo extends BaseEntity {
 
   @OneToMany(() => Veiculo, (veiculo) => veiculo.modeloVeiculo)
   veiculos?: Veiculo[];
+
+  @ApiProperty({
+    description: 'Vistas (desenhos) já gravadas no modelo',
+    type: () => [ModeloVeiculoVista],
+    required: false,
+  })
+  @OneToMany(() => ModeloVeiculoVista, (vista) => vista.modelo)
+  vistas?: ModeloVeiculoVista[];
 }

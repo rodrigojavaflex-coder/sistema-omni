@@ -29,6 +29,7 @@ import { MatrizCriticidade } from '../../models/matriz-criticidade.model';
 import { IrregularidadeResumo, SosSessaoAberta } from '../../models/vistoria.model';
 import { compressImageForUpload } from '../../utils/compress-image.util';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
+import { MapaAvariaComponent } from '../mapa-avaria/mapa-avaria';
 
 type SosEtapa = 1 | 2 | 3;
 type SosModoAbertura = 'verificando' | 'escolher_sessao' | 'formulario';
@@ -74,6 +75,7 @@ const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
     VeiculoAutocompleteComponent,
     MotoristaAutocompleteComponent,
     ConfirmationModalComponent,
+    MapaAvariaComponent,
   ],
   templateUrl: './irregularidade-sos-modal.html',
   styleUrls: ['./irregularidade-sos-modal.css'],
@@ -138,6 +140,7 @@ export class IrregularidadeSosModalComponent implements OnChanges {
 
   observacao = '';
   selectedMatriz: MatrizCriticidade | null = null;
+  marcaMapa: { idVista: string; posXPct: number; posYPct: number } | null = null;
   fotos: FotoPendente[] = [];
   audios: AudioPendente[] = [];
   midiaUploadError = '';
@@ -596,6 +599,19 @@ export class IrregularidadeSosModalComponent implements OnChanges {
     this.sintomaBusca = item.sintoma?.descricao ?? item.idSintoma;
     this.showSintomaOptions = false;
     this.selectedMatriz = item;
+    this.marcaMapa = null;
+  }
+
+  get exigeMapa(): boolean {
+    return !!this.selectedMatriz?.sintoma?.exigeMarcacaoMapa;
+  }
+
+  get idsCatalogoMapa(): string[] {
+    return this.selectedMatriz?.idVistas ?? [];
+  }
+
+  onMarcaMapa(marca: { idVista: string; posXPct: number; posYPct: number } | null): void {
+    this.marcaMapa = marca;
   }
 
   pendenciaDuplicada(): IrregularidadeResumo | undefined {
@@ -672,6 +688,10 @@ export class IrregularidadeSosModalComponent implements OnChanges {
       this.irregularidadeFormError = 'Foto obrigatória para este sintoma.';
       return;
     }
+    if (this.exigeMapa && !this.marcaMapa) {
+      this.irregularidadeFormError = 'Marque o local da irregularidade no desenho do veículo.';
+      return;
+    }
 
     const dup = this.pendenciaDuplicada();
     if (dup) {
@@ -695,6 +715,9 @@ export class IrregularidadeSosModalComponent implements OnChanges {
           idcomponente: this.modalIdComponente,
           idsintoma: this.modalIdSintoma,
           observacao: observacaoTrim,
+          idVista: this.marcaMapa?.idVista,
+          posXPct: this.marcaMapa?.posXPct,
+          posYPct: this.marcaMapa?.posYPct,
         }),
       );
 
@@ -873,6 +896,7 @@ export class IrregularidadeSosModalComponent implements OnChanges {
     this.componenteBusca = '';
     this.sintomaBusca = '';
     this.selectedMatriz = null;
+    this.marcaMapa = null;
     this.fotos = [];
     this.audios = [];
     this.componentes = [];

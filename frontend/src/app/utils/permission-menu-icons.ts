@@ -34,6 +34,7 @@ export const PERMISSION_GROUP_ICON_KEYS: Record<string, string> = {
   'Áreas Vistoriadas': 'feather-grid',
   Componentes: 'feather-layers',
   Sintomas: 'feather-activity',
+  'Vistas do veículo': 'feather-layers',
   'Matriz de Criticidade': 'feather-grid',
   Metas: 'feather-target',
   'Vistoria Web': 'feather-check-square',

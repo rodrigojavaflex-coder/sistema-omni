@@ -363,7 +363,19 @@
           <span [class]="getGravidadeChipClass(selectedMatriz.gravidade)">{{ selectedMatriz.gravidade }}</span>
           <span class="chip chip-requisito chip-requisito--foto" *ngIf="selectedMatriz.exigeFoto">Foto obrigatória</span>
           <span class="chip chip-requisito chip-requisito--audio" *ngIf="selectedMatriz.permiteAudio">Áudio permitido</span>
+          <span class="chip chip-requisito" *ngIf="exigeMapa">Exige mapa</span>
         </div>
+      </div>
+
+      <div class="form-group" *ngIf="exigeMapa && selectedVeiculo?.idModelo && selectedVeiculo as veiculoMapa">
+        <label>Local no veículo *</label>
+        <app-mapa-avaria
+          [modeloId]="veiculoMapa.idModelo"
+          [veiculoId]="veiculoMapa.id"
+          [somenteAbertas]="true"
+          [idsCatalogoPermitidos]="idsCatalogoMapa"
+          (marcaChange)="onMarcaMapa($event)"
+        ></app-mapa-avaria>
       </div>
 
       <div class="form-group sos-sub-field">

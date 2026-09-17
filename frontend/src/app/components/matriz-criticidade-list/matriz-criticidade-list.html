@@ -54,6 +54,7 @@
           <th>Sintoma</th>
           <th>Gravidade</th>
           <th>Exige Foto</th>
+          <th>Exige mapa</th>
           <th>Permite Áudio</th>
           <th>Ações</th>
         </tr>
@@ -64,6 +65,7 @@
           <td>{{ getSintomaLabel(item.idSintoma) }}</td>
           <td>{{ item.gravidade }}</td>
           <td>{{ getBooleanLabel(item.exigeFoto) }}</td>
+          <td>{{ getBooleanLabel(itemExigeMapa(item)) }}</td>
           <td>{{ getBooleanLabel(item.permiteAudio) }}</td>
           <td>
             <div class="table-actions">
@@ -106,7 +108,8 @@
     idsintoma: 'Sintoma',
     gravidade: 'Gravidade',
     exige_foto: 'Exige Foto',
-    permite_audio: 'Permite Áudio'
+    permite_audio: 'Permite Áudio',
+    idVistas: 'Vistas do mapa'
   }"
   [showModal]="showAuditModal"
   (modalClosed)="closeAuditModal()">

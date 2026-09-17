@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { StatusIrregularidade } from '../../../common/enums/status-irregularidade.enum';
+import { IrregularidadeMarcacaoDto } from './irregularidade-marcacao.dto';
 
 export class IrregularidadeHistoricoVeiculoMidiaDto {
   @ApiProperty({ description: 'ID da mídia', format: 'uuid' })
@@ -30,6 +31,13 @@ export class IrregularidadeHistoricoVeiculoMidiaDto {
 export class IrregularidadeHistoricoVeiculoItemDto {
   @ApiProperty({ description: 'ID da irregularidade', format: 'uuid' })
   id: string;
+
+  @ApiProperty({
+    description: 'Número único da irregularidade (ano + sequencial)',
+    example: 20261,
+    required: false,
+  })
+  numeroIrregularidade?: number;
 
   @ApiProperty({ description: 'ID da vistoria', format: 'uuid' })
   idvistoria: string;
@@ -81,6 +89,14 @@ export class IrregularidadeHistoricoVeiculoItemDto {
     type: [IrregularidadeHistoricoVeiculoMidiaDto],
   })
   midias: IrregularidadeHistoricoVeiculoMidiaDto[];
+
+  @ApiProperty({
+    description: 'Marcação no mapa do modelo',
+    required: false,
+    type: () => IrregularidadeMarcacaoDto,
+    nullable: true,
+  })
+  marcacao?: IrregularidadeMarcacaoDto | null;
 }
 
 export class IrregularidadeHistoricoVeiculoDto {

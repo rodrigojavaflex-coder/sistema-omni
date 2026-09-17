@@ -6,7 +6,7 @@ import { Observable, of } from 'rxjs';
 import { BaseListComponent } from '../base-list.component';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
 import { HistoricoAuditoriaComponent } from '../historico-auditoria/historico-auditoria.component';
-import { ModeloVeiculo } from '../../models/modelo-veiculo.model';
+import { ModeloVeiculo, ModeloVeiculoVista } from '../../models/modelo-veiculo.model';
 import { ModeloVeiculoService } from '../../services/modelo-veiculo.service';
 import { Permission } from '../../models/usuario.model';
 
@@ -27,8 +27,18 @@ export class ModeloVeiculoListComponent extends BaseListComponent<ModeloVeiculo>
 
   canCreate = this.authService.hasPermission(Permission.MODELOVEICULO_CREATE);
   canEdit = this.authService.hasPermission(Permission.MODELOVEICULO_UPDATE);
+  canSaveVistas = this.authService.hasPermission(Permission.MODELOVEICULO_VISTAS);
+  canTrocarImagem = this.authService.hasPermission(Permission.MODELOVEICULO_VISTAS_IMAGEM);
+  canInativarVista = this.authService.hasPermission(Permission.MODELOVEICULO_VISTAS_INATIVAR);
+  canExcluirVista = this.authService.hasPermission(Permission.MODELOVEICULO_VISTAS_EXCLUIR);
   canDelete = this.authService.hasPermission(Permission.MODELOVEICULO_DELETE);
   canAudit = this.authService.hasPermission(Permission.MODELOVEICULO_READ);
+  canOpenForm =
+    this.canEdit ||
+    this.canSaveVistas ||
+    this.canTrocarImagem ||
+    this.canInativarVista ||
+    this.canExcluirVista;
 
   showAuditModal = false;
   selectedItemForAudit: ModeloVeiculo | null = null;
@@ -99,21 +109,32 @@ export class ModeloVeiculoListComponent extends BaseListComponent<ModeloVeiculo>
     return item.ativo ? 'Ativo' : 'Inativo';
   }
 
+  vistasDoModelo(item: ModeloVeiculo): ModeloVeiculoVista[] {
+    return item.vistas ?? [];
+  }
+
+  vistasLabel(item: ModeloVeiculo): string {
+    const nomes = this.vistasDoModelo(item).map((vista) =>
+      vista.ativo ? vista.descricao : `${vista.descricao} (inativa)`,
+    );
+    return nomes.length ? nomes.join(', ') : '—';
+  }
+
   protected loadAllItemsForExport(): Observable<ModeloVeiculo[]> {
     return of(this.applyFilters(this.allItems));
   }
 
   protected getExportDataExcel(items: ModeloVeiculo[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Nome', 'Status'],
-      data: items.map((item) => [item.nome, this.getStatusLabel(item)]),
+      headers: ['Nome', 'Vistas', 'Status'],
+      data: items.map((item) => [item.nome, this.vistasLabel(item), this.getStatusLabel(item)]),
     };
   }
 
   protected getExportDataPDF(items: ModeloVeiculo[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Nome', 'Status'],
-      data: items.map((item) => [item.nome, this.getStatusLabel(item)]),
+      headers: ['Nome', 'Vistas', 'Status'],
+      data: items.map((item) => [item.nome, this.vistasLabel(item), this.getStatusLabel(item)]),
     };
   }
 

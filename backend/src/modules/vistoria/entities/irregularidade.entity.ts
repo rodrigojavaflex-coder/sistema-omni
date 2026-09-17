@@ -15,6 +15,7 @@ import { Sintoma } from './sintoma.entity';
 import { IrregularidadeMidia } from './irregularidade-midia.entity';
 import { StatusIrregularidade } from '../../../common/enums/status-irregularidade.enum';
 import { OrigemRegistroIrregularidade } from '../../../common/enums/origem-vistoria.enum';
+import { ModeloVeiculoVista } from '../../veiculo/entities/modelo-veiculo-vista.entity';
 
 @Entity('irregularidades')
 @Index('IDX_IRREGULARIDADE_VISTORIA', ['idVistoria'])
@@ -193,4 +194,46 @@ export class Irregularidade extends BaseEntity {
     nullable: true,
   })
   ultimoErroIntegracaoEm?: Date | null;
+
+  @ManyToOne(() => ModeloVeiculoVista, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'id_vista' })
+  vista?: ModeloVeiculoVista | null;
+
+  @ApiProperty({
+    description: 'Vista do modelo onde a irregularidade foi marcada',
+    format: 'uuid',
+    required: false,
+  })
+  @Column({ name: 'id_vista', type: 'uuid', nullable: true })
+  idVista?: string | null;
+
+  @ApiProperty({ description: 'Posição X percentual (0-100)', required: false })
+  @Column({
+    name: 'pos_x_pct',
+    type: 'numeric',
+    precision: 6,
+    scale: 3,
+    nullable: true,
+    transformer: {
+      to: (value?: number | null) => value,
+      from: (value: string | number | null) =>
+        value === null || value === undefined ? null : Number(value),
+    },
+  })
+  posXPct?: number | null;
+
+  @ApiProperty({ description: 'Posição Y percentual (0-100)', required: false })
+  @Column({
+    name: 'pos_y_pct',
+    type: 'numeric',
+    precision: 6,
+    scale: 3,
+    nullable: true,
+    transformer: {
+      to: (value?: number | null) => value,
+      from: (value: string | number | null) =>
+        value === null || value === undefined ? null : Number(value),
+    },
+  })
+  posYPct?: number | null;
 }

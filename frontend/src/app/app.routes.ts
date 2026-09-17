@@ -368,6 +368,33 @@ export const routes: Routes = [
     data: { permissions: [...RoutePermissions.sintoma.update] },
   },
   {
+    path: 'vistas-veiculo',
+    loadComponent: () =>
+      import('./components/vista-veiculo-list/vista-veiculo-list').then(
+        (m) => m.VistaVeiculoListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.vistaVeiculo.list] },
+  },
+  {
+    path: 'vistas-veiculo/new',
+    loadComponent: () =>
+      import('./components/vista-veiculo-form/vista-veiculo-form').then(
+        (m) => m.VistaVeiculoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.vistaVeiculo.create] },
+  },
+  {
+    path: 'vistas-veiculo/edit/:id',
+    loadComponent: () =>
+      import('./components/vista-veiculo-form/vista-veiculo-form').then(
+        (m) => m.VistaVeiculoFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.vistaVeiculo.update] },
+  },
+  {
     path: 'matriz-criticidade',
     loadComponent: () =>
       import('./components/matriz-criticidade-list/matriz-criticidade-list').then(

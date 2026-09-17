@@ -36,6 +36,7 @@ import { AuthService } from '../../services/auth.service';
 import { Permission } from '../../models/usuario.model';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
 import { PeriodoFluxoFilterComponent, PeriodoIntervaloPayload } from '../periodo-fluxo-filter/periodo-fluxo-filter.component';
+import { MapaAvariaComponent } from '../mapa-avaria/mapa-avaria';
 import { Veiculo } from '../../models/veiculo.model';
 import { ConfiguracaoService } from '../../services/configuracao.service';
 import { TempoFaixaConfig, TempoFluxoConfig } from '../../models/configuracao.model';
@@ -65,6 +66,7 @@ type ModalAcao =
     FormsModule,
     VeiculoAutocompleteComponent,
     PeriodoFluxoFilterComponent,
+    MapaAvariaComponent,
   ],
   templateUrl: './irregularidade-fluxo-list.html',
   styleUrls: ['./irregularidade-fluxo-list.css'],
@@ -138,7 +140,14 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   modalMotivoNaoProcede = '';
   reclassAreas: AreaVistoriada[] = [];
   reclassComponentes: Array<{ id: string; nome: string }> = [];
-  reclassSintomas: Array<{ id: string; descricao: string }> = [];
+  reclassSintomas: Array<{
+    id: string;
+    descricao: string;
+    exigeMarcacaoMapa?: boolean;
+    idVistas?: string[];
+  }> = [];
+  reclassModeloId = '';
+  reclassMarca: { idVista: string; posXPct: number; posYPct: number } | null = null;
   reclassAreaBusca = '';
   reclassComponenteBusca = '';
   reclassSintomaBusca = '';
@@ -472,6 +481,14 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.reclassAreas = [];
     this.reclassComponentes = [];
     this.reclassSintomas = [];
+    this.reclassModeloId = item.veiculoModeloId ?? '';
+    this.reclassMarca = item.marcacao
+      ? {
+          idVista: item.marcacao.idVista,
+          posXPct: item.marcacao.posXPct,
+          posYPct: item.marcacao.posYPct,
+        }
+      : null;
     this.reclassAreaBusca = item.nomeArea ?? '';
     this.reclassComponenteBusca = item.nomeComponente ?? '';
     this.reclassSintomaBusca = item.descricaoSintoma ?? '';
@@ -497,6 +514,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.reclassAreas = [];
     this.reclassComponentes = [];
     this.reclassSintomas = [];
+    this.reclassModeloId = '';
+    this.reclassMarca = null;
     this.reclassAreaBusca = '';
     this.reclassComponenteBusca = '';
     this.reclassSintomaBusca = '';
@@ -571,10 +590,13 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       return !!this.modalIdEmpresaManutencao && !!this.manutencaoPreview;
     }
     if (this.modalAcao === 'reclassificar') {
+      const destExigeMapa = !!this.reclassSintomas.find((s) => s.id === this.modalIdSintoma)
+        ?.exigeMarcacaoMapa;
       return !!(
         this.modalIdArea.trim() &&
         this.modalIdComponente.trim() &&
-        this.modalIdSintoma.trim()
+        this.modalIdSintoma.trim() &&
+        (!destExigeMapa || this.reclassMarca)
       );
     }
     if (this.modalAcao === 'cancelar') return !!this.modalMotivoCancelamento.trim();
@@ -585,6 +607,20 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (this.modalAcao === 'nao-procede') return !!this.modalMotivoNaoProcede.trim();
     if (this.modalAcao === 'reprovar-final') return !!this.modalObservacao.trim();
     return true;
+  }
+
+  get reclassDestinoExigeMapa(): boolean {
+    return !!this.reclassSintomas.find((s) => s.id === this.modalIdSintoma)?.exigeMarcacaoMapa;
+  }
+
+  get reclassIdVistas(): string[] {
+    return (
+      this.reclassSintomas.find((s) => s.id === this.modalIdSintoma)?.idVistas ?? []
+    );
+  }
+
+  onReclassMarca(marca: { idVista: string; posXPct: number; posYPct: number } | null): void {
+    this.reclassMarca = marca;
   }
 
   submitActionModal(): void {
@@ -633,6 +669,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
             idcomponente: this.modalIdComponente.trim(),
             idsintoma: this.modalIdSintoma.trim(),
             observacao: this.modalObservacao.trim() || undefined,
+            idVista: this.reclassMarca?.idVista,
+            posXPct: this.reclassMarca?.posXPct,
+            posYPct: this.reclassMarca?.posYPct,
           }),
         );
       }
@@ -763,6 +802,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.modalError = '';
     try {
       const idModelo = await this.resolveModeloVeiculoId(item.idVeiculo);
+      this.reclassModeloId = idModelo ?? item.veiculoModeloId ?? '';
       this.reclassAreas = await firstValueFrom(this.areaService.getAll(idModelo, true));
       await this.loadComponentesByArea(this.modalIdArea, item.idcomponente);
       await this.loadSintomasByComponente(this.modalIdComponente, item.idsintoma);
@@ -819,14 +859,26 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.reclassSintomas = [];
     if (!idComponente) return;
     const matriz = await firstValueFrom(this.matrizService.getAll(idComponente));
-    const map = new Map<string, string>();
+    const map = new Map<
+      string,
+      { descricao: string; exigeMarcacaoMapa?: boolean; idVistas?: string[] }
+    >();
     (matriz ?? []).forEach((m: MatrizCriticidade) => {
       if (m.idSintoma) {
-        map.set(m.idSintoma, m.sintoma?.descricao ?? m.idSintoma);
+        map.set(m.idSintoma, {
+          descricao: m.sintoma?.descricao ?? m.idSintoma,
+          exigeMarcacaoMapa: m.sintoma?.exigeMarcacaoMapa,
+          idVistas: m.idVistas ?? [],
+        });
       }
     });
     this.reclassSintomas = Array.from(map.entries())
-      .map(([id, descricao]) => ({ id, descricao }))
+      .map(([id, info]) => ({
+        id,
+        descricao: info.descricao,
+        exigeMarcacaoMapa: info.exigeMarcacaoMapa,
+        idVistas: info.idVistas,
+      }))
       .sort((a, b) => a.descricao.localeCompare(b.descricao));
     if (
       keepSelectedId &&

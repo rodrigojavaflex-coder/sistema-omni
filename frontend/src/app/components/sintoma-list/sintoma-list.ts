@@ -6,7 +6,7 @@ import { Observable, of } from 'rxjs';
 import { BaseListComponent } from '../base-list.component';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
 import { HistoricoAuditoriaComponent } from '../historico-auditoria/historico-auditoria.component';
-import { Sintoma } from '../../models/sintoma.model';
+import { Sintoma, SintomaModeloResumo } from '../../models/sintoma.model';
 import { SintomaService } from '../../services/sintoma.service';
 import { Permission } from '../../models/usuario.model';
 
@@ -99,22 +99,60 @@ export class SintomaListComponent extends BaseListComponent<Sintoma> {
     return item.ativo ? 'Ativo' : 'Inativo';
   }
 
+  getModelosComVistas(item: Sintoma): SintomaModeloResumo[] {
+    if (!item.exigeMarcacaoMapa) {
+      return [];
+    }
+    return (item.modelos ?? []).filter((modelo) => modelo.total > 0);
+  }
+
+  getModelosCount(item: Sintoma): number {
+    return this.getModelosComVistas(item).length;
+  }
+
+  getModelosVazioLabel(item: Sintoma): string {
+    if (!item.exigeMarcacaoMapa) {
+      return 'Não exige mapa';
+    }
+    return 'Nenhum modelo com vistas';
+  }
+
   protected loadAllItemsForExport(): Observable<Sintoma[]> {
     return of(this.applyFilters(this.allItems));
   }
 
   protected getExportDataExcel(items: Sintoma[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Descrição', 'Status'],
-      data: items.map((item) => [item.descricao, this.getStatusLabel(item)]),
+      headers: ['Descrição', 'Exige mapa', 'Modelos e vistas', 'Status'],
+      data: items.map((item) => [
+        item.descricao,
+        item.exigeMarcacaoMapa ? 'Sim' : 'Não',
+        this.getModelosExportLabel(item),
+        this.getStatusLabel(item),
+      ]),
     };
   }
 
   protected getExportDataPDF(items: Sintoma[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Descrição', 'Status'],
-      data: items.map((item) => [item.descricao, this.getStatusLabel(item)]),
+      headers: ['Descrição', 'Exige mapa', 'Modelos e vistas', 'Status'],
+      data: items.map((item) => [
+        item.descricao,
+        item.exigeMarcacaoMapa ? 'Sim' : 'Não',
+        this.getModelosExportLabel(item),
+        this.getStatusLabel(item),
+      ]),
     };
+  }
+
+  private getModelosExportLabel(item: Sintoma): string {
+    const modelos = this.getModelosComVistas(item);
+    if (!modelos.length) {
+      return this.getModelosVazioLabel(item);
+    }
+    return modelos
+      .map((modelo) => `${modelo.nome} ${modelo.total}`)
+      .join('; ');
   }
 
   protected getExportFileName(): string {

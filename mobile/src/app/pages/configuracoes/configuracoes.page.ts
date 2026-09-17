@@ -4,18 +4,25 @@ import {
   AlertController,
   IonButton,
   IonButtons,
+  IonCard,
+  IonCardContent,
   IonContent,
   IonHeader,
-  IonItem,
-  IonLabel,
+  IonIcon,
   IonMenuButton,
-  IonText,
   IonTitle,
   IonToggle,
   IonToolbar,
   ToastController,
 } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
+import { addIcons } from 'ionicons';
+import {
+  chevronForwardOutline,
+  fingerPrintOutline,
+  keyOutline,
+  settingsOutline,
+} from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -32,10 +39,10 @@ import { AuthService } from '../../services/auth.service';
     IonTitle,
     IonButton,
     IonContent,
-    IonItem,
-    IonLabel,
+    IonCard,
+    IonCardContent,
+    IonIcon,
     IonToggle,
-    IonText,
   ],
 })
 export class ConfiguracoesPage implements OnInit {
@@ -47,6 +54,15 @@ export class ConfiguracoesPage implements OnInit {
   biometricAvailable = false;
   biometricEnabled = false;
   biometricSaving = false;
+
+  constructor() {
+    addIcons({
+      settingsOutline,
+      fingerPrintOutline,
+      keyOutline,
+      chevronForwardOutline,
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     await this.refreshBiometricState();

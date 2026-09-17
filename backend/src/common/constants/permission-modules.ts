@@ -53,6 +53,7 @@ export const PERMISSION_MODULE_CONFIG: PermissionModuleConfig[] = [
       'Áreas Vistoriadas',
       'Componentes',
       'Sintomas',
+      'Vistas do veículo',
       'Matriz de Criticidade',
     ],
   },

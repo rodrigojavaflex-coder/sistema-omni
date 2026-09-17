@@ -63,6 +63,24 @@
           <option [value]="false">Não</option>
         </select>
       </div>
+
+      <div class="form-group" *ngIf="sintomaExigeMapa">
+        <label class="form-label">Vistas do mapa</label>
+        <p class="field-hint">Marque as vistas deste sintoma. Nenhuma marcada = o app mostra todas.</p>
+        <p class="field-hint" *ngIf="vistasCatalogo.length === 0">
+          Cadastre vistas em Cadastros → Vistoria → Vistas / partes para listar aqui.
+        </p>
+        <div class="vistas-matriz-grid" *ngIf="vistasCatalogo.length > 0">
+          <label class="vistas-matriz-item" *ngFor="let vista of vistasCatalogo">
+            <input
+              type="checkbox"
+              [checked]="isVistaSelecionada(vista.id)"
+              (change)="toggleVista(vista.id)"
+            />
+            <span>{{ vista.descricao }}</span>
+          </label>
+        </div>
+      </div>
     </div>
 
     <div class="form-actions">

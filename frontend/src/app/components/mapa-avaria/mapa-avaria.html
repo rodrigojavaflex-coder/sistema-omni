@@ -1,0 +1,92 @@
+<div class="mapa-avaria" *ngIf="modeloId">
+  <p class="mapa-error" *ngIf="error()" role="alert">{{ error() }}</p>
+  <p class="mapa-loading" *ngIf="loading()">Carregando desenho do veículo...</p>
+
+  <div class="mapa-chrome" *ngIf="!loading() && vistas().length">
+    <div class="mapa-vistas" role="tablist" aria-label="Vistas do veículo">
+      <button
+        type="button"
+        class="mapa-vista-btn"
+        *ngFor="let vista of vistas()"
+        [class.is-active]="vista.id === vistaId()"
+        (click)="selecionarVista(vista.id)"
+      >
+        {{ vista.descricao }}
+      </button>
+    </div>
+    <div class="mapa-toolbar">
+      <button type="button" class="btn btn-secondary" (click)="alternarPendentes()">
+        {{ textoPendentes() }}
+      </button>
+      <button type="button" class="btn btn-secondary" [disabled]="!podeZoomOut()" (click)="zoomOut()" aria-label="Diminuir zoom">
+        −
+      </button>
+      <span class="mapa-zoom-label">{{ textoEscala() }}</span>
+      <button type="button" class="btn btn-secondary" [disabled]="!podeZoomIn()" (click)="zoomIn()" aria-label="Aumentar zoom">
+        +
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="resetarZoom()">1x</button>
+    </div>
+    <p class="mapa-hint">
+      {{
+        readonly
+          ? 'Vermelho = irregularidade atual. Azul = demais marcações da vista.'
+          : 'Toque no desenho para marcar. Pinça ou +/− para zoom. Vermelho = nova. Azul = pendentes.'
+      }}
+    </p>
+  </div>
+
+  <div
+    class="mapa-viewport"
+    #viewport
+    *ngIf="imagemUrl()"
+    (mousedown)="onMouseDown($event)"
+    (mousemove)="onMouseMove($event)"
+    (mouseup)="onMouseUp()"
+    (mouseleave)="onMouseUp()"
+  >
+    <div class="mapa-frame" [style.transform]="transformCss()">
+      <img
+        #mapaImg
+        [src]="imagemUrl()!"
+        alt="Desenho do veículo para marcar o local da avaria"
+        draggable="false"
+        (load)="onImagemCarregada()"
+      />
+      <div
+        class="mapa-overlay"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="readonly ? 'Mapa de avaria' : 'Área para marcar o local da irregularidade'"
+        (click)="onToqueMapa($event)"
+      >
+        <span
+          *ngFor="let marca of pendentes()"
+          class="mapa-mark mapa-mark-pending"
+          [class.mapa-mark-hidden]="!mostrarPendentes()"
+          [class.mapa-mark-resolvida]="marca.resolvido"
+          [style.left.%]="marca.xPct"
+          [style.top.%]="marca.yPct"
+          [style.width.px]="tamanhoMarcaPx()"
+          [style.height.px]="tamanhoMarcaPx()"
+          [style.transform]="transformMarca()"
+          [style.font-size.px]="tamanhoMarcaPx() * 0.38"
+        >
+          <span class="mapa-mark-label">{{ marca.rotulo }}</span>
+        </span>
+        <span
+          *ngIf="marcaAtual() as atual"
+          class="mapa-mark mapa-mark-current"
+          [style.left.%]="atual.xPct"
+          [style.top.%]="atual.yPct"
+          [style.width.px]="tamanhoMarcaPx()"
+          [style.height.px]="tamanhoMarcaPx()"
+          [style.transform]="transformMarca()"
+          [style.font-size.px]="tamanhoMarcaPx() * 0.38"
+        >
+          <span class="mapa-mark-label">{{ atual.rotulo }}</span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

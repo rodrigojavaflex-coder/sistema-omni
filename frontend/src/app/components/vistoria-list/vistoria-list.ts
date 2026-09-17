@@ -1,13 +1,15 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { catchError, forkJoin, from, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, forkJoin, from, map, of, switchMap } from 'rxjs';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { UserService } from '../../services/user.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { AuthService } from '../../services/auth.service';
 import { ConfiguracaoService } from '../../services/configuracao.service';
+import { ModeloVeiculoService } from '../../services/modelo-veiculo.service';
+import { VeiculoService } from '../../services/veiculo.service';
 import {
   ROTULO_COLUNA_PERCENTUAL_NIVEL,
   rotuloPercentualNivel,
@@ -25,6 +27,11 @@ import { Permission, Usuario } from '../../models/usuario.model';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
 import { MotoristaAutocompleteComponent } from '../shared/motorista-autocomplete/motorista-autocomplete.component';
 import { UsuarioAutocompleteComponent } from '../shared/usuario-autocomplete/usuario-autocomplete.component';
+
+interface MapaImpressaoVista {
+  dataUrl: string;
+  baixa: boolean;
+}
 
 @Component({
   selector: 'app-vistoria-list',
@@ -44,6 +51,8 @@ export class VistoriaListComponent implements OnInit {
   private userService = inject(UserService);
   private authService = inject(AuthService);
   private configuracaoService = inject(ConfiguracaoService);
+  private modeloVeiculoService = inject(ModeloVeiculoService);
+  private veiculoService = inject(VeiculoService);
   private fb = inject(FormBuilder);
 
   loading = false;
@@ -584,26 +593,34 @@ export class VistoriaListComponent implements OnInit {
     doc.document.write(
       '<html><body><p>Carregando relatório da vistoria...</p></body></html>',
     );
-    forkJoin({
-      detalhe: detalhe$,
-      logoUrl: this.carregarLogoRelatorio$(),
-    }).subscribe({
-      next: ({ detalhe, logoUrl }) => {
-        this.gerarImpressao(
-          doc,
-          alvo,
-          detalhe.irregularidades,
-          detalhe.imagensPorIrregularidade,
-          detalhe.audiosPorIrregularidade,
-          logoUrl,
-        );
-        this.imprimindoId = null;
-      },
-      error: () => {
-        doc.close();
-        this.imprimindoId = null;
-      },
-    });
+    detalhe$
+      .pipe(
+        switchMap((detalhe) =>
+          forkJoin({
+            detalhe: of(detalhe),
+            logoUrl: this.carregarLogoRelatorio$(),
+            mapas: this.carregarMapasImpressao$(alvo, detalhe.irregularidades),
+          }),
+        ),
+      )
+      .subscribe({
+        next: ({ detalhe, logoUrl, mapas }) => {
+          this.gerarImpressao(
+            doc,
+            alvo,
+            detalhe.irregularidades,
+            detalhe.imagensPorIrregularidade,
+            detalhe.audiosPorIrregularidade,
+            logoUrl,
+            mapas,
+          );
+          this.imprimindoId = null;
+        },
+        error: () => {
+          doc.close();
+          this.imprimindoId = null;
+        },
+      });
   }
 
   private carregarLogoRelatorio$() {
@@ -650,6 +667,95 @@ export class VistoriaListComponent implements OnInit {
     return `${origin}${rel}`;
   }
 
+  private resolveModeloId$(vistoria: VistoriaResumo): Observable<string | null> {
+    const direto = vistoria.veiculo?.idModelo?.trim();
+    if (direto) {
+      return of(direto);
+    }
+    return this.veiculoService.getById(vistoria.idVeiculo).pipe(
+      map((veiculo) => veiculo.idModelo?.trim() || null),
+      catchError(() => of(null as string | null)),
+    );
+  }
+
+  private blobToDataUrl$(blob: Blob): Observable<string> {
+    return from(
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result ?? ''));
+        reader.onerror = () => reject(reader.error ?? new Error('Falha ao ler imagem'));
+        reader.readAsDataURL(blob);
+      }),
+    );
+  }
+
+  private lerDimensaoImagem$(dataUrl: string): Observable<{ w: number; h: number }> {
+    return from(
+      new Promise<{ w: number; h: number }>((resolve) => {
+        const img = new Image();
+        img.onload = () =>
+          resolve({
+            w: img.naturalWidth || 1,
+            h: img.naturalHeight || 1,
+          });
+        img.onerror = () => resolve({ w: 1, h: 1 });
+        img.src = dataUrl;
+      }),
+    );
+  }
+
+  private carregarMapasImpressao$(
+    vistoria: VistoriaResumo,
+    irregularidades: IrregularidadeResumo[],
+  ): Observable<Record<string, MapaImpressaoVista>> {
+    const idsVista = [
+      ...new Set(
+        irregularidades
+          .map((ir) => ir.marcacao?.idVista)
+          .filter((id): id is string => !!id),
+      ),
+    ];
+    if (idsVista.length === 0) {
+      return of({});
+    }
+    return this.resolveModeloId$(vistoria).pipe(
+      switchMap((idModelo) => {
+        if (!idModelo) {
+          return of({} as Record<string, MapaImpressaoVista>);
+        }
+        const pedidos = idsVista.map((idVista) =>
+          this.modeloVeiculoService.getVistaImagem(idModelo, idVista).pipe(
+            switchMap((blob) => this.blobToDataUrl$(blob)),
+            switchMap((dataUrl) =>
+              this.lerDimensaoImagem$(dataUrl).pipe(
+                map((dim) => ({
+                  idVista,
+                  dataUrl,
+                  baixa: dim.h / dim.w < 0.55,
+                })),
+              ),
+            ),
+            catchError(() => of(null)),
+          ),
+        );
+        return forkJoin(pedidos).pipe(
+          map((itens) => {
+            const mapas: Record<string, MapaImpressaoVista> = {};
+            for (const item of itens) {
+              if (item) {
+                mapas[item.idVista] = {
+                  dataUrl: item.dataUrl,
+                  baixa: item.baixa,
+                };
+              }
+            }
+            return mapas;
+          }),
+        );
+      }),
+    );
+  }
+
   private gerarImpressao(
     doc: Window,
     vistoria: VistoriaResumo,
@@ -657,6 +763,7 @@ export class VistoriaListComponent implements OnInit {
     imagensPorIrregularidade: Record<string, IrregularidadeImagemItem[]>,
     audiosPorIrregularidade: Record<string, IrregularidadeAudioItem[]>,
     logoUrl: string | null,
+    mapas: Record<string, MapaImpressaoVista>,
   ): void {
     const printDate = new Date().toLocaleString('pt-BR');
     const dataVistoria = new Date(vistoria.datavistoria).toLocaleString('pt-BR');
@@ -715,12 +822,34 @@ export class VistoriaListComponent implements OnInit {
                 this.getIrregularidadeLinhaRelatorio(ir),
               );
               const obsTxt = ir.observacao?.trim() || 'Não informada.';
+              const mapa = ir.marcacao ? mapas[ir.marcacao.idVista] : undefined;
+              const localLabel = ir.marcacao
+                ? `<div class="item-local-label">Local: ${this.escapeHtml(
+                    ir.marcacao.descricaoVista || 'Veículo',
+                  )}</div>`
+                : '';
+              const mapaHtml = mapa
+                ? `<div class="mapa-wrap${mapa.baixa ? ' mapa-baixa' : ''}">
+                     <div class="mapa-frame">
+                       <img src="${mapa.dataUrl}" alt="Local no veículo" />
+                       <span class="mapa-dot" style="left:${ir.marcacao?.posXPct ?? 0}%;top:${ir.marcacao?.posYPct ?? 0}%"></span>
+                     </div>
+                   </div>`
+                : '';
+              const fotosAoLado = !!(mapa && !mapa.baixa && imagens.length > 0);
+              const midiaClass = fotosAoLado
+                ? 'item-midia item-midia-lado'
+                : 'item-midia';
               return `
         <div class="item">
           <div class="item-title">${tituloItem}</div>
           <div class="item-meta">Observação: ${this.escapeHtml(obsTxt)}</div>
           ${audiosHtml}
-          ${imagensHtml}
+          ${localLabel}
+          <div class="${midiaClass}">
+            ${mapaHtml}
+            ${imagensHtml}
+          </div>
         </div>
       `;
             })
@@ -795,6 +924,69 @@ export class VistoriaListComponent implements OnInit {
             .item-meta { font-size: 8pt; color: #334155; margin-bottom: 4pt; }
             .item-audios-wrap { margin-bottom: 6pt; font-size: 8pt; color: #334155; }
             .item-audios { margin: 3pt 0 0 16pt; padding: 0; }
+            .item-local-label {
+              font-size: 8pt;
+              font-weight: 700;
+              color: #334155;
+              margin: 0 0 4pt;
+            }
+            .item-midia { margin-top: 2pt; }
+            .item-midia-lado {
+              display: grid;
+              grid-template-columns: auto 1fr;
+              gap: 8pt;
+              align-items: start;
+              justify-items: start;
+            }
+            .mapa-wrap {
+              max-width: 210pt;
+              border: 0.6pt solid #e2e8f0;
+              border-radius: 4pt;
+              overflow: hidden;
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            .mapa-frame {
+              position: relative;
+              display: block;
+              width: max-content;
+              max-width: 210pt;
+              line-height: 0;
+            }
+            .mapa-frame img {
+              display: block;
+              max-width: 210pt;
+              max-height: 210pt;
+              width: auto;
+              height: auto;
+            }
+            .mapa-wrap.mapa-baixa {
+              max-width: 100%;
+              margin-bottom: 8pt;
+            }
+            .mapa-wrap.mapa-baixa .mapa-frame {
+              width: 100%;
+              max-width: 100%;
+            }
+            .mapa-wrap.mapa-baixa img {
+              max-width: 100%;
+              max-height: none;
+              width: 100%;
+              height: auto;
+            }
+            .mapa-dot {
+              position: absolute;
+              width: 12pt;
+              height: 12pt;
+              transform: translate(-50%, -50%);
+              border-radius: 50%;
+              background: #2563eb;
+              border: 1pt solid #1e40af;
+              box-shadow: inset 0 0 0 12pt #2563eb;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              color-adjust: exact;
+            }
             .item-images {
               display: grid;
               grid-template-columns: repeat(3, 1fr);
@@ -816,6 +1008,14 @@ export class VistoriaListComponent implements OnInit {
               height: auto;
               object-fit: contain;
             }
+            .item-midia-lado .item-images {
+              grid-template-columns: repeat(2, 1fr);
+            }
+            .item-midia-lado .img-cell {
+              height: auto;
+              max-height: 210pt;
+            }
+            .item-midia-lado .img-cell img { max-height: 210pt; }
             .muted { color: #6b7280; font-size: 8pt; }
             .footer {
               position: fixed;
@@ -830,9 +1030,14 @@ export class VistoriaListComponent implements OnInit {
             @media print {
               body { padding-bottom: 18pt; }
               .footer { position: fixed; }
-              .item, .img-cell {
+              .item, .img-cell, .mapa-wrap {
                 break-inside: avoid;
                 page-break-inside: avoid;
+              }
+              body, img, .mapa-dot {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                color-adjust: exact;
               }
             }
           </style>
@@ -862,7 +1067,7 @@ export class VistoriaListComponent implements OnInit {
           ${irregularidadesHtml}
           <div class="footer">${rodapeEsquerda}</div>
           <script>
-            window.onload = () => setTimeout(() => window.print(), 250);
+            window.onload = () => setTimeout(() => window.print(), 400);
           </script>
         </body>
       </html>

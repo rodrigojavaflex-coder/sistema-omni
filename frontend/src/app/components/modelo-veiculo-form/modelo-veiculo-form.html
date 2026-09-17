@@ -2,7 +2,12 @@
   <h2>{{ getFormTitle() }} Modelo de Veículo</h2>
 
   <div class="form-actions form-actions-top">
-    <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+    <button
+      type="submit"
+      class="btn btn-primary"
+      [disabled]="loading || !canEditModelo"
+      (click)="onSubmit()"
+    >
       <span *ngIf="loading" class="spinner"></span>
       {{ loading ? 'Salvando...' : getSubmitButtonText() }}
     </button>
@@ -30,8 +35,118 @@
       </div>
     </div>
 
+    <div class="form-section">
+      <h3>Vistas do veículo</h3>
+      <p class="field-hint" *ngIf="!editMode">
+        Salve o modelo para cadastrar os desenhos (lados, frente, reboque, etc.).
+      </p>
+
+      <div *ngIf="editMode">
+        <p class="field-hint">
+          Escolha a vista no catálogo e anexe o JPEG compactado. A troca da imagem avisa, mas não bloqueia as marcações já feitas.
+        </p>
+        <p class="field-hint" *ngIf="!canSaveVistas">
+          Seu perfil não tem permissão para salvar vistas neste modelo.
+        </p>
+
+        <div class="vista-add" *ngIf="canSaveVistas">
+          <label class="form-label" for="nova-vista-catalogo">Nova vista</label>
+          <select
+            id="nova-vista-catalogo"
+            class="form-select"
+            [(ngModel)]="novaCatalogoId"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="uploading || catalogoDisponivel.length === 0"
+          >
+            <option value="">Selecione no catálogo</option>
+            <option *ngFor="let item of catalogoDisponivel" [value]="item.id">
+              {{ item.descricao }}
+            </option>
+          </select>
+          <label class="btn btn-secondary vista-file-label" [class.is-disabled]="uploading || !novaCatalogoId">
+            {{ uploading ? 'Enviando...' : 'Adicionar JPEG' }}
+            <input
+              type="file"
+              accept="image/jpeg,image/jpg"
+              [disabled]="uploading || !novaCatalogoId"
+              (change)="onNovaVista($event)"
+            />
+          </label>
+        </div>
+        <p class="field-hint" *ngIf="canSaveVistas && catalogo.length === 0">
+          Cadastre vistas em Cadastros → Vistoria → Vistas / partes antes de anexar imagens.
+        </p>
+        <p class="field-hint" *ngIf="canSaveVistas && catalogo.length > 0 && catalogoDisponivel.length === 0">
+          Todas as vistas ativas do catálogo já estão neste modelo.
+        </p>
+
+        <p class="form-error" *ngIf="vistasError">{{ vistasError }}</p>
+        <p *ngIf="vistasLoading">Carregando vistas...</p>
+        <p class="field-hint" *ngIf="!vistasLoading && vistas.length === 0">
+          Nenhuma vista cadastrada. Adicione ao menos uma para sintomas que exigem mapa.
+        </p>
+
+        <ul class="vista-list" *ngIf="vistas.length">
+          <li class="vista-item" *ngFor="let vista of vistas">
+            <button
+              type="button"
+              class="vista-thumb"
+              *ngIf="vista.previewUrl"
+              (click)="abrirImagem(vista)"
+              [attr.aria-label]="'Ampliar imagem de ' + vista.descricao"
+            >
+              <img [src]="vista.previewUrl" [alt]="vista.descricao" />
+              <span class="vista-thumb-hint">Clique para ampliar</span>
+            </button>
+            <div class="vista-fields">
+              <strong class="vista-nome">{{ vista.descricao }}</strong>
+              <span class="vista-meta">
+                {{ vista.ativo ? 'Ativa' : 'Inativa' }} · {{ (vista.tamanho / 1024) | number:'1.0-0' }} KB
+              </span>
+              <div
+                class="vista-actions"
+                *ngIf="canTrocarImagem || canInativarVista || canExcluirVista"
+              >
+                <label
+                  *ngIf="canTrocarImagem"
+                  class="btn btn-small btn-secondary vista-file-label vista-action-btn"
+                  [class.is-disabled]="uploading"
+                >
+                  Trocar imagem
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg"
+                    [disabled]="uploading"
+                    (change)="pedirTrocaImagem(vista, $event)"
+                  />
+                </label>
+                <button
+                  *ngIf="canInativarVista"
+                  type="button"
+                  class="btn btn-small btn-secondary vista-action-btn"
+                  [disabled]="uploading"
+                  (click)="alternarAtivo(vista)"
+                >
+                  {{ vista.ativo ? 'Inativar' : 'Ativar' }}
+                </button>
+                <button
+                  *ngIf="canExcluirVista"
+                  type="button"
+                  class="btn btn-small btn-danger vista-action-btn"
+                  [disabled]="uploading"
+                  (click)="excluirVista(vista)"
+                >
+                  Excluir
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="loading">
+      <button type="submit" class="btn btn-primary" [disabled]="loading || !canEditModelo">
         <span *ngIf="loading" class="spinner"></span>
         {{ loading ? 'Salvando...' : getSubmitButtonText() }}
       </button>
@@ -39,3 +154,42 @@
     </div>
   </form>
 </div>
+
+<app-confirmation-modal
+  [isVisible]="showReplaceModal"
+  title="Substituir imagem da vista"
+  message="As marcações já feitas permanecem na mesma posição percentual. Confira se o novo desenho está alinhado."
+  confirmText="Substituir"
+  cancelText="Cancelar"
+  (confirmed)="confirmarTrocaImagem()"
+  (cancelled)="cancelarTrocaImagem()"
+></app-confirmation-modal>
+
+@if (previewVista; as vista) {
+  @if (vista.previewUrl) {
+    <div
+      class="vista-modal-overlay"
+      (click)="fecharImagem()"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'Imagem da vista ' + vista.descricao"
+    >
+      <div class="vista-modal" (click)="$event.stopPropagation()">
+        <div class="vista-modal-header">
+          <h3>{{ vista.descricao }}</h3>
+          <button
+            type="button"
+            class="vista-modal-close"
+            (click)="fecharImagem()"
+            aria-label="Fechar imagem"
+          >
+            ×
+          </button>
+        </div>
+        <div class="vista-modal-body">
+          <img [src]="vista.previewUrl" [alt]="vista.descricao" />
+        </div>
+      </div>
+    </div>
+  }
+}

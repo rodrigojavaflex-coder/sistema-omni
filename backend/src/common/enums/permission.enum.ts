@@ -44,6 +44,16 @@ export enum Permission {
   MODELOVEICULO_READ = 'modelo_veiculo:read',
   MODELOVEICULO_UPDATE = 'modelo_veiculo:update',
   MODELOVEICULO_DELETE = 'modelo_veiculo:delete',
+  MODELOVEICULO_VISTAS = 'modelo_veiculo:vistas',
+  MODELOVEICULO_VISTAS_IMAGEM = 'modelo_veiculo:vistas_imagem',
+  MODELOVEICULO_VISTAS_INATIVAR = 'modelo_veiculo:vistas_inativar',
+  MODELOVEICULO_VISTAS_EXCLUIR = 'modelo_veiculo:vistas_excluir',
+
+  // Vistas / partes do veículo (catálogo)
+  VISTAVEICULO_CREATE = 'vista_veiculo:create',
+  VISTAVEICULO_READ = 'vista_veiculo:read',
+  VISTAVEICULO_UPDATE = 'vista_veiculo:update',
+  VISTAVEICULO_DELETE = 'vista_veiculo:delete',
 
   // Motoristas
   MOTORISTA_CREATE = 'motorista:create',
@@ -244,6 +254,28 @@ export const PERMISSION_GROUPS = {
       key: Permission.MODELOVEICULO_DELETE,
       label: 'Excluir modelos de veículo',
     },
+    {
+      key: Permission.MODELOVEICULO_VISTAS,
+      label: 'Adicionar vistas do modelo',
+    },
+    {
+      key: Permission.MODELOVEICULO_VISTAS_IMAGEM,
+      label: 'Trocar imagem da vista do modelo',
+    },
+    {
+      key: Permission.MODELOVEICULO_VISTAS_INATIVAR,
+      label: 'Inativar/ativar vista do modelo',
+    },
+    {
+      key: Permission.MODELOVEICULO_VISTAS_EXCLUIR,
+      label: 'Excluir vista do modelo',
+    },
+  ],
+  'Vistas do veículo': [
+    { key: Permission.VISTAVEICULO_CREATE, label: 'Criar vistas do veículo' },
+    { key: Permission.VISTAVEICULO_READ, label: 'Visualizar vistas do veículo' },
+    { key: Permission.VISTAVEICULO_UPDATE, label: 'Editar vistas do veículo' },
+    { key: Permission.VISTAVEICULO_DELETE, label: 'Excluir vistas do veículo' },
   ],
   Motoristas: [
     { key: Permission.MOTORISTA_CREATE, label: 'Criar motoristas' },

@@ -25,7 +25,20 @@ export class ModeloVeiculoService {
     if (ativo !== undefined) {
       where.ativo = ativo;
     }
-    return this.modeloRepository.find({ where, order: { nome: 'ASC' } });
+    const modelos = await this.modeloRepository.find({
+      where,
+      relations: ['vistas'],
+      order: { nome: 'ASC' },
+    });
+    for (const modelo of modelos) {
+      modelo.vistas = [...(modelo.vistas ?? [])].sort((a, b) => {
+        if (a.ordem !== b.ordem) {
+          return a.ordem - b.ordem;
+        }
+        return a.descricao.localeCompare(b.descricao, 'pt-BR');
+      });
+    }
+    return modelos;
   }
 
   async findOne(id: string): Promise<ModeloVeiculo> {

@@ -15,6 +15,8 @@ import { Componente } from '../../models/componente.model';
 import { Sintoma } from '../../models/sintoma.model';
 import { ComponenteService } from '../../services/componente.service';
 import { SintomaService } from '../../services/sintoma.service';
+import { VistaVeiculo } from '../../models/vista-veiculo.model';
+import { VistaVeiculoService } from '../../services/vista-veiculo.service';
 
 @Component({
   selector: 'app-matriz-criticidade-form',
@@ -29,6 +31,7 @@ export class MatrizCriticidadeFormComponent
 {
   componentes: Componente[] = [];
   sintomas: Sintoma[] = [];
+  vistasCatalogo: VistaVeiculo[] = [];
   gravidades: GravidadeCriticidade[] = ['VERDE', 'AMARELO', 'VERMELHO'];
 
   constructor(
@@ -36,6 +39,7 @@ export class MatrizCriticidadeFormComponent
     private matrizService: MatrizCriticidadeService,
     private componenteService: ComponenteService,
     private sintomaService: SintomaService,
+    private vistaVeiculoService: VistaVeiculoService,
     private route: ActivatedRoute,
     router: Router,
   ) {
@@ -49,6 +53,7 @@ export class MatrizCriticidadeFormComponent
       this.entityId = id;
     }
     this.loadCatalogos();
+    this.loadVistasCatalogo();
     super.ngOnInit();
   }
 
@@ -59,6 +64,7 @@ export class MatrizCriticidadeFormComponent
       gravidade: ['VERDE', [Validators.required]],
       exige_foto: [false],
       permite_audio: [false],
+      id_vistas: [[] as string[]],
     });
   }
 
@@ -70,6 +76,9 @@ export class MatrizCriticidadeFormComponent
       gravidade: formValue.gravidade,
       exige_foto: !!formValue.exige_foto,
       permite_audio: !!formValue.permite_audio,
+      id_vistas: this.sintomaExigeMapa
+        ? [...((formValue.id_vistas as string[] | undefined) ?? [])]
+        : [],
     };
   }
 
@@ -89,11 +98,38 @@ export class MatrizCriticidadeFormComponent
       gravidade: matriz.gravidade,
       exige_foto: matriz.exigeFoto,
       permite_audio: matriz.permiteAudio,
+      id_vistas: [...(matriz.idVistas ?? [])],
     });
   }
 
   protected override getListRoute(): string {
     return '/matriz-criticidade';
+  }
+
+  get sintomaExigeMapa(): boolean {
+    const id = this.form?.get('idsintoma')?.value as string | undefined;
+    if (!id) {
+      return false;
+    }
+    return !!this.sintomas.find((s) => s.id === id)?.exigeMarcacaoMapa;
+  }
+
+  isVistaSelecionada(id: string): boolean {
+    const atuais = (this.form?.get('id_vistas')?.value as string[] | undefined) ?? [];
+    return atuais.includes(id);
+  }
+
+  toggleVista(id: string): void {
+    const ctrl = this.form.get('id_vistas');
+    const atuais = [...((ctrl?.value as string[] | undefined) ?? [])];
+    const idx = atuais.indexOf(id);
+    if (idx >= 0) {
+      atuais.splice(idx, 1);
+    } else {
+      atuais.push(id);
+    }
+    ctrl?.setValue(atuais);
+    ctrl?.markAsDirty();
   }
 
   private loadCatalogos(): void {
@@ -105,6 +141,17 @@ export class MatrizCriticidadeFormComponent
     this.sintomaService.getAll(true).subscribe({
       next: (items) => {
         this.sintomas = items;
+      },
+    });
+  }
+
+  private loadVistasCatalogo(): void {
+    this.vistaVeiculoService.getAll(true).subscribe({
+      next: (items) => {
+        this.vistasCatalogo = items;
+      },
+      error: () => {
+        this.vistasCatalogo = [];
       },
     });
   }

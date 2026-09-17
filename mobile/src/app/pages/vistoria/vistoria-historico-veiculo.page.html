@@ -36,12 +36,17 @@
     </ion-text>
     <ion-item *ngIf="openedFromMenu">
       <ion-label position="stacked">Selecionar veículo</ion-label>
-      <ion-searchbar
+      <ion-input
         [value]="veiculoSearch"
         placeholder="Digite placa ou descrição"
+        type="text"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        enterkeyhint="search"
+        autocomplete="off"
+        [clearInput]="true"
         (ionInput)="onBuscarVeiculos($event)"
-        (ionClear)="limparVeiculoSelecionado()"
-      ></ion-searchbar>
+      ></ion-input>
     </ion-item>
 
     <div class="search-loading" *ngIf="openedFromMenu && loadingVeiculos">

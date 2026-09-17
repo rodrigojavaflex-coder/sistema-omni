@@ -51,6 +51,7 @@
       <thead>
         <tr>
           <th>Nome</th>
+          <th>Vistas</th>
           <th>Status</th>
           <th>Ações</th>
         </tr>
@@ -58,10 +59,25 @@
       <tbody>
         <tr *ngFor="let item of items">
           <td>{{ item.nome }}</td>
+          <td>
+            <div class="vistas-chips" *ngIf="vistasDoModelo(item).length; else semVistas">
+              <span
+                class="vista-chip"
+                *ngFor="let vista of vistasDoModelo(item)"
+                [class.is-inativa]="!vista.ativo"
+                [title]="vista.ativo ? vista.descricao : vista.descricao + ' (inativa)'"
+              >
+                {{ vista.descricao }}
+              </span>
+            </div>
+            <ng-template #semVistas>
+              <span class="vistas-empty">Nenhuma</span>
+            </ng-template>
+          </td>
           <td>{{ getStatusLabel(item) }}</td>
           <td>
             <div class="table-actions">
-              <button *ngIf="canEdit" class="btn btn-small btn-primary" (click)="onEdit(item)">
+              <button *ngIf="canOpenForm" class="btn btn-small btn-primary" (click)="onEdit(item)">
                 Editar
               </button>
               <button *ngIf="canDelete" class="btn btn-small btn-danger" (click)="onDelete(item)">
@@ -74,7 +90,7 @@
           </td>
         </tr>
         <tr *ngIf="items.length === 0">
-          <td colspan="3" class="table-empty-cell" style="text-align: center; padding: 2rem;">
+          <td colspan="4" class="table-empty-cell" style="text-align: center; padding: 2rem;">
             Nenhum modelo encontrado
           </td>
         </tr>

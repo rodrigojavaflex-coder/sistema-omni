@@ -1,0 +1,278 @@
+:host {
+  --mapa-surface: var(--ion-card-background, var(--ion-background-color, #ffffff));
+  --mapa-border: var(--ion-color-step-200, #e2e8f0);
+  --mapa-text: var(--ion-text-color, #0f172a);
+  --mapa-muted: var(--ion-color-medium, #73849c);
+  --mapa-avaria-atual: var(--ion-color-danger, #eb445a);
+  --mapa-avaria-pendente: var(--ion-color-primary, #3880ff);
+  --mapa-avaria-pendente-texto: var(--ion-color-primary-contrast, #ffffff);
+  --mapa-overlay-bg: var(--ion-color-step-50, #f8fafc);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :host {
+    --mapa-border: var(--ion-color-step-300, #334155);
+    --mapa-overlay-bg: var(--ion-color-step-100, #1e293b);
+  }
+}
+
+ion-content.mapa-content {
+  flex: 1;
+  min-height: 0;
+  --overflow: hidden;
+}
+
+ion-content.mapa-content::part(scroll) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px 8px;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chrome {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hint,
+.legend,
+.status {
+  margin: 0;
+  color: var(--mapa-text);
+}
+
+.hint,
+.legend {
+  font-size: 0.88rem;
+  color: var(--mapa-muted);
+  line-height: 1.4;
+}
+
+.status {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.status-empty {
+  font-weight: 500;
+  color: var(--mapa-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions ion-button {
+  margin: 0;
+  text-transform: none;
+  --border-radius: 10px;
+}
+
+.zoom-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-actions ion-button {
+  margin: 0;
+  min-width: 44px;
+  min-height: 40px;
+  text-transform: none;
+  --border-radius: 10px;
+}
+
+.zoom-actions ion-button:focus-visible,
+.actions ion-button:focus-visible {
+  outline: 3px solid var(--ion-color-primary, #3880ff);
+  outline-offset: 2px;
+}
+
+.zoom-label {
+  min-width: 3.2rem;
+  text-align: center;
+  font-weight: 700;
+  color: var(--mapa-text);
+}
+
+.file-input {
+  display: none;
+}
+
+.map-card {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--mapa-surface);
+  border: 1px solid var(--mapa-border);
+  border-radius: 12px;
+  padding: 8px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.map-viewport {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--mapa-overlay-bg);
+  touch-action: none;
+  user-select: none;
+  overscroll-behavior: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+
+.map-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.map-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.map-overlay {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  border-radius: 8px;
+  touch-action: none;
+}
+
+.map-overlay:focus-visible {
+  outline: 3px solid var(--ion-color-primary, #3880ff);
+  outline-offset: 2px;
+}
+
+.mark {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--mapa-surface);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.4);
+}
+
+.mark-hidden {
+  display: none;
+}
+
+.mark-current {
+  background: var(--mapa-avaria-atual);
+}
+
+.mark-pending {
+  background: var(--mapa-avaria-pendente);
+}
+
+.mark-label {
+  font-weight: 700;
+  line-height: 1;
+  color: var(--mapa-surface);
+}
+
+.mark-pending .mark-label {
+  color: var(--mapa-avaria-pendente-texto);
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.footer-actions ion-button {
+  margin: 0;
+  min-height: 46px;
+  font-weight: 700;
+  text-transform: none;
+  --border-radius: 12px;
+}
+
+.btn-secondary {
+  flex: 0 0 38%;
+  --background: var(--ion-color-medium, #73849c);
+  --background-hover: var(--ion-color-medium-shade, #637084);
+  --background-activated: var(--ion-color-medium-tint, #818fa8);
+  --color: var(--ion-color-medium-contrast, #ffffff);
+}
+
+.btn-main {
+  flex: 1 1 auto;
+  --background: var(--ion-color-primary, #3880ff);
+  --background-hover: var(--ion-color-primary-shade, #3171e0);
+  --background-activated: var(--ion-color-primary-tint, #4c8dff);
+  --color: var(--ion-color-primary-contrast, #ffffff);
+}
+
+.btn-secondary[disabled],
+.btn-main[disabled],
+.actions ion-button[disabled],
+.zoom-actions ion-button[disabled] {
+  opacity: 0.45;
+}
+
+.mapa-avaria {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  touch-action: none;
+}
+
+.vistas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vistas ion-button {
+  margin: 0;
+  text-transform: none;
+}
+
+.mapa-error,
+.mapa-loading {
+  margin: 0 0 8px;
+}
+
+.mapa-error {
+  color: var(--ion-color-danger, #eb445a);
+}
+

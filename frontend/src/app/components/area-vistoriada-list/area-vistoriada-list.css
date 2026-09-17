@@ -309,6 +309,72 @@
   margin-bottom: 0;
 }
 
+.field-hint {
+  margin: 0 0 8px;
+  color: var(--text-muted, var(--text-secondary, #64748b));
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.vistas-matriz-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, var(--ion-item-border-color, #e2e8f0));
+  background: var(--bg-secondary, var(--surface-muted, #f8fafc));
+}
+
+.vistas-matriz-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-primary, #0f172a);
+  font-weight: 500;
+}
+
+.vistas-matriz-item:hover {
+  background: var(--bg-hover, rgba(56, 128, 255, 0.08));
+}
+
+.vistas-matriz-item:focus-within {
+  outline: 2px solid var(--color-primary, #3880ff);
+  outline-offset: 1px;
+}
+
+.vistas-matriz-item input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary, #3880ff);
+}
+
+.vistas-matriz-item input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.modal-container-matriz-vistas {
+  max-width: 480px;
+}
+
+.modal-container-matriz-vistas .modal-body {
+  overflow-y: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .vistas-matriz-grid {
+    background: var(--bg-secondary, #1e293b);
+    border-color: var(--border-color, #334155);
+  }
+}
+
 /* Modal Vincular Componente */
 .modal-container-vincular {
   max-width: 640px;
