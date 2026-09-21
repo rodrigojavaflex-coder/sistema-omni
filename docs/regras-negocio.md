@@ -397,7 +397,7 @@ Copie o bloco abaixo para cada regra nova.
   - Excluir item do catálogo em uso no modelo ou na matriz: recusar (inativar permitido)
   - Troca de imagem: persistir e avisar; nao bloquear; coordenadas % permanecem no mesmo `id_vista`
 - **Acoes do sistema:** Persistir vistas no modelo; persistir marcacao na irregularidade; overlay em tela, no PDF de pendencias (RN-VIS-007), no PDF de manutencao (RN-VIS-006) e na impressao da vistoria na web; filtrar operacional por `resolvido = false`
-- **Mensagens ao usuario:** Sem marcacao quando obrigatoria: "Marque o local da irregularidade no desenho do veiculo."; modelo sem vistas: "Cadastre ao menos uma vista no modelo do veiculo para sintomas que exigem localizacao."; troca de imagem: aviso de desalinhamento percentual; exclusao com uso: orientar inativar
+- **Mensagens ao usuario:** Sem marcacao quando obrigatoria: "Marque o local da irregularidade no desenho do veiculo."; modelo sem vistas: "Este modelo não tem desenho cadastrado. Cadastre ao menos uma vista no modelo do veiculo para sintomas que exigem localizacao."; troca de imagem: aviso de desalinhamento percentual; exclusao com uso: orientar inativar
 - **Permissoes envolvidas:** `vista_veiculo:*` (CRUD do catálogo, concessao manual em Perfis); `modelo_veiculo:vistas` (adicionar JPEG no modelo); `modelo_veiculo:vistas_imagem` (trocar imagem); `modelo_veiculo:vistas_inativar` (inativar/ativar vista); `modelo_veiculo:vistas_excluir` (excluir vista); `modelo_veiculo:*` (cadastro do modelo); `sintoma:update` (flag); leitura de vistas na vistoria com `vistoria_mobile:read` / `vistoria_web:read` / `irregularidade_tratamento:read` / `irregularidade_tratamento:create_sos`
 - **Dados impactados:** `vistas_veiculo`; `modelo_veiculo_vistas`; `sintomas.exige_marcacao_mapa`; `matriz_criticidade.id_vistas`; `irregularidades.id_vista`, `pos_x_pct`, `pos_y_pct`
 - **Rastreabilidade:** Auditoria padrao de modelo, sintoma e irregularidade; marcacao acompanha o historico de status da irregularidade
@@ -540,6 +540,8 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-09-21: RN-VIS-009 — pinça do mapa ancora o zoom no ponto dos dedos e mantém a posição ao soltar (app e web).
+- 2026-09-21: RN-VIS-009 — app avisa na tela de áreas e no mapa quando o sintoma exige localização e o modelo não tem desenho.
 - 2026-09-17: RN-VIS-006 / RN-VIS-007 — círculo do local preenchido na impressão da vistoria, no PDF de pendências e no PDF de manutenção.
 - 2026-09-17: RN-VIS-007 / RN-VIS-009 — impressão da vistoria na web (Imprimir) inclui a vista do modelo e o círculo do local.
 - 2026-09-17: RN-VIS-006 — PDF de envio à manutenção desenha a vista do modelo quando a irregularidade tem local.

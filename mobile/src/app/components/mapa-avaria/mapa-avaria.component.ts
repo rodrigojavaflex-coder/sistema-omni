@@ -116,6 +116,7 @@ export class MapaAvariaComponent implements OnChanges, OnDestroy {
   private objectUrl: string | null = null;
   private pinchStartDistance: number | null = null;
   private pinchStartScale = ZOOM_MIN;
+  private pinchLastMid: { x: number; y: number } | null = null;
   private panStartX = 0;
   private panStartY = 0;
   private pointerMoved = false;
@@ -181,11 +182,11 @@ export class MapaAvariaComponent implements OnChanges, OnDestroy {
   }
 
   zoomIn(): void {
-    this.aplicarEscala(this.escala() + ZOOM_PASSO);
+    this.aplicarEscala(this.escala() + ZOOM_PASSO, this.centroViewport());
   }
 
   zoomOut(): void {
-    this.aplicarEscala(this.escala() - ZOOM_PASSO);
+    this.aplicarEscala(this.escala() - ZOOM_PASSO, this.centroViewport());
   }
 
   resetarZoom(): void {
@@ -262,7 +263,7 @@ export class MapaAvariaComponent implements OnChanges, OnDestroy {
         this.error.set(
           filtradas.length === 0 && vistas.length > 0
             ? 'Nenhuma vista deste veículo corresponde às selecionadas na matriz.'
-            : 'Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.',
+            : 'Este modelo não tem desenho cadastrado. Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.',
         );
         this.marcaChange.emit(null);
         return;
@@ -297,9 +298,14 @@ export class MapaAvariaComponent implements OnChanges, OnDestroy {
       return;
     }
     this.revoke();
-    const blob = await this.vistoriaService.obterImagemVista(this.modeloId, vistaId);
-    this.objectUrl = URL.createObjectURL(blob);
-    this.imagemUrl.set(this.objectUrl);
+    try {
+      const blob = await this.vistoriaService.obterImagemVista(this.modeloId, vistaId);
+      this.objectUrl = URL.createObjectURL(blob);
+      this.imagemUrl.set(this.objectUrl);
+    } catch {
+      this.imagemUrl.set(null);
+      this.error.set('Não foi possível carregar o desenho desta vista do modelo.');
+    }
   }
 
   private async carregarMarcacoes(): Promise<void> {
@@ -354,8 +360,10 @@ export class MapaAvariaComponent implements OnChanges, OnDestroy {
     this.pointerMoved = false;
     if (event.touches.length === 2) {
       this.skipClick = true;
+      this.mousePanAtivo = false;
       this.pinchStartDistance = this.distancia(event.touches[0], event.touches[1]);
       this.pinchStartScale = this.escala();
+      this.pinchLastMid = this.pontoMedioViewport(event.touches[0], event.touches[1]);
       event.preventDefault();
       return;
     }
@@ -368,8 +376,21 @@ export class MapaAvariaComponent implements OnChanges, OnDestroy {
 
   private onTouchMove(event: TouchEvent): void {
     if (event.touches.length === 2 && this.pinchStartDistance) {
+      const mid = this.pontoMedioViewport(event.touches[0], event.touches[1]);
+      if (this.pinchLastMid) {
+        const dx = mid.x - this.pinchLastMid.x;
+        const dy = mid.y - this.pinchLastMid.y;
+        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+          this.pointerMoved = true;
+          this.translateX.set(this.translateX() + dx);
+          this.translateY.set(this.translateY() + dy);
+        }
+      }
+      this.pinchLastMid = mid;
       const atual = this.distancia(event.touches[0], event.touches[1]);
-      this.aplicarEscala(this.pinchStartScale * (atual / this.pinchStartDistance));
+      const novaEscala =
+        this.pinchStartScale * (atual / this.pinchStartDistance);
+      this.aplicarEscala(novaEscala, mid);
       event.preventDefault();
       return;
     }
@@ -393,9 +414,15 @@ export class MapaAvariaComponent implements OnChanges, OnDestroy {
   private onTouchEnd(event: TouchEvent): void {
     if (event.touches.length < 2) {
       this.pinchStartDistance = null;
+      this.pinchLastMid = null;
     }
     if (this.pointerMoved) {
       this.skipClick = true;
+    }
+    if (event.touches.length === 1 && this.escala() > ZOOM_MIN) {
+      const touch = event.touches[0];
+      this.panStartX = touch.clientX - this.translateX();
+      this.panStartY = touch.clientY - this.translateY();
     }
     if (this.escala() <= ZOOM_MIN) {
       this.resetarZoom();
@@ -407,17 +434,53 @@ export class MapaAvariaComponent implements OnChanges, OnDestroy {
   private onWheel(event: WheelEvent): void {
     event.preventDefault();
     const delta = event.deltaY > 0 ? -0.2 : 0.2;
-    this.aplicarEscala(this.escala() + delta);
+    const viewport = this.viewportEl;
+    if (!viewport) {
+      this.aplicarEscala(this.escala() + delta);
+      return;
+    }
+    const rect = viewport.getBoundingClientRect();
+    this.aplicarEscala(this.escala() + delta, {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    });
   }
 
-  private aplicarEscala(valor: number): void {
-    const next = this.clamp(valor, ZOOM_MIN, ZOOM_MAX);
-    this.escala.set(Number(next.toFixed(2)));
-    if (this.escala() <= ZOOM_MIN) {
+  private aplicarEscala(
+    valor: number,
+    foco?: { x: number; y: number },
+  ): void {
+    const viewport = this.viewportEl;
+    const escalaAtual = this.escala();
+    const next = Number(this.clamp(valor, ZOOM_MIN, ZOOM_MAX).toFixed(2));
+    if (!viewport || next === escalaAtual) {
+      this.escala.set(next);
+      if (next <= ZOOM_MIN) {
+        this.translateX.set(0);
+        this.translateY.set(0);
+      } else {
+        this.limitarPan();
+      }
+      return;
+    }
+
+    const cx = viewport.clientWidth / 2;
+    const cy = viewport.clientHeight / 2;
+    const midX = foco?.x ?? cx;
+    const midY = foco?.y ?? cy;
+    const offsetX = midX - cx;
+    const offsetY = midY - cy;
+    const conteudoX = (offsetX - this.translateX()) / escalaAtual;
+    const conteudoY = (offsetY - this.translateY()) / escalaAtual;
+
+    this.escala.set(next);
+    if (next <= ZOOM_MIN) {
       this.translateX.set(0);
       this.translateY.set(0);
       return;
     }
+    this.translateX.set(offsetX - conteudoX * next);
+    this.translateY.set(offsetY - conteudoY * next);
     this.limitarPan();
   }
 
@@ -432,6 +495,35 @@ export class MapaAvariaComponent implements OnChanges, OnDestroy {
     const maxY = (viewport.clientHeight * (this.escala() - 1)) / 2;
     this.translateX.set(this.clamp(this.translateX(), -maxX, maxX));
     this.translateY.set(this.clamp(this.translateY(), -maxY, maxY));
+  }
+
+  private centroViewport(): { x: number; y: number } | undefined {
+    const viewport = this.viewportEl;
+    if (!viewport) {
+      return undefined;
+    }
+    return {
+      x: viewport.clientWidth / 2,
+      y: viewport.clientHeight / 2,
+    };
+  }
+
+  private pontoMedioViewport(
+    t1: Touch,
+    t2: Touch,
+  ): { x: number; y: number } {
+    const viewport = this.viewportEl;
+    if (!viewport) {
+      return {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2,
+      };
+    }
+    const rect = viewport.getBoundingClientRect();
+    return {
+      x: (t1.clientX + t2.clientX) / 2 - rect.left,
+      y: (t1.clientY + t2.clientY) / 2 - rect.top,
+    };
   }
 
   private medirImagem(): void {

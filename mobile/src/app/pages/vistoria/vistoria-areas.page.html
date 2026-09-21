@@ -76,9 +76,18 @@
     <p>Carregando áreas...</p>
   </div>
 
-  <div class="content" *ngIf="errorMessage">
+  <div class="content" *ngIf="errorMessage && selectedArea === null">
     <ion-text color="danger"><p class="error-message">{{ errorMessage }}</p></ion-text>
     <ion-button fill="outline" (click)="carregarAreas()">Tentar novamente</ion-button>
+  </div>
+
+  <div class="content aviso-modelo" *ngIf="!loading && !errorMessage && avisoModeloSemVista && selectedArea === null">
+    <ion-text color="warning">
+      <p class="aviso-modelo-texto">{{ avisoModeloSemVista }}</p>
+    </ion-text>
+    <ion-button *ngIf="areas.length === 0" fill="outline" (click)="carregarAreas()">
+      Tentar novamente
+    </ion-button>
   </div>
 
   <!-- Lista de áreas em cards -->
@@ -105,8 +114,8 @@
     </div>
   </div>
 
-  <div class="content" *ngIf="!loading && areas.length === 0">
-    <p>Nenhuma área encontrada. Verifique se há áreas ativas cadastradas no sistema.</p>
+  <div class="content" *ngIf="!loading && !errorMessage && areas.length === 0 && !avisoModeloSemVista">
+    <p>{{ mensagemAreasVazias }}</p>
     <ion-button fill="outline" (click)="carregarAreas()">Tentar novamente</ion-button>
   </div>
 

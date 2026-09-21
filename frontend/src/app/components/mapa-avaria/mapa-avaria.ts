@@ -90,6 +90,7 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   private objectUrl: string | null = null;
   private pinchStartDistance: number | null = null;
   private pinchStartScale = ZOOM_MIN;
+  private pinchLastMid: { x: number; y: number } | null = null;
   private panStartX = 0;
   private panStartY = 0;
   private pointerMoved = false;
@@ -157,11 +158,11 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   }
 
   zoomIn(): void {
-    this.aplicarEscala(this.escala() + ZOOM_PASSO);
+    this.aplicarEscala(this.escala() + ZOOM_PASSO, this.centroViewport());
   }
 
   zoomOut(): void {
-    this.aplicarEscala(this.escala() - ZOOM_PASSO);
+    this.aplicarEscala(this.escala() - ZOOM_PASSO, this.centroViewport());
   }
 
   resetarZoom(): void {
@@ -247,7 +248,7 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
         this.error.set(
           filtradas.length === 0 && ativas.length > 0
             ? 'Nenhuma vista deste veículo corresponde às selecionadas na matriz.'
-            : 'Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.',
+            : 'Este modelo não tem desenho cadastrado. Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.',
         );
         this.marcaChange.emit(null);
         return;
@@ -332,21 +333,98 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
     });
   }
 
-  private aplicarEscala(valor: number): void {
-    const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, valor));
-    this.escala.set(Number(next.toFixed(2)));
-    if (this.escala() <= ZOOM_MIN) {
+  private aplicarEscala(
+    valor: number,
+    foco?: { x: number; y: number },
+  ): void {
+    const viewport = this.viewport?.nativeElement;
+    const escalaAtual = this.escala();
+    const next = Number(
+      Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, valor)).toFixed(2),
+    );
+    if (!viewport || next === escalaAtual) {
+      this.escala.set(next);
+      if (next <= ZOOM_MIN) {
+        this.translateX.set(0);
+        this.translateY.set(0);
+      }
+      return;
+    }
+
+    const cx = viewport.clientWidth / 2;
+    const cy = viewport.clientHeight / 2;
+    const midX = foco?.x ?? cx;
+    const midY = foco?.y ?? cy;
+    const offsetX = midX - cx;
+    const offsetY = midY - cy;
+    const conteudoX = (offsetX - this.translateX()) / escalaAtual;
+    const conteudoY = (offsetY - this.translateY()) / escalaAtual;
+
+    this.escala.set(next);
+    if (next <= ZOOM_MIN) {
       this.translateX.set(0);
       this.translateY.set(0);
+      return;
     }
+    this.translateX.set(offsetX - conteudoX * next);
+    this.translateY.set(offsetY - conteudoY * next);
+    this.limitarPan();
+  }
+
+  private limitarPan(): void {
+    const viewport = this.viewport?.nativeElement;
+    if (!viewport || this.escala() <= ZOOM_MIN) {
+      this.translateX.set(0);
+      this.translateY.set(0);
+      return;
+    }
+    const maxX = (viewport.clientWidth * (this.escala() - 1)) / 2;
+    const maxY = (viewport.clientHeight * (this.escala() - 1)) / 2;
+    this.translateX.set(
+      Math.min(maxX, Math.max(-maxX, this.translateX())),
+    );
+    this.translateY.set(
+      Math.min(maxY, Math.max(-maxY, this.translateY())),
+    );
+  }
+
+  private centroViewport(): { x: number; y: number } | undefined {
+    const viewport = this.viewport?.nativeElement;
+    if (!viewport) {
+      return undefined;
+    }
+    return {
+      x: viewport.clientWidth / 2,
+      y: viewport.clientHeight / 2,
+    };
+  }
+
+  private pontoMedioViewport(
+    t1: Touch,
+    t2: Touch,
+  ): { x: number; y: number } {
+    const viewport = this.viewport?.nativeElement;
+    if (!viewport) {
+      return {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2,
+      };
+    }
+    const rect = viewport.getBoundingClientRect();
+    return {
+      x: (t1.clientX + t2.clientX) / 2 - rect.left,
+      y: (t1.clientY + t2.clientY) / 2 - rect.top,
+    };
   }
 
   private onTouchStart(event: TouchEvent): void {
     this.pointerMoved = false;
     if (event.touches.length === 2) {
       this.skipClick = true;
+      this.mousePanAtivo = false;
       this.pinchStartDistance = this.distancia(event.touches[0], event.touches[1]);
       this.pinchStartScale = this.escala();
+      this.pinchLastMid = this.pontoMedioViewport(event.touches[0], event.touches[1]);
       event.preventDefault();
     } else if (event.touches.length === 1 && this.escala() > ZOOM_MIN) {
       this.panStartX = event.touches[0].clientX - this.translateX();
@@ -356,8 +434,22 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
 
   private onTouchMove(event: TouchEvent): void {
     if (event.touches.length === 2 && this.pinchStartDistance) {
+      const mid = this.pontoMedioViewport(event.touches[0], event.touches[1]);
+      if (this.pinchLastMid) {
+        const dx = mid.x - this.pinchLastMid.x;
+        const dy = mid.y - this.pinchLastMid.y;
+        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+          this.pointerMoved = true;
+          this.translateX.set(this.translateX() + dx);
+          this.translateY.set(this.translateY() + dy);
+        }
+      }
+      this.pinchLastMid = mid;
       const atual = this.distancia(event.touches[0], event.touches[1]);
-      this.aplicarEscala(this.pinchStartScale * (atual / this.pinchStartDistance));
+      this.aplicarEscala(
+        this.pinchStartScale * (atual / this.pinchStartDistance),
+        mid,
+      );
       event.preventDefault();
       return;
     }
@@ -365,6 +457,7 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
       this.pointerMoved = true;
       this.translateX.set(event.touches[0].clientX - this.panStartX);
       this.translateY.set(event.touches[0].clientY - this.panStartY);
+      this.limitarPan();
       event.preventDefault();
     }
   }
@@ -372,12 +465,19 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   private onTouchEnd(event: TouchEvent): void {
     if (event.touches.length < 2) {
       this.pinchStartDistance = null;
+      this.pinchLastMid = null;
     }
     if (this.pointerMoved) {
       this.skipClick = true;
     }
+    if (event.touches.length === 1 && this.escala() > ZOOM_MIN) {
+      this.panStartX = event.touches[0].clientX - this.translateX();
+      this.panStartY = event.touches[0].clientY - this.translateY();
+    }
     if (this.escala() <= ZOOM_MIN) {
       this.resetarZoom();
+    } else {
+      this.limitarPan();
     }
   }
 

@@ -76,6 +76,12 @@ export class VistoriaAreasPage implements OnInit {
   loading = false;
   isExcluindo = false;
   errorMessage = '';
+  avisoModeloSemVista = '';
+  private motivoAreasVazias: 'sem-modelo' | 'sem-area' | 'sem-matriz' | null = null;
+  private algumSintomaExigeMapa = false;
+
+  private readonly mensagemModeloSemVista =
+    'Este modelo não tem desenho cadastrado. Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.';
 
   /** Bottom sheet de componentes (mesma aba) */
   selectedArea: AreaVistoriada | null = null;
@@ -102,6 +108,19 @@ export class VistoriaAreasPage implements OnInit {
 
   get veiculoNumero(): string {
     return this.flowService.getVeiculoDescricao() || '-';
+  }
+
+  get mensagemAreasVazias(): string {
+    switch (this.motivoAreasVazias) {
+      case 'sem-modelo':
+        return 'Este veículo não tem modelo vinculado. Não é possível listar as áreas da vistoria.';
+      case 'sem-area':
+        return 'Nenhuma área ativa está vinculada ao modelo deste veículo.';
+      case 'sem-matriz':
+        return 'As áreas deste veículo não têm componentes com matriz de criticidade.';
+      default:
+        return 'Nenhuma área encontrada. Verifique se há áreas ativas cadastradas no sistema.';
+    }
   }
 
   get canViewHistoricoVeiculo(): boolean {
@@ -225,10 +244,22 @@ export class VistoriaAreasPage implements OnInit {
 
     this.loading = true;
     this.errorMessage = '';
+    this.avisoModeloSemVista = '';
+    this.motivoAreasVazias = null;
+    this.algumSintomaExigeMapa = false;
     try {
       const bootstrap = await this.bootstrapService.getOrFetch(vistoriaId);
       if (bootstrap) {
+        this.algumSintomaExigeMapa = this.bootstrapExigeMapa(bootstrap);
         this.aplicarBootstrap(bootstrap);
+        if (this.areas.length === 0) {
+          this.motivoAreasVazias =
+            bootstrap.areas.length === 0
+              ? modeloId
+                ? 'sem-area'
+                : 'sem-modelo'
+              : 'sem-matriz';
+        }
         await this.recarregarIndicadores(vistoriaId);
         if (!this.flowService.getNumeroVistoria() && bootstrap.vistoria?.numeroVistoria != null) {
           this.flowService.updateContext({ numeroVistoria: bootstrap.vistoria.numeroVistoria });
@@ -240,16 +271,25 @@ export class VistoriaAreasPage implements OnInit {
           }
           this.reopenAreaId = null;
         }
+        await this.avaliarVistasDoModelo(modeloId);
         return;
       }
 
-      if (modeloId) {
-        this.areas = await this.areaService.listarPorModelo(modeloId);
-      }
+      const areasDoModelo = modeloId
+        ? await this.areaService.listarPorModelo(modeloId)
+        : [];
+      const areasBase =
+        areasDoModelo.length > 0
+          ? areasDoModelo
+          : await this.areaService.listarAtivas();
+      this.areas = await this.filtrarAreasComMatriz(areasBase);
       if (this.areas.length === 0) {
-        this.areas = await this.areaService.listarAtivas();
+        this.motivoAreasVazias = !modeloId
+          ? 'sem-modelo'
+          : areasBase.length === 0
+            ? 'sem-area'
+            : 'sem-matriz';
       }
-      this.areas = await this.filtrarAreasComMatriz(this.areas);
       const [irregularidades, pendentes] = await Promise.all([
         this.vistoriaService.listarIrregularidades(vistoriaId),
         this.flowService.getVeiculoId()
@@ -266,6 +306,7 @@ export class VistoriaAreasPage implements OnInit {
         }
         this.reopenAreaId = null;
       }
+      await this.avaliarVistasDoModelo(modeloId);
     } catch {
       this.errorMessage = 'Erro ao carregar áreas. Tente novamente.';
     } finally {
@@ -330,6 +371,28 @@ export class VistoriaAreasPage implements OnInit {
     } finally {
       this.loadingComponentes = false;
       this.cdr.detectChanges();
+    }
+  }
+
+  private bootstrapExigeMapa(bootstrap: VistoriaBootstrap): boolean {
+    return bootstrap.areas.some((area) =>
+      (area.componentes ?? []).some((componente) =>
+        (componente.matriz ?? []).some((item) => !!item.sintoma?.exigeMarcacaoMapa),
+      ),
+    );
+  }
+
+  private async avaliarVistasDoModelo(modeloId: string | null): Promise<void> {
+    if (!modeloId || !this.algumSintomaExigeMapa) {
+      this.avisoModeloSemVista = '';
+      return;
+    }
+    try {
+      const vistas = await this.vistoriaService.listarVistasModelo(modeloId, true);
+      this.avisoModeloSemVista = vistas.length === 0 ? this.mensagemModeloSemVista : '';
+    } catch {
+      this.avisoModeloSemVista =
+        'Não foi possível verificar os desenhos do modelo deste veículo.';
     }
   }
 
@@ -514,6 +577,9 @@ export class VistoriaAreasPage implements OnInit {
     }
     try {
       const matriz = await this.matrizService.listarPorComponente(idComponente);
+      if (matriz.some((item) => item.sintoma?.exigeMarcacaoMapa)) {
+        this.algumSintomaExigeMapa = true;
+      }
       const tem = matriz.length > 0;
       this.componenteTemMatrizCache.set(idComponente, tem);
       return tem;
