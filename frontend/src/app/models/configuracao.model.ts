@@ -26,6 +26,7 @@ export interface ErpVistoriaConfig {
 export interface Configuracao {
   id: string;
   nomeCliente?: string;
+  /** Legado/path ou marcador `db` quando a logo está em bytea */
   logoRelatorio?: string;
   // Configurações de Auditoria
   auditarConsultas: boolean;

@@ -346,7 +346,7 @@ Copie o bloco abaixo para cada regra nova.
 ### RN-VIS-007 - Relatorio PDF de pendencias do veiculo
 - **Modulo:** Vistoria
 - **Fluxo:** App mobile — tela Pendencias do Veiculo
-- **Descricao:** Usuario com permissao de historico do veiculo gera PDF das irregularidades nao resolvidas do veiculo selecionado, no padrao de relatorio do sistema (logo, titulo, fotos das irregularidades, rodape com usuario e data). A primeira pagina mostra as vistas/partes do veiculo (ate 4 por pagina, na ordem do catalogo `vistas_veiculo`): vistas altas lado a lado e silhuetas laterais em largura total, recortando margem em branco. Circulos azuis usam indice global do veiculo (1, 2, 3…); a legenda em uma linha no formato `OS: 1:202637, 2:202639 e 3:202689`. As paginas seguintes listam as pendencias. O relatorio impresso da vistoria na web (tela Vistorias) segue o mesmo padrao visual das fotos e, quando a irregularidade tiver marcacao, desenha a vista do modelo com o circulo do local (retrato ao lado das fotos; silhueta baixa em largura total).
+- **Descricao:** Usuario com permissao de historico do veiculo gera PDF das irregularidades nao resolvidas do veiculo selecionado, no padrao de relatorio do sistema (logo em `configuracoes.logo_relatorio_bytes`, titulo, fotos das irregularidades, rodape com usuario e data). A primeira pagina mostra as vistas/partes do veiculo (ate 4 por pagina, na ordem do catalogo `vistas_veiculo`): vistas altas lado a lado e silhuetas laterais em largura total, recortando margem em branco. Circulos azuis usam indice global do veiculo (1, 2, 3…); a legenda em uma linha no formato `OS: 1:202637, 2:202639 e 3:202689`. As paginas seguintes listam as pendencias; quando a irregularidade tiver marcacao, cada card desenha a vista do modelo com o circulo do local (retrato ao lado das fotos; silhueta baixa em largura total), no mesmo padrao da impressao da vistoria na web. O relatorio impresso da vistoria na web (tela Vistorias) segue o mesmo padrao visual das fotos e, quando a irregularidade tiver marcacao, desenha a vista do modelo com o circulo do local (retrato ao lado das fotos; silhueta baixa em largura total).
 - **Condicoes de entrada:** Veiculo selecionado; permissao `vistoria_web_historico_veiculo:read`.
 - **Validacoes:**
   - Sem veiculo, o botao permanece desabilitado
@@ -354,11 +354,12 @@ Copie o bloco abaixo para cada regra nova.
   - Sem filtro, o PDF traz todas as pendencias do veiculo
 - **Acoes do sistema:** `GET /vistoria/veiculo/:id/historico-irregularidades-nao-resolvidas/pdf`
 - **Permissoes envolvidas:** `vistoria_web_historico_veiculo:read`
-- **Dados impactados:** somente leitura (`irregularidades`, `irregularidades_midias`, `vistorias`, `veiculos`, `configuracao.logoRelatorio`)
+- **Dados impactados:** somente leitura (`irregularidades`, `irregularidades_midias`, `vistorias`, `veiculos`, `configuracao.logo_relatorio_bytes`)
 - **Criterios de aceite:**
   - [x] PDF com logo (quando cadastrada), veiculo/placa, lista de pendencias
   - [x] Fotos de cada irregularidade no PDF (grade 3 colunas, celula 200pt); sem foto, texto "Sem imagens anexadas"
   - [x] Primeira pagina: ate 4 vistas/partes (ordem do catalogo); laterais recortadas e em largura total; circulo azul com indice global do veiculo e legenda `OS: 1:n, 2:n e 3:n`
+  - [x] Cada pendencia com marcacao: label `Local:` + vista + circulo azul (retrato ao lado das fotos; silhueta baixa em largura total); resumo do mapa permanece no inicio
   - [x] Rodape com emissao, usuario e paginacao
   - [ ] Filtros de area/componente visiveis no PDF quando aplicados
   - [ ] Impressao da vistoria na web com logo, titulo, grade 3 colunas 200pt e rodape no mesmo padrao; vista do modelo com circulo quando houver local
@@ -388,18 +389,18 @@ Copie o bloco abaixo para cada regra nova.
 - **Condicoes de entrada:** Veiculo com modelo (ja exigido na vistoria mobile). Usuario autenticado com permissao da tela.
 - **Validacoes:**
   - Vista do modelo: catálogo + imagem obrigatórios na criacao; JPEG compactado; uma vista do catálogo por modelo
-  - Sintoma com flag ligado: `idVista` + `posXPct` + `posYPct` obrigatorios (mobile e SOS)
+  - Sintoma com flag ligado: ao menos 1 ponto (`marcacoes[]` ou `idVista`+coords); ate 10 na mesma vista (mobile e SOS)
   - Vista deve ser ativa e do modelo do veiculo da vistoria
   - Se a matriz tiver `id_vistas`, a marcação precisa ser de uma dessas vistas do catálogo
-  - Coordenadas 0–100; uma marcacao por irregularidade
+  - Coordenadas 0–100; ate 10 pontos por irregularidade na mesma vista
   - Modelo sem vista ativa + sintoma que exige mapa: recusar save
   - Excluir vista com marcacao: recusar (inativar permitido)
   - Excluir item do catálogo em uso no modelo ou na matriz: recusar (inativar permitido)
   - Troca de imagem: persistir e avisar; nao bloquear; coordenadas % permanecem no mesmo `id_vista`
-- **Acoes do sistema:** Persistir vistas no modelo; persistir marcacao na irregularidade; overlay em tela, no PDF de pendencias (RN-VIS-007), no PDF de manutencao (RN-VIS-006) e na impressao da vistoria na web; filtrar operacional por `resolvido = false`
+- **Acoes do sistema:** Persistir vistas no modelo; persistir pontos em `irregularidades_marcacoes` (1º ponto espelhado nas colunas legado); overlay em tela, no PDF de pendencias (RN-VIS-007), no PDF de manutencao (RN-VIS-006) e na impressao da vistoria na web; filtrar operacional por `resolvido = false`
 - **Mensagens ao usuario:** Sem marcacao quando obrigatoria: "Marque o local da irregularidade no desenho do veiculo."; modelo sem vistas: "Este modelo não tem desenho cadastrado. Cadastre ao menos uma vista no modelo do veiculo para sintomas que exigem localizacao."; troca de imagem: aviso de desalinhamento percentual; exclusao com uso: orientar inativar
 - **Permissoes envolvidas:** `vista_veiculo:*` (CRUD do catálogo, concessao manual em Perfis); `modelo_veiculo:vistas` (adicionar JPEG no modelo); `modelo_veiculo:vistas_imagem` (trocar imagem); `modelo_veiculo:vistas_inativar` (inativar/ativar vista); `modelo_veiculo:vistas_excluir` (excluir vista); `modelo_veiculo:*` (cadastro do modelo); `sintoma:update` (flag); leitura de vistas na vistoria com `vistoria_mobile:read` / `vistoria_web:read` / `irregularidade_tratamento:read` / `irregularidade_tratamento:create_sos`
-- **Dados impactados:** `vistas_veiculo`; `modelo_veiculo_vistas`; `sintomas.exige_marcacao_mapa`; `matriz_criticidade.id_vistas`; `irregularidades.id_vista`, `pos_x_pct`, `pos_y_pct`
+- **Dados impactados:** `vistas_veiculo`; `modelo_veiculo_vistas`; `sintomas.exige_marcacao_mapa`; `matriz_criticidade.id_vistas`; `irregularidades.id_vista`, `pos_x_pct`, `pos_y_pct` (1º ponto); `irregularidades_marcacoes`
 - **Rastreabilidade:** Auditoria padrao de modelo, sintoma e irregularidade; marcacao acompanha o historico de status da irregularidade
 - **Criterios de aceite:**
   - [x] Catálogo de vistas/partes; modelo escolhe o item e anexa JPEG (sem descrição livre)
@@ -407,8 +408,9 @@ Copie o bloco abaixo para cada regra nova.
   - [x] Flag no sintoma obriga mapa em qualquer componente; sem flag o mapa nao aparece
   - [x] Cadastro de sintoma lista modelos e vistas de forma informativa; a restrição de vistas é na matriz (componente + sintoma)
   - [x] Matriz com sintoma que exige mapa pode restringir vistas pelo ID do catálogo; nenhuma marcada = o app mostra todas as vistas do modelo
-  - [x] Overlay operacional mostra circulos `resolvido = false` da mesma vista; VALIDADA/CANCELADA saem da operacao e ficam no historico
-  - [x] PDF de pendencias (RN-VIS-007) desenha os circulos ainda abertos
+  - [x] Overlay operacional mostra circulos `resolvido = false` da mesma vista com rotulos por irregularidade (`1.1`/`1.2`… na 1ª, `2.1`/`2.2`… na 2ª, etc., ordem por `numeroIrregularidade`) e legenda `OS: 1.1:n, 1.2:n e 2.1:n`; a irregularidade em destaque/edicao usa o proprio indice global (nao reinicia em `1`); VALIDADA/CANCELADA saem da operacao e ficam no historico
+  - [x] Ate 10 pontos por irregularidade na mesma vista; PDF/impressao desenham todos os pontos
+  - [x] PDF de pendencias (RN-VIS-007) desenha os circulos ainda abertos no resumo e o local (vista + circulo) em cada card de irregularidade
   - [x] Impressao da vistoria na web (tela Vistorias) desenha a vista e o circulo quando a irregularidade tem local
 - **Cenarios de excecao:** Reclassificacao para sintoma que exige mapa sem marcacao → 422; vista inativa nao lista para novo registro e reabre no historico; SOS com a mesma obrigatoriedade; ERP (RN-VIS-008) nao envia coordenada
 - **Origem da regra:** Decisao de produto — mapa de avaria, 2026-09-16
@@ -556,6 +558,11 @@ Copie o bloco abaixo para cada regra nova.
 - 2026-09-16: RN-VIS-009 — matriz restringe vistas do mapa por descricao; vazio = todas no app.
 - 2026-09-16: RN-VIS-009 Implementada — mapa de avaria (vistas no modelo, flag no sintoma, overlay percentual, PDF de pendencias).
 - 2026-09-16: RN-VIS-009 Proposta — mapa de avaria (vistas N no modelo, flag no sintoma, overlay percentual). Plano em `docs/PLANO_MAPA_AVARIA_MODELO.md`.
+- 2026-09-22: RN-VIS-009 — overlay: índice global por irregularidade na vista (`1.1`/`1.2`…, `2.1`/`2.2`…); destaque/edição não reinicia em `1` (web e mobile).
+- 2026-09-22: RN-VIS-009 — até 10 pontos por irregularidade na mesma vista; overlay/PDF com rótulos `1.1`, `1.2`…; tabela `irregularidades_marcacoes`.
+- 2026-09-22: RN-VIS-009 — overlay do mapa: círculo com índice sequencial e legenda `OS: 1:n…` (web e mobile), alinhado ao PDF de pendências.
+- 2026-09-22: RN-VIS-007 — PDF de pendências: local (vista + círculo) em cada irregularidade, mantendo o resumo no início.
+- 2026-09-22: Logo do relatório persistida em `configuracoes.logo_relatorio_bytes` (bytea); deixa de depender de `uploads` no deploy.
 - 2026-09-15: Logo do relatorio em producao via data URL da API; proxy IIS/nginx de `/uploads` (Nest serve fora de `/api`).
 - 2026-09-15: RN-VIS-007 Impressao da vistoria na web alinhada ao PDF de pendencias (logo, titulo, fotos 3x200pt, rodape).
 - 2026-09-15: RN-VIS-008 Sintomas ERP passam a incluir observacao: `AREA-COMPONENTE-SINTOMA - (observacao)`.

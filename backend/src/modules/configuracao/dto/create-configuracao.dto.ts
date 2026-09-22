@@ -15,8 +15,9 @@ export class CreateConfiguracaoDto {
   nomeCliente?: string;
 
   @ApiPropertyOptional({
-    description: 'Logo do relatório (caminho/URL)',
-    example: '/uploads/logo.png',
+    description:
+      'Legado: caminho da logo. Preferir upload multipart; a imagem é persistida em bytea.',
+    example: 'db',
   })
   @IsOptional()
   @IsString()

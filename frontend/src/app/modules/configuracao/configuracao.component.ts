@@ -240,17 +240,13 @@ export class ConfiguracaoComponent implements OnInit {
     return texto;
   }
 
-  private aplicarLogoPreview(logoRelatorio?: string | null): void {
-    if (!logoRelatorio?.trim()) {
-      this.logoPreview = null;
-      return;
-    }
+  private aplicarLogoPreview(_logoRelatorio?: string | null): void {
     this.configuracaoService.getLogoRelatorio().subscribe({
       next: (resposta) => {
-        this.logoPreview = resposta.dataUrl || logoRelatorio;
+        this.logoPreview = resposta.dataUrl || null;
       },
       error: () => {
-        this.logoPreview = logoRelatorio;
+        this.logoPreview = null;
       },
     });
   }

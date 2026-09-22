@@ -140,6 +140,11 @@ export class VistoriaService {
       idcomponente: string;
       idsintoma: string;
       observacao: string;
+      marcacoes?: Array<{
+        idVista: string;
+        posXPct: number;
+        posYPct: number;
+      }>;
       idVista?: string;
       posXPct?: number;
       posYPct?: number;
@@ -158,6 +163,11 @@ export class VistoriaService {
     payload: {
       observacao: string;
       resolvido?: boolean;
+      marcacoes?: Array<{
+        idVista: string;
+        posXPct: number;
+        posYPct: number;
+      }>;
       idVista?: string;
       posXPct?: number;
       posYPct?: number;

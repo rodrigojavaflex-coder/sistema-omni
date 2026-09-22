@@ -10,6 +10,7 @@ import { ModeloVeiculoVista } from './entities/modelo-veiculo-vista.entity';
 import { ModeloVeiculo } from './entities/modelo-veiculo.entity';
 import { VistaVeiculo } from './entities/vista-veiculo.entity';
 import { Irregularidade } from '../vistoria/entities/irregularidade.entity';
+import { IrregularidadeMarcacao } from '../vistoria/entities/irregularidade-marcacao.entity';
 import { ModeloVeiculoVistaResumoDto } from './dto/modelo-veiculo-vista.dto';
 
 const JPEG_MIME = 'image/jpeg';
@@ -24,6 +25,8 @@ export class ModeloVeiculoVistaService {
     private readonly modeloRepository: Repository<ModeloVeiculo>,
     @InjectRepository(Irregularidade)
     private readonly irregularidadeRepository: Repository<Irregularidade>,
+    @InjectRepository(IrregularidadeMarcacao)
+    private readonly marcacaoRepository: Repository<IrregularidadeMarcacao>,
     @InjectRepository(VistaVeiculo)
     private readonly catalogoRepository: Repository<VistaVeiculo>,
   ) {}
@@ -170,10 +173,13 @@ export class ModeloVeiculoVistaService {
     if (!vista) {
       throw new NotFoundException('Vista do modelo não encontrada');
     }
-    const emUso = await this.irregularidadeRepository.count({
+    const emUsoLegado = await this.irregularidadeRepository.count({
       where: { idVista: vistaId },
     });
-    if (emUso > 0) {
+    const emUsoPontos = await this.marcacaoRepository.count({
+      where: { idVista: vistaId },
+    });
+    if (emUsoLegado > 0 || emUsoPontos > 0) {
       throw new ConflictException(
         'Não é possível excluir. Inative a vista. Há irregularidades marcadas neste desenho.',
       );

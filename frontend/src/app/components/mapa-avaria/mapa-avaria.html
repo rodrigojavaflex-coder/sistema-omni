@@ -27,12 +27,34 @@
       </button>
       <button type="button" class="btn btn-secondary" (click)="resetarZoom()">1x</button>
     </div>
-    <p class="mapa-hint">
-      {{
-        readonly
-          ? 'Vermelho = irregularidade atual. Azul = demais marcações da vista.'
-          : 'Toque no desenho para marcar. Pinça ou +/− para zoom. Vermelho = nova. Azul = pendentes.'
-      }}
+    <div class="mapa-toolbar" *ngIf="!readonly">
+      <span class="mapa-zoom-label">{{ textoMarcasAtuais() }}</span>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        [disabled]="marcasAtuais().length === 0"
+        (click)="desfazerUltimaMarca()"
+        aria-label="Desfazer último ponto"
+      >
+        ↶ Desfazer
+      </button>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        [disabled]="marcasAtuais().length === 0"
+        (click)="limparMarcas()"
+        aria-label="Limpar todos os pontos"
+      >
+        Limpar
+      </button>
+    </div>
+    <p class="mapa-hint">{{ textoAjudaMapa() }}</p>
+    <p
+      class="mapa-legenda-os"
+      *ngIf="mostrarPendentes() && legendaOsPendentes()"
+      aria-label="Legenda das ordens de serviço no mapa"
+    >
+      {{ legendaOsPendentes() }}
     </p>
   </div>
 
@@ -57,7 +79,7 @@
         class="mapa-overlay"
         role="button"
         tabindex="0"
-        [attr.aria-label]="readonly ? 'Mapa de avaria' : 'Área para marcar o local da irregularidade'"
+        aria-label="Área para marcar o local da irregularidade"
         (click)="onToqueMapa($event)"
       >
         <span
@@ -70,21 +92,44 @@
           [style.width.px]="tamanhoMarcaPx()"
           [style.height.px]="tamanhoMarcaPx()"
           [style.transform]="transformMarca()"
-          [style.font-size.px]="tamanhoMarcaPx() * 0.38"
+          [style.font-size.px]="tamanhoMarcaPx() * 0.32"
         >
           <span class="mapa-mark-label">{{ marca.rotulo }}</span>
         </span>
         <span
-          *ngIf="marcaAtual() as atual"
+          *ngFor="let atual of marcasAtuais(); let i = index; let last = last"
           class="mapa-mark mapa-mark-current"
+          [class.mapa-mark-interactive]="!readonly"
+          [class.mapa-mark-moving]="indiceArrastando() === i"
           [style.left.%]="atual.xPct"
           [style.top.%]="atual.yPct"
           [style.width.px]="tamanhoMarcaPx()"
           [style.height.px]="tamanhoMarcaPx()"
           [style.transform]="transformMarca()"
-          [style.font-size.px]="tamanhoMarcaPx() * 0.38"
+          [style.font-size.px]="tamanhoMarcaPx() * 0.32"
+          (pointerdown)="onMarcaPointerDown(i, $event)"
+          (pointermove)="onMarcaPointerMove(i, $event)"
+          (pointerup)="onMarcaPointerUp(i, $event)"
+          (pointercancel)="onMarcaPointerUp(i, $event)"
+          role="button"
+          [attr.aria-label]="'Ponto ' + atual.rotulo + '. Arraste para mover'"
         >
           <span class="mapa-mark-label">{{ atual.rotulo }}</span>
+          <button
+            *ngIf="last && !readonly"
+            type="button"
+            class="mapa-mark-remove"
+            [style.width.px]="tamanhoRemovePx()"
+            [style.height.px]="tamanhoRemovePx()"
+            [style.top.px]="-tamanhoRemovePx() * 0.35"
+            [style.right.px]="-tamanhoRemovePx() * 0.35"
+            [style.font-size.px]="tamanhoRemovePx() * 0.7"
+            (pointerdown)="$event.stopPropagation()"
+            (click)="onRemoverUltimaClick($event)"
+            aria-label="Remover último ponto"
+          >
+            ×
+          </button>
         </span>
       </div>
     </div>

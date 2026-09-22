@@ -36,6 +36,7 @@ import { EmpresaTerceiraModule } from '../empresa-terceira/empresa-terceira.modu
 import { VeiculoModule } from '../veiculo/veiculo.module';
 import { ModeloVeiculoVista } from '../veiculo/entities/modelo-veiculo-vista.entity';
 import { IrregularidadeOsExterna } from './entities/irregularidade-os-externa.entity';
+import { IrregularidadeMarcacao } from './entities/irregularidade-marcacao.entity';
 import { BrtOsIntegrationService } from './brt-os-integration.service';
 import { ErpVistoriaIntegrationService } from './erp-vistoria-integration.service';
 import {
@@ -56,6 +57,7 @@ import {
       IrregularidadeMidia,
       IrregularidadeHistorico,
       IrregularidadeOsExterna,
+      IrregularidadeMarcacao,
       ModeloVeiculo,
       ModeloVeiculoVista,
       VistaVeiculo,

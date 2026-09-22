@@ -53,8 +53,15 @@ export class Configuracao extends BaseEntity {
   @Column({ nullable: true })
   nomeCliente: string;
 
-  @Column({ nullable: true })
-  logoRelatorio: string; // Caminho/URL da imagem
+  /** Legado: caminho em disco (`/uploads/...`) ou marcador `db` quando a logo está em bytea. */
+  @Column({ type: 'varchar', nullable: true })
+  logoRelatorio?: string | null;
+
+  @Column({ name: 'logo_relatorio_bytes', type: 'bytea', nullable: true })
+  logoRelatorioBytes?: Buffer | null;
+
+  @Column({ name: 'logo_relatorio_mime', type: 'varchar', length: 100, nullable: true })
+  logoRelatorioMime?: string | null;
 
   // Configurações de Auditoria
   @Column({ default: true })

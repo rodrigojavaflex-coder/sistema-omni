@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -8,7 +10,9 @@ import {
   IsUUID,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { MarcacaoPontoDto } from './irregularidade-marcacao.dto';
 
 /** Normaliza entrada de texto antes de validar obrigatoriedade (espaços não contam). */
 function trimLeadingTrailingWhitespace(value: unknown): unknown {
@@ -25,6 +29,19 @@ export class UpdateIrregularidadeDto {
   @IsString({ message: 'A descrição do problema deve ser um texto válido.' })
   @IsNotEmpty({ message: 'A descrição do problema é obrigatória.' })
   observacao: string;
+
+  @ApiProperty({
+    description:
+      'Pontos no mapa (mesma vista, 1–10). Preferir sobre idVista/pos únicos.',
+    type: [MarcacaoPontoDto],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @ValidateNested({ each: true })
+  @Type(() => MarcacaoPontoDto)
+  marcacoes?: MarcacaoPontoDto[];
 
   @ApiProperty({
     description: 'Vista do modelo para reposicionar a marcação',

@@ -13,6 +13,7 @@ import { AreaVistoriada } from './area-vistoriada.entity';
 import { Componente } from './componente.entity';
 import { Sintoma } from './sintoma.entity';
 import { IrregularidadeMidia } from './irregularidade-midia.entity';
+import { IrregularidadeMarcacao } from './irregularidade-marcacao.entity';
 import { StatusIrregularidade } from '../../../common/enums/status-irregularidade.enum';
 import { OrigemRegistroIrregularidade } from '../../../common/enums/origem-vistoria.enum';
 import { ModeloVeiculoVista } from '../../veiculo/entities/modelo-veiculo-vista.entity';
@@ -236,4 +237,12 @@ export class Irregularidade extends BaseEntity {
     },
   })
   posYPct?: number | null;
+
+  /** Pontos do mapa (mesma vista; fonte canônica após migration 174570). */
+  @OneToMany(
+    () => IrregularidadeMarcacao,
+    (marcacao) => marcacao.irregularidade,
+    { cascade: true },
+  )
+  marcacoes?: IrregularidadeMarcacao[];
 }

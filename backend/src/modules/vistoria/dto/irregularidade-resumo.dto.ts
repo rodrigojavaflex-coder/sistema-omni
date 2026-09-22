@@ -152,12 +152,19 @@ export class IrregularidadeResumoDto {
   ultimoErroIntegracaoEm?: string;
 
   @ApiProperty({
-    description: 'Marcação no mapa do modelo',
+    description: 'Marcação no mapa do modelo (primeiro ponto; legado)',
     required: false,
     type: () => IrregularidadeMarcacaoDto,
     nullable: true,
   })
   marcacao?: IrregularidadeMarcacaoDto | null;
+
+  @ApiProperty({
+    description: 'Pontos no mapa (mesma vista, até 10)',
+    required: false,
+    type: () => [IrregularidadeMarcacaoDto],
+  })
+  marcacoes?: IrregularidadeMarcacaoDto[];
 
   @ApiProperty({
     description: 'Sintoma exige marcação no mapa',

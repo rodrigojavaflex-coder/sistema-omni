@@ -209,23 +209,25 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
   }
 
   get localDefinido(): boolean {
-    return !!this.marcaMapa;
+    return !!this.marcaMapa && this.marcaMapa.pontos.length > 0;
   }
 
   get textoLocal(): string {
     if (!this.modeloId) {
       return 'Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.';
     }
-    if (!this.marcaMapa) {
+    if (!this.marcaMapa || this.marcaMapa.pontos.length === 0) {
       return 'Obrigatório. Toque para marcar no desenho do veículo.';
     }
+    const n = this.marcaMapa.pontos.length;
+    const pontosLabel = n === 1 ? '1 ponto marcado' : `${n} pontos marcados`;
     return this.vistaDescricao
-      ? `${this.vistaDescricao} • local marcado`
-      : 'Local marcado no desenho';
+      ? `${this.vistaDescricao} • ${pontosLabel}`
+      : pontosLabel;
   }
 
   get rotuloBotaoLocal(): string {
-    return this.marcaMapa ? 'Alterar local' : 'Definir local';
+    return this.localDefinido ? 'Alterar local' : 'Definir local';
   }
 
   get tempoGravacaoFormatado(): string {
@@ -361,11 +363,27 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
       const existente = this.irregularidadesDaVistoria.find(
         (ir) => ir.id === this.irregularidadeEmEdicaoId,
       );
-      if (existente?.marcacao) {
+      if (existente?.marcacoes && existente.marcacoes.length > 0) {
+        const ordenadas = existente.marcacoes
+          .slice()
+          .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+        this.marcaMapa = {
+          idVista: ordenadas[0].idVista,
+          pontos: ordenadas.map((m) => ({
+            posXPct: m.posXPct,
+            posYPct: m.posYPct,
+          })),
+        };
+        this.vistaDescricao = ordenadas[0].descricaoVista ?? '';
+      } else if (existente?.marcacao) {
         this.marcaMapa = {
           idVista: existente.marcacao.idVista,
-          posXPct: existente.marcacao.posXPct,
-          posYPct: existente.marcacao.posYPct,
+          pontos: [
+            {
+              posXPct: existente.marcacao.posXPct,
+              posYPct: existente.marcacao.posYPct,
+            },
+          ],
         };
         this.vistaDescricao = existente.marcacao.descricaoVista ?? '';
       }
@@ -398,7 +416,7 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
   }
 
   confirmarMapa(): void {
-    if (!this.marcaMapaRascunho) {
+    if (!this.marcaMapaRascunho || this.marcaMapaRascunho.pontos.length === 0) {
       this.errorMessage = 'Marque o local da irregularidade no desenho do veículo.';
       return;
     }
@@ -851,7 +869,7 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
   }
 
   private temDadosNaoSalvos(): boolean {
-    return this.fotos.length > 0 || this.audios.length > 0 || (this.observacao?.trim()?.length ?? 0) > 0 || !!this.marcaMapa;
+    return this.fotos.length > 0 || this.audios.length > 0 || (this.observacao?.trim()?.length ?? 0) > 0 || this.localDefinido;
   }
 
   private async confirmarPerdaAlteracoes(): Promise<boolean> {
@@ -898,7 +916,7 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
       this.errorMessage = 'Foto obrigatória para este sintoma.';
       return;
     }
-    if (this.exigeMapa && !this.marcaMapa) {
+    if (this.exigeMapa && !this.localDefinido) {
       this.errorMessage = 'Marque o local da irregularidade no desenho do veículo.';
       this.abrirMapa();
       return;
@@ -911,14 +929,21 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
         return;
       }
 
+      const marcacoesPayload =
+        this.marcaMapa && this.marcaMapa.pontos.length > 0
+          ? this.marcaMapa.pontos.map((p) => ({
+              idVista: this.marcaMapa!.idVista,
+              posXPct: p.posXPct,
+              posYPct: p.posYPct,
+            }))
+          : undefined;
+
       let irregularidadeId = this.irregularidadeEmEdicaoId;
       let numeroIrregularidade = this.irregularidadeEmEdicaoNumero;
       if (irregularidadeId) {
         await this.vistoriaService.atualizarIrregularidade(irregularidadeId, {
           observacao: observacaoTrim,
-          idVista: this.marcaMapa?.idVista,
-          posXPct: this.marcaMapa?.posXPct,
-          posYPct: this.marcaMapa?.posYPct,
+          marcacoes: marcacoesPayload,
         });
       } else {
         const irregularidade = await this.vistoriaService.criarIrregularidade(vistoriaId, {
@@ -926,9 +951,7 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
           idcomponente: this.componenteId,
           idsintoma: this.selectedMatriz.idSintoma,
           observacao: observacaoTrim,
-          idVista: this.marcaMapa?.idVista,
-          posXPct: this.marcaMapa?.posXPct,
-          posYPct: this.marcaMapa?.posYPct,
+          marcacoes: marcacoesPayload,
         });
         irregularidadeId = irregularidade.id;
         numeroIrregularidade = irregularidade.numeroIrregularidade ?? null;

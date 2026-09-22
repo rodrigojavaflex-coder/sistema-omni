@@ -18,7 +18,15 @@ export interface IrregularidadeResumo {
     descricaoVista: string;
     posXPct: number;
     posYPct: number;
+    ordem?: number;
   } | null;
+  marcacoes?: Array<{
+    idVista: string;
+    descricaoVista: string;
+    posXPct: number;
+    posYPct: number;
+    ordem?: number;
+  }>;
   exigeMarcacaoMapa?: boolean;
 }
 

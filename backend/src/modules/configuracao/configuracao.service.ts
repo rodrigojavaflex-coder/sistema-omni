@@ -260,12 +260,23 @@ export class ConfiguracaoService {
   }
 
   private mascararConfig(config: Configuracao): Configuracao {
+    const temLogoBytes = !!(
+      config.logoRelatorioBytes && config.logoRelatorioBytes.length > 0
+    );
+    const base: Configuracao = {
+      ...config,
+      logoRelatorio: temLogoBytes
+        ? 'db'
+        : config.logoRelatorio?.trim() || null,
+      logoRelatorioBytes: undefined,
+      logoRelatorioMime: undefined,
+    };
     if (!config.erpVistoriaConfig) {
-      return config;
+      return base;
     }
     const apiKey = this.chaveErpValida(config.erpVistoriaConfig.apiKey);
     return {
-      ...config,
+      ...base,
       erpVistoriaConfig: {
         ...config.erpVistoriaConfig,
         apiKey: '',
@@ -274,9 +285,22 @@ export class ConfiguracaoService {
     };
   }
 
+  private aplicarLogoArquivo(
+    config: Configuracao,
+    file?: Express.Multer.File | null,
+  ): void {
+    if (!file?.buffer?.length) {
+      return;
+    }
+    config.logoRelatorioBytes = Buffer.from(file.buffer);
+    config.logoRelatorioMime = file.mimetype?.trim() || 'image/png';
+    config.logoRelatorio = 'db';
+  }
+
   async create(
     dto: CreateConfiguracaoDto,
     userId?: string,
+    logoFile?: Express.Multer.File | null,
   ): Promise<Configuracao> {
     const defaultTempoFluxo = this.buildDefaultTempoFluxoConfig();
     const normalizedDto: CreateConfiguracaoDto = {
@@ -286,6 +310,8 @@ export class ConfiguracaoService {
         defaultTempoFluxo,
       emailEnvioConfig: this.normalizeEmailEnvioConfig(dto.emailEnvioConfig),
     };
+    // Não persistir path legado via multipart; bytes vêm no arquivo.
+    delete normalizedDto.logoRelatorio;
     if (dto.erpVistoriaConfig === undefined) {
       delete normalizedDto.erpVistoriaConfig;
     }
@@ -301,6 +327,7 @@ export class ConfiguracaoService {
       }
       const dadosAnteriores = this.mascararConfig({ ...config });
       Object.assign(config, normalizedDto);
+      this.aplicarLogoArquivo(config, logoFile);
 
       const configuracaoAtualizada =
         await this.configuracaoRepository.save(config);
@@ -314,6 +341,7 @@ export class ConfiguracaoService {
         dadosAnteriores,
         dadosNovos: this.mascararConfig({
           ...normalizedDto,
+          logoRelatorio: logoFile?.buffer?.length ? 'db' : config.logoRelatorio,
         } as Configuracao),
       });
 
@@ -325,6 +353,7 @@ export class ConfiguracaoService {
         );
       }
       config = this.configuracaoRepository.create(normalizedDto);
+      this.aplicarLogoArquivo(config, logoFile);
       const novaConfig = await this.configuracaoRepository.save(config);
 
       await this.auditoriaService.createLog({
@@ -335,6 +364,7 @@ export class ConfiguracaoService {
         entidadeId: config.id,
         dadosNovos: this.mascararConfig({
           ...normalizedDto,
+          logoRelatorio: logoFile?.buffer?.length ? 'db' : undefined,
         } as Configuracao),
       });
 
@@ -357,10 +387,31 @@ export class ConfiguracaoService {
     dataUrl: string | null;
   }> {
     const config = await this.configuracaoRepository.findOne({ where: {} });
-    const logoRelatorio = config?.logoRelatorio?.trim() || null;
+    if (!config) {
+      return { logoRelatorio: null, dataUrl: null };
+    }
+
+    const fromDb = this.buildLogoDataUrlFromBytes(config);
+    if (fromDb) {
+      return { logoRelatorio: 'db', dataUrl: fromDb };
+    }
+
+    // Migração pontual: se ainda houver arquivo em disco, importa para bytea
+    const imported = this.tryImportLogoFromDisk(config);
+    if (imported) {
+      config.logoRelatorioBytes = imported.bytes;
+      config.logoRelatorioMime = imported.mime;
+      config.logoRelatorio = 'db';
+      await this.configuracaoRepository.save(config);
+      return {
+        logoRelatorio: 'db',
+        dataUrl: `data:${imported.mime};base64,${imported.bytes.toString('base64')}`,
+      };
+    }
+
     return {
-      logoRelatorio,
-      dataUrl: this.buildLogoDataUrl(logoRelatorio),
+      logoRelatorio: config.logoRelatorio?.trim() || null,
+      dataUrl: null,
     };
   }
 
@@ -435,6 +486,7 @@ export class ConfiguracaoService {
     id: string,
     dto: UpdateConfiguracaoDto,
     userId?: string,
+    logoFile?: Express.Multer.File | null,
   ): Promise<Configuracao> {
     const config = await this.configuracaoRepository.findOne({ where: { id } });
     if (!config) throw new NotFoundException('Configuração não encontrada');
@@ -457,13 +509,14 @@ export class ConfiguracaoService {
               config.erpVistoriaConfig,
             ),
     };
+    delete normalizedDto.logoRelatorio;
 
     const dadosAnteriores = this.mascararConfig({ ...config });
     Object.assign(config, normalizedDto);
+    this.aplicarLogoArquivo(config, logoFile);
     const configuracaoAtualizada =
       await this.configuracaoRepository.save(config);
 
-    // Auditar atualização
     await this.auditoriaService.createLog({
       acao: AuditAction.UPDATE,
       descricao: `Configuração do sistema atualizada via PUT`,
@@ -474,23 +527,44 @@ export class ConfiguracaoService {
       dadosNovos: this.mascararConfig({
         ...configuracaoAtualizada,
         ...normalizedDto,
+        logoRelatorio: logoFile?.buffer?.length
+          ? 'db'
+          : configuracaoAtualizada.logoRelatorio,
       } as Configuracao),
     });
 
     return this.mascararConfig(configuracaoAtualizada);
   }
 
-  private buildLogoDataUrl(logoRelatorio?: string | null): string | null {
-    const abs = this.resolveLogoRelatorioPath(logoRelatorio);
+  private buildLogoDataUrlFromBytes(config: Configuracao): string | null {
+    const raw = config.logoRelatorioBytes;
+    if (!raw || (Buffer.isBuffer(raw) ? raw.length === 0 : !raw)) {
+      return null;
+    }
+    const buf = Buffer.isBuffer(raw) ? raw : Buffer.from(raw);
+    if (!buf.length) {
+      return null;
+    }
+    const mime = config.logoRelatorioMime?.trim() || 'image/png';
+    return `data:${mime};base64,${buf.toString('base64')}`;
+  }
+
+  private tryImportLogoFromDisk(
+    config: Configuracao,
+  ): { bytes: Buffer; mime: string } | null {
+    const abs = this.resolveLogoRelatorioPath(config.logoRelatorio);
     if (!abs) {
       return null;
     }
     try {
-      const buf = readFileSync(abs);
+      const bytes = readFileSync(abs);
+      if (!bytes.length) {
+        return null;
+      }
       const ext = extname(abs).toLowerCase();
       const mime =
         ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
-      return `data:${mime};base64,${buf.toString('base64')}`;
+      return { bytes, mime };
     } catch {
       return null;
     }
@@ -499,7 +573,7 @@ export class ConfiguracaoService {
   private resolveLogoRelatorioPath(
     logoRelatorio?: string | null,
   ): string | null {
-    if (!logoRelatorio?.trim()) {
+    if (!logoRelatorio?.trim() || logoRelatorio.trim() === 'db') {
       return null;
     }
     const raw = logoRelatorio.trim();

@@ -14,6 +14,7 @@ import { ModeloVeiculoVistaService } from './modelo-veiculo-vista.service';
 import { VistaVeiculoService } from './vista-veiculo.service';
 import { VistasVeiculoController } from './vistas-veiculo.controller';
 import { Irregularidade } from '../vistoria/entities/irregularidade.entity';
+import { IrregularidadeMarcacao } from '../vistoria/entities/irregularidade-marcacao.entity';
 import { MatrizCriticidade } from '../vistoria/entities/matriz-criticidade.entity';
 
 @Module({
@@ -24,6 +25,8 @@ import { MatrizCriticidade } from '../vistoria/entities/matriz-criticidade.entit
       ModeloVeiculoVista,
       VistaVeiculo,
       Irregularidade,
+      IrregularidadeMarcacao,
+      IrregularidadeMarcacao,
       MatrizCriticidade,
     ]),
     JwtModule,

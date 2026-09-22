@@ -822,17 +822,29 @@ export class VistoriaListComponent implements OnInit {
                 this.getIrregularidadeLinhaRelatorio(ir),
               );
               const obsTxt = ir.observacao?.trim() || 'Não informada.';
-              const mapa = ir.marcacao ? mapas[ir.marcacao.idVista] : undefined;
-              const localLabel = ir.marcacao
+              const marcas =
+                ir.marcacoes && ir.marcacoes.length > 0
+                  ? ir.marcacoes
+                  : ir.marcacao
+                    ? [ir.marcacao]
+                    : [];
+              const mapa = marcas[0] ? mapas[marcas[0].idVista] : undefined;
+              const localLabel = marcas[0]
                 ? `<div class="item-local-label">Local: ${this.escapeHtml(
-                    ir.marcacao.descricaoVista || 'Veículo',
+                    marcas[0].descricaoVista || 'Veículo',
                   )}</div>`
                 : '';
+              const dotsHtml = marcas
+                .map(
+                  (m, ordem) =>
+                    `<span class="mapa-dot" style="left:${m.posXPct}%;top:${m.posYPct}%"><span class="mapa-dot-label">1.${ordem + 1}</span></span>`,
+                )
+                .join('');
               const mapaHtml = mapa
                 ? `<div class="mapa-wrap${mapa.baixa ? ' mapa-baixa' : ''}">
                      <div class="mapa-frame">
                        <img src="${mapa.dataUrl}" alt="Local no veículo" />
-                       <span class="mapa-dot" style="left:${ir.marcacao?.posXPct ?? 0}%;top:${ir.marcacao?.posYPct ?? 0}%"></span>
+                       ${dotsHtml}
                      </div>
                    </div>`
                 : '';
@@ -976,16 +988,24 @@ export class VistoriaListComponent implements OnInit {
             }
             .mapa-dot {
               position: absolute;
-              width: 12pt;
-              height: 12pt;
+              width: 14pt;
+              height: 14pt;
               transform: translate(-50%, -50%);
               border-radius: 50%;
               background: #2563eb;
               border: 1pt solid #1e40af;
-              box-shadow: inset 0 0 0 12pt #2563eb;
+              display: flex;
+              align-items: center;
+              justify-content: center;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
               color-adjust: exact;
+            }
+            .mapa-dot-label {
+              font-size: 6pt;
+              font-weight: 700;
+              color: #fff;
+              line-height: 1;
             }
             .item-images {
               display: grid;

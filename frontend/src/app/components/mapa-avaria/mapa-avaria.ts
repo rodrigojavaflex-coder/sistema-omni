@@ -17,7 +17,13 @@ import { CommonModule } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { ModeloVeiculoService } from '../../services/modelo-veiculo.service';
 import { ModeloVeiculoVista } from '../../models/modelo-veiculo.model';
-import { MapaAvariaMarca } from '../../models/mapa-avaria.model';
+import {
+  formatarLegendaOsMarcas,
+  MapaAvariaMarca,
+  MARCACOES_MAX,
+  rotuloCirculoMarcacao,
+  VistaMarcacaoApi,
+} from '../../models/mapa-avaria.model';
 
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 4;
@@ -25,6 +31,18 @@ const ZOOM_PASSO = 0.5;
 const MARCA_ALTURA_FATOR = 0.22;
 const MARCA_MIN_PX = 16;
 const MARCA_MAX_PX = 40;
+
+export type MarcaMapaPayload = {
+  idVista: string;
+  pontos: Array<{ posXPct: number; posYPct: number }>;
+};
+
+export type MarcaMapaInicial = {
+  idVista: string;
+  posXPct?: number;
+  posYPct?: number;
+  pontos?: Array<{ posXPct: number; posYPct: number }>;
+};
 
 @Component({
   selector: 'app-mapa-avaria',
@@ -41,15 +59,10 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   @Input() somenteAbertas = true;
   @Input() readonly = false;
   @Input() destaqueId: string | null = null;
-  @Input() marcaInicial: { idVista: string; posXPct: number; posYPct: number } | null =
-    null;
+  @Input() marcaInicial: MarcaMapaInicial | null = null;
   @Input() idsCatalogoPermitidos: string[] | null = null;
 
-  @Output() marcaChange = new EventEmitter<{
-    idVista: string;
-    posXPct: number;
-    posYPct: number;
-  } | null>();
+  @Output() marcaChange = new EventEmitter<MarcaMapaPayload | null>();
 
   @ViewChild('viewport') private viewport?: ElementRef<HTMLElement>;
   @ViewChild('mapaImg') private mapaImg?: ElementRef<HTMLImageElement>;
@@ -59,7 +72,8 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   readonly imagemUrl = signal<string | null>(null);
   readonly pendentes = signal<MapaAvariaMarca[]>([]);
   readonly mostrarPendentes = signal(true);
-  readonly marcaAtual = signal<MapaAvariaMarca | null>(null);
+  /** Pontos da irregularidade em edição (vermelhos). */
+  readonly marcasAtuais = signal<MapaAvariaMarca[]>([]);
   readonly loading = signal(false);
   readonly error = signal('');
   readonly escala = signal(ZOOM_MIN);
@@ -80,12 +94,45 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
       Math.max(MARCA_MIN_PX, Math.round(this.alturaImagemPx() * MARCA_ALTURA_FATOR)),
     ),
   );
+  /** Botão X ~45% do diâmetro do ponto, acompanhando o redimensionamento. */
+  readonly tamanhoRemovePx = computed(() =>
+    Math.min(20, Math.max(10, Math.round(this.tamanhoMarcaPx() * 0.45))),
+  );
   readonly transformMarca = computed(
     () => `translate(-50%, -50%) scale(${1 / Math.max(this.escala(), ZOOM_MIN)})`,
   );
   readonly textoPendentes = computed(() =>
     this.mostrarPendentes() ? 'Ocultar pendentes' : 'Ver pendentes',
   );
+  /** Índice 1-based da irregularidade atual no overlay (`1.x`, `2.x`…). */
+  readonly indiceOsAtual = signal(1);
+  readonly numeroOsAtual = signal<number | null>(null);
+  readonly legendaOsPendentes = computed(() =>
+    formatarLegendaOsMarcas([
+      ...this.pendentes(),
+      ...this.marcasAtuais().filter((m) => !!m.numeroOs),
+    ]),
+  );
+  readonly podeAdicionarMarca = computed(
+    () => this.marcasAtuais().length < MARCACOES_MAX,
+  );
+  readonly textoMarcasAtuais = computed(() => {
+    const n = this.marcasAtuais().length;
+    if (n === 0) {
+      return 'Nenhum ponto marcado';
+    }
+    return `${n}/${MARCACOES_MAX} ponto(s)`;
+  });
+  readonly indiceArrastando = signal<number | null>(null);
+  readonly textoAjudaMapa = computed(() => {
+    if (this.readonly) {
+      return 'Vermelho = irregularidade atual. Azul = demais (1ª = 1.1/1.2…, 2ª = 2.1/2.2…).';
+    }
+    if (this.indiceArrastando() !== null) {
+      return 'Solte o ponto na nova posição.';
+    }
+    return 'Clique para adicionar. Arraste um ponto vermelho para mover. O X remove o último.';
+  });
 
   private objectUrl: string | null = null;
   private pinchStartDistance: number | null = null;
@@ -96,6 +143,8 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   private pointerMoved = false;
   private skipClick = false;
   private mousePanAtivo = false;
+  private dragMoved = false;
+  private overlayEl: HTMLElement | null = null;
 
   private readonly onTouchStartBound = (event: TouchEvent) => this.onTouchStart(event);
   private readonly onTouchMoveBound = (event: TouchEvent) => this.onTouchMove(event);
@@ -146,11 +195,19 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   }
 
   async selecionarVista(id: string): Promise<void> {
+    const previa = this.vistaId();
     this.vistaId.set(id);
+    this.indiceArrastando.set(null);
+    this.dragMoved = false;
     this.resetarZoom();
     await this.carregarImagem();
     await this.carregarMarcacoes();
-    this.aplicarMarcaInicial();
+    if (previa && previa !== id && this.marcaInicial?.idVista !== id) {
+      this.marcasAtuais.set([]);
+      this.marcaChange.emit(null);
+    } else {
+      this.aplicarMarcaInicial();
+    }
   }
 
   alternarPendentes(): void {
@@ -172,14 +229,17 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   }
 
   onImagemCarregada(): void {
-    const altura = this.mapaImg?.nativeElement.clientHeight ?? 0;
-    if (altura > 0) {
-      this.alturaImagemPx.set(altura);
-    }
+    // Após contain/layout: altura real da imagem (marcas escalam com ela)
+    requestAnimationFrame(() => {
+      const altura = this.mapaImg?.nativeElement.clientHeight ?? 0;
+      if (altura > 0) {
+        this.alturaImagemPx.set(altura);
+      }
+    });
   }
 
   onToqueMapa(event: MouseEvent): void {
-    if (this.readonly || this.skipClick) {
+    if (this.readonly || this.skipClick || this.indiceArrastando() !== null) {
       this.skipClick = false;
       return;
     }
@@ -188,18 +248,187 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
     if (rect.width <= 0 || rect.height <= 0 || !this.vistaId()) {
       return;
     }
-    const posXPct = this.limitarPercentual(((event.clientX - rect.left) / rect.width) * 100);
-    const posYPct = this.limitarPercentual(((event.clientY - rect.top) / rect.height) * 100);
-    this.marcaAtual.set({ xPct: posXPct, yPct: posYPct, rotulo: 'Nova' });
+    if (!this.podeAdicionarMarca()) {
+      return;
+    }
+    const posXPct = this.limitarPercentual(
+      ((event.clientX - rect.left) / rect.width) * 100,
+    );
+    const posYPct = this.limitarPercentual(
+      ((event.clientY - rect.top) / rect.height) * 100,
+    );
+    const next = [
+      ...this.marcasAtuais(),
+      {
+        xPct: posXPct,
+        yPct: posYPct,
+        rotulo: rotuloCirculoMarcacao(
+          this.indiceOsAtual(),
+          this.marcasAtuais().length,
+        ),
+        numeroOs: this.numeroOsAtual(),
+      },
+    ];
+    this.marcasAtuais.set(next);
+    this.emitirMarcas();
+  }
+
+  onMarcaPointerDown(index: number, event: PointerEvent): void {
+    if (this.readonly || (event.button !== undefined && event.button !== 0)) {
+      return;
+    }
+    event.stopPropagation();
+    event.preventDefault();
+    const alvo = event.currentTarget as HTMLElement;
+    this.overlayEl = alvo.parentElement;
+    try {
+      alvo.setPointerCapture(event.pointerId);
+    } catch {
+      // ignore
+    }
+    this.indiceArrastando.set(index);
+    this.dragMoved = false;
+    this.skipClick = true;
+    this.mousePanAtivo = false;
+    this.atualizarPosicaoPorClient(index, event.clientX, event.clientY, false);
+  }
+
+  onMarcaPointerMove(index: number, event: PointerEvent): void {
+    if (this.readonly || this.indiceArrastando() !== index) {
+      return;
+    }
+    event.stopPropagation();
+    event.preventDefault();
+    this.dragMoved = true;
+    this.atualizarPosicaoPorClient(index, event.clientX, event.clientY, false);
+  }
+
+  onMarcaPointerUp(index: number, event: PointerEvent): void {
+    if (this.readonly || this.indiceArrastando() !== index) {
+      return;
+    }
+    event.stopPropagation();
+    event.preventDefault();
+    const alvo = event.currentTarget as HTMLElement;
+    try {
+      if (alvo.hasPointerCapture?.(event.pointerId)) {
+        alvo.releasePointerCapture(event.pointerId);
+      }
+    } catch {
+      // ignore
+    }
+    if (this.dragMoved) {
+      this.atualizarPosicaoPorClient(index, event.clientX, event.clientY, true);
+    }
+    this.indiceArrastando.set(null);
+    this.dragMoved = false;
+    this.overlayEl = null;
+    this.skipClick = true;
+  }
+
+  onRemoverUltimaClick(event: Event): void {
+    if (this.readonly) {
+      return;
+    }
+    event.stopPropagation();
+    event.preventDefault();
+    this.desfazerUltimaMarca();
+  }
+
+  desfazerUltimaMarca(): void {
+    const atuais = this.marcasAtuais();
+    if (atuais.length === 0) {
+      return;
+    }
+    const arrastando = this.indiceArrastando();
+    if (arrastando !== null && arrastando >= atuais.length - 1) {
+      this.indiceArrastando.set(null);
+    }
+    const restantes = atuais.slice(0, -1).map((marca, ordem) => ({
+      ...marca,
+      rotulo: rotuloCirculoMarcacao(this.indiceOsAtual(), ordem),
+      numeroOs: this.numeroOsAtual(),
+    }));
+    this.marcasAtuais.set(restantes);
+    this.emitirMarcas();
+  }
+
+  limparMarcas(): void {
+    if (this.marcasAtuais().length === 0) {
+      return;
+    }
+    const ok = window.confirm('Remover todos os pontos marcados nesta vista?');
+    if (!ok) {
+      return;
+    }
+    this.indiceArrastando.set(null);
+    this.marcasAtuais.set([]);
+    this.marcaChange.emit(null);
+  }
+
+  private atualizarPosicaoPorClient(
+    index: number,
+    clientX: number,
+    clientY: number,
+    emitir: boolean,
+  ): void {
+    const overlay = this.overlayEl;
+    if (!overlay) {
+      return;
+    }
+    const rect = overlay.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+    const posXPct = this.limitarPercentual(
+      ((clientX - rect.left) / rect.width) * 100,
+    );
+    const posYPct = this.limitarPercentual(
+      ((clientY - rect.top) / rect.height) * 100,
+    );
+    this.atualizarPosicaoMarca(index, posXPct, posYPct, emitir);
+  }
+
+  private atualizarPosicaoMarca(
+    index: number,
+    posXPct: number,
+    posYPct: number,
+    emitir = true,
+  ): void {
+    const atuais = [...this.marcasAtuais()];
+    if (index < 0 || index >= atuais.length) {
+      return;
+    }
+    atuais[index] = {
+      ...atuais[index],
+      xPct: posXPct,
+      yPct: posYPct,
+    };
+    this.marcasAtuais.set(atuais);
+    if (emitir) {
+      this.emitirMarcas();
+    }
+  }
+
+  private emitirMarcas(): void {
+    const vistaId = this.vistaId();
+    const pontos = this.marcasAtuais();
+    if (!vistaId || pontos.length === 0) {
+      this.marcaChange.emit(null);
+      return;
+    }
     this.marcaChange.emit({
-      idVista: this.vistaId()!,
-      posXPct,
-      posYPct,
+      idVista: vistaId,
+      pontos: pontos.map((p) => ({ posXPct: p.xPct, posYPct: p.yPct })),
     });
   }
 
   onMouseDown(event: MouseEvent): void {
-    if (event.button !== 0 || this.escala() <= ZOOM_MIN) {
+    if (
+      event.button !== 0 ||
+      this.escala() <= ZOOM_MIN ||
+      this.indiceArrastando() !== null
+    ) {
       return;
     }
     this.mousePanAtivo = true;
@@ -294,27 +523,93 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
     const vistaId = this.vistaId();
     if (!this.veiculoId || !vistaId) {
       this.pendentes.set([]);
+      this.indiceOsAtual.set(1);
+      this.numeroOsAtual.set(null);
+      this.relabelMarcasAtuais();
       return;
     }
     try {
       const itens = await firstValueFrom(
         this.modeloService.listMarcacoes(this.veiculoId, vistaId, this.somenteAbertas),
       );
-      this.pendentes.set(
-        itens
-          .filter((item) => item.idIrregularidade !== this.destaqueId)
-          .map((item) => ({
-            xPct: item.posXPct,
-            yPct: item.posYPct,
-            rotulo: item.numeroIrregularidade
-              ? String(item.numeroIrregularidade)
-              : 'P',
-            resolvido: item.resolvido,
-          })),
-      );
+      this.aplicarIndicesMarcacoes(itens);
     } catch {
       this.pendentes.set([]);
+      this.indiceOsAtual.set(1);
+      this.numeroOsAtual.set(null);
+      this.relabelMarcasAtuais();
     }
+  }
+
+  /**
+   * Índice global por irregularidade na vista (ordem de numeroIrregularidade):
+   * 1ª → 1.1/1.2…, 2ª → 2.1/2.2…; a atual (destaque ou nova) usa o próprio índice.
+   */
+  private aplicarIndicesMarcacoes(itens: VistaMarcacaoApi[]): void {
+    const ordenados = itens.slice().sort((a, b) => {
+      const byNum =
+        (a.numeroIrregularidade ?? 0) - (b.numeroIrregularidade ?? 0);
+      if (byNum !== 0) {
+        return byNum;
+      }
+      return (a.ordem ?? 0) - (b.ordem ?? 0);
+    });
+
+    const indicePorId = new Map<string, number>();
+    let ultimoIndice = 0;
+    for (const item of ordenados) {
+      if (!indicePorId.has(item.idIrregularidade)) {
+        ultimoIndice += 1;
+        indicePorId.set(item.idIrregularidade, ultimoIndice);
+      }
+    }
+
+    let indiceAtual = ultimoIndice + 1;
+    let numeroOsAtual: number | null = null;
+    if (this.destaqueId && indicePorId.has(this.destaqueId)) {
+      indiceAtual = indicePorId.get(this.destaqueId)!;
+      numeroOsAtual =
+        ordenados.find((i) => i.idIrregularidade === this.destaqueId)
+          ?.numeroIrregularidade ?? null;
+    }
+
+    this.indiceOsAtual.set(indiceAtual);
+    this.numeroOsAtual.set(numeroOsAtual);
+
+    const pendentes: MapaAvariaMarca[] = [];
+    for (const item of ordenados) {
+      if (item.idIrregularidade === this.destaqueId) {
+        continue;
+      }
+      pendentes.push({
+        xPct: item.posXPct,
+        yPct: item.posYPct,
+        rotulo: rotuloCirculoMarcacao(
+          indicePorId.get(item.idIrregularidade) ?? 1,
+          item.ordem ?? 0,
+        ),
+        numeroOs: item.numeroIrregularidade || null,
+        resolvido: item.resolvido,
+      });
+    }
+    this.pendentes.set(pendentes);
+    this.relabelMarcasAtuais();
+  }
+
+  private relabelMarcasAtuais(): void {
+    const idx = this.indiceOsAtual();
+    const numeroOs = this.numeroOsAtual();
+    const atuais = this.marcasAtuais();
+    if (atuais.length === 0) {
+      return;
+    }
+    this.marcasAtuais.set(
+      atuais.map((marca, ordem) => ({
+        ...marca,
+        rotulo: rotuloCirculoMarcacao(idx, ordem),
+        numeroOs: numeroOs ?? marca.numeroOs,
+      })),
+    );
   }
 
   private aplicarMarcaInicial(): void {
@@ -323,14 +618,25 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
       if (!this.readonly) {
         return;
       }
-      this.marcaAtual.set(null);
+      this.marcasAtuais.set([]);
       return;
     }
-    this.marcaAtual.set({
-      xPct: inicial.posXPct,
-      yPct: inicial.posYPct,
-      rotulo: 'Atual',
-    });
+    const pontos =
+      inicial.pontos && inicial.pontos.length > 0
+        ? inicial.pontos
+        : inicial.posXPct !== undefined && inicial.posYPct !== undefined
+          ? [{ posXPct: inicial.posXPct, posYPct: inicial.posYPct }]
+          : [];
+    const idx = this.indiceOsAtual();
+    const numeroOs = this.numeroOsAtual();
+    this.marcasAtuais.set(
+      pontos.map((p, ordem) => ({
+        xPct: p.posXPct,
+        yPct: p.posYPct,
+        rotulo: rotuloCirculoMarcacao(idx, ordem),
+        numeroOs,
+      })),
+    );
   }
 
   private aplicarEscala(
@@ -418,6 +724,10 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   }
 
   private onTouchStart(event: TouchEvent): void {
+    if (this.indiceArrastando() !== null) {
+      event.preventDefault();
+      return;
+    }
     this.pointerMoved = false;
     if (event.touches.length === 2) {
       this.skipClick = true;
@@ -433,6 +743,10 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   }
 
   private onTouchMove(event: TouchEvent): void {
+    if (this.indiceArrastando() !== null) {
+      event.preventDefault();
+      return;
+    }
     if (event.touches.length === 2 && this.pinchStartDistance) {
       const mid = this.pontoMedioViewport(event.touches[0], event.touches[1]);
       if (this.pinchLastMid) {

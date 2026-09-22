@@ -91,12 +91,19 @@ export class IrregularidadeHistoricoVeiculoItemDto {
   midias: IrregularidadeHistoricoVeiculoMidiaDto[];
 
   @ApiProperty({
-    description: 'Marcação no mapa do modelo',
+    description: 'Marcação no mapa do modelo (primeiro ponto; legado)',
     required: false,
     type: () => IrregularidadeMarcacaoDto,
     nullable: true,
   })
   marcacao?: IrregularidadeMarcacaoDto | null;
+
+  @ApiProperty({
+    description: 'Pontos no mapa (mesma vista, até 10)',
+    required: false,
+    type: () => [IrregularidadeMarcacaoDto],
+  })
+  marcacoes?: IrregularidadeMarcacaoDto[];
 }
 
 export class IrregularidadeHistoricoVeiculoDto {

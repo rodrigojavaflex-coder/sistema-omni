@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Post,
   Get,
@@ -16,10 +17,28 @@ import { UpdateConfiguracaoDto } from './dto/update-configuracao.dto';
 import { ErpApiKeyDto } from './dto/erp-api-key.dto';
 import { LogoRelatorioDto } from './dto/logo-relatorio.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Permission } from '../../common/enums/permission.enum';
+
+const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+
+const logoUploadInterceptor = FileInterceptor('logoRelatorio', {
+  storage: memoryStorage(),
+  limits: { fileSize: LOGO_MAX_BYTES },
+  fileFilter: (_req, file, cb) => {
+    const mime = (file.mimetype || '').toLowerCase();
+    const name = (file.originalname || '').toLowerCase();
+    if (mime !== 'image/png' && !name.endsWith('.png')) {
+      cb(
+        new BadRequestException('Apenas arquivos .png são permitidos para a logo.'),
+        false,
+      );
+      return;
+    }
+    cb(null, true);
+  },
+});
 
 @ApiTags('configuracao')
 @Controller('configuracao')
@@ -70,26 +89,15 @@ export class ConfiguracaoController {
 
   @Post()
   @Permissions(Permission.CONFIGURACAO_ACCESS)
-  @UseInterceptors(
-    FileInterceptor('logoRelatorio', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, uniqueSuffix + extname(file.originalname));
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(logoUploadInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateConfiguracaoDto })
-  async create(@UploadedFile() file?: any, @Req() req?: any) {
-    // Processar FormData manualmente
+  async create(
+    @UploadedFile() file?: Express.Multer.File,
+    @Req() req?: any,
+  ) {
     const body: CreateConfiguracaoDto = {
       nomeCliente: req.body.nomeCliente,
-      logoRelatorio: file ? `/uploads/${file.filename}` : undefined,
-      // Processar campos booleanos - converter strings para booleanos
       auditarConsultas: req.body.auditarConsultas
         ? req.body.auditarConsultas === 'true'
         : true,
@@ -113,7 +121,7 @@ export class ConfiguracaoController {
       erpVistoriaConfig: this.parseErpVistoriaConfig(req.body.erpVistoriaConfig),
     };
 
-    return this.configuracaoService.create(body, req?.user?.id);
+    return this.configuracaoService.create(body, req?.user?.id, file);
   }
 
   @Get()
@@ -125,7 +133,7 @@ export class ConfiguracaoController {
 
   @Get('logo-relatorio')
   @Permissions(Permission.VISTORIA_WEB_READ, Permission.CONFIGURACAO_ACCESS)
-  @ApiOperation({ summary: 'Obter caminho da logo usada nos relatórios' })
+  @ApiOperation({ summary: 'Obter logo do relatório (data URL a partir do banco)' })
   @ApiResponse({ status: 200, type: LogoRelatorioDto })
   findLogoRelatorio(): Promise<LogoRelatorioDto> {
     return this.configuracaoService.findLogoRelatorio();
@@ -165,34 +173,19 @@ export class ConfiguracaoController {
 
   @Put(':id')
   @Permissions(Permission.CONFIGURACAO_ACCESS)
-  @UseInterceptors(
-    FileInterceptor('logoRelatorio', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, uniqueSuffix + extname(file.originalname));
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(logoUploadInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdateConfiguracaoDto })
   async update(
     @Param('id') id: string,
-    @UploadedFile() file?: any,
+    @UploadedFile() file?: Express.Multer.File,
     @Req() req?: any,
   ) {
-    // Capturar dados anteriores para auditoria
     const previousConfig = await this.configuracaoService.findOne();
     req.previousUserData = previousConfig;
 
-    // Processar FormData manualmente
     const body: UpdateConfiguracaoDto = {
       nomeCliente: req.body.nomeCliente,
-      logoRelatorio: file ? `/uploads/${file.filename}` : undefined,
-      // Processar campos booleanos - converter strings para booleanos
       auditarConsultas: req.body.auditarConsultas
         ? req.body.auditarConsultas === 'true'
         : undefined,
@@ -216,6 +209,6 @@ export class ConfiguracaoController {
       erpVistoriaConfig: this.parseErpVistoriaConfig(req.body.erpVistoriaConfig),
     };
 
-    return this.configuracaoService.update(id, body, req?.user?.id);
+    return this.configuracaoService.update(id, body, req?.user?.id, file);
   }
 }

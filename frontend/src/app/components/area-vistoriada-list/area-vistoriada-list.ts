@@ -26,7 +26,6 @@ import { NotificationService } from '../../services/notification.service';
 import { MatrizCriticidadeService } from '../../services/matriz-criticidade.service';
 import { SintomaService } from '../../services/sintoma.service';
 import { ConfiguracaoService } from '../../services/configuracao.service';
-import { environment } from '../../../environments/environment';
 import {
   MatrizCriticidade,
   CreateMatrizCriticidadeDto,
@@ -1160,14 +1159,9 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
       .subscribe({
         next: ({ exportData }) => {
           const fileName = this.getExportFileName();
-          const backendBase = environment.apiUrl.replace(/\/api\/?$/, '') || '';
-          const baseUrl = backendBase || (typeof window !== 'undefined' ? window.location.origin : '');
-          this.configuracaoService.getConfiguracao().subscribe({
-            next: (config) => {
-              const logoPath = config?.logoRelatorio;
-              const logoUrl = logoPath
-                ? (logoPath.startsWith('http') ? logoPath : baseUrl + (logoPath.startsWith('/') ? logoPath : '/' + logoPath))
-                : undefined;
+          this.configuracaoService.getLogoRelatorio().subscribe({
+            next: (logo) => {
+              const logoUrl = logo?.dataUrl || undefined;
               this.exportService.exportToPDF({ ...exportData, logoUrl }, fileName, 'Mapa das Áreas').subscribe({
                 next: () => (this.loading = false),
                 error: (err) => {

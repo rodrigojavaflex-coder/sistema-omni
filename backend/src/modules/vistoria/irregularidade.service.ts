@@ -9,7 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, QueryFailedError, Repository } from 'typeorm';
 import { createTransport } from 'nodemailer';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import PDFDocument from 'pdfkit';
 import { decode as decodeJpeg } from 'jpeg-js';
@@ -62,8 +62,12 @@ import { IrregularidadeManutencaoEnvioService,
 import { ModeloVeiculoVistaService } from '../veiculo/modelo-veiculo-vista.service';
 import {
   IrregularidadeMarcacaoDto,
+  MarcacaoPontoDto,
   VistaMarcacaoItemDto,
 } from './dto/irregularidade-marcacao.dto';
+import { IrregularidadeMarcacao } from './entities/irregularidade-marcacao.entity';
+
+const MARCACOES_MAX_POR_IRREGULARIDADE = 10;
 
 type RecorteJpegPdf = {
   left: number;
@@ -77,8 +81,10 @@ type RecorteJpegPdf = {
 type CirculoMapaPdf = {
   posXPct: number;
   posYPct: number;
+  /** Número da OS para a legenda. */
   rotulo: string;
-  indice: number;
+  /** Texto no círculo: `1.1`, `1.2`, `2.1`… */
+  rotuloCirculo: string;
 };
 
 type MapaPdfVista = {
@@ -87,6 +93,14 @@ type MapaPdfVista = {
   buffer: Buffer;
   circulos: CirculoMapaPdf[];
   recorte?: RecorteJpegPdf;
+};
+
+type MapaPdfIrregularidadeLocal = {
+  descricao: string;
+  buffer: Buffer;
+  recorte?: RecorteJpegPdf;
+  /** Pontos na mesma vista. */
+  pontos: Array<{ posXPct: number; posYPct: number; ordem: number }>;
 };
 
 @Injectable()
@@ -118,6 +132,8 @@ export class IrregularidadeService {
     private readonly veiculoRepository: Repository<Veiculo>,
     @InjectRepository(IrregularidadeHistorico)
     private readonly irregularidadeHistoricoRepository: Repository<IrregularidadeHistorico>,
+    @InjectRepository(IrregularidadeMarcacao)
+    private readonly marcacaoRepository: Repository<IrregularidadeMarcacao>,
     private readonly manutencaoEnvioService: IrregularidadeManutencaoEnvioService,
     private readonly vistaService: ModeloVeiculoVistaService,
   ) {}
@@ -142,21 +158,18 @@ export class IrregularidadeService {
     await this.ensureSintoma(dto.idsintoma);
     await this.ensureComponenteNaArea(dto.idarea, dto.idcomponente);
     await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
-    const marcacao = await this.resolveMarcacao(
+    const marcacao = await this.resolveMarcacoes(
       vistoria,
       dto.idcomponente,
       dto.idsintoma,
-      {
-        idVista: dto.idVista,
-        posXPct: dto.posXPct,
-        posYPct: dto.posYPct,
-      },
+      dto,
     );
 
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
         let saved: Irregularidade | null = null;
         let lastError: unknown;
+        const primeiro = marcacao.pontos[0];
 
         for (let attempt = 0; attempt < 5; attempt += 1) {
           const numeroIrregularidade =
@@ -174,8 +187,8 @@ export class IrregularidadeService {
               ? OrigemRegistroIrregularidade.SOS_WEB
               : null,
             idVista: marcacao.idVista,
-            posXPct: marcacao.posXPct,
-            posYPct: marcacao.posYPct,
+            posXPct: primeiro?.posXPct ?? null,
+            posYPct: primeiro?.posYPct ?? null,
           });
 
           try {
@@ -194,6 +207,13 @@ export class IrregularidadeService {
         if (!saved) {
           throw lastError;
         }
+
+        await this.persistirMarcacoes(
+          manager.getRepository(IrregularidadeMarcacao),
+          saved.id,
+          marcacao.idVista,
+          marcacao.pontos,
+        );
 
         await this.registrarHistoricoTransicao(
           manager.getRepository(IrregularidadeHistorico),
@@ -225,6 +245,7 @@ export class IrregularidadeService {
       .leftJoinAndSelect('i.componente', 'componente')
       .leftJoinAndSelect('i.sintoma', 'sintoma')
       .leftJoinAndSelect('i.vista', 'vista')
+      .leftJoinAndSelect('i.marcacoes', 'marcacoesPontos')
       .where('v.idVeiculo = :idVeiculo', { idVeiculo })
       .andWhere('v.status = :statusVistoriaFinalizada', {
         statusVistoriaFinalizada: StatusVistoria.FINALIZADA,
@@ -254,6 +275,7 @@ export class IrregularidadeService {
       criadoEm: item.criadoEm.toISOString(),
       atualizadoEm: item.atualizadoEm.toISOString(),
       marcacao: this.mapMarcacao(item),
+      marcacoes: this.mapMarcacoes(item),
       exigeMarcacaoMapa: item.sintoma?.exigeMarcacaoMapa ?? false,
     }));
   }
@@ -262,7 +284,7 @@ export class IrregularidadeService {
     await this.getVistoriaOrFail(vistoriaId);
     const itens = await this.irregularidadeRepository.find({
       where: { idVistoria: vistoriaId },
-      relations: ['area', 'componente', 'sintoma', 'vista'],
+      relations: ['area', 'componente', 'sintoma', 'vista', 'marcacoes'],
       order: { atualizadoEm: 'DESC' },
     });
 
@@ -282,6 +304,7 @@ export class IrregularidadeService {
       criadoEm: item.criadoEm.toISOString(),
       atualizadoEm: item.atualizadoEm.toISOString(),
       marcacao: this.mapMarcacao(item),
+      marcacoes: this.mapMarcacoes(item),
       exigeMarcacaoMapa: item.sintoma?.exigeMarcacaoMapa ?? false,
     }));
   }
@@ -291,30 +314,37 @@ export class IrregularidadeService {
     idVista: string,
     somenteAbertas = true,
   ): Promise<VistaMarcacaoItemDto[]> {
-    const qb = this.irregularidadeRepository
-      .createQueryBuilder('i')
+    const qb = this.marcacaoRepository
+      .createQueryBuilder('m')
+      .innerJoinAndSelect('m.irregularidade', 'i')
       .innerJoinAndSelect('i.vistoria', 'v')
       .leftJoinAndSelect('i.sintoma', 'sintoma')
       .where('v.idVeiculo = :idVeiculo', { idVeiculo })
-      .andWhere('i.idVista = :idVista', { idVista })
-      .andWhere('i.posXPct IS NOT NULL')
-      .andWhere('i.posYPct IS NOT NULL');
+      .andWhere('m.idVista = :idVista', { idVista });
 
     if (somenteAbertas) {
       qb.andWhere('i.resolvido = false');
     }
 
-    const itens = await qb.orderBy('i.criadoEm', 'ASC').getMany();
-    return itens.map((item) => ({
-      idIrregularidade: item.id,
-      numeroIrregularidade: item.numeroIrregularidade,
-      idsintoma: item.idSintoma,
-      descricaoSintoma: item.sintoma?.descricao,
-      statusAtual: item.statusAtual,
-      resolvido: item.resolvido,
-      posXPct: Number(item.posXPct),
-      posYPct: Number(item.posYPct),
-    }));
+    const pontos = await qb
+      .orderBy('i.numeroIrregularidade', 'ASC')
+      .addOrderBy('m.ordem', 'ASC')
+      .getMany();
+
+    return pontos.map((ponto) => {
+      const item = ponto.irregularidade!;
+      return {
+        idIrregularidade: item.id,
+        numeroIrregularidade: item.numeroIrregularidade,
+        idsintoma: item.idSintoma,
+        descricaoSintoma: item.sintoma?.descricao,
+        statusAtual: item.statusAtual,
+        resolvido: item.resolvido,
+        posXPct: Number(ponto.posXPct),
+        posYPct: Number(ponto.posYPct),
+        ordem: ponto.ordem ?? 0,
+      };
+    });
   }
 
   async listHistoricoByIrregularidade(
@@ -359,6 +389,7 @@ export class IrregularidadeService {
       .leftJoinAndSelect('i.componente', 'componente')
       .leftJoinAndSelect('i.sintoma', 'sintoma')
       .leftJoinAndSelect('i.vista', 'vista')
+      .leftJoinAndSelect('i.marcacoes', 'marcacoesPontos')
       .where('v.idVeiculo = :idVeiculo', { idVeiculo })
       .andWhere('v.status = :statusFinalizada', {
         statusFinalizada: StatusVistoria.FINALIZADA,
@@ -441,6 +472,7 @@ export class IrregularidadeService {
         atualizadoEm: item.atualizadoEm.toISOString(),
         midias: midiasPorIrregularidade.get(item.id) ?? [],
         marcacao: this.mapMarcacao(item),
+        marcacoes: this.mapMarcacoes(item),
       }),
     );
 
@@ -493,6 +525,10 @@ export class IrregularidadeService {
         historico.itens.map((item) => item.id),
       );
     const mapas = await this.carregarMapasPdf(veiculo.idModelo, historico.itens);
+    const mapasPorItem = await this.carregarMapasPdfPorHistoricoItens(
+      veiculo.idModelo,
+      historico.itens,
+    );
 
     return this.buildPdfPendenciasVeiculo({
       veiculoDescricao: veiculo.descricao,
@@ -504,9 +540,10 @@ export class IrregularidadeService {
         imagens: imagensPorIrregularidade.get(item.id) ?? [],
       })),
       mapas,
+      mapasPorItem,
       emitidoEm: new Date(),
       emitidoPor: emitidoPor?.trim() || undefined,
-      logoRelatorio: configuracao?.logoRelatorio,
+      logoBuffer: this.resolveLogoBuffer(configuracao),
     });
   }
 
@@ -517,25 +554,34 @@ export class IrregularidadeService {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     await this.ensureVistoriaAberta(irregularidade.idVistoria);
     const vistoria = await this.getVistoriaOrFail(irregularidade.idVistoria);
-    const marcacao = await this.resolveMarcacao(
+    const marcacao = await this.resolveMarcacoes(
       vistoria,
       irregularidade.idComponente,
       irregularidade.idSintoma,
-      {
-        idVista: dto.idVista,
-        posXPct: dto.posXPct,
-        posYPct: dto.posYPct,
-      },
+      dto,
       irregularidade,
     );
+    const primeiro = marcacao.pontos[0];
 
-    const updated = this.irregularidadeRepository.merge(irregularidade, {
-      observacao: dto.observacao ?? irregularidade.observacao,
-      idVista: marcacao.idVista,
-      posXPct: marcacao.posXPct,
-      posYPct: marcacao.posYPct,
-    });
-    return this.irregularidadeRepository.save(updated);
+    return this.irregularidadeRepository.manager.transaction(
+      async (manager) => {
+        irregularidade.observacao =
+          dto.observacao ?? irregularidade.observacao;
+        irregularidade.idVista = marcacao.idVista;
+        irregularidade.posXPct = primeiro?.posXPct ?? null;
+        irregularidade.posYPct = primeiro?.posYPct ?? null;
+        const saved = await manager
+          .getRepository(Irregularidade)
+          .save(irregularidade);
+        await this.persistirMarcacoes(
+          manager.getRepository(IrregularidadeMarcacao),
+          saved.id,
+          marcacao.idVista,
+          marcacao.pontos,
+        );
+        return saved;
+      },
+    );
   }
 
   async listByStatus(
@@ -560,6 +606,7 @@ export class IrregularidadeService {
       .leftJoinAndSelect('i.componente', 'componente')
       .leftJoinAndSelect('i.sintoma', 'sintoma')
       .leftJoinAndSelect('i.vista', 'vista')
+      .leftJoinAndSelect('i.marcacoes', 'marcacoesPontos')
       .leftJoinAndSelect('i.vistoria', 'v')
       .leftJoinAndSelect('v.veiculo', 'veiculo')
       .leftJoinAndSelect('v.usuario', 'vistoriador')
@@ -859,18 +906,15 @@ export class IrregularidadeService {
     await this.ensureComponenteNaArea(dto.idarea, dto.idcomponente);
     await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
     const vistoria = await this.getVistoriaOrFail(irregularidade.idVistoria);
-    const marcacao = await this.resolveMarcacao(
+    const marcacao = await this.resolveMarcacoes(
       vistoria,
       dto.idcomponente,
       dto.idsintoma,
-      {
-        idVista: dto.idVista,
-        posXPct: dto.posXPct,
-        posYPct: dto.posYPct,
-      },
+      dto,
       irregularidade,
     );
     const statusOrigemReclass = irregularidade.statusAtual;
+    const primeiro = marcacao.pontos[0];
 
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
@@ -879,11 +923,17 @@ export class IrregularidadeService {
         irregularidade.idSintoma = dto.idsintoma;
         irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
         irregularidade.idVista = marcacao.idVista;
-        irregularidade.posXPct = marcacao.posXPct;
-        irregularidade.posYPct = marcacao.posYPct;
+        irregularidade.posXPct = primeiro?.posXPct ?? null;
+        irregularidade.posYPct = primeiro?.posYPct ?? null;
         const saved = await manager
           .getRepository(Irregularidade)
           .save(irregularidade);
+        await this.persistirMarcacoes(
+          manager.getRepository(IrregularidadeMarcacao),
+          saved.id,
+          marcacao.idVista,
+          marcacao.pontos,
+        );
         await this.registrarHistoricoTransicao(
           manager.getRepository(IrregularidadeHistorico),
           {
@@ -1455,6 +1505,7 @@ export class IrregularidadeService {
         'componente',
         'sintoma',
         'vista',
+        'marcacoes',
         'vistoria',
         'vistoria.veiculo',
         'midias',
@@ -1648,10 +1699,32 @@ export class IrregularidadeService {
     `;
   }
 
+  private resolveLogoBuffer(
+    configuracao?: Configuracao | null,
+  ): Buffer | null {
+    const raw = configuracao?.logoRelatorioBytes;
+    if (raw) {
+      const buf = Buffer.isBuffer(raw) ? raw : Buffer.from(raw);
+      if (buf.length > 0) {
+        return buf;
+      }
+    }
+    const path = this.resolveLogoRelatorioPath(configuracao?.logoRelatorio);
+    if (!path) {
+      return null;
+    }
+    try {
+      const fromDisk = readFileSync(path);
+      return fromDisk.length > 0 ? fromDisk : null;
+    } catch {
+      return null;
+    }
+  }
+
   private resolveLogoRelatorioPath(
     logoRelatorio?: string | null,
   ): string | null {
-    if (!logoRelatorio?.trim()) {
+    if (!logoRelatorio?.trim() || logoRelatorio.trim() === 'db') {
       return null;
     }
     const raw = logoRelatorio.trim();
@@ -1708,22 +1781,36 @@ export class IrregularidadeService {
         circulos: CirculoMapaPdf[];
       }
     >();
+    let indiceOs = 0;
+    let ultimoIdIrreg: string | null = null;
     for (const item of itens) {
-      const marca = item.marcacao;
-      if (!marca) {
+      const marcas =
+        item.marcacoes && item.marcacoes.length > 0
+          ? item.marcacoes
+          : item.marcacao
+            ? [item.marcacao]
+            : [];
+      if (marcas.length === 0) {
         continue;
       }
-      const atual = porVista.get(marca.idVista) ?? {
-        descricao: marca.descricaoVista || 'Vista',
+      if (item.id !== ultimoIdIrreg) {
+        indiceOs += 1;
+        ultimoIdIrreg = item.id;
+      }
+      const idVista = marcas[0].idVista;
+      const atual = porVista.get(idVista) ?? {
+        descricao: marcas[0].descricaoVista || 'Vista',
         circulos: [],
       };
-      atual.circulos.push({
-        posXPct: marca.posXPct,
-        posYPct: marca.posYPct,
-        rotulo: String(item.numeroIrregularidade ?? ''),
-        indice: 0,
+      marcas.forEach((marca, ordem) => {
+        atual.circulos.push({
+          posXPct: marca.posXPct,
+          posYPct: marca.posYPct,
+          rotulo: String(item.numeroIrregularidade ?? ''),
+          rotuloCirculo: this.rotuloCirculoMarcacao(indiceOs, ordem),
+        });
       });
-      porVista.set(marca.idVista, atual);
+      porVista.set(idVista, atual);
     }
 
     const mapas: MapaPdfVista[] = [];
@@ -1754,15 +1841,51 @@ export class IrregularidadeService {
         // Vista removida ou sem imagem: ignora no PDF
       }
     }
-    let indiceGlobal = 1;
     for (const mapa of mapas) {
       const recorte = this.detectarRecorteConteudoJpeg(mapa.buffer);
       if (recorte) {
         mapa.recorte = recorte;
       }
-      for (const circulo of mapa.circulos) {
-        circulo.indice = indiceGlobal;
-        indiceGlobal += 1;
+    }
+    return mapas;
+  }
+
+  private async carregarMapasPdfPorHistoricoItens(
+    idModelo: string | null,
+    itens: IrregularidadeHistoricoVeiculoItemDto[],
+  ): Promise<Map<string, MapaPdfIrregularidadeLocal>> {
+    const mapas = new Map<string, MapaPdfIrregularidadeLocal>();
+    if (!idModelo) {
+      return mapas;
+    }
+    for (const item of itens) {
+      const marcas =
+        item.marcacoes && item.marcacoes.length > 0
+          ? item.marcacoes
+          : item.marcacao
+            ? [item.marcacao]
+            : [];
+      if (marcas.length === 0 || !marcas[0].idVista) {
+        continue;
+      }
+      try {
+        const imagem = await this.vistaService.getImagem(
+          idModelo,
+          marcas[0].idVista,
+        );
+        const recorte = this.detectarRecorteConteudoJpeg(imagem.buffer);
+        mapas.set(item.id, {
+          descricao: marcas[0].descricaoVista?.trim() || 'Local no veículo',
+          buffer: imagem.buffer,
+          recorte: recorte ?? undefined,
+          pontos: marcas.map((m, ordem) => ({
+            posXPct: m.posXPct,
+            posYPct: m.posYPct,
+            ordem: m.ordem ?? ordem,
+          })),
+        });
+      } catch {
+        // Sem imagem da vista: o card segue só com as fotos da irregularidade
       }
     }
     return mapas;
@@ -1777,12 +1900,16 @@ export class IrregularidadeService {
       IrregularidadeHistoricoVeiculoItemDto & { imagens: Buffer[] }
     >;
     mapas?: MapaPdfVista[];
+    mapasPorItem?: Map<string, MapaPdfIrregularidadeLocal>;
     emitidoEm: Date;
     emitidoPor?: string;
-    logoRelatorio?: string | null;
+    logoBuffer?: Buffer | null;
   }): Promise<Buffer> {
     const dataEmissao = this.formatDateTimeBr(params.emitidoEm);
-    const logoPath = this.resolveLogoRelatorioPath(params.logoRelatorio);
+    const logoBuffer =
+      params.logoBuffer && params.logoBuffer.length > 0
+        ? params.logoBuffer
+        : null;
     const marginX = 50;
     const contentTopY = 100;
     const footerBandPt = 92;
@@ -1855,9 +1982,9 @@ export class IrregularidadeService {
       const logoBoxW = 132;
       const logoBoxH = 48;
 
-      if (logoPath) {
+      if (logoBuffer) {
         try {
-          doc.image(logoPath, marginX, headerRowTop, {
+          doc.image(logoBuffer, marginX, headerRowTop, {
             fit: [logoBoxW, logoBoxH],
           });
         } catch {
@@ -2159,10 +2286,48 @@ export class IrregularidadeService {
         const vistoriaLinha = `Vistoria: ${item.numeroVistoria ?? '-'} (${this.formatDateTimeBr(item.datavistoria)})`;
         const obsTxt = item.observacao?.trim() || 'Não informada.';
         const imagens = item.imagens;
+        const mapaLocal = params.mapasPorItem?.get(item.id);
         const cardPadX = 12;
         const cardPadY = 10;
         const cardInnerW = innerW - cardPadX * 2;
-        const imageLayout = getImageGridLayout(imagens.length, cardInnerW);
+
+        const jpegMapa = mapaLocal
+          ? this.lerDimensoesJpeg(mapaLocal.buffer)
+          : null;
+        const jpegW = jpegMapa?.width || cardInnerW;
+        const jpegH = jpegMapa?.height || 80;
+        const recorte = mapaLocal?.recorte;
+        const recorteBaixa = !!(
+          recorte && recorte.height / recorte.width < 0.55
+        );
+        const mapaBaixa = recorteBaixa || jpegH / jpegW < 0.55;
+        const mapaUtilW = mapaBaixa ? recorte?.width || jpegW : jpegW;
+        const mapaUtilH = mapaBaixa ? recorte?.height || jpegH : jpegH;
+        let mapaBoxW = 0;
+        let mapaBoxH = 0;
+        if (mapaLocal) {
+          if (mapaBaixa) {
+            mapaBoxW = cardInnerW;
+            mapaBoxH = Math.min(
+              100,
+              Math.max(56, mapaBoxW * (mapaUtilH / mapaUtilW)),
+            );
+          } else {
+            const maxW = 210;
+            const maxH = 210;
+            const escala = Math.min(maxW / mapaUtilW, maxH / mapaUtilH);
+            mapaBoxW = Math.max(96, mapaUtilW * escala);
+            mapaBoxH = Math.max(96, mapaUtilH * escala);
+          }
+        }
+        const fotosAoLado =
+          !!mapaLocal && !mapaBaixa && imagens.length > 0;
+        const imageLayout = getImageGridLayout(
+          imagens.length,
+          fotosAoLado
+            ? Math.max(120, cardInnerW - mapaBoxW - 12)
+            : cardInnerW,
+        );
         const imagemLinhaFallback = 'Sem imagens anexadas.';
         const hTitulo = measureTextHeight(
           tituloItem,
@@ -2184,15 +2349,21 @@ export class IrregularidadeService {
         );
         const hImgs =
           imagens.length > 0
-            ? imageLayout.gridH
+            ? fotosAoLado
+              ? 0
+              : imageLayout.gridH
             : measureTextHeight(
                 imagemLinhaFallback,
                 'Helvetica',
                 9,
                 cardInnerW,
               );
+        const hMapa = mapaLocal ? 14 + mapaBoxH + 8 : 0;
+        const hMidia = fotosAoLado
+          ? Math.max(hMapa, mapaBoxH + 14)
+          : hMapa + hImgs;
         const requiredH =
-          cardPadY * 2 + hTitulo + 5 + hVistoria + 5 + hObs + 8 + hImgs;
+          cardPadY * 2 + hTitulo + 5 + hVistoria + 5 + hObs + 8 + hMidia;
         ensureTextBlock(requiredH);
 
         const cardX = marginX;
@@ -2219,7 +2390,72 @@ export class IrregularidadeService {
           .text(`Observação: ${obsTxt}`, { width: cardInnerW });
         doc.moveDown(0.35);
 
-        if (imagens.length === 0) {
+        if (mapaLocal) {
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(8)
+            .fillColor('#334155')
+            .text(`Local: ${mapaLocal.descricao}`, { width: cardInnerW });
+          const mapY = doc.y + 3;
+          this.desenharMapaVistaNoPdf(doc, {
+            buffer: mapaLocal.buffer,
+            recorte: mapaBaixa ? mapaLocal.recorte : undefined,
+            x: cardTextX,
+            y: mapY,
+            boxW: mapaBoxW,
+            boxH: mapaBoxH,
+            circulos: mapaLocal.pontos.map((ponto) => ({
+              posXPct: ponto.posXPct,
+              posYPct: ponto.posYPct,
+              rotulo: '',
+              rotuloCirculo: this.rotuloCirculoMarcacao(1, ponto.ordem),
+            })),
+          });
+          doc.save();
+          doc
+            .lineWidth(0.6)
+            .strokeColor('#e2e8f0')
+            .roundedRect(cardTextX, mapY, mapaBoxW, mapaBoxH, 4)
+            .stroke();
+          doc.restore();
+
+          if (fotosAoLado) {
+            const gapMapa = 12;
+            const fotoAreaX = cardTextX + mapaBoxW + gapMapa;
+            const fotoAreaW = Math.max(80, cardInnerW - mapaBoxW - gapMapa);
+            const cols = Math.min(2, imagens.length);
+            const rows = Math.ceil(imagens.length / cols);
+            const cellW = Math.floor((fotoAreaW - 8 * (cols - 1)) / cols);
+            const cellH = Math.floor((mapaBoxH - 8 * (rows - 1)) / rows);
+            for (let idx = 0; idx < imagens.length; idx += 1) {
+              const row = Math.floor(idx / cols);
+              const col = idx % cols;
+              const x = fotoAreaX + col * (cellW + 8);
+              const y = mapY + row * (cellH + 8);
+              try {
+                doc.image(imagens[idx], x, y, {
+                  fit: [cellW, cellH],
+                  align: 'center',
+                  valign: 'center',
+                });
+              } catch {
+                doc
+                  .fontSize(8)
+                  .fillColor('#b91c1c')
+                  .text('Falha na imagem.', x, y, { width: cellW });
+              }
+            }
+            doc.x = cardTextX;
+            doc.y = mapY + mapaBoxH + 8;
+          } else {
+            doc.x = cardTextX;
+            doc.y = mapY + mapaBoxH + 8;
+          }
+        }
+
+        if (fotosAoLado) {
+          // Fotos já desenhadas ao lado do mapa.
+        } else if (imagens.length === 0) {
           doc
             .font('Helvetica')
             .fontSize(9)
@@ -2381,7 +2617,9 @@ export class IrregularidadeService {
     if (circulos.length === 0) {
       return '';
     }
-    const partes = circulos.map((circulo) => `${circulo.indice}:${circulo.rotulo}`);
+    const partes = circulos.map(
+      (circulo) => `${circulo.rotuloCirculo}:${circulo.rotulo}`,
+    );
     if (partes.length === 1) {
       return `OS: ${partes[0]}`;
     }
@@ -2439,9 +2677,10 @@ export class IrregularidadeService {
         doc.fillColor('#2563eb').strokeColor('#1e40af').lineWidth(0.8);
         doc.circle(cx, cy, raio).fillAndStroke();
         doc.restore();
-        if (circulo.indice > 0) {
-          const rotuloCirculo = String(circulo.indice);
-          const fontSize = rotuloCirculo.length > 1 ? 6 : 7;
+        if (circulo.rotuloCirculo) {
+          const rotuloCirculo = circulo.rotuloCirculo;
+          const fontSize =
+            rotuloCirculo.length > 3 ? 5 : rotuloCirculo.length > 2 ? 5.5 : 7;
           doc
             .font('Helvetica-Bold')
             .fontSize(fontSize)
@@ -2521,39 +2760,13 @@ export class IrregularidadeService {
 
   private async carregarMapasPdfManutencao(
     irregularidades: Irregularidade[],
-  ): Promise<
-    Map<
-      string,
-      {
-        descricao: string;
-        buffer: Buffer;
-        recorte?: RecorteJpegPdf;
-        posXPct: number;
-        posYPct: number;
-      }
-    >
-  > {
-    const mapas = new Map<
-      string,
-      {
-        descricao: string;
-        buffer: Buffer;
-        recorte?: RecorteJpegPdf;
-        posXPct: number;
-        posYPct: number;
-      }
-    >();
+  ): Promise<Map<string, MapaPdfIrregularidadeLocal>> {
+    const mapas = new Map<string, MapaPdfIrregularidadeLocal>();
     for (const item of irregularidades) {
-      const idVista = item.idVista;
+      const marcas = this.mapMarcacoes(item);
+      const idVista = marcas[0]?.idVista ?? item.idVista;
       const idModelo = item.vistoria?.veiculo?.idModelo;
-      if (
-        !idVista ||
-        !idModelo ||
-        item.posXPct === null ||
-        item.posXPct === undefined ||
-        item.posYPct === null ||
-        item.posYPct === undefined
-      ) {
+      if (!idVista || !idModelo || marcas.length === 0) {
         continue;
       }
       try {
@@ -2563,8 +2776,11 @@ export class IrregularidadeService {
           descricao: item.vista?.descricao?.trim() || 'Local no veículo',
           buffer: imagem.buffer,
           recorte: recorte ?? undefined,
-          posXPct: item.posXPct,
-          posYPct: item.posYPct,
+          pontos: marcas.map((m, ordem) => ({
+            posXPct: m.posXPct,
+            posYPct: m.posYPct,
+            ordem: m.ordem ?? ordem,
+          })),
         });
       } catch {
         // Sem imagem da vista: o card segue só com as fotos da irregularidade
@@ -2579,7 +2795,7 @@ export class IrregularidadeService {
     configuracao: Configuracao | null,
   ): Promise<Buffer> {
     const dataEmissao = this.formatDateTimeBr(resumo.emitidoEm);
-    const logoPath = this.resolveLogoRelatorioPath(configuracao?.logoRelatorio);
+    const logoBuffer = this.resolveLogoBuffer(configuracao);
     const mapasPorItem =
       await this.carregarMapasPdfManutencao(irregularidades);
 
@@ -2660,9 +2876,9 @@ export class IrregularidadeService {
       const logoBoxW = 132;
       const logoBoxH = 48;
 
-      if (logoPath) {
+      if (logoBuffer) {
         try {
-          doc.image(logoPath, marginX, headerRowTop, {
+          doc.image(logoBuffer, marginX, headerRowTop, {
             fit: [logoBoxW, logoBoxH],
           });
         } catch {
@@ -2903,14 +3119,12 @@ export class IrregularidadeService {
               y: mapY,
               boxW: mapaBoxW,
               boxH: mapaBoxH,
-              circulos: [
-                {
-                  posXPct: mapaLocal.posXPct,
-                  posYPct: mapaLocal.posYPct,
-                  rotulo: '',
-                  indice: 0,
-                },
-              ],
+              circulos: mapaLocal.pontos.map((ponto) => ({
+                posXPct: ponto.posXPct,
+                posYPct: ponto.posYPct,
+                rotulo: '',
+                rotuloCirculo: this.rotuloCirculoMarcacao(1, ponto.ordem),
+              })),
             });
             doc.save();
             doc
@@ -3283,11 +3497,36 @@ export class IrregularidadeService {
             ? item.ultimoErroIntegracaoEm.toISOString()
             : undefined,
       marcacao: this.mapMarcacao(item),
+      marcacoes: this.mapMarcacoes(item),
       exigeMarcacaoMapa: item.sintoma?.exigeMarcacaoMapa ?? false,
     };
   }
 
+  private mapMarcacoes(item: Irregularidade): IrregularidadeMarcacaoDto[] {
+    const rows = [...(item.marcacoes ?? [])].sort(
+      (a, b) => (a.ordem ?? 0) - (b.ordem ?? 0),
+    );
+    if (rows.length > 0) {
+      return rows.map((row) => ({
+        idVista: row.idVista,
+        descricaoVista: item.vista?.descricao ?? '',
+        posXPct: Number(row.posXPct),
+        posYPct: Number(row.posYPct),
+        ordem: row.ordem ?? 0,
+      }));
+    }
+    const legado = this.mapMarcacaoFromCols(item);
+    return legado ? [legado] : [];
+  }
+
   private mapMarcacao(item: Irregularidade): IrregularidadeMarcacaoDto | null {
+    const todas = this.mapMarcacoes(item);
+    return todas[0] ?? null;
+  }
+
+  private mapMarcacaoFromCols(
+    item: Irregularidade,
+  ): IrregularidadeMarcacaoDto | null {
     if (
       !item.idVista ||
       item.posXPct === null ||
@@ -3302,19 +3541,75 @@ export class IrregularidadeService {
       descricaoVista: item.vista?.descricao ?? '',
       posXPct: Number(item.posXPct),
       posYPct: Number(item.posYPct),
+      ordem: 0,
     };
   }
 
-  private async resolveMarcacao(
+  private normalizarPontosEntrada(dto: {
+    marcacoes?: MarcacaoPontoDto[];
+    idVista?: string;
+    posXPct?: number;
+    posYPct?: number;
+  }): MarcacaoPontoDto[] {
+    if (dto.marcacoes && dto.marcacoes.length > 0) {
+      return dto.marcacoes.slice(0, MARCACOES_MAX_POR_IRREGULARIDADE);
+    }
+    if (
+      dto.idVista &&
+      dto.posXPct !== undefined &&
+      dto.posYPct !== undefined
+    ) {
+      return [
+        {
+          idVista: dto.idVista,
+          posXPct: dto.posXPct,
+          posYPct: dto.posYPct,
+        },
+      ];
+    }
+    return [];
+  }
+
+  private async persistirMarcacoes(
+    repo: Repository<IrregularidadeMarcacao>,
+    idIrregularidade: string,
+    idVista: string | null,
+    pontos: Array<{ posXPct: number; posYPct: number }>,
+  ): Promise<void> {
+    await repo.delete({ idIrregularidade });
+    if (!idVista || pontos.length === 0) {
+      return;
+    }
+    const entities = pontos.map((ponto, ordem) =>
+      repo.create({
+        idIrregularidade,
+        idVista,
+        posXPct: ponto.posXPct,
+        posYPct: ponto.posYPct,
+        ordem,
+      }),
+    );
+    await repo.save(entities);
+  }
+
+  private rotuloCirculoMarcacao(indiceOs: number, ordem: number): string {
+    return `${indiceOs}.${Math.max(0, ordem) + 1}`;
+  }
+
+  private async resolveMarcacoes(
     vistoria: Vistoria,
     idComponente: string,
     idSintoma: string,
-    dto: { idVista?: string; posXPct?: number; posYPct?: number },
+    dto: {
+      marcacoes?: MarcacaoPontoDto[];
+      idVista?: string;
+      posXPct?: number;
+      posYPct?: number;
+    },
     existente?: Irregularidade,
   ): Promise<{
     idVista: string | null;
-    posXPct: number | null;
-    posYPct: number | null;
+    pontos: Array<{ posXPct: number; posYPct: number }>;
   }> {
     const sintoma = await this.sintomaRepository.findOne({
       where: { id: idSintoma },
@@ -3323,37 +3618,37 @@ export class IrregularidadeService {
       throw new NotFoundException('Sintoma não encontrado');
     }
 
-    const existenteCompleta = Boolean(
-      existente?.idVista &&
-        existente.posXPct !== null &&
-        existente.posXPct !== undefined &&
-        existente.posYPct !== null &&
-        existente.posYPct !== undefined,
-    );
-    const enviouMarcacao = Boolean(
-      dto.idVista && dto.posXPct !== undefined && dto.posYPct !== undefined,
-    );
+    const pontosDto = this.normalizarPontosEntrada(dto);
+    const enviouMarcacao = pontosDto.length > 0;
+
+    const pontosExistentes = existente
+      ? this.mapMarcacoes(existente).map((m) => ({
+          posXPct: m.posXPct,
+          posYPct: m.posYPct,
+          idVista: m.idVista,
+        }))
+      : [];
+    const existenteCompleta = pontosExistentes.length > 0;
 
     if (!sintoma.exigeMarcacaoMapa) {
       if (enviouMarcacao) {
-        const idModelo = vistoria.veiculo?.idModelo;
-        if (!idModelo) {
-          throw new UnprocessableEntityException(
-            'Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.',
-          );
-        }
-        await this.vistaService.assertVistaDoModelo(idModelo, dto.idVista!);
+        return this.validarPontosMarcacao(
+          vistoria,
+          idComponente,
+          idSintoma,
+          pontosDto,
+        );
+      }
+      if (existenteCompleta) {
         return {
-          idVista: dto.idVista!,
-          posXPct: dto.posXPct!,
-          posYPct: dto.posYPct!,
+          idVista: pontosExistentes[0].idVista,
+          pontos: pontosExistentes.map((p) => ({
+            posXPct: p.posXPct,
+            posYPct: p.posYPct,
+          })),
         };
       }
-      return {
-        idVista: existente?.idVista ?? null,
-        posXPct: existente?.posXPct ?? null,
-        posYPct: existente?.posYPct ?? null,
-      };
+      return { idVista: null, pontos: [] };
     }
 
     const idModelo = vistoria.veiculo?.idModelo;
@@ -3370,33 +3665,68 @@ export class IrregularidadeService {
     }
 
     if (enviouMarcacao) {
-      const vista = await this.vistaService.assertVistaDoModelo(
-        idModelo,
-        dto.idVista!,
-      );
-      await this.assertVistaPermitidaNaMatriz(
+      return this.validarPontosMarcacao(
+        vistoria,
         idComponente,
         idSintoma,
-        vista.idCatalogo,
+        pontosDto,
       );
-      return {
-        idVista: dto.idVista!,
-        posXPct: dto.posXPct!,
-        posYPct: dto.posYPct!,
-      };
     }
 
-    if (existenteCompleta && existente?.idVista) {
+    if (existenteCompleta) {
       return {
-        idVista: existente.idVista,
-        posXPct: existente.posXPct ?? null,
-        posYPct: existente.posYPct ?? null,
+        idVista: pontosExistentes[0].idVista,
+        pontos: pontosExistentes.map((p) => ({
+          posXPct: p.posXPct,
+          posYPct: p.posYPct,
+        })),
       };
     }
 
     throw new UnprocessableEntityException(
       'Marque o local da irregularidade no desenho do veículo.',
     );
+  }
+
+  private async validarPontosMarcacao(
+    vistoria: Vistoria,
+    idComponente: string,
+    idSintoma: string,
+    pontosDto: MarcacaoPontoDto[],
+  ): Promise<{
+    idVista: string;
+    pontos: Array<{ posXPct: number; posYPct: number }>;
+  }> {
+    if (pontosDto.length > MARCACOES_MAX_POR_IRREGULARIDADE) {
+      throw new UnprocessableEntityException(
+        `É permitido no máximo ${MARCACOES_MAX_POR_IRREGULARIDADE} marcações por irregularidade.`,
+      );
+    }
+    const idVista = pontosDto[0].idVista;
+    if (pontosDto.some((p) => p.idVista !== idVista)) {
+      throw new UnprocessableEntityException(
+        'Todas as marcações da irregularidade devem ser na mesma vista.',
+      );
+    }
+    const idModelo = vistoria.veiculo?.idModelo;
+    if (!idModelo) {
+      throw new UnprocessableEntityException(
+        'Cadastre ao menos uma vista no modelo do veículo para sintomas que exigem localização.',
+      );
+    }
+    const vista = await this.vistaService.assertVistaDoModelo(idModelo, idVista);
+    await this.assertVistaPermitidaNaMatriz(
+      idComponente,
+      idSintoma,
+      vista.idCatalogo,
+    );
+    return {
+      idVista,
+      pontos: pontosDto.map((p) => ({
+        posXPct: p.posXPct,
+        posYPct: p.posYPct,
+      })),
+    };
   }
 
   private async assertVistaPermitidaNaMatriz(
@@ -3637,6 +3967,7 @@ export class IrregularidadeService {
   private async getIrregularidadeOrFail(id: string): Promise<Irregularidade> {
     const irregularidade = await this.irregularidadeRepository.findOne({
       where: { id },
+      relations: ['vista', 'marcacoes', 'sintoma'],
     });
     if (!irregularidade) {
       throw new NotFoundException('Irregularidade não encontrada');

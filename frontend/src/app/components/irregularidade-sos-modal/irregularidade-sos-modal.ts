@@ -140,7 +140,10 @@ export class IrregularidadeSosModalComponent implements OnChanges {
 
   observacao = '';
   selectedMatriz: MatrizCriticidade | null = null;
-  marcaMapa: { idVista: string; posXPct: number; posYPct: number } | null = null;
+  marcaMapa: {
+    idVista: string;
+    pontos: Array<{ posXPct: number; posYPct: number }>;
+  } | null = null;
   fotos: FotoPendente[] = [];
   audios: AudioPendente[] = [];
   midiaUploadError = '';
@@ -610,7 +613,12 @@ export class IrregularidadeSosModalComponent implements OnChanges {
     return this.selectedMatriz?.idVistas ?? [];
   }
 
-  onMarcaMapa(marca: { idVista: string; posXPct: number; posYPct: number } | null): void {
+  onMarcaMapa(
+    marca: {
+      idVista: string;
+      pontos: Array<{ posXPct: number; posYPct: number }>;
+    } | null,
+  ): void {
     this.marcaMapa = marca;
   }
 
@@ -715,9 +723,13 @@ export class IrregularidadeSosModalComponent implements OnChanges {
           idcomponente: this.modalIdComponente,
           idsintoma: this.modalIdSintoma,
           observacao: observacaoTrim,
-          idVista: this.marcaMapa?.idVista,
-          posXPct: this.marcaMapa?.posXPct,
-          posYPct: this.marcaMapa?.posYPct,
+          marcacoes: this.marcaMapa
+            ? this.marcaMapa.pontos.map((p) => ({
+                idVista: this.marcaMapa!.idVista,
+                posXPct: p.posXPct,
+                posYPct: p.posYPct,
+              }))
+            : undefined,
         }),
       );
 

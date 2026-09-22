@@ -1,13 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { MarcacaoPontoDto } from './irregularidade-marcacao.dto';
 
 export class ReclassificarIrregularidadeDto {
   @ApiProperty({ description: 'ID da área de destino', format: 'uuid' })
@@ -31,7 +35,21 @@ export class ReclassificarIrregularidadeDto {
   observacao?: string;
 
   @ApiProperty({
-    description: 'Vista do modelo (obrigatória se o sintoma destino exige mapa e não há marcação)',
+    description:
+      'Pontos no mapa (mesma vista, 1–10). Preferir sobre idVista/pos únicos.',
+    type: [MarcacaoPontoDto],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @ValidateNested({ each: true })
+  @Type(() => MarcacaoPontoDto)
+  marcacoes?: MarcacaoPontoDto[];
+
+  @ApiProperty({
+    description:
+      'Vista do modelo (obrigatória se o sintoma destino exige mapa e não há marcação)',
     format: 'uuid',
     required: false,
   })

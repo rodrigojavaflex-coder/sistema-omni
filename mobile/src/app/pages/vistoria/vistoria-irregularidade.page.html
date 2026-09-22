@@ -247,7 +247,7 @@
       </div>
       <p class="midia-bloco-status" *ngIf="localDefinido">
         <ion-icon name="checkmark-circle-outline" aria-hidden="true"></ion-icon>
-        Pronto para salvar com o ponto marcado.
+        Pronto para salvar com o(s) ponto(s) marcado(s).
       </p>
     </section>
 
@@ -343,7 +343,7 @@
 >
   <div class="mapa-fullscreen-header">
     <h1 id="mapa-fullscreen-titulo">Local no veículo</h1>
-    <p>Toque no desenho para marcar. Pinça ou +/− para zoom. Depois confirme para voltar ao sintoma.</p>
+    <p>Toque no desenho para adicionar pontos (máx. 10, mesma vista). Pinça ou +/− para zoom. Depois confirme para voltar ao sintoma.</p>
   </div>
   <div class="mapa-fullscreen-body">
     <app-mapa-avaria
@@ -359,7 +359,8 @@
     </p>
   </div>
   <div class="mapa-fullscreen-footer">
-    <ion-button class="btn-main" (click)="confirmarMapa()" [disabled]="!marcaMapaRascunho">
+    <ion-button class="btn-main" (click)="confirmarMapa()" [disabled]="!marcaMapaRascunho?.pontos?.length">
+      <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
       Confirmar local
     </ion-button>
     <ion-button class="btn-voltar" fill="solid" (click)="voltar()">

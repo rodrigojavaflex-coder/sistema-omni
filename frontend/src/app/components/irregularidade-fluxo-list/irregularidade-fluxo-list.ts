@@ -147,7 +147,10 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     idVistas?: string[];
   }> = [];
   reclassModeloId = '';
-  reclassMarca: { idVista: string; posXPct: number; posYPct: number } | null = null;
+  reclassMarca: {
+    idVista: string;
+    pontos: Array<{ posXPct: number; posYPct: number }>;
+  } | null = null;
   reclassAreaBusca = '';
   reclassComponenteBusca = '';
   reclassSintomaBusca = '';
@@ -482,13 +485,28 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.reclassComponentes = [];
     this.reclassSintomas = [];
     this.reclassModeloId = item.veiculoModeloId ?? '';
-    this.reclassMarca = item.marcacao
-      ? {
-          idVista: item.marcacao.idVista,
-          posXPct: item.marcacao.posXPct,
-          posYPct: item.marcacao.posYPct,
-        }
-      : null;
+    this.reclassMarca = (() => {
+      const pontos =
+        item.marcacoes && item.marcacoes.length > 0
+          ? item.marcacoes.map((m) => ({
+              posXPct: m.posXPct,
+              posYPct: m.posYPct,
+            }))
+          : item.marcacao
+            ? [
+                {
+                  posXPct: item.marcacao.posXPct,
+                  posYPct: item.marcacao.posYPct,
+                },
+              ]
+            : [];
+      const idVista =
+        item.marcacoes?.[0]?.idVista ?? item.marcacao?.idVista;
+      if (!idVista || pontos.length === 0) {
+        return null;
+      }
+      return { idVista, pontos };
+    })();
     this.reclassAreaBusca = item.nomeArea ?? '';
     this.reclassComponenteBusca = item.nomeComponente ?? '';
     this.reclassSintomaBusca = item.descricaoSintoma ?? '';
@@ -619,8 +637,38 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     );
   }
 
-  onReclassMarca(marca: { idVista: string; posXPct: number; posYPct: number } | null): void {
+  onReclassMarca(
+    marca: {
+      idVista: string;
+      pontos: Array<{ posXPct: number; posYPct: number }>;
+    } | null,
+  ): void {
     this.reclassMarca = marca;
+  }
+
+  marcaInicialDoItem(item: IrregularidadeFluxoItem): {
+    idVista: string;
+    pontos: Array<{ posXPct: number; posYPct: number }>;
+  } | null {
+    const pontos =
+      item.marcacoes && item.marcacoes.length > 0
+        ? item.marcacoes.map((m) => ({
+            posXPct: m.posXPct,
+            posYPct: m.posYPct,
+          }))
+        : item.marcacao
+          ? [
+              {
+                posXPct: item.marcacao.posXPct,
+                posYPct: item.marcacao.posYPct,
+              },
+            ]
+          : [];
+    const idVista = item.marcacoes?.[0]?.idVista ?? item.marcacao?.idVista;
+    if (!idVista || pontos.length === 0) {
+      return null;
+    }
+    return { idVista, pontos };
   }
 
   submitActionModal(): void {
@@ -669,9 +717,13 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
             idcomponente: this.modalIdComponente.trim(),
             idsintoma: this.modalIdSintoma.trim(),
             observacao: this.modalObservacao.trim() || undefined,
-            idVista: this.reclassMarca?.idVista,
-            posXPct: this.reclassMarca?.posXPct,
-            posYPct: this.reclassMarca?.posYPct,
+            marcacoes: this.reclassMarca
+              ? this.reclassMarca.pontos.map((p) => ({
+                  idVista: this.reclassMarca!.idVista,
+                  posXPct: p.posXPct,
+                  posYPct: p.posYPct,
+                }))
+              : undefined,
           }),
         );
       }

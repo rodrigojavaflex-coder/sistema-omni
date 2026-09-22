@@ -29,8 +29,34 @@
         {{ textoPendentes() }}
       </ion-button>
     </div>
-    <p class="legend">
-      Pinça ou +/− para zoom. Vermelho = nova. Azul = pendentes.
+    <div class="actions marcas-actions">
+      <span class="marcas-status">{{ textoMarcasAtuais() }}</span>
+      <ion-button
+        fill="outline"
+        size="small"
+        [disabled]="marcasAtuais().length === 0"
+        (click)="desfazerUltimaMarca()"
+      >
+        <ion-icon slot="start" name="arrow-undo-outline"></ion-icon>
+        Desfazer
+      </ion-button>
+      <ion-button
+        fill="outline"
+        size="small"
+        [disabled]="marcasAtuais().length === 0"
+        (click)="limparMarcas()"
+      >
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        Limpar
+      </ion-button>
+    </div>
+    <p class="legend">{{ textoAjudaMapa() }}</p>
+    <p
+      class="legenda-os"
+      *ngIf="mostrarPendentes() && legendaOsPendentes()"
+      aria-label="Legenda das ordens de serviço no mapa"
+    >
+      {{ legendaOsPendentes() }}
     </p>
   </div>
 
@@ -68,21 +94,43 @@
             [style.width.px]="tamanhoMarcaPx()"
             [style.height.px]="tamanhoMarcaPx()"
             [style.transform]="transformMarcaPendente()"
-            [style.font-size.px]="tamanhoMarcaPx() * 0.38"
+            [style.font-size.px]="tamanhoMarcaPx() * 0.32"
           >
             <span class="mark-label">{{ marca.rotulo }}</span>
           </span>
           <span
-            *ngIf="marcaAtual() as atual"
-            class="mark mark-current"
+            *ngFor="let atual of marcasAtuais(); let i = index; let last = last"
+            class="mark mark-current mark-interactive"
+            [class.mark-moving]="indiceArrastando() === i"
             [style.left.%]="atual.xPct"
             [style.top.%]="atual.yPct"
             [style.width.px]="tamanhoMarcaPx()"
             [style.height.px]="tamanhoMarcaPx()"
             [style.transform]="transformMarcaAtual()"
-            [style.font-size.px]="tamanhoMarcaPx() * 0.38"
+            [style.font-size.px]="tamanhoMarcaPx() * 0.32"
+            (pointerdown)="onMarcaPointerDown(i, $event)"
+            (pointermove)="onMarcaPointerMove(i, $event)"
+            (pointerup)="onMarcaPointerUp(i, $event)"
+            (pointercancel)="onMarcaPointerUp(i, $event)"
+            role="button"
+            [attr.aria-label]="'Ponto ' + atual.rotulo + '. Arraste para mover'"
           >
             <span class="mark-label">{{ atual.rotulo }}</span>
+            <button
+              *ngIf="last"
+              type="button"
+              class="mark-remove"
+              [style.width.px]="tamanhoRemovePx()"
+              [style.height.px]="tamanhoRemovePx()"
+              [style.top.px]="-tamanhoRemovePx() * 0.35"
+              [style.right.px]="-tamanhoRemovePx() * 0.35"
+              [style.font-size.px]="tamanhoRemovePx() * 0.7"
+              (pointerdown)="$event.stopPropagation()"
+              (click)="onRemoverUltimaClick($event)"
+              aria-label="Remover último ponto"
+            >
+              <ion-icon name="close-outline" aria-hidden="true"></ion-icon>
+            </button>
           </span>
         </div>
       </div>

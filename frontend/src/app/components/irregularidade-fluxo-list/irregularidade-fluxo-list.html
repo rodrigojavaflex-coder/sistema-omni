@@ -340,7 +340,10 @@
             <p class="descricao-problema-texto">{{ item.observacao || '-' }}</p>
           </div>
 
-          <div class="mapa-fluxo" *ngIf="item.marcacao && item.veiculoModeloId && item.idVeiculo">
+          <div
+            class="mapa-fluxo"
+            *ngIf="(item.marcacoes?.length || item.marcacao) && item.veiculoModeloId && item.idVeiculo"
+          >
             <span class="detail-label">Mapa de avaria</span>
             <app-mapa-avaria
               [modeloId]="item.veiculoModeloId"
@@ -348,7 +351,7 @@
               [somenteAbertas]="false"
               [readonly]="true"
               [destaqueId]="item.id"
-              [marcaInicial]="item.marcacao"
+              [marcaInicial]="marcaInicialDoItem(item)"
             ></app-mapa-avaria>
           </div>
 

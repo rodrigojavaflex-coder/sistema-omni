@@ -52,7 +52,15 @@ export interface IrregularidadeFluxoItem {
     descricaoVista: string;
     posXPct: number;
     posYPct: number;
+    ordem?: number;
   } | null;
+  marcacoes?: Array<{
+    idVista: string;
+    descricaoVista: string;
+    posXPct: number;
+    posYPct: number;
+    ordem?: number;
+  }>;
   exigeMarcacaoMapa?: boolean;
 }
 
@@ -149,6 +157,11 @@ export interface ReclassificarPayload {
   idcomponente: string;
   idsintoma: string;
   observacao?: string;
+  marcacoes?: Array<{
+    idVista: string;
+    posXPct: number;
+    posYPct: number;
+  }>;
   idVista?: string;
   posXPct?: number;
   posYPct?: number;
