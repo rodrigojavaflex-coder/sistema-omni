@@ -49,6 +49,19 @@ export class EmpresaTerceira extends BaseEntity {
   brtAmbiente?: string;
 
   @ApiProperty({
+    description:
+      'Aceitar certificado SSL não confiável na API BRT (emergência/ops por empresa)',
+    default: false,
+  })
+  @Column({
+    name: 'brt_allow_insecure_tls',
+    type: 'boolean',
+    nullable: false,
+    default: false,
+  })
+  brtAllowInsecureTls: boolean;
+
+  @ApiProperty({
     description: 'Nome do solicitante enviado à API BRT',
     required: false,
   })

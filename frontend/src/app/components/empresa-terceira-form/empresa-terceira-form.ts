@@ -66,6 +66,7 @@ export class EmpresaTerceiraFormComponent
       brtTenEmp: [''],
       brtToken: [''],
       brtAmbiente: [''],
+      brtAllowInsecureTls: [false],
       brtNomSol: ['', [Validators.maxLength(200)]],
       brtTelCtt: ['', [Validators.maxLength(40)]],
       brtLocAtd: ['', [Validators.maxLength(500)]],
@@ -85,6 +86,7 @@ export class EmpresaTerceiraFormComponent
       payload.brtUrlBase = raw.brtUrlBase?.trim() || undefined;
       payload.brtTenEmp = raw.brtTenEmp?.trim() || undefined;
       payload.brtAmbiente = raw.brtAmbiente?.trim() || undefined;
+      payload.brtAllowInsecureTls = !!raw.brtAllowInsecureTls;
       payload.brtNomSol = raw.brtNomSol?.trim() || undefined;
       payload.brtTelCtt = raw.brtTelCtt?.trim() || undefined;
       payload.brtLocAtd = raw.brtLocAtd?.trim() || undefined;
@@ -124,6 +126,7 @@ export class EmpresaTerceiraFormComponent
         brtTenEmp: item.brtTenEmp ?? '',
         brtToken: item.brtToken ?? '',
         brtAmbiente: item.brtAmbiente ?? '',
+        brtAllowInsecureTls: !!item.brtAllowInsecureTls,
         brtNomSol: item.brtNomSol ?? '',
         brtTelCtt: item.brtTelCtt ?? '',
         brtLocAtd: item.brtLocAtd ?? '',

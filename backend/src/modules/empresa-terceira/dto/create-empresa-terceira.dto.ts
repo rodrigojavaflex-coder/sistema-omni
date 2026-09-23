@@ -56,6 +56,10 @@ export class CreateEmpresaTerceiraDto {
   brtAmbiente?: string;
 
   @IsOptional()
+  @IsBoolean()
+  brtAllowInsecureTls?: boolean;
+
+  @IsOptional()
   @IsString()
   @MaxLength(200)
   brtNomSol?: string;

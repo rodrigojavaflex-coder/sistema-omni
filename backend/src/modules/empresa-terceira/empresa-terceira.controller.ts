@@ -55,6 +55,8 @@ export class EmpresaTerceiraController {
     Permission.EMPRESATERCIRA_READ,
     Permission.OCORRENCIA_READ,
     Permission.OCORRENCIA_CREATE,
+    /** Lookup do combo «Enviar para manutenção» sem liberar o cadastro. */
+    Permission.IRREGULARIDADE_MANUTENCAO_START,
   )
   findAll(
     @Query('manutencao') manutencao?: string,
@@ -75,6 +77,7 @@ export class EmpresaTerceiraController {
     Permission.EMPRESATERCIRA_READ,
     Permission.OCORRENCIA_READ,
     Permission.OCORRENCIA_CREATE,
+    Permission.IRREGULARIDADE_MANUTENCAO_START,
   )
   findOne(
     @Param('id', new ParseUUIDPipe()) id: string,

@@ -75,7 +75,7 @@ export type BrtCancelarOsResult =
 export class BrtOsIntegrationService {
   private readonly logger = new Logger(BrtOsIntegrationService.name);
 
-  /** Reutilizado em homologação com TLS relaxado (mesmo pacote undici do fetch). */
+  /** Reutilizado com TLS relaxado (mesmo pacote undici do fetch). */
   private readonly insecureTlsAgent = new Agent({
     connect: { rejectUnauthorized: false },
   });
@@ -220,10 +220,10 @@ export class BrtOsIntegrationService {
     const contextoLog = `url=${url} os_orig=${payload.os_orig} plc_vcl=${payload.plc_vcl} ten_emp=${payload.ten_emp}`;
     this.logger.debug(`BRT OS POST iniciando ${contextoLog}`);
 
-    const usarTlsInseguroHomolog = this.deveIgnorarTlsHomolog(empresa);
-    if (usarTlsInseguroHomolog) {
+    const usarTlsInseguro = this.deveIgnorarTls(empresa);
+    if (usarTlsInseguro) {
       this.logger.warn(
-        `BRT OS: TLS com rejectUnauthorized=false (empresa ambiente HOMOLOG + BRT_OS_ALLOW_INSECURE_TLS_HOMOLOG=true) ${contextoLog}`,
+        `BRT OS: TLS com rejectUnauthorized=false (${this.motivoTlsInseguro(empresa)}) ${contextoLog}`,
       );
     }
 
@@ -236,9 +236,7 @@ export class BrtOsIntegrationService {
       },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(60_000),
-      ...(usarTlsInseguroHomolog
-        ? { dispatcher: this.insecureTlsAgent }
-        : {}),
+      ...(usarTlsInseguro ? { dispatcher: this.insecureTlsAgent } : {}),
     };
 
     let response: Response;
@@ -333,10 +331,10 @@ export class BrtOsIntegrationService {
     const contextoLog = `url=${url} os_orig=${payload.os_orig} ten_emp=${payload.ten_emp} tpo_reg=7`;
     this.logger.debug(`BRT OS cancelamento POST iniciando ${contextoLog}`);
 
-    const usarTlsInseguroHomolog = this.deveIgnorarTlsHomolog(empresa);
-    if (usarTlsInseguroHomolog) {
+    const usarTlsInseguro = this.deveIgnorarTls(empresa);
+    if (usarTlsInseguro) {
       this.logger.warn(
-        `BRT OS cancelamento: TLS com rejectUnauthorized=false (empresa ambiente HOMOLOG + BRT_OS_ALLOW_INSECURE_TLS_HOMOLOG=true) ${contextoLog}`,
+        `BRT OS cancelamento: TLS com rejectUnauthorized=false (${this.motivoTlsInseguro(empresa)}) ${contextoLog}`,
       );
     }
 
@@ -349,9 +347,7 @@ export class BrtOsIntegrationService {
       },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(60_000),
-      ...(usarTlsInseguroHomolog
-        ? { dispatcher: this.insecureTlsAgent }
-        : {}),
+      ...(usarTlsInseguro ? { dispatcher: this.insecureTlsAgent } : {}),
     };
 
     let response: Response;
@@ -444,15 +440,42 @@ export class BrtOsIntegrationService {
     return `Erro ao criar OS na API BRT (HTTP ${httpStatus})`;
   }
 
-  private deveIgnorarTlsHomolog(empresa: EmpresaTerceira): boolean {
-    const flag = this.configService.get<boolean>(
+  /**
+   * TLS relaxado: flag da empresa, flag global env, ou homolog + empresa HOMOLOG.
+   */
+  private deveIgnorarTls(empresa: EmpresaTerceira): boolean {
+    if (empresa.brtAllowInsecureTls === true) {
+      return true;
+    }
+    const allowAny = this.configService.get<boolean>(
+      'brtOs.allowInsecureTls',
+      false,
+    );
+    if (allowAny) {
+      return true;
+    }
+    const allowHomolog = this.configService.get<boolean>(
       'brtOs.allowInsecureTlsHomolog',
       false,
     );
-    if (!flag) {
+    if (!allowHomolog) {
       return false;
     }
     return empresa.brtAmbiente?.trim().toUpperCase() === 'HOMOLOG';
+  }
+
+  private motivoTlsInseguro(empresa: EmpresaTerceira): string {
+    if (empresa.brtAllowInsecureTls === true) {
+      return 'empresa.brtAllowInsecureTls=true';
+    }
+    const allowAny = this.configService.get<boolean>(
+      'brtOs.allowInsecureTls',
+      false,
+    );
+    if (allowAny) {
+      return 'BRT_OS_ALLOW_INSECURE_TLS=true';
+    }
+    return `empresa ambiente ${empresa.brtAmbiente ?? '?'} + BRT_OS_ALLOW_INSECURE_TLS_HOMOLOG=true`;
   }
 
   private mensagemComunicacaoParaUsuario(
@@ -477,8 +500,9 @@ export class BrtOsIntegrationService {
     ) {
       return (
         'Certificado SSL da API não é confiável (comum em homologação). ' +
-        'Instale o certificado no servidor ou, em dev, defina BRT_OS_ALLOW_INSECURE_TLS_HOMOLOG=true ' +
-        'e configure a empresa com ambiente Homologação.'
+        'Instale o certificado no servidor, marque «Permitir certificado SSL não confiável» ' +
+        'na empresa de manutenção, ou use BRT_OS_ALLOW_INSECURE_TLS=true / ' +
+        'BRT_OS_ALLOW_INSECURE_TLS_HOMOLOG=true (só Homologação).'
       );
     }
     return mensagemUsuario;

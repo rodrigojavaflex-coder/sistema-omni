@@ -29,6 +29,7 @@ export function toEmpresaTerceiraResponse(
       brtUrlBase: _u,
       brtTenEmp: _t,
       brtAmbiente: _a,
+      brtAllowInsecureTls: _tls,
       brtNomSol: _n,
       brtTelCtt: _tel,
       brtLocAtd: _loc,

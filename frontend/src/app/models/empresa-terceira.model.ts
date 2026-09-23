@@ -8,6 +8,7 @@ export interface EmpresaTerceira {
   brtUrlBase?: string;
   brtTenEmp?: string;
   brtAmbiente?: string;
+  brtAllowInsecureTls?: boolean;
   brtNomSol?: string;
   brtTelCtt?: string;
   brtLocAtd?: string;
@@ -27,6 +28,7 @@ export interface CreateEmpresaTerceiraDto {
   brtTenEmp?: string;
   brtToken?: string;
   brtAmbiente?: string;
+  brtAllowInsecureTls?: boolean;
   brtNomSol?: string;
   brtTelCtt?: string;
   brtLocAtd?: string;

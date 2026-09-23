@@ -7,6 +7,7 @@ const INTEGRACAO_DTO_KEYS = [
   'brtTenEmp',
   'brtToken',
   'brtAmbiente',
+  'brtAllowInsecureTls',
   'brtNomSol',
   'brtTelCtt',
   'brtLocAtd',

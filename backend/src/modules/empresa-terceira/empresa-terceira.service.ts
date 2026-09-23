@@ -126,6 +126,7 @@ export class EmpresaTerceiraService {
       brtTenEmp: effectiveDto.brtTenEmp?.trim() || undefined,
       brtToken: effectiveDto.brtToken?.trim() || undefined,
       brtAmbiente: effectiveDto.brtAmbiente?.trim() || undefined,
+      brtAllowInsecureTls: !!effectiveDto.brtAllowInsecureTls,
       brtNomSol: effectiveDto.brtNomSol?.trim() || undefined,
       brtTelCtt: effectiveDto.brtTelCtt?.trim() || undefined,
       brtLocAtd: effectiveDto.brtLocAtd?.trim() || undefined,
@@ -240,6 +241,9 @@ export class EmpresaTerceiraService {
     }
     if (effectiveDto.brtAmbiente !== undefined) {
       entidade.brtAmbiente = effectiveDto.brtAmbiente?.trim() || undefined;
+    }
+    if (effectiveDto.brtAllowInsecureTls !== undefined) {
+      entidade.brtAllowInsecureTls = !!effectiveDto.brtAllowInsecureTls;
     }
     if (effectiveDto.brtNomSol !== undefined) {
       entidade.brtNomSol = effectiveDto.brtNomSol?.trim() || undefined;

@@ -226,7 +226,7 @@ Copie o bloco abaixo para cada regra nova.
   - Filtro «Todos» na tela Tratamento (frontend) monta a lista de status conforme `:read` do usuario antes de chamar a API
 - **Mensagens ao usuario:** Guard/rota redireciona para home sem `:read`; API 403 com lista de permissoes faltantes
 - **Permissoes envolvidas:**
-  - Tratamento: `irregularidade_tratamento:read` (acesso), `irregularidade_tratamento:update` (reclassificar/cancelar), `irregularidade_manutencao:start` (enviar para manutencao)
+  - Tratamento: `irregularidade_tratamento:read` (acesso), `irregularidade_tratamento:update` (reclassificar/cancelar), `irregularidade_manutencao:start` (enviar para manutencao; tambem autoriza `GET /empresas-terceiras` so para lookup do combo, sem liberar menu/rota de cadastro de empresas)
   - Manutencao: `irregularidade_manutencao:read` (acesso), `irregularidade_manutencao:finish`, `irregularidade_manutencao:mark_not_proceeding`
   - Validacao: `irregularidade_validacao_final:read` (acesso), `irregularidade_validacao_final:update` (validar/reprovar)
 - **Dados impactados:** Nenhum (sem alteracao de schema; keys de permissao mantidas)
@@ -234,6 +234,7 @@ Copie o bloco abaixo para cada regra nova.
 - **Criterios de aceite:**
   - [ ] Usuario so com permissoes de acao (sem `:read`) nao ve menu nem rota da tela
   - [ ] Usuario com `:read` ve fila sem botoes de acao nao autorizados
+  - [ ] Operador Tratamento com `manutencao:start` (sem `empresaterceira:read`) ve empresas no combo «Enviar para manutenção» e nao ve menu/rota de cadastro de empresas
   - [ ] Operador Tratamento precisa de `tratamento:read` + acoes desejadas (ex.: `update`, `manutencao:start`)
   - [ ] `GET /irregularidades` retorna 403 ao consultar status de etapa sem `:read`
   - [ ] Cadastro de perfil exibe 3 grupos com labels alinhados as telas
@@ -297,8 +298,8 @@ Copie o bloco abaixo para cada regra nova.
 - **Fluxo:** Tratamento (`/irregularidades/tratamento`) → Manutencao → Validacao final; registro mobile e SOS inalterados na origem
 - **Descricao:** Ao enviar irregularidade para manutencao, o operador seleciona empresa de manutencao (mesmo fluxo atual). Se a empresa estiver configurada para integracao de OS (ex.: API Consorcio BRT), o sistema cria uma OS externa **sincrona** (1 irregularidade = 1 OS), persiste `os_orig` e `numOs` retornado, e so entao transiciona para `EM_MANUTENCAO`. Se a empresa **nao** usar API, mantem-se o fluxo atual (relatorio PDF/e-mail conforme parametros). Falhas de integracao mantem a irregularidade em `REGISTRADA` na tela Tratamento, com detalhes do erro para tratamento ou cancelamento. Reprovacao na validacao final move para `RETRABALHO_GARANTIA` (retrabalho/garantia) na mesma tela Tratamento; reenvio usa `os_orig` com sufixo (`numeroIrregularidade-2`, `-3`, …) para nova OS na BRT, preservando historico das tentativas anteriores. Irregularidades sob controle da API nao permitem conclusao manual na Manutencao — a saida de `EM_MANUTENCAO` para `CONCLUIDA` ocorrera por integracao de retorno (escopo v2, API ainda nao documentada). A validacao final permanece no OMNI; aprovacao marca irregularidade como corrigida no veiculo (`VALIDADA` / `resolvido` conforme regras de pendencia).
 - **Condicoes de entrada:**
-  - Envio: status `REGISTRADA` ou `RETRABALHO_GARANTIA`; empresa com `ehEmpresaManutencao`; permissao `irregularidade_manutencao:start`
-  - Integracao BRT: empresa com tipo de integracao OS configurado e credenciais validas (`ten_emp`, `token`, URL)
+  - Envio: status `REGISTRADA` ou `RETRABALHO_GARANTIA`; empresa com `ehEmpresaManutencao`; permissao `irregularidade_manutencao:start` (suficiente para listar empresas no combo via `GET /empresas-terceiras`; nao exige `empresaterceira:read`)
+  - Integracao BRT: empresa com tipo de integracao OS configurado e credenciais validas (`ten_emp`, `token`, URL). Certificado SSL: preferir CA no servidor; por empresa marcar `brt_allow_insecure_tls` no cadastro (exige `empresaterceira:integracao_config`); emergencia tambem via `BRT_OS_ALLOW_INSECURE_TLS=true` ou `BRT_OS_ALLOW_INSECURE_TLS_HOMOLOG=true` + empresa Homologacao
   - Empresa sem API: mesmas pre-condicoes do fluxo legado (RN-VIS-003 e backlog epico 2)
 - **Validacoes:**
   - Lote: cada irregularidade e processada individualmente na API; sucesso parcial e permitido (ex.: 3 em Manutencao, 2 permanecem em Tratamento com erro)
@@ -558,6 +559,9 @@ Copie o bloco abaixo para cada regra nova.
 - 2026-09-16: RN-VIS-009 — matriz restringe vistas do mapa por descricao; vazio = todas no app.
 - 2026-09-16: RN-VIS-009 Implementada — mapa de avaria (vistas no modelo, flag no sintoma, overlay percentual, PDF de pendencias).
 - 2026-09-16: RN-VIS-009 Proposta — mapa de avaria (vistas N no modelo, flag no sintoma, overlay percentual). Plano em `docs/PLANO_MAPA_AVARIA_MODELO.md`.
+- 2026-09-22: RN-VIS-006 — `brt_allow_insecure_tls` no cadastro da empresa (integração BRT) relaxa TLS por empresa; envs `BRT_OS_ALLOW_INSECURE_TLS` / `_HOMOLOG` permanecem como fallback.
+- 2026-09-22: RN-VIS-006 — flag `BRT_OS_ALLOW_INSECURE_TLS=true` relaxa TLS em qualquer ambiente da empresa (emergência/ops); mantém `BRT_OS_ALLOW_INSECURE_TLS_HOMOLOG` só para Homologação.
+- 2026-09-22: RN-VIS-003 / RN-VIS-006 — `irregularidade_manutencao:start` autoriza lookup de `GET /empresas-terceiras` no combo de envio, sem exigir `empresaterceira:read` (cadastro continua restrito).
 - 2026-09-22: RN-VIS-009 — overlay: índice global por irregularidade na vista (`1.1`/`1.2`…, `2.1`/`2.2`…); destaque/edição não reinicia em `1` (web e mobile).
 - 2026-09-22: RN-VIS-009 — até 10 pontos por irregularidade na mesma vista; overlay/PDF com rótulos `1.1`, `1.2`…; tabela `irregularidades_marcacoes`.
 - 2026-09-22: RN-VIS-009 — overlay do mapa: círculo com índice sequencial e legenda `OS: 1:n…` (web e mobile), alinhado ao PDF de pendências.

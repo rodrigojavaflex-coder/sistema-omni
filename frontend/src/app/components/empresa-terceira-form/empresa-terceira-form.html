@@ -116,6 +116,15 @@
           <option value="PROD">Produção</option>
         </select>
       </div>
+      <div class="form-group">
+        <label class="form-label checkbox-inline">
+          <input type="checkbox" formControlName="brtAllowInsecureTls" />
+          Permitir certificado SSL não confiável
+        </label>
+        <small class="form-hint">
+          Use só se a API BRT tiver certificado inválido/autoassinado. Preferível instalar a CA no servidor.
+        </small>
+      </div>
       </ng-container>
     </div>
 
