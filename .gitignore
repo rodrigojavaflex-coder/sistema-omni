@@ -18,6 +18,15 @@ frontend/.angular/
 frontend/.env
 frontend/.env.local
 
+# Mobile
+mobile/node_modules/
+mobile/dist/
+mobile/.angular/
+mobile/www/
+
+# TypeScript incremental build
+*.tsbuildinfo
+
 # Logs
 *.log
 npm-debug.log*
