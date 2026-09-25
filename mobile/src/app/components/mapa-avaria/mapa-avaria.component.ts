@@ -131,7 +131,7 @@ export class MapaAvariaComponent implements OnChanges, OnDestroy {
   );
   /** Índice 1-based da irregularidade em edição no overlay (`1.x`, `2.x`…). */
   readonly indiceOsAtual = signal(1);
-  /** Legenda no formato: `OS: 1.1:202637, 1.2:202637 e 2.1:202689`. */
+  /** Legenda no formato: `OS: 1.X:202637, 2.X:202689`. */
   readonly legendaOsPendentes = computed(() =>
     formatarLegendaOsMarcas([
       ...this.pendentes(),

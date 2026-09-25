@@ -54,6 +54,10 @@
             <dt>Odômetro</dt>
             <dd>{{ sessao.odometro }}</dd>
           </div>
+          <div class="sos-sessao-detalhe">
+            <dt>Tipo</dt>
+            <dd>{{ rotuloTipo(sessao.tipo) }}</dd>
+          </div>
           <div class="sos-sessao-detalhe" *ngIf="sessao.porcentagembateria !== null">
             <dt>{{ rotuloSessaoPercentual(sessao.veiculoCombustivel) }}</dt>
             <dd>{{ sessao.porcentagembateria }}</dd>
@@ -110,6 +114,23 @@
         </section>
 
         <section class="sos-etapa1-section">
+          <h4 class="sos-etapa1-section-title">Tipo da vistoria</h4>
+          <div class="form-group">
+            <label for="sos-tipo">Tipo *</label>
+            <select
+              id="sos-tipo"
+              class="form-input"
+              [(ngModel)]="tipo"
+              aria-label="Tipo da vistoria"
+            >
+              <option *ngFor="let opcao of tipoOpcoes" [ngValue]="opcao.value">
+                {{ opcao.label }}
+              </option>
+            </select>
+          </div>
+        </section>
+
+        <section class="sos-etapa1-section">
           <h4 class="sos-etapa1-section-title">Medições do veículo</h4>
           <div class="sos-etapa1-medicoes">
             <div class="form-group sos-etapa1-odometro">
@@ -124,8 +145,10 @@
                 class="form-input"
                 [class.is-invalid]="odometroInvalido"
                 inputmode="numeric"
+                pattern="[0-9]*"
                 [value]="odometroDisplay"
                 (input)="onOdometroInput($any($event.target).value)"
+                (blur)="onOdometroBlur($event)"
               />
               <div class="sos-field-error" *ngIf="mensagemErroOdometro">{{ mensagemErroOdometro }}</div>
             </div>

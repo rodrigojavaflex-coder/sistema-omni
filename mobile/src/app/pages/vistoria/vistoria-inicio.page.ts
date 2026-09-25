@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -14,6 +14,8 @@ import {
   IonLabel,
   IonList,
   IonSearchbar,
+  IonSelect,
+  IonSelectOption,
   IonSpinner,
   IonText,
   IonTitle,
@@ -32,7 +34,11 @@ import { VistoriaFlowService } from '../../services/vistoria-flow.service';
 import { VistoriaBootstrapService } from '../../services/vistoria-bootstrap.service';
 import { Veiculo } from '../../models/veiculo.model';
 import { Motorista } from '../../models/motorista.model';
-import { Vistoria } from '../../models/vistoria.model';
+import {
+  TIPO_VISTORIA_OPCOES,
+  TipoVistoria,
+  Vistoria,
+} from '../../models/vistoria.model';
 import { SystemService } from '../../services/system.service';
 import { AuthService } from '../../services/auth.service';
 import { ErrorMessageService } from '../../services/error-message.service';
@@ -66,6 +72,8 @@ import {
     IonIcon,
     IonList,
     IonSearchbar,
+    IonSelect,
+    IonSelectOption,
     IonSpinner,
     IonText,
   ],
@@ -82,6 +90,8 @@ export class VistoriaInicioPage implements OnInit, OnDestroy {
   private alertController = inject(AlertController);
   private errorMessageService = inject(ErrorMessageService);
 
+  @ViewChild('odometroInput') private odometroInput?: IonInput;
+
   veiculos: Veiculo[] = [];
   motoristas: Motorista[] = [];
   vistoriasEmAndamento: Vistoria[] = [];
@@ -94,8 +104,11 @@ export class VistoriaInicioPage implements OnInit, OnDestroy {
   odometro: number | null = null;
   odometroDisplay = '';
   bateria: number | null = null;
+  tipo: TipoVistoria = 'CORRETIVA';
+  readonly tipoOpcoes = TIPO_VISTORIA_OPCOES;
   ultimoOdometro: number | null = null;
   ultimoOdometroData: string | null = null;
+  odometroDiffMaxKm = 500;
   datavistoriaDisplay = '';
   datavistoriaIso = '';
 
@@ -114,6 +127,7 @@ export class VistoriaInicioPage implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     await this.atualizarDataHora();
+    await this.carregarParametrosVistoria();
 
     this.loadingAndamento = true;
     try {
@@ -310,21 +324,66 @@ export class VistoriaInicioPage implements OnInit, OnDestroy {
   }
 
   onOdometroInput(value: string | number | null | undefined): void {
-    const parsed = this.parseOdometroValue(value);
-    if (parsed === null) {
+    this.aplicarOdometroInteiro(value, true);
+  }
+
+  onOdometroBlur(): void {
+    this.aplicarOdometroInteiro(this.odometroDisplay || this.odometro, true);
+    // Sempre força o DOM no blur (ponto/vírgula podem ter ficado na tela).
+    void this.sincronizarInputOdometro(this.odometroDisplay);
+  }
+
+  /** Remove ponto/vírgula e demais não-dígitos; odômetro só inteiro. */
+  private aplicarOdometroInteiro(
+    value: string | number | null | undefined,
+    forcarDom: boolean,
+  ): void {
+    const raw = String(value ?? '');
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) {
       this.odometro = null;
       this.odometroDisplay = '';
+      if (forcarDom) {
+        void this.sincronizarInputOdometro('');
+      }
+      return;
+    }
+    const parsed = Number(digits);
+    if (!Number.isFinite(parsed)) {
+      this.odometro = null;
+      this.odometroDisplay = '';
+      if (forcarDom) {
+        void this.sincronizarInputOdometro('');
+      }
       return;
     }
     this.odometro = parsed;
-    this.odometroDisplay = parsed.toString();
+    this.odometroDisplay = digits;
+    if (forcarDom && raw !== digits) {
+      void this.sincronizarInputOdometro(digits);
+    }
+  }
+
+  private async sincronizarInputOdometro(digits: string): Promise<void> {
+    const input = this.odometroInput;
+    if (!input) {
+      return;
+    }
+    try {
+      const native = await input.getInputElement();
+      if (native.value !== digits) {
+        native.value = digits;
+      }
+    } catch {
+      // Input ainda não montado.
+    }
   }
 
   formatarNumeroSemSeparador(value: number | null): string {
     if (value === null || value === undefined) {
       return 'Sem histórico';
     }
-    return Math.trunc(value).toString();
+    return Math.trunc(Number(value)).toString();
   }
 
   selecionarMotorista(motorista: Motorista): void {
@@ -376,6 +435,7 @@ export class VistoriaInicioPage implements OnInit, OnDestroy {
   }
 
   async iniciarVistoria(): Promise<void> {
+    this.onOdometroBlur();
     if (!this.canStart || !this.selectedVeiculo || !this.selectedMotorista) {
       this.errorMessage = 'Preencha todos os campos obrigatórios.';
       return;
@@ -399,9 +459,10 @@ export class VistoriaInicioPage implements OnInit, OnDestroy {
         idusuario: user.id,
         idveiculo: this.selectedVeiculo.id,
         idmotorista: this.selectedMotorista.id,
-        odometro: Number(this.odometro),
+        odometro: Math.trunc(Number(this.odometro)),
         ...(this.bateria !== null ? { porcentagembateria: Number(this.bateria) } : {}),
         datavistoria: this.datavistoriaIso,
+        tipo: this.tipo,
       });
       this.flowService.iniciar(vistoria.id, {
         numeroVistoria: vistoria.numeroVistoria,
@@ -504,38 +565,15 @@ export class VistoriaInicioPage implements OnInit, OnDestroy {
     }
   }
 
-  private parseOdometroValue(value: string | number | null | undefined): number | null {
-    if (value === null || value === undefined) {
-      return null;
+  private async carregarParametrosVistoria(): Promise<void> {
+    try {
+      const params = await this.vistoriaService.getParametros();
+      const valor = Number(params?.odometroDiffMaxKm);
+      this.odometroDiffMaxKm =
+        Number.isFinite(valor) && valor >= 1 ? Math.trunc(valor) : 500;
+    } catch {
+      this.odometroDiffMaxKm = 500;
     }
-    if (typeof value === 'number') {
-      return Number.isNaN(value) ? null : Math.floor(value);
-    }
-    const raw = value.toString().trim();
-    if (!raw) {
-      return null;
-    }
-    const hasDot = raw.includes('.');
-    const hasComma = raw.includes(',');
-    let normalized = raw;
-    if (hasDot && hasComma) {
-      normalized = raw.replace(/\./g, '').replace(',', '.');
-    } else if (hasComma) {
-      const parts = raw.split(',');
-      normalized = parts[parts.length - 1].length <= 2 ? raw.replace(',', '.') : raw.replace(/,/g, '');
-    } else if (hasDot) {
-      const parts = raw.split('.');
-      normalized = parts[parts.length - 1].length <= 2 ? raw : raw.replace(/\./g, '');
-    }
-    normalized = normalized.replace(/[^\d.]/g, '');
-    if (!normalized) {
-      return null;
-    }
-    const parsed = Number.parseFloat(normalized);
-    if (Number.isNaN(parsed)) {
-      return null;
-    }
-    return Math.floor(parsed);
   }
 
   private async carregarUltimoOdometro(
@@ -572,18 +610,9 @@ export class VistoriaInicioPage implements OnInit, OnDestroy {
       return false;
     }
     const diff = this.odometro - this.ultimoOdometro;
-    if (diff > 200) {
-      const alert = await this.alertController.create({
-        header: 'Confirmar odômetro',
-        message: `Veículo rodou ${diff} km desde a última vistoria. Deseja registrar o odômetro?`,
-        buttons: [
-          { text: 'Cancelar', role: 'cancel' },
-          { text: 'Confirmar', role: 'confirm' },
-        ],
-      });
-      await alert.present();
-      const { role } = await alert.onDidDismiss();
-      return role === 'confirm';
+    if (diff > this.odometroDiffMaxKm) {
+      this.errorMessage = `Odômetro não pode ser mais de ${this.odometroDiffMaxKm} km acima do da última vistoria.`;
+      return false;
     }
     return true;
   }

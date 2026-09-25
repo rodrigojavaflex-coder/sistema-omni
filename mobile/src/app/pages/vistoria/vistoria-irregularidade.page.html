@@ -171,7 +171,7 @@
             <span>{{ fotos.length === 1 ? '1 anexo' : fotos.length + ' anexos' }}</span>
           </div>
         </div>
-        <ion-button fill="outline" (click)="adicionarFoto()">
+        <ion-button fill="outline" (click)="adicionarFoto()" aria-label="Adicionar foto da câmera ou galeria">
           Adicionar
         </ion-button>
       </div>
@@ -365,6 +365,66 @@
     </ion-button>
     <ion-button class="btn-voltar" fill="solid" (click)="voltar()">
       Voltar
+    </ion-button>
+  </div>
+</div>
+
+<!-- Origem da foto: câmera ou galeria -->
+<div
+  *ngIf="exibirModalOrigemFoto"
+  class="origem-foto-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="origem-foto-titulo-el"
+  (click)="fecharModalOrigemFoto()"
+>
+  <div class="origem-foto-panel" (click)="$event.stopPropagation()">
+    <div class="origem-foto-header">
+      <ion-icon name="camera-outline" class="origem-foto-header-icon" aria-hidden="true"></ion-icon>
+      <h1 id="origem-foto-titulo-el" class="origem-foto-titulo">Adicionar foto</h1>
+      <p class="origem-foto-sub">Escolha a origem da imagem</p>
+    </div>
+
+    <div class="origem-foto-opcoes">
+      <button
+        type="button"
+        class="origem-foto-opcao"
+        (click)="escolherFotoCamera()"
+        aria-label="Tirar foto com a câmera"
+      >
+        <span class="origem-foto-opcao-icon" aria-hidden="true">
+          <ion-icon name="camera-outline"></ion-icon>
+        </span>
+        <span class="origem-foto-opcao-text">
+          <strong>Câmera</strong>
+          <small>Tirar uma nova foto</small>
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="origem-foto-opcao"
+        (click)="escolherFotoGaleria()"
+        aria-label="Escolher imagem da galeria"
+      >
+        <span class="origem-foto-opcao-icon origem-foto-opcao-icon--galeria" aria-hidden="true">
+          <ion-icon name="images-outline"></ion-icon>
+        </span>
+        <span class="origem-foto-opcao-text">
+          <strong>Galeria</strong>
+          <small>Buscar foto salva</small>
+        </span>
+      </button>
+    </div>
+
+    <ion-button
+      expand="block"
+      fill="outline"
+      color="medium"
+      class="origem-foto-cancelar"
+      (click)="fecharModalOrigemFoto()"
+    >
+      Cancelar
     </ion-button>
   </div>
 </div>

@@ -426,10 +426,29 @@ export const MENU_CONFIGURATION: MenuConfig = {
     },
     {
       label: 'Relatórios',
-      route: '/reports',
       icon: 'feather-bar-chart-2',
-      requiredPermissions: [Permission.REPORTS_VIEW],
-      order: 4
-    }
+      requiredPermissions: [],
+      isSubmenu: true,
+      order: 4,
+      submenuItems: [
+        {
+          label: 'Vistoria',
+          icon: 'feather-check-square',
+          requiredPermissions: [],
+          isSubmenu: true,
+          parentMenu: 'Relatórios',
+          submenuItems: [
+            {
+              label: 'Pendências',
+              title: 'Pendências do veículo',
+              route: '/relatorios/vistoria/pendencias-veiculo',
+              icon: 'feather-truck',
+              requiredPermissions: [Permission.RELATORIO_PENDENCIAS_VEICULO_READ],
+              parentMenu: 'Relatórios',
+            },
+          ],
+        },
+      ],
+    },
   ]
 };

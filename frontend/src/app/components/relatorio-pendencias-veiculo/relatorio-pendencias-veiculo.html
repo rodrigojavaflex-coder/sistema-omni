@@ -1,0 +1,130 @@
+<div class="list-container">
+  <div class="list-header">
+    <h2>Pendências do veículo</h2>
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!veiculoId || gerandoPdf || loading"
+        (click)="gerarRelatorioPdf()"
+        aria-label="Gerar relatório PDF"
+      >
+        {{ gerandoPdf ? 'Gerando PDF...' : 'Gerar PDF' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-field filter-field--veiculo">
+      <label for="pendencias-veiculo-busca">Veículo</label>
+      <app-veiculo-autocomplete
+        id="pendencias-veiculo-busca"
+        [(ngModel)]="veiculoId"
+        [filterStatus]="statusAtivo"
+        placeholder="Buscar veículo por descrição ou placa..."
+        (ngModelChange)="onVeiculoIdChange($event)"
+        (veiculoSelected)="onVeiculoSelected($event)"
+      ></app-veiculo-autocomplete>
+    </div>
+
+    <div class="filter-field">
+      <label for="pendencias-area-filtro">Área</label>
+      <select
+        id="pendencias-area-filtro"
+        class="filter-select"
+        [(ngModel)]="areaFiltro"
+        (ngModelChange)="onAreaChange()"
+        [disabled]="!veiculoId || loading"
+      >
+        <option value="">Todas</option>
+        @for (area of areaOptions; track area.id) {
+          <option [value]="area.id">{{ area.nome }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-field">
+      <label for="pendencias-componente-filtro">Componente</label>
+      <select
+        id="pendencias-componente-filtro"
+        class="filter-select"
+        [(ngModel)]="componenteFiltro"
+        [disabled]="!veiculoId || loading"
+      >
+        <option value="">Todos</option>
+        @for (componente of componenteOptions; track componente.id) {
+          <option [value]="componente.id">{{ componente.nome }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (pdfErrorMessage) {
+    <div class="error-message" role="alert">{{ pdfErrorMessage }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="error-message" role="alert">{{ errorMessage }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading">Carregando pendências...</div>
+  }
+
+  @if (!loading && !errorMessage && veiculoId) {
+    <div class="resumo-card">
+      <p class="resumo-veiculo">
+        <strong>Veículo:</strong> {{ veiculoDescricao || '-' }}
+      </p>
+      <p>
+        <strong>Total de pendências:</strong> {{ total }}
+        @if (areaFiltro || componenteFiltro) {
+          <span class="resumo-filtrado">
+            (exibindo {{ itensFiltrados.length }} filtrada{{ itensFiltrados.length === 1 ? '' : 's' }})
+          </span>
+        }
+      </p>
+    </div>
+
+    @if (itensFiltrados.length === 0) {
+      <div class="empty-state">
+        Nenhuma irregularidade não resolvida para os filtros selecionados.
+      </div>
+    } @else {
+      <div class="cards-grid">
+        @for (item of itensFiltrados; track item.id) {
+          <article class="pendencia-card">
+            <header class="pendencia-card__header">
+              <h3>
+                {{ item.nomeArea || 'Área' }} —
+                {{ item.nomeComponente || 'Componente' }} —
+                {{ item.descricaoSintoma || 'Sintoma' }}
+              </h3>
+            </header>
+            <div class="pendencia-card__body">
+              <p>
+                <strong>Vistoria:</strong>
+                {{ item.numeroVistoria }} ({{ formatarData(item.datavistoria) }})
+              </p>
+              @if (item.numeroIrregularidade) {
+                <p><strong>Irregularidade:</strong> {{ item.numeroIrregularidade }}</p>
+              }
+              <p><strong>Observação:</strong> {{ item.observacao || '-' }}</p>
+              <p class="midias-resumo">
+                <strong>Mídias:</strong>
+                {{ quantidadeImagens(item) }} imagem(ns) ·
+                {{ quantidadeAudios(item) }} áudio(s)
+              </p>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  }
+
+  @if (!loading && !errorMessage && !veiculoId) {
+    <div class="empty-state">
+      Selecione um veículo para visualizar as pendências.
+    </div>
+  }
+</div>

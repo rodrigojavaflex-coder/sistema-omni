@@ -38,6 +38,7 @@ import {
   IrregularidadeHistoricoVeiculoItemDto,
 } from './dto/irregularidade-historico-veiculo.dto';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
+import { TipoVistoria } from '../../common/enums/tipo-vistoria.enum';
 import {
   OrigemRegistroIrregularidade,
   OrigemVistoria,
@@ -544,6 +545,161 @@ export class IrregularidadeService {
       emitidoEm: new Date(),
       emitidoPor: emitidoPor?.trim() || undefined,
       logoBuffer: this.resolveLogoBuffer(configuracao),
+    });
+  }
+
+  /**
+   * PDF do relatório de uma vistoria (paridade com Imprimir na web).
+   */
+  async gerarPdfVistoria(
+    idVistoria: string,
+    emitidoPor?: string | null,
+  ): Promise<Buffer> {
+    const vistoria = await this.vistoriaRepository.findOne({
+      where: { id: idVistoria },
+      relations: ['veiculo', 'motorista', 'usuario'],
+    });
+    if (!vistoria) {
+      throw new NotFoundException('Vistoria não encontrada');
+    }
+
+    const irregularidades = await this.irregularidadeRepository.find({
+      where: { idVistoria },
+      relations: ['area', 'componente', 'sintoma', 'vista', 'marcacoes'],
+      order: { atualizadoEm: 'ASC' },
+    });
+
+    const historicoItens: IrregularidadeHistoricoVeiculoItemDto[] =
+      irregularidades.map((item) => ({
+        id: item.id,
+        numeroIrregularidade: item.numeroIrregularidade,
+        idvistoria: item.idVistoria,
+        numeroVistoria: vistoria.numeroVistoria,
+        datavistoria: vistoria.datavistoria.toISOString(),
+        statusVistoria: vistoria.status,
+        idarea: item.idArea,
+        nomeArea: item.area?.nome,
+        idcomponente: item.idComponente,
+        nomeComponente: item.componente?.nome,
+        idsintoma: item.idSintoma,
+        descricaoSintoma: item.sintoma?.descricao,
+        observacao: item.observacao ?? undefined,
+        resolvido: item.resolvido,
+        statusAtual: item.statusAtual,
+        atualizadoEm: item.atualizadoEm.toISOString(),
+        midias: [],
+        marcacao: this.mapMarcacao(item),
+        marcacoes: this.mapMarcacoes(item),
+      }));
+
+    const configuracao = await this.configuracaoRepository.findOne({
+      where: {},
+    });
+    const imagensPorIrregularidade =
+      await this.carregarImagensPdfPorIrregularidade(
+        historicoItens.map((item) => item.id),
+      );
+    const mapasPorItem = await this.carregarMapasPdfPorHistoricoItens(
+      vistoria.veiculo?.idModelo ?? null,
+      historicoItens,
+    );
+
+    const percentual =
+      vistoria.porcentagembateria === null ||
+      vistoria.porcentagembateria === undefined
+        ? '-'
+        : `${Number(vistoria.porcentagembateria)}%`;
+    const combustivel = vistoria.veiculo?.combustivel;
+    const rotuloPercentual =
+      combustivel === 'GNV (Gás Natural)'
+        ? '% GNV (Gás Natural)'
+        : '% Bateria';
+    const statusLabel =
+      vistoria.status === StatusVistoria.FINALIZADA
+        ? 'Finalizada'
+        : vistoria.status === StatusVistoria.CANCELADA
+          ? 'Cancelada'
+          : 'Em andamento';
+
+    const capaCampos: Array<{ label: string; value: string; half?: boolean }> = [
+      { label: 'Status', value: statusLabel, half: true },
+      {
+        label: 'Tipo',
+        value:
+          vistoria.tipo === TipoVistoria.SINISTRO
+            ? 'Sinistro'
+            : vistoria.tipo === TipoVistoria.PREVENTIVA
+              ? 'Preventiva'
+              : 'Corretiva',
+        half: true,
+      },
+      {
+        label: 'Data da vistoria',
+        value: this.formatDateTimeBr(vistoria.datavistoria),
+        half: true,
+      },
+      { label: 'Vistoriador', value: vistoria.usuario?.nome?.trim() || '-' },
+      {
+        label: 'Motorista',
+        value: vistoria.motorista?.nome?.trim() || '-',
+        half: true,
+      },
+      {
+        label: 'Matrícula',
+        value: vistoria.motorista?.matricula?.trim() || '-',
+        half: true,
+      },
+      {
+        label: 'Odômetro',
+        value: Number(vistoria.odometro || 0).toLocaleString('pt-BR'),
+        half: true,
+      },
+      { label: rotuloPercentual, value: percentual, half: true },
+      {
+        label: 'Tempo',
+        value: `${Number(vistoria.tempo) || 0} min`,
+        half: true,
+      },
+      {
+        label: 'Vistoria',
+        value: String(vistoria.numeroVistoria ?? '-'),
+        half: true,
+      },
+      {
+        label: 'Observação',
+        value: vistoria.observacao?.trim() || '-',
+      },
+      {
+        label: 'Vistoria OMNI',
+        value:
+          vistoria.erpNumeroVistoria != null && vistoria.erpNumeroVistoria !== ''
+            ? String(vistoria.erpNumeroVistoria)
+            : '—',
+        half: true,
+      },
+      {
+        label: 'Erro ERP',
+        value: vistoria.erpUltimoErro?.trim() || '-',
+        half: true,
+      },
+    ];
+
+    return this.buildPdfPendenciasVeiculo({
+      veiculoDescricao: vistoria.veiculo?.descricao ?? '-',
+      veiculoPlaca: vistoria.veiculo?.placa ?? '-',
+      itens: historicoItens.map((item) => ({
+        ...item,
+        imagens: imagensPorIrregularidade.get(item.id) ?? [],
+      })),
+      mapas: [],
+      mapasPorItem,
+      emitidoEm: new Date(),
+      emitidoPor: emitidoPor?.trim() || undefined,
+      logoBuffer: this.resolveLogoBuffer(configuracao),
+      titulo: 'Relatório de Vistoria',
+      capaCampos,
+      emptyMessage: 'Nenhuma irregularidade registrada nesta vistoria.',
+      omitTotalPendencias: true,
     });
   }
 
@@ -1774,6 +1930,8 @@ export class IrregularidadeService {
     if (!idModelo) {
       return [];
     }
+    const indicePorIrregularidade =
+      this.montarIndiceOsPorIrregularidade(itens);
     const porVista = new Map<
       string,
       {
@@ -1781,8 +1939,6 @@ export class IrregularidadeService {
         circulos: CirculoMapaPdf[];
       }
     >();
-    let indiceOs = 0;
-    let ultimoIdIrreg: string | null = null;
     for (const item of itens) {
       const marcas =
         item.marcacoes && item.marcacoes.length > 0
@@ -1793,16 +1949,14 @@ export class IrregularidadeService {
       if (marcas.length === 0) {
         continue;
       }
-      if (item.id !== ultimoIdIrreg) {
-        indiceOs += 1;
-        ultimoIdIrreg = item.id;
-      }
+      const indiceOs = indicePorIrregularidade.get(item.id) ?? 1;
       const idVista = marcas[0].idVista;
       const atual = porVista.get(idVista) ?? {
         descricao: marcas[0].descricaoVista || 'Vista',
         circulos: [],
       };
-      marcas.forEach((marca, ordem) => {
+      marcas.forEach((marca, idx) => {
+        const ordem = marca.ordem ?? idx;
         atual.circulos.push({
           posXPct: marca.posXPct,
           posYPct: marca.posYPct,
@@ -1904,6 +2058,12 @@ export class IrregularidadeService {
     emitidoEm: Date;
     emitidoPor?: string;
     logoBuffer?: Buffer | null;
+    /** Título do relatório (padrão: pendências). */
+    titulo?: string;
+    /** Campos de capa em cards (ex.: relatório de vistoria — paridade com overlay de conclusão). */
+    capaCampos?: Array<{ label: string; value: string; half?: boolean }>;
+    emptyMessage?: string;
+    omitTotalPendencias?: boolean;
   }): Promise<Buffer> {
     const dataEmissao = this.formatDateTimeBr(params.emitidoEm);
     const logoBuffer =
@@ -1913,7 +2073,7 @@ export class IrregularidadeService {
     const marginX = 50;
     const contentTopY = 100;
     const footerBandPt = 92;
-    const titulo = 'Relatório de Pendências do Veículo';
+    const titulo = params.titulo?.trim() || 'Relatório de Pendências do Veículo';
 
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument({
@@ -2045,12 +2205,135 @@ export class IrregularidadeService {
         doc.moveDown(0.6);
       }
 
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor('#334155')
-        .text(`Total de pendências: ${params.itens.length}`, { width: innerW });
-      doc.moveDown(0.6);
+      if (params.capaCampos && params.capaCampos.length > 0) {
+        const gap = 6;
+        const padX = 7;
+        const padY = 5;
+        const labelSize = 7;
+        const valueSize = 9;
+        const labelGap = 2;
+        const colW = (innerW - gap) / 2;
+        const radius = 5;
+        const bg = '#f1f5f9';
+        const labelColor = '#64748b';
+        const valueColor = '#0f172a';
+
+        const measureCardH = (value: string, width: number): number => {
+          const textW = Math.max(20, width - padX * 2);
+          doc.font('Helvetica-Bold').fontSize(labelSize);
+          const labelH = doc.currentLineHeight();
+          doc.font('Helvetica-Bold').fontSize(valueSize);
+          const valueH = doc.heightOfString(value || '-', { width: textW });
+          return padY * 2 + labelH + labelGap + valueH;
+        };
+
+        const drawCard = (
+          x: number,
+          y: number,
+          width: number,
+          label: string,
+          value: string,
+          height: number,
+        ) => {
+          doc
+            .roundedRect(x, y, width, height, radius)
+            .fillColor(bg)
+            .fill();
+          const textW = Math.max(20, width - padX * 2);
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(labelSize)
+            .fillColor(labelColor)
+            .text(label.toUpperCase(), x + padX, y + padY, {
+              width: textW,
+              lineBreak: false,
+            });
+          const afterLabelY = y + padY + doc.currentLineHeight() + labelGap;
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(valueSize)
+            .fillColor(valueColor)
+            .text(value || '-', x + padX, afterLabelY, { width: textW });
+        };
+
+        let cursorY = doc.y;
+        let col = 0;
+        let rowMaxH = 0;
+
+        const flushHalfRow = () => {
+          if (col > 0) {
+            cursorY += rowMaxH + gap;
+            col = 0;
+            rowMaxH = 0;
+          }
+        };
+
+        for (const campo of params.capaCampos) {
+          const half = !!campo.half;
+          const width = half ? colW : innerW;
+          const height = measureCardH(campo.value, width);
+
+          if (!half) {
+            flushHalfRow();
+            ensureTextBlock(height + gap);
+            cursorY = doc.y;
+            drawCard(
+              marginX,
+              cursorY,
+              width,
+              campo.label,
+              campo.value,
+              height,
+            );
+            cursorY += height + gap;
+            doc.x = marginX;
+            doc.y = cursorY;
+            continue;
+          }
+
+          if (col === 0) {
+            ensureTextBlock(height + gap);
+            cursorY = doc.y;
+          }
+
+          const x = col === 0 ? marginX : marginX + colW + gap;
+          drawCard(x, cursorY, width, campo.label, campo.value, height);
+          doc.x = marginX;
+          doc.y = cursorY;
+          rowMaxH = Math.max(rowMaxH, height);
+          col += 1;
+          if (col >= 2) {
+            cursorY += rowMaxH + gap;
+            col = 0;
+            rowMaxH = 0;
+            doc.x = marginX;
+            doc.y = cursorY;
+          }
+        }
+        flushHalfRow();
+        doc.x = marginX;
+        doc.y = cursorY;
+        doc.moveDown(0.2);
+      }
+
+      if (!params.omitTotalPendencias) {
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .fillColor('#334155')
+          .text(`Total de pendências: ${params.itens.length}`, { width: innerW });
+        doc.moveDown(0.6);
+      } else if (params.itens.length > 0) {
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .fillColor('#334155')
+          .text(
+            `Irregularidades registradas: ${params.itens.length}`,
+            { width: innerW },
+          );
+        doc.moveDown(0.6);
+      }
 
       const mapas = params.mapas ?? [];
       const MAPAS_POR_PAGINA = 4;
@@ -2276,10 +2559,15 @@ export class IrregularidadeService {
           .fontSize(10)
           .fillColor('#64748b')
           .text(
-            'Nenhuma irregularidade pendente para os filtros informados.',
+            params.emptyMessage?.trim() ||
+              'Nenhuma irregularidade pendente para os filtros informados.',
             { width: innerW },
           );
       }
+
+      const indicePorIrregularidade = this.montarIndiceOsPorIrregularidade(
+        params.itens,
+      );
 
       for (const item of params.itens) {
         const tituloItem = `${item.nomeArea ?? 'Área'} - ${item.nomeComponente ?? 'Componente'} - ${item.descricaoSintoma ?? 'Sintoma'}`;
@@ -2287,6 +2575,7 @@ export class IrregularidadeService {
         const obsTxt = item.observacao?.trim() || 'Não informada.';
         const imagens = item.imagens;
         const mapaLocal = params.mapasPorItem?.get(item.id);
+        const indiceOsItem = indicePorIrregularidade.get(item.id) ?? 1;
         const cardPadX = 12;
         const cardPadY = 10;
         const cardInnerW = innerW - cardPadX * 2;
@@ -2408,7 +2697,10 @@ export class IrregularidadeService {
               posXPct: ponto.posXPct,
               posYPct: ponto.posYPct,
               rotulo: '',
-              rotuloCirculo: this.rotuloCirculoMarcacao(1, ponto.ordem),
+              rotuloCirculo: this.rotuloCirculoMarcacao(
+                indiceOsItem,
+                ponto.ordem,
+              ),
             })),
           });
           doc.save();
@@ -2617,15 +2909,71 @@ export class IrregularidadeService {
     if (circulos.length === 0) {
       return '';
     }
-    const partes = circulos.map(
-      (circulo) => `${circulo.rotuloCirculo}:${circulo.rotulo}`,
-    );
+    /** Uma entrada por irregularidade: `1.X:20261`, `2.X:20262`… */
+    const porIndice = new Map<number, string>();
+    for (const circulo of circulos) {
+      const indice = this.extrairIndiceOsDoRotulo(circulo.rotuloCirculo);
+      if (indice == null || !circulo.rotulo) {
+        continue;
+      }
+      if (!porIndice.has(indice)) {
+        porIndice.set(indice, circulo.rotulo);
+      }
+    }
+    const partes = Array.from(porIndice.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([indice, numeroOs]) => `${indice}.X:${numeroOs}`);
+    if (partes.length === 0) {
+      return '';
+    }
     if (partes.length === 1) {
       return `OS: ${partes[0]}`;
     }
     const ultimo = partes[partes.length - 1];
     const anteriores = partes.slice(0, -1).join(', ');
     return `OS: ${anteriores} e ${ultimo}`;
+  }
+
+  /** Extrai o índice da irregularidade de um rótulo `1.2` → `1`. */
+  private extrairIndiceOsDoRotulo(rotuloCirculo: string): number | null {
+    const match = /^(\d+)\./.exec(rotuloCirculo?.trim() || '');
+    if (!match) {
+      return null;
+    }
+    const indice = Number(match[1]);
+    return Number.isFinite(indice) && indice > 0 ? indice : null;
+  }
+
+  /**
+   * Índice global no PDF de pendências: ordem crescente de `numeroIrregularidade`
+   * entre irregularidades com marcação (alinhado ao overlay / RN-VIS-009).
+   */
+  private montarIndiceOsPorIrregularidade(
+    itens: IrregularidadeHistoricoVeiculoItemDto[],
+  ): Map<string, number> {
+    const comMarcacao = itens.filter((item) => {
+      if (item.marcacoes && item.marcacoes.length > 0) {
+        return true;
+      }
+      return !!item.marcacao;
+    });
+    const ordenados = comMarcacao.slice().sort((a, b) => {
+      const byNum =
+        (a.numeroIrregularidade ?? 0) - (b.numeroIrregularidade ?? 0);
+      if (byNum !== 0) {
+        return byNum;
+      }
+      return a.id.localeCompare(b.id);
+    });
+    const indicePorId = new Map<string, number>();
+    let indice = 0;
+    for (const item of ordenados) {
+      if (!indicePorId.has(item.id)) {
+        indice += 1;
+        indicePorId.set(item.id, indice);
+      }
+    }
+    return indicePorId;
   }
 
   private desenharMapaVistaNoPdf(

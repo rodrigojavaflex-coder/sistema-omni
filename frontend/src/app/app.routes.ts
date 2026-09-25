@@ -431,6 +431,15 @@ export const routes: Routes = [
     data: { permissions: [Permission.VISTORIA_WEB_READ] },
   },
   {
+    path: 'relatorios/vistoria/pendencias-veiculo',
+    loadComponent: () =>
+      import(
+        './components/relatorio-pendencias-veiculo/relatorio-pendencias-veiculo'
+      ).then((m) => m.RelatorioPendenciasVeiculoComponent),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.RELATORIO_PENDENCIAS_VEICULO_READ] },
+  },
+  {
     path: 'irregularidades/tratamento',
     loadComponent: () =>
       import('./components/irregularidade-fluxo-list/irregularidade-fluxo-list').then(

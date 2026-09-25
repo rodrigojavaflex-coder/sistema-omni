@@ -58,6 +58,21 @@
     </ion-list>
   </ion-card>
 
+  <ion-card class="card" id="vistoria-card-tipo">
+    <ion-item>
+      <ion-label position="stacked">Tipo</ion-label>
+      <ion-select
+        [(ngModel)]="tipo"
+        interface="popover"
+        aria-label="Tipo da vistoria"
+      >
+        <ion-select-option *ngFor="let opcao of tipoOpcoes" [value]="opcao.value">
+          {{ opcao.label }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+  </ion-card>
+
   <ion-card
     class="card"
     id="vistoria-card-veiculo"
@@ -151,6 +166,7 @@
     <div class="medida-row">
       <span class="medida-label">Odômetro</span>
       <ion-input
+        #odometroInput
         type="text"
         inputmode="numeric"
         pattern="[0-9]*"
@@ -158,6 +174,7 @@
         class="campo-destaque"
         [value]="odometroDisplay"
         (ionInput)="onOdometroInput($event.detail.value)"
+        (ionBlur)="onOdometroBlur()"
         (ionFocus)="onCampoFocus('vistoria-card-medidas')"
       ></ion-input>
     </div>

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import {
   Configuracao,
   CreateConfiguracaoDto,
+  MobileAppVersionCatalogItem,
   TempoFluxoConfig,
   UpdateConfiguracaoDto,
 } from '../models/configuracao.model';
@@ -34,6 +35,16 @@ export class ConfiguracaoService {
 
   updateConfiguracao(id: string, data: FormData): Observable<Configuracao> {
     return this.http.put<Configuracao>(`${this.apiUrl}/${id}`, data);
+  }
+
+  removeMobileVersaoCatalogo(version: string): Observable<{
+    mobileVersoesCatalogo: MobileAppVersionCatalogItem[];
+    mobileVersaoMinima: string | null;
+  }> {
+    return this.http.delete<{
+      mobileVersoesCatalogo: MobileAppVersionCatalogItem[];
+      mobileVersaoMinima: string | null;
+    }>(`${this.apiUrl}/mobile-versoes/${encodeURIComponent(version)}`);
   }
 
   getErpApiKey(): Observable<{ configurada: boolean; apiKey: string }> {

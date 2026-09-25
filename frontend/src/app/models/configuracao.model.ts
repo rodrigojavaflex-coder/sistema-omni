@@ -38,8 +38,19 @@ export interface Configuracao {
   tempoFluxoConfig?: TempoFluxoConfig;
   emailEnvioConfig?: EmailEnvioConfig;
   erpVistoriaConfig?: ErpVistoriaConfig;
+  /** Null = usar padrão 500 km no backend */
+  odometroDiffMaxKm?: number | null;
+  /** Null/vazio = não bloqueia apps abaixo desta versão */
+  mobileVersaoMinima?: string | null;
+  /** Catálogo de versões geradas (somente leitura na API; não persistido na tabela) */
+  mobileVersoesCatalogo?: MobileAppVersionCatalogItem[];
   criadoEm: string;
   atualizadoEm: string;
+}
+
+export interface MobileAppVersionCatalogItem {
+  version: string;
+  date: string | null;
 }
 
 export type FluxoTelaConfiguracao = 'tratamento' | 'manutencao' | 'validacaoFinal';
@@ -73,6 +84,8 @@ export interface CreateConfiguracaoDto {
   tempoFluxoConfig?: TempoFluxoConfig;
   emailEnvioConfig?: EmailEnvioConfig;
   erpVistoriaConfig?: ErpVistoriaConfig;
+  odometroDiffMaxKm?: number | null;
+  mobileVersaoMinima?: string | null;
 }
 
 export interface UpdateConfiguracaoDto extends Partial<CreateConfiguracaoDto> {}

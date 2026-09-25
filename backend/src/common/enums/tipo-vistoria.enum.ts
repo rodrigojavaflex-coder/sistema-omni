@@ -1,0 +1,5 @@
+export enum TipoVistoria {
+  CORRETIVA = 'CORRETIVA',
+  PREVENTIVA = 'PREVENTIVA',
+  SINISTRO = 'SINISTRO',
+}

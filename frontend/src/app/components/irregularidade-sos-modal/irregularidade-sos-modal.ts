@@ -26,7 +26,7 @@ import { Motorista } from '../../models/motorista.model';
 import { StatusMotorista } from '../../models/status-motorista.enum';
 import { AreaVistoriada, AreaComponente } from '../../models/area-vistoriada.model';
 import { MatrizCriticidade } from '../../models/matriz-criticidade.model';
-import { IrregularidadeResumo, SosSessaoAberta } from '../../models/vistoria.model';
+import { IrregularidadeResumo, SosSessaoAberta, TipoVistoria, TIPO_VISTORIA_OPCOES, rotuloTipoVistoria } from '../../models/vistoria.model';
 import { compressImageForUpload } from '../../utils/compress-image.util';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
 import { MapaAvariaComponent } from '../mapa-avaria/mapa-avaria';
@@ -116,7 +116,10 @@ export class IrregularidadeSosModalComponent implements OnChanges {
   odometro: number | null = null;
   odometroDisplay = '';
   ultimoOdometro: number | null = null;
+  odometroDiffMaxKm = 500;
   bateria: number | null = null;
+  tipo: TipoVistoria = 'CORRETIVA';
+  readonly tipoOpcoes = TIPO_VISTORIA_OPCOES;
   observacaoVistoria = '';
   vistoriaMobileEmAndamento = false;
 
@@ -168,6 +171,7 @@ export class IrregularidadeSosModalComponent implements OnChanges {
   private async aoAbrirModal(): Promise<void> {
     this.resetWizard();
     this.modoAbertura = 'verificando';
+    await this.carregarParametrosVistoria();
     try {
       const sessao = await firstValueFrom(this.vistoriaService.buscarSosSessaoAberta());
       if (sessao) {
@@ -178,6 +182,17 @@ export class IrregularidadeSosModalComponent implements OnChanges {
       this.modoAbertura = 'formulario';
     } catch {
       this.modoAbertura = 'formulario';
+    }
+  }
+
+  private async carregarParametrosVistoria(): Promise<void> {
+    try {
+      const params = await firstValueFrom(this.vistoriaService.getParametros());
+      const valor = Number(params?.odometroDiffMaxKm);
+      this.odometroDiffMaxKm =
+        Number.isFinite(valor) && valor >= 1 ? Math.trunc(valor) : 500;
+    } catch {
+      this.odometroDiffMaxKm = 500;
     }
   }
 
@@ -193,8 +208,8 @@ export class IrregularidadeSosModalComponent implements OnChanges {
       ]);
       this.selectedVeiculo = veiculo;
       this.selectedMotorista = motorista;
-      this.odometro = sessao.odometro;
-      this.odometroDisplay = String(sessao.odometro);
+      this.odometro = sessao.odometro != null ? Math.trunc(Number(sessao.odometro)) : null;
+      this.odometroDisplay = this.odometro != null ? String(this.odometro) : '';
       this.bateria = sessao.porcentagembateria;
       this.vistoriaId = sessao.id;
       this.startedAt = new Date(sessao.datavistoria).getTime();
@@ -256,6 +271,10 @@ export class IrregularidadeSosModalComponent implements OnChanges {
     const parsed = new Date(data);
     if (Number.isNaN(parsed.getTime())) return data;
     return parsed.toLocaleString('pt-BR');
+  }
+
+  rotuloTipo(tipo?: TipoVistoria | string | null): string {
+    return rotuloTipoVistoria(tipo);
   }
 
   get rotuloVeiculoSessao(): string {
@@ -337,6 +356,12 @@ export class IrregularidadeSosModalComponent implements OnChanges {
     }
     if (this.ultimoOdometro !== null && this.odometro <= this.ultimoOdometro) {
       return `O odômetro deve ser maior que ${this.ultimoOdometro} (última vistoria).`;
+    }
+    if (
+      this.ultimoOdometro !== null &&
+      this.odometro - this.ultimoOdometro > this.odometroDiffMaxKm
+    ) {
+      return `Odômetro não pode ser mais de ${this.odometroDiffMaxKm} km acima do da última vistoria.`;
     }
     return '';
   }
@@ -473,14 +498,32 @@ export class IrregularidadeSosModalComponent implements OnChanges {
   }
 
   onOdometroInput(value: string): void {
-    const parsed = Number.parseInt(value.replace(/\D/g, ''), 10);
-    if (Number.isNaN(parsed)) {
+    this.aplicarOdometroInteiro(value);
+  }
+
+  onOdometroBlur(event?: FocusEvent): void {
+    const target = event?.target as HTMLInputElement | undefined;
+    this.aplicarOdometroInteiro(target?.value ?? this.odometroDisplay);
+    if (target) {
+      target.value = this.odometroDisplay;
+    }
+  }
+
+  private aplicarOdometroInteiro(value: string | number | null | undefined): void {
+    const digits = String(value ?? '').replace(/\D/g, '');
+    if (!digits) {
       this.odometro = null;
       this.odometroDisplay = '';
-      return;
+    } else {
+      const parsed = Number(digits);
+      if (!Number.isFinite(parsed)) {
+        this.odometro = null;
+        this.odometroDisplay = '';
+      } else {
+        this.odometro = parsed;
+        this.odometroDisplay = digits;
+      }
     }
-    this.odometro = parsed;
-    this.odometroDisplay = String(parsed);
     if (
       this.error &&
       (this.error.includes('odômetro') || this.error.includes('Odômetro'))
@@ -525,11 +568,12 @@ export class IrregularidadeSosModalComponent implements OnChanges {
         this.vistoriaService.criarVistoriaSos({
           idveiculo: this.selectedVeiculo.id,
           idmotorista: this.selectedMotorista.id,
-          odometro: Number(this.odometro),
+          odometro: Math.trunc(Number(this.odometro)),
           ...(this.bateria !== null ? { porcentagembateria: Number(this.bateria) } : {}),
           ...(this.observacaoVistoria.trim()
             ? { observacao: this.observacaoVistoria.trim() }
             : {}),
+          tipo: this.tipo,
         }),
       );
       this.vistoriaId = vistoria.id;
@@ -546,6 +590,7 @@ export class IrregularidadeSosModalComponent implements OnChanges {
   }
 
   private async validarOdometro(): Promise<boolean> {
+    this.onOdometroBlur();
     if (this.odometro === null || this.odometro <= 0) {
       this.error = 'Informe um odômetro válido.';
       return false;
@@ -554,14 +599,12 @@ export class IrregularidadeSosModalComponent implements OnChanges {
       this.error = 'Odômetro deve ser maior que o da última vistoria.';
       return false;
     }
-    if (this.ultimoOdometro !== null) {
-      const diff = this.odometro - this.ultimoOdometro;
-      if (diff > 200) {
-        const ok = window.confirm(
-          `Veículo rodou ${diff} km desde a última vistoria. Deseja registrar o odômetro?`,
-        );
-        if (!ok) return false;
-      }
+    if (
+      this.ultimoOdometro !== null &&
+      this.odometro - this.ultimoOdometro > this.odometroDiffMaxKm
+    ) {
+      this.error = `Odômetro não pode ser mais de ${this.odometroDiffMaxKm} km acima do da última vistoria.`;
+      return false;
     }
     return true;
   }
@@ -948,6 +991,7 @@ export class IrregularidadeSosModalComponent implements OnChanges {
     this.odometroDisplay = '';
     this.ultimoOdometro = null;
     this.bateria = null;
+    this.tipo = 'CORRETIVA';
     this.observacaoVistoria = '';
     this.vistoriaMobileEmAndamento = false;
     this.vistoriaId = '';

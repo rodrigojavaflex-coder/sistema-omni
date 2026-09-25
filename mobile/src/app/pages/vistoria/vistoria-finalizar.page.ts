@@ -7,6 +7,7 @@ import {
   IonContent,
   IonFooter,
   IonHeader,
+  IonIcon,
   IonItem,
   IonLabel,
   IonMenuButton,
@@ -17,6 +18,11 @@ import {
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
+import { addIcons } from 'ionicons';
+import { checkmarkCircle } from 'ionicons/icons';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { FileOpener } from '@capacitor-community/file-opener';
 import { VistoriaFlowService } from '../../services/vistoria-flow.service';
 import { VistoriaService } from '../../services/vistoria.service';
 import { AuthService } from '../../services/auth.service';
@@ -44,6 +50,7 @@ import { rotuloPercentualNivel } from '../../models/combustivel.enum';
     IonButton,
     IonSpinner,
     IonText,
+    IonIcon,
   ],
 })
 export class VistoriaFinalizarPage implements OnInit {
@@ -66,7 +73,14 @@ export class VistoriaFinalizarPage implements OnInit {
   resumoIrregularidades = 0;
   resumoIrregularidadesDetalhes: string[] = [];
   sucessoVisivel = false;
+  gerandoPdf = false;
+  pdfErrorMessage = '';
+  vistoriaIdPdf: string | null = null;
   private sucessoResolver: (() => void) | null = null;
+
+  constructor() {
+    addIcons({ checkmarkCircle });
+  }
 
   get vistoriaNrDisplay(): string {
     const nr = this.flowService.getNumeroVistoriaDisplay();
@@ -112,10 +126,11 @@ export class VistoriaFinalizarPage implements OnInit {
         tempo: this.tempoMinutos,
         observacao: this.observacao?.trim() || undefined,
       });
+      this.vistoriaIdPdf = vistoriaId;
       await this.mostrarResumoConclusao();
       this.flowService.finalizar();
       this.router.navigate(['/home']);
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.errorMessage = this.errorMessageService.fromApi(
         error,
         'Erro ao finalizar vistoria. Tente novamente.',
@@ -123,6 +138,122 @@ export class VistoriaFinalizarPage implements OnInit {
     } finally {
       this.isSaving = false;
     }
+  }
+
+  async gerarRelatorioPdf(): Promise<void> {
+    if (!this.vistoriaIdPdf || this.gerandoPdf) {
+      return;
+    }
+    this.gerandoPdf = true;
+    this.pdfErrorMessage = '';
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await this.abrirPdfNativo();
+        return;
+      }
+      const blob = await this.vistoriaService.baixarPdfVistoria(this.vistoriaIdPdf);
+      if (!this.isPdfBlob(blob)) {
+        throw new Error('Relatório PDF não disponível neste ambiente.');
+      }
+      await this.abrirPdfWeb(blob);
+    } catch (error: unknown) {
+      this.pdfErrorMessage = this.mensagemErroGerarPdf(error);
+    } finally {
+      this.gerandoPdf = false;
+    }
+  }
+
+  private async abrirPdfNativo(): Promise<void> {
+    if (!this.vistoriaIdPdf) {
+      return;
+    }
+    const token = await this.authService.getAccessToken();
+    if (!token) {
+      throw new Error('Sessão expirada. Faça login novamente.');
+    }
+    const fileName = `relatorio-vistoria-${this.sanitizeFilename(
+      this.resumoVistoriaNumero,
+    )}.pdf`;
+    const downloaded = await Filesystem.downloadFile({
+      url: this.vistoriaService.montarUrlPdfVistoria(this.vistoriaIdPdf),
+      path: fileName,
+      directory: Directory.Cache,
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const filePath = downloaded.path;
+    if (!filePath) {
+      throw new Error('Não foi possível baixar o relatório PDF.');
+    }
+    try {
+      await FileOpener.open({
+        filePath,
+        contentType: 'application/pdf',
+        openWithDefault: true,
+      });
+    } catch (error: unknown) {
+      throw new Error(this.mensagemErroAbrirPdf(error));
+    }
+  }
+
+  private async abrirPdfWeb(blob: Blob): Promise<void> {
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
+
+  private isPdfBlob(blob: Blob): boolean {
+    const tipo = (blob.type || '').toLowerCase();
+    return !tipo || tipo.includes('pdf') || tipo === 'application/octet-stream';
+  }
+
+  private mensagemErroGerarPdf(error: unknown): string {
+    const raw =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as { message: unknown }).message)
+        : String(error ?? '');
+    if (/error downloading file/i.test(raw)) {
+      return 'Não foi possível baixar o relatório PDF. Tente novamente.';
+    }
+    const status = Number(
+      typeof error === 'object' && error !== null && 'status' in error
+        ? (error as { status?: number }).status
+        : 0,
+    );
+    if (status === 404) {
+      return 'Relatório PDF não disponível neste ambiente. Verifique se a API está atualizada.';
+    }
+    if (status === 403) {
+      return 'Você não tem permissão para gerar o relatório PDF.';
+    }
+    return this.errorMessageService.fromApi(
+      error,
+      'Não foi possível gerar o relatório PDF.',
+    );
+  }
+
+  private mensagemErroAbrirPdf(error: unknown): string {
+    const raw =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as { message: unknown }).message)
+        : String(error ?? '');
+    if (/activity not found|no app|unavailable|not found to handle/i.test(raw)) {
+      return 'Nenhum aplicativo para abrir PDF está instalado neste dispositivo.';
+    }
+    if (/error downloading file/i.test(raw)) {
+      return 'Não foi possível baixar o relatório PDF. Tente novamente.';
+    }
+    return this.errorMessageService.fromApi(
+      error,
+      'Não foi possível abrir o relatório PDF.',
+    );
+  }
+
+  private sanitizeFilename(value: string): string {
+    const cleaned = value.replace(/[<>:"/\\|?*]+/g, '').trim();
+    return cleaned.slice(0, 40) || 'vistoria';
   }
 
   private async carregarResumo(): Promise<void> {
@@ -161,12 +292,16 @@ export class VistoriaFinalizarPage implements OnInit {
 
   private async mostrarResumoConclusao(): Promise<void> {
     this.sucessoVisivel = true;
+    this.pdfErrorMessage = '';
     await new Promise<void>((resolve) => {
       this.sucessoResolver = resolve;
     });
   }
 
   confirmarConclusao(): void {
+    if (this.gerandoPdf) {
+      return;
+    }
     this.sucessoVisivel = false;
     if (this.sucessoResolver) {
       this.sucessoResolver();

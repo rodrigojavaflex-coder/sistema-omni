@@ -1,5 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsBoolean, IsObject } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsObject,
+  IsInt,
+  Min,
+  Max,
+  ValidateIf,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import {
   EmailEnvioConfig,
   ErpVistoriaConfig,
@@ -80,21 +90,6 @@ export class CreateConfiguracaoDto {
   @ApiPropertyOptional({
     description:
       'Configuração de faixas de tempo por tela do fluxo (tratamento, manutencao, validacaoFinal)',
-    example: {
-      tratamento: [
-        {
-          minHoras: 0,
-          maxHoras: 24,
-          label: '',
-          corHex: '#64748b',
-          mostrarCor: false,
-          mostrarRotulo: false,
-          ativo: true,
-        },
-      ],
-      manutencao: [],
-      validacaoFinal: [],
-    },
   })
   @IsOptional()
   @IsObject()
@@ -102,17 +97,6 @@ export class CreateConfiguracaoDto {
 
   @ApiPropertyOptional({
     description: 'Configuração SMTP para envio de e-mails de relatório',
-    example: {
-      ativo: false,
-      host: 'smtp.seudominio.com.br',
-      porta: 587,
-      usuario: 'usuario@seudominio.com.br',
-      senha: '******',
-      usarTls: true,
-      remetenteNome: 'OMNI',
-      remetenteEmail: 'nao-responda@seudominio.com.br',
-      assuntoPadrao: 'Relatório de Ordem de Serviço',
-    },
   })
   @IsOptional()
   @IsObject()
@@ -124,4 +108,27 @@ export class CreateConfiguracaoDto {
   @IsOptional()
   @IsObject()
   erpVistoriaConfig?: ErpVistoriaConfig;
+
+  @ApiPropertyOptional({
+    description:
+      'Diferença máxima (km) entre odômetros do veículo. Null/omitido = padrão 500.',
+    example: 500,
+  })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== undefined)
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(999999)
+  odometroDiffMaxKm?: number | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Versão mínima do app mobile (semver x.y.z). Null/vazio = não bloqueia apps antigos.',
+    example: '1.3.9',
+  })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== undefined && value !== '')
+  @IsString()
+  mobileVersaoMinima?: string | null;
 }

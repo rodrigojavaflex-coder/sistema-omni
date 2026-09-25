@@ -28,6 +28,7 @@ import {
   arrowBack,
   cameraOutline,
   checkmarkCircleOutline,
+  imagesOutline,
   locationOutline,
   micOutline,
   trashOutline,
@@ -163,6 +164,7 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
   /** Modal aberto antes do native concluir startRecording (evita tela “muda” sem feedback). */
   gravacaoPreparando = false;
   exibirModalGravacaoAudio = false;
+  exibirModalOrigemFoto = false;
   tempoGravacaoSegundos = 0;
   private audioTimerId: ReturnType<typeof setInterval> | null = null;
   private audioObjectUrls = new Set<string>();
@@ -242,6 +244,7 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
       arrowBack,
       cameraOutline,
       checkmarkCircleOutline,
+      imagesOutline,
       locationOutline,
       micOutline,
       trashOutline,
@@ -701,30 +704,110 @@ export class VistoriaIrregularidadePage implements OnInit, OnDestroy {
 
 
   async adicionarFoto(): Promise<void> {
-    const photo = await Camera.getPhoto({
-      quality: 60,
-      resultType: CameraResultType.Base64,
-      source: CameraSource.Camera,
-      allowEditing: false,
-      width: 1024,
-      height: 1024,
-      correctOrientation: true,
-    });
+    this.errorMessage = '';
+    this.exibirModalOrigemFoto = true;
+  }
 
-    if (!photo.base64String) {
-      return;
+  fecharModalOrigemFoto(): void {
+    this.exibirModalOrigemFoto = false;
+  }
+
+  escolherFotoCamera(): void {
+    this.exibirModalOrigemFoto = false;
+    void this.capturarFoto(CameraSource.Camera);
+  }
+
+  escolherFotoGaleria(): void {
+    this.exibirModalOrigemFoto = false;
+    void this.capturarFoto(CameraSource.Photos);
+  }
+
+  private async capturarFoto(source: CameraSource): Promise<void> {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const permitido = await this.garantirPermissaoFoto(source);
+        if (!permitido) {
+          this.errorMessage =
+            source === CameraSource.Photos
+              ? 'Permissão de acesso à galeria negada.'
+              : 'Permissão de câmera negada.';
+          return;
+        }
+      }
+
+      // Mesmo tratamento de tamanho/qualidade para câmera e galeria.
+      const photo = await Camera.getPhoto({
+        quality: 60,
+        resultType: CameraResultType.Base64,
+        source,
+        allowEditing: false,
+        width: 1024,
+        height: 1024,
+        correctOrientation: true,
+      });
+
+      if (!photo.base64String) {
+        return;
+      }
+
+      const base64 = photo.base64String;
+      const imageIndex = this.fotos.length + 1;
+      const nomeArquivo = `img${imageIndex}.jpg`;
+      const tamanho = this.estimateBase64Size(base64);
+
+      this.fotos.push({
+        nomeArquivo,
+        tamanho,
+        dadosBase64: base64,
+      });
+    } catch (error: unknown) {
+      if (this.isCancelamentoCaptura(error)) {
+        return;
+      }
+      this.errorMessage = this.errorMessageService.fromApi(
+        error,
+        source === CameraSource.Photos
+          ? 'Não foi possível obter a imagem da galeria.'
+          : 'Não foi possível capturar a foto.',
+      );
     }
+  }
 
-    const base64 = photo.base64String;
-    const imageIndex = this.fotos.length + 1;
-    const nomeArquivo = `img${imageIndex}.jpg`;
-    const tamanho = this.estimateBase64Size(base64);
+  private async garantirPermissaoFoto(source: CameraSource): Promise<boolean> {
+    try {
+      const atual = await Camera.checkPermissions();
+      if (source === CameraSource.Photos) {
+        if (atual.photos === 'granted' || atual.photos === 'limited') {
+          return true;
+        }
+        const pedida = await Camera.requestPermissions({
+          permissions: ['photos'],
+        });
+        return pedida.photos === 'granted' || pedida.photos === 'limited';
+      }
+      if (atual.camera === 'granted') {
+        return true;
+      }
+      const pedida = await Camera.requestPermissions({
+        permissions: ['camera'],
+      });
+      return pedida.camera === 'granted';
+    } catch {
+      return false;
+    }
+  }
 
-    this.fotos.push({
-      nomeArquivo,
-      tamanho,
-      dadosBase64: base64,
-    });
+  private isCancelamentoCaptura(error: unknown): boolean {
+    const msg =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'object' &&
+            error !== null &&
+            'message' in error &&
+            typeof (error as { message: unknown }).message === 'string'
+          ? (error as { message: string }).message
+          : String(error ?? '');
+    return /cancel/i.test(msg);
   }
 
   removerFoto(index: number): void {

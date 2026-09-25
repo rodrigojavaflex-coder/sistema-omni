@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ConfiguracaoService } from '../../services/configuracao.service';
-import { Configuracao } from '../../models/configuracao.model';
+import { Configuracao, MobileAppVersionCatalogItem } from '../../models/configuracao.model';
 
 @Component({
   selector: 'app-configuracao',
@@ -22,10 +22,14 @@ export class ConfiguracaoComponent implements OnInit {
   error: string | null = null;
   success: string | null = null;
   logoPreview: string | null = null;
-  activeTab: 'sistema' | 'email' | 'erp' = 'sistema';
+  activeTab: 'sistema' | 'email' | 'erp' | 'vistoria' | 'app' = 'sistema';
   showErpApiKey = false;
   erpApiKeyConfigured = false;
   erpApiKeyLoading = false;
+  removingMobileVersion: string | null = null;
+  readonly odometroDiffMaxKmPadrao = 500;
+  mobileVersoesCatalogo: MobileAppVersionCatalogItem[] = [];
+  private readonly semverPattern = /^\d+\.\d+\.\d+$/;
 
   constructor() {
     this.form = this.fb.group({
@@ -55,7 +59,64 @@ export class ConfiguracaoComponent implements OnInit {
       erpTipoPedido: [0],
       erpMensagemErroPadrao: [''],
       erpTimeoutMs: [30000],
+      odometroDiffMaxKm: [500],
+      mobileVersaoMinima: [''],
     });
+  }
+
+  /** Opções do combo: catálogo + valor salvo se ainda não estiver na lista. */
+  get mobileVersaoOpcoes(): MobileAppVersionCatalogItem[] {
+    const selected = (this.form.get('mobileVersaoMinima')?.value ?? '')
+      .toString()
+      .trim();
+    const byVersion = new Map<string, MobileAppVersionCatalogItem>();
+    for (const item of this.mobileVersoesCatalogo) {
+      byVersion.set(item.version, item);
+    }
+    if (selected && this.semverPattern.test(selected) && !byVersion.has(selected)) {
+      byVersion.set(selected, { version: selected, date: null });
+    }
+    return Array.from(byVersion.values()).sort((a, b) =>
+      this.compareSemverDesc(a.version, b.version),
+    );
+  }
+
+  formatMobileVersionLabel(item: MobileAppVersionCatalogItem): string {
+    const data = this.formatCatalogDate(item.date);
+    return data ? `${item.version} — ${data}` : item.version;
+  }
+
+  formatCatalogDate(isoDate: string | null | undefined): string {
+    const raw = isoDate?.trim();
+    if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return '';
+    }
+    const [ano, mes, dia] = raw.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  private compareSemverDesc(a: string, b: string): number {
+    const pa = a.split('.').map((n) => Number.parseInt(n, 10) || 0);
+    const pb = b.split('.').map((n) => Number.parseInt(n, 10) || 0);
+    for (let i = 0; i < 3; i++) {
+      if (pa[i] !== pb[i]) {
+        return pb[i] - pa[i];
+      }
+    }
+    return 0;
+  }
+
+  private applyCatalog(
+    items: MobileAppVersionCatalogItem[] | undefined | null,
+  ): void {
+    this.mobileVersoesCatalogo = (items ?? []).map((item) =>
+      typeof item === 'string'
+        ? { version: item, date: null }
+        : {
+            version: item.version,
+            date: item.date ?? null,
+          },
+    );
   }
 
   ngOnInit() {
@@ -63,6 +124,7 @@ export class ConfiguracaoComponent implements OnInit {
     this.configuracaoService.getConfiguracao().subscribe({
       next: (config) => {
         this.configuracao = config;
+        this.applyCatalog(config.mobileVersoesCatalogo);
         this.form.patchValue({
           nomeCliente: config.nomeCliente,
           // Configurações de Auditoria
@@ -90,6 +152,9 @@ export class ConfiguracaoComponent implements OnInit {
           erpTipoPedido: config.erpVistoriaConfig?.tipoPedido ?? 0,
           erpMensagemErroPadrao: config.erpVistoriaConfig?.mensagemErroPadrao ?? '',
           erpTimeoutMs: config.erpVistoriaConfig?.timeoutMs ?? 30000,
+          odometroDiffMaxKm:
+            config.odometroDiffMaxKm ?? this.odometroDiffMaxKmPadrao,
+          mobileVersaoMinima: config.mobileVersaoMinima ?? '',
         });
         this.showErpApiKey = false;
         this.erpApiKeyConfigured = !!config.erpVistoriaConfig?.apiKeyConfigured;
@@ -170,6 +235,20 @@ export class ConfiguracaoComponent implements OnInit {
         timeoutMs: Number(this.form.value.erpTimeoutMs ?? 30000),
       }),
     );
+    const odometroDiffRaw = this.form.value.odometroDiffMaxKm;
+    if (
+      odometroDiffRaw === null ||
+      odometroDiffRaw === undefined ||
+      odometroDiffRaw === ''
+    ) {
+      formData.append('odometroDiffMaxKm', '');
+    } else {
+      formData.append('odometroDiffMaxKm', String(Number(odometroDiffRaw)));
+    }
+    formData.append(
+      'mobileVersaoMinima',
+      (this.form.value.mobileVersaoMinima ?? '').toString().trim(),
+    );
     const handleError = (err: any) => {
       this.loading = false;
       this.success = null;
@@ -177,8 +256,14 @@ export class ConfiguracaoComponent implements OnInit {
     };
     const handleSuccess = (config: Configuracao) => {
       this.configuracao = config;
+      if (config.mobileVersoesCatalogo?.length) {
+        this.applyCatalog(config.mobileVersoesCatalogo);
+      }
       this.form.patchValue({
         erpApiKey: '',
+        mobileVersaoMinima: config.mobileVersaoMinima ?? '',
+        odometroDiffMaxKm:
+          config.odometroDiffMaxKm ?? this.odometroDiffMaxKmPadrao,
       });
       this.showErpApiKey = false;
       this.erpApiKeyConfigured = !!config.erpVistoriaConfig?.apiKeyConfigured;
@@ -251,4 +336,35 @@ export class ConfiguracaoComponent implements OnInit {
     });
   }
 
+  removerVersaoCatalogo(version: string): void {
+    const alvo = version.trim();
+    if (!alvo || this.removingMobileVersion) {
+      return;
+    }
+    const confirmar = window.confirm(
+      `Remover a versão ${alvo} do catálogo?\nEla deixará de aparecer no combo. Se for a versão mínima atual, o bloqueio será desativado.`,
+    );
+    if (!confirmar) {
+      return;
+    }
+    this.removingMobileVersion = alvo;
+    this.error = null;
+    this.success = null;
+    this.configuracaoService.removeMobileVersaoCatalogo(alvo).subscribe({
+      next: (res) => {
+        this.applyCatalog(res.mobileVersoesCatalogo);
+        this.form.patchValue({
+          mobileVersaoMinima: res.mobileVersaoMinima ?? '',
+        });
+        this.removingMobileVersion = null;
+        this.success = `Versão ${alvo} removida do catálogo.`;
+      },
+      error: (err) => {
+        this.removingMobileVersion = null;
+        this.error =
+          'Erro ao remover versão: ' +
+          (err?.error?.message || err?.message || err?.statusText || 'Erro desconhecido');
+      },
+    });
+  }
 }

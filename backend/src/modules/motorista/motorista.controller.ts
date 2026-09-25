@@ -35,6 +35,7 @@ export class MotoristaController {
   @Permissions(
     Permission.MOTORISTA_READ,
     Permission.VISTORIA_READ,
+    Permission.VISTORIA_MOBILE_LISTA_READ,
     Permission.OCORRENCIA_READ,
     Permission.OCORRENCIA_CREATE,
   )

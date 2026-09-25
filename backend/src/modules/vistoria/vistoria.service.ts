@@ -17,6 +17,7 @@ import { Irregularidade } from './entities/irregularidade.entity';
 import { CreateVistoriaDto } from './dto/create-vistoria.dto';
 import { FinalizeVistoriaDto } from './dto/finalize-vistoria.dto';
 import { UpdateVistoriaDto } from './dto/update-vistoria.dto';
+import { CorrigirVistoriaDto } from './dto/corrigir-vistoria.dto';
 import { StatusVeiculo } from '../../common/enums/status-veiculo.enum';
 import { StatusMotorista } from '../../common/enums/status-motorista.enum';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
@@ -26,12 +27,15 @@ import {
 } from '../../common/enums/combustivel.enum';
 import { StatusIrregularidade } from '../../common/enums/status-irregularidade.enum';
 import { OrigemVistoria } from '../../common/enums/origem-vistoria.enum';
+import { TipoVistoria } from '../../common/enums/tipo-vistoria.enum';
 import { CreateVistoriaSosDto } from './dto/create-vistoria-sos.dto';
 import { SosSessaoAbertaDto } from './dto/sos-sessao-aberta.dto';
 import { EnviarErpVistoriaRespostaDto } from './dto/enviar-erp-vistoria-resultado.dto';
 import { IrregularidadeMidia } from './entities/irregularidade-midia.entity';
 import { IrregularidadeHistorico } from './entities/irregularidade-historico.entity';
 import { ErpVistoriaIntegrationService } from './erp-vistoria-integration.service';
+import { Configuracao } from '../configuracao/entities/configuracao.entity';
+import { DEFAULT_ODOMETRO_DIFF_MAX_KM } from '../../common/constants/odometro.constants';
 
 @Injectable()
 export class VistoriaService {
@@ -54,6 +58,8 @@ export class VistoriaService {
     private readonly matrizRepository: Repository<MatrizCriticidade>,
     @InjectRepository(Irregularidade)
     private readonly irregularidadeRepository: Repository<Irregularidade>,
+    @InjectRepository(Configuracao)
+    private readonly configuracaoRepository: Repository<Configuracao>,
     private readonly erpVistoriaIntegrationService: ErpVistoriaIntegrationService,
   ) {}
 
@@ -124,6 +130,7 @@ export class VistoriaService {
       datavistoria: dataVistoria,
       tempo: 0,
       status: StatusVistoria.EM_ANDAMENTO,
+      tipo: dto.tipo ?? TipoVistoria.CORRETIVA,
     });
 
     return this.vistoriaRepository.save(vistoria);
@@ -207,9 +214,28 @@ export class VistoriaService {
       status: StatusVistoria.EM_ANDAMENTO,
       origem: OrigemVistoria.SOS_WEB,
       observacao: dto.observacao?.trim() || undefined,
+      tipo: dto.tipo ?? TipoVistoria.CORRETIVA,
     });
 
     return this.vistoriaRepository.save(vistoria);
+  }
+
+  async getOdometroDiffMaxKm(): Promise<number> {
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    const valor = config?.odometroDiffMaxKm;
+    if (
+      valor === null ||
+      valor === undefined ||
+      !Number.isFinite(Number(valor)) ||
+      Number(valor) < 1
+    ) {
+      return DEFAULT_ODOMETRO_DIFF_MAX_KM;
+    }
+    return Math.trunc(Number(valor));
+  }
+
+  async getParametros(): Promise<{ odometroDiffMaxKm: number }> {
+    return { odometroDiffMaxKm: await this.getOdometroDiffMaxKm() };
   }
 
   async validateOdometroVeiculo(
@@ -231,6 +257,13 @@ export class VistoriaService {
     if (odometro <= ultimo.odometro) {
       throw new BadRequestException(
         'Odômetro deve ser maior que o da última vistoria.',
+      );
+    }
+    const diffMax = await this.getOdometroDiffMaxKm();
+    const diff = odometro - ultimo.odometro;
+    if (diff > diffMax) {
+      throw new BadRequestException(
+        `Odômetro não pode ser mais de ${diffMax} km acima do da última vistoria.`,
       );
     }
   }
@@ -301,6 +334,7 @@ export class VistoriaService {
     idveiculo: string,
     ignorarVistoriaId?: string,
   ): Promise<{
+    id: string;
     odometro: number;
     datavistoria: string;
   } | null> {
@@ -323,11 +357,72 @@ export class VistoriaService {
       return null;
     }
     return {
+      id: ultima.id,
       odometro: Number(ultima.odometro),
       datavistoria: ultima.datavistoria
         ? ultima.datavistoria.toISOString()
         : new Date().toISOString(),
     };
+  }
+
+  /**
+   * Corrige motorista e/ou odômetro de vistoria FINALIZADA (web).
+   * Odômetro só pode mudar na última FINALIZADA do veículo (datavistoria DESC)
+   * e deve ser estritamente maior que o da anterior (RN-VIS-004).
+   */
+  async corrigir(id: string, dto: CorrigirVistoriaDto): Promise<Vistoria> {
+    const vistoria = await this.findOne(id);
+    if (vistoria.status !== StatusVistoria.FINALIZADA) {
+      throw new BadRequestException(
+        'Somente vistorias finalizadas podem ser corrigidas.',
+      );
+    }
+
+    const motorista = await this.motoristaRepository.findOne({
+      where: { id: dto.idmotorista },
+    });
+    if (!motorista) {
+      throw new NotFoundException('Motorista não encontrado');
+    }
+    if (motorista.status !== StatusMotorista.ATIVO) {
+      throw new BadRequestException('Motorista inativo');
+    }
+
+    const odometroAtual = Number(vistoria.odometro);
+    const odometroNovo = Number(dto.odometro);
+    const odometroMudou = odometroNovo !== odometroAtual;
+
+    if (odometroMudou) {
+      const ultima = await this.getUltimoOdometro(vistoria.idVeiculo);
+      if (!ultima || ultima.id !== vistoria.id) {
+        throw new BadRequestException(
+          'Somente a última vistoria finalizada do veículo permite alteração do odômetro.',
+        );
+      }
+      await this.validateOdometroVeiculo(
+        vistoria.idVeiculo,
+        odometroNovo,
+        vistoria.id,
+      );
+    }
+
+    const updated = this.vistoriaRepository.merge(vistoria, {
+      idMotorista: dto.idmotorista,
+      odometro: odometroNovo,
+      tipo: dto.tipo,
+    });
+    await this.vistoriaRepository.save(updated);
+
+    const reloaded = await this.vistoriaRepository.findOne({
+      where: { id },
+      relations: ['veiculo', 'motorista', 'usuario'],
+    });
+    if (!reloaded) {
+      throw new NotFoundException('Vistoria não encontrada');
+    }
+    const [comFlag] =
+      await this.erpVistoriaIntegrationService.anexarElegibilidade([reloaded]);
+    return comFlag;
   }
 
   async getSosSessaoAberta(
@@ -410,6 +505,7 @@ export class VistoriaService {
       idVeiculo: vistoria.idVeiculo,
       idMotorista: vistoria.idMotorista,
       odometro: Number(vistoria.odometro),
+      tipo: vistoria.tipo ?? TipoVistoria.CORRETIVA,
       porcentagembateria:
         vistoria.porcentagembateria === null ||
         vistoria.porcentagembateria === undefined
@@ -559,6 +655,7 @@ export class VistoriaService {
     status?: StatusVistoria,
     idUsuario?: string,
     ignorarVistoriaId?: string,
+    tipo?: TipoVistoria,
   ): Promise<Vistoria[]> {
     const where: Record<string, unknown> = {};
     if (status) {
@@ -566,6 +663,9 @@ export class VistoriaService {
     }
     if (idUsuario) {
       where.idUsuario = idUsuario;
+    }
+    if (tipo) {
+      where.tipo = tipo;
     }
     if (!ignorarVistoriaId) {
       const lista = await this.vistoriaRepository.find({

@@ -1,0 +1,132 @@
+.content {
+  padding: 12px 12px 24px;
+}
+
+.filtros {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.datas-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.data-item {
+  --min-height: 64px;
+}
+
+.btn-limpar {
+  margin-top: 4px;
+  text-transform: none;
+  font-weight: 700;
+  --border-radius: 10px;
+}
+
+.search-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  color: var(--ion-color-medium-shade, #64748b);
+}
+
+.search-loading ion-spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.search-results {
+  margin: 0;
+}
+
+.loading-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 0;
+  color: var(--ion-color-medium-shade, #64748b);
+}
+
+.resultado-count {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ion-color-medium-shade, #64748b);
+}
+
+.cards {
+  display: grid;
+  gap: 10px;
+}
+
+.vistoria-card {
+  margin: 0;
+  border-radius: 12px;
+}
+
+.vistoria-card p {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--ion-text-color, #0f172a);
+}
+
+.card-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.card-titulo {
+  margin: 0 !important;
+  font-size: 1rem !important;
+  font-weight: 700;
+}
+
+.card-sub {
+  margin: 2px 0 0 !important;
+  font-size: 0.8rem !important;
+  color: var(--ion-color-medium-shade, #64748b) !important;
+}
+
+.btn-pdf {
+  margin: 0;
+  min-width: 56px;
+  min-height: 36px;
+  font-weight: 800;
+  --border-radius: 8px;
+  --border-width: 1.5px;
+}
+
+.btn-pdf .pdf-mark {
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: -0.04em;
+}
+
+.btn-pdf ion-spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.btn-pdf[disabled] {
+  opacity: 0.5;
+}
+
+.error-message {
+  margin: 8px 0;
+  font-size: 0.9rem;
+}
+
+.vazio {
+  margin: 16px 0;
+  text-align: center;
+  color: var(--ion-color-medium-shade, #64748b);
+  font-size: 0.9rem;
+}

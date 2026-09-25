@@ -5,6 +5,7 @@ import { fetch as undiciFetch } from 'undici';
 import { StatusErpVistoria } from '../../common/enums/status-erp-vistoria.enum';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
 import { OrigemVistoria } from '../../common/enums/origem-vistoria.enum';
+import { TipoVistoria } from '../../common/enums/tipo-vistoria.enum';
 import {
   Configuracao,
   ErpVistoriaConfig,
@@ -303,6 +304,11 @@ export class ErpVistoriaIntegrationService {
   }
 
   private montarCondicao(vistoria: Vistoria): number {
+    // SINISTRO tem precedência sobre origem SOS (legado: 2 = sinistro).
+    // PREVENTIVA usa o mesmo código ERP de CORRETIVA (mobile=1 / SOS=5).
+    if (vistoria.tipo === TipoVistoria.SINISTRO) {
+      return 2;
+    }
     return vistoria.origem === OrigemVistoria.SOS_WEB ? 5 : 1;
   }
 

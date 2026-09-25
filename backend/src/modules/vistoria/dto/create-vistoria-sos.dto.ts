@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -8,6 +9,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { TipoVistoria } from '../../../common/enums/tipo-vistoria.enum';
 
 export class CreateVistoriaSosDto {
   @ApiProperty({ description: 'ID do veículo', format: 'uuid' })
@@ -41,4 +43,14 @@ export class CreateVistoriaSosDto {
   @IsOptional()
   @IsString()
   observacao?: string;
+
+  @ApiProperty({
+    description: 'Tipo da vistoria',
+    enum: TipoVistoria,
+    default: TipoVistoria.CORRETIVA,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(TipoVistoria)
+  tipo?: TipoVistoria;
 }

@@ -90,4 +90,18 @@ export class Configuracao extends BaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   erpVistoriaConfig?: ErpVistoriaConfig;
+
+  /**
+   * Diferença máxima permitida (km) entre o odômetro informado e o da última
+   * vistoria FINALIZADA do veículo. Null = usar padrão 500.
+   */
+  @Column({ name: 'odometro_diff_max_km', type: 'integer', nullable: true })
+  odometroDiffMaxKm?: number | null;
+
+  /**
+   * Versão mínima do app mobile (semver x.y.z). Null/vazio = não bloqueia.
+   * Requests com header X-App-Version abaixo desta versão são rejeitados.
+   */
+  @Column({ name: 'mobile_versao_minima', type: 'varchar', length: 20, nullable: true })
+  mobileVersaoMinima?: string | null;
 }

@@ -37,6 +37,7 @@ const ROUTE_TO_SHORTCUT_ID: Record<string, string> = {
   '/meta/dashboard': 'painel-metas',
   '/ocorrencia/painel': 'painel-ocorrencias',
   '/reports': 'relatorios',
+  '/relatorios/vistoria/pendencias-veiculo': 'pendencias-veiculo',
 };
 
 export function routeToShortcutId(route: string): string {

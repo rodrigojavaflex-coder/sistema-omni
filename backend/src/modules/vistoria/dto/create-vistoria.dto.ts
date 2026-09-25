@@ -2,12 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsUUID,
   Max,
   Min,
 } from 'class-validator';
+import { TipoVistoria } from '../../../common/enums/tipo-vistoria.enum';
 
 export class CreateVistoriaDto {
   @ApiProperty({ description: 'ID do usuário', format: 'uuid' })
@@ -44,4 +46,14 @@ export class CreateVistoriaDto {
   @ApiProperty({ description: 'Data/hora da vistoria (ISO)' })
   @IsDateString()
   datavistoria: string;
+
+  @ApiProperty({
+    description: 'Tipo da vistoria',
+    enum: TipoVistoria,
+    default: TipoVistoria.CORRETIVA,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(TipoVistoria)
+  tipo?: TipoVistoria;
 }

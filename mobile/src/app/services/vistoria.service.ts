@@ -34,6 +34,7 @@ export class VistoriaService {
     odometro: number;
     porcentagembateria?: number;
     datavistoria: string;
+    tipo?: 'CORRETIVA' | 'PREVENTIVA' | 'SINISTRO';
   }): Promise<Vistoria> {
     return firstValueFrom(
       this.http.post<Vistoria>(`${this.apiBaseUrl}/vistoria`, payload),
@@ -117,6 +118,18 @@ export class VistoriaService {
     }`;
   }
 
+  async baixarPdfVistoria(idVistoria: string): Promise<Blob> {
+    return firstValueFrom(
+      this.http.get(this.montarUrlPdfVistoria(idVistoria), {
+        responseType: 'blob',
+      }),
+    );
+  }
+
+  montarUrlPdfVistoria(idVistoria: string): string {
+    return `${this.apiBaseUrl}/vistoria/${idVistoria}/pdf`;
+  }
+
   async getUltimoOdometro(
     idveiculo: string,
     ignorarVistoriaId?: string,
@@ -129,6 +142,14 @@ export class VistoriaService {
             ? { ignorarVistoriaId }
             : {},
         },
+      ),
+    );
+  }
+
+  async getParametros(): Promise<{ odometroDiffMaxKm: number }> {
+    return firstValueFrom(
+      this.http.get<{ odometroDiffMaxKm: number }>(
+        `${this.apiBaseUrl}/vistoria/parametros`,
       ),
     );
   }
@@ -295,6 +316,14 @@ export class VistoriaService {
           ...(idusuario ? { idusuario } : {}),
           ...(ignorarVistoriaId ? { ignorarVistoriaId } : {}),
         },
+      }),
+    );
+  }
+
+  async listarFinalizadas(): Promise<Vistoria[]> {
+    return firstValueFrom(
+      this.http.get<Vistoria[]>(`${this.apiBaseUrl}/vistoria`, {
+        params: { status: 'FINALIZADA' },
       }),
     );
   }

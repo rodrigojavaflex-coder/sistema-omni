@@ -13,6 +13,7 @@ export enum Permission {
 
   // Relatórios
   REPORTS_VIEW = 'reports:view',
+  RELATORIO_PENDENCIAS_VEICULO_READ = 'relatorio_pendencias_veiculo:read',
 
   // BI - Links externos
   BI_ACESSO_LINK_CREATE = 'bi_acesso_link:create',
@@ -119,10 +120,12 @@ export enum Permission {
   VISTORIA_CREATE = 'vistoria_mobile:create',
   VISTORIA_READ = 'vistoria_mobile:read',
   VISTORIA_UPDATE = 'vistoria_mobile:update',
+  VISTORIA_MOBILE_LISTA_READ = 'vistoria_mobile_lista:read',
   // Vistoria Web
   VISTORIA_WEB_READ = 'vistoria_web:read',
   VISTORIA_WEB_HISTORICO_VEICULO_READ = 'vistoria_web_historico_veiculo:read',
   VISTORIA_WEB_REPROCESSAR_ERP = 'vistoria_web:reprocessar_erp',
+  VISTORIA_WEB_CORRIGIR = 'vistoria_web:corrigir',
   // Fluxo de Irregularidades
   IRREGULARIDADE_TRATAMENTO_READ = 'irregularidade_tratamento:read',
   IRREGULARIDADE_TRATAMENTO_UPDATE = 'irregularidade_tratamento:update',
@@ -208,6 +211,12 @@ export const PERMISSION_GROUPS = {
   ],
   Relatórios: [
     { key: Permission.REPORTS_VIEW, label: 'Acessar menu Relatórios' },
+  ],
+  'Relatórios – Pendências do veículo': [
+    {
+      key: Permission.RELATORIO_PENDENCIAS_VEICULO_READ,
+      label: 'Acessar relatório de pendências do veículo',
+    },
   ],
   'BI - Administração': [
     { key: Permission.BI_ACESSO_LINK_CREATE, label: 'Cadastrar links de BI' },
@@ -369,6 +378,10 @@ export const PERMISSION_GROUPS = {
     { key: Permission.VISTORIA_READ, label: 'Visualizar vistorias (mobile)' },
     { key: Permission.VISTORIA_UPDATE, label: 'Atualizar vistorias (mobile)' },
     {
+      key: Permission.VISTORIA_MOBILE_LISTA_READ,
+      label: 'Listar vistorias finalizadas e imprimir PDF (mobile)',
+    },
+    {
       key: Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ,
       label: 'Pendências do Veículo (mobile)',
     },
@@ -378,6 +391,10 @@ export const PERMISSION_GROUPS = {
     {
       key: Permission.VISTORIA_WEB_REPROCESSAR_ERP,
       label: 'Enviar / reenviar vistorias ao ERP',
+    },
+    {
+      key: Permission.VISTORIA_WEB_CORRIGIR,
+      label: 'Corrigir vistoria finalizada (motorista e odômetro)',
     },
   ],
   'Irregularidades – Tratamento': [

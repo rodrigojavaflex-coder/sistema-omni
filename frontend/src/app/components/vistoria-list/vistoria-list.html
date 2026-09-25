@@ -15,6 +15,11 @@
         <option [value]="status.value">{{ status.label }}</option>
       }
     </select>
+    <select formControlName="tipo" class="filter-select" aria-label="Filtrar por tipo">
+      @for (tipo of tipoOptions; track tipo.value) {
+        <option [value]="tipo.value">{{ tipo.label }}</option>
+      }
+    </select>
     <select formControlName="erpStatus" class="filter-select" aria-label="Status ERP">
       @for (status of erpStatusOptions; track status.value) {
         <option [value]="status.value">{{ status.label }}</option>
@@ -152,13 +157,22 @@
           </div>
           <div>{{ vistoria.motorista?.nome || '-' }}</div>
           <div>{{ vistoria.datavistoria | date: 'dd/MM/yyyy HH:mm' }}</div>
-          <div>
-            @if (vistoria.origem === 'SOS_WEB') {
-              <span class="badge-origem-sos">SOS</span>
-            }
-            <span class="status-badge" [ngClass]="getStatusClass(vistoria.status)">
-              {{ getStatusLabel(vistoria.status) }}
-            </span>
+          <div class="status-col">
+            <div class="status-stack">
+              @if (vistoria.origem === 'SOS_WEB') {
+                <span class="badge-origem-sos">SOS</span>
+              }
+              <span class="status-badge" [ngClass]="getStatusClass(vistoria.status)">
+                {{ getStatusLabel(vistoria.status) }}
+              </span>
+              <span
+                class="badge-tipo"
+                [class.badge-tipo--sinistro]="vistoria.tipo === 'SINISTRO'"
+                [class.badge-tipo--preventiva]="vistoria.tipo === 'PREVENTIVA'"
+              >
+                {{ getTipoLabel(vistoria.tipo) }}
+              </span>
+            </div>
           </div>
           <div>{{ formatNumero(vistoria.odometro) }}</div>
           <div>
@@ -198,6 +212,15 @@
               >
                 Detalhes
               </button>
+              @if (podeCorrigir(vistoria)) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-corrigir"
+                  (click)="openCorrigirModal(vistoria)"
+                >
+                  Corrigir Vistoria
+                </button>
+              }
             </div>
           </div>
         </div>
@@ -268,6 +291,7 @@
           <div><strong>Motorista:</strong> {{ selectedVistoria.motorista?.nome || '-' }}</div>
           <div><strong>Data:</strong> {{ selectedVistoria.datavistoria | date: 'dd/MM/yyyy HH:mm' }}</div>
           <div><strong>Status:</strong> {{ getStatusLabel(selectedVistoria.status) }}</div>
+          <div><strong>Tipo:</strong> {{ getTipoLabel(selectedVistoria.tipo) }}</div>
           <div><strong>Vistoriador:</strong> {{ getUsuarioNome(selectedVistoria.idUsuario) }}</div>
           <div><strong>Odômetro:</strong> {{ formatNumero(selectedVistoria.odometro) }}</div>
           <div>
@@ -367,6 +391,110 @@
       </div>
       <div class="modal-body image-modal-body">
         <img [src]="getImagemPreview(selectedImage.dadosBase64)" [alt]="selectedImage.nomeArquivo">
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCorrigirModal && corrigirTarget) {
+  <div class="modal-overlay">
+    <div class="modal-container modal-container-sm corrigir-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Corrigir vistoria</h3>
+        <button type="button" class="modal-close" (click)="closeCorrigirModal()" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="corrigir-resumo">
+          <strong>Veículo:</strong>
+          {{ corrigirTarget.veiculo?.descricao || '-' }}
+          @if (corrigirTarget.veiculo; as veiculoCorrigir) {
+            @if (veiculoCorrigir.placa) {
+              <span> — {{ veiculoCorrigir.placa }}</span>
+            }
+          }
+          <br />
+          <strong>Vistoria:</strong> {{ corrigirTarget.numeroVistoria || '-' }}
+        </p>
+
+        @if (corrigirLoading) {
+          <div class="loading">Verificando regras de odômetro...</div>
+        }
+
+        @if (corrigirError) {
+          <div class="error-message" role="alert">{{ corrigirError }}</div>
+        }
+
+        <div class="form-group">
+          <label for="corrigir-motorista">Motorista *</label>
+          <app-motorista-autocomplete
+            id="corrigir-motorista"
+            [(ngModel)]="corrigirMotoristaId"
+            [filterStatus]="statusMotoristaAtivo"
+            placeholder="Buscar motorista..."
+          ></app-motorista-autocomplete>
+        </div>
+
+        <div class="form-group">
+          <label for="corrigir-tipo">Tipo *</label>
+          <select
+            id="corrigir-tipo"
+            class="form-control"
+            [(ngModel)]="corrigirTipo"
+            [disabled]="corrigirLoading"
+            aria-label="Tipo da vistoria"
+          >
+            @for (opcao of tipoOpcoes; track opcao.value) {
+              <option [ngValue]="opcao.value">{{ opcao.label }}</option>
+            }
+          </select>
+          <small class="field-hint">
+            Alterar o tipo não reenvia automaticamente ao ERP nem à BRT.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="corrigir-odometro">Odômetro *</label>
+          <input
+            id="corrigir-odometro"
+            type="text"
+            inputmode="decimal"
+            class="form-control"
+            [ngModel]="corrigirOdometroDisplay"
+            (ngModelChange)="onCorrigirOdometroInput($event)"
+            [disabled]="corrigirLoading || !corrigirPodeEditarOdometro"
+            [attr.aria-invalid]="corrigirOdometroInvalido"
+            autocomplete="off"
+          />
+          @if (!corrigirLoading && !corrigirPodeEditarOdometro) {
+            <small class="field-hint">
+              Odômetro só pode ser alterado na última vistoria finalizada deste veículo.
+            </small>
+          }
+          @if (corrigirPodeEditarOdometro && corrigirOdometroAnterior !== null) {
+            <small class="field-hint">
+              Deve ser maior que {{ formatNumero(corrigirOdometroAnterior) }}
+              e no máximo {{ odometroDiffMaxKm }} km acima (vistoria anterior).
+            </small>
+          }
+          @if (corrigirOdometroInvalido) {
+            <small class="field-error" role="alert">
+              Informe um odômetro válido, maior que o da vistoria anterior e com diferença de no máximo {{ odometroDiffMaxKm }} km.
+            </small>
+          }
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCorrigirModal()" [disabled]="corrigirSaving">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="submitCorrigir()"
+          [disabled]="!canSubmitCorrigir"
+        >
+          {{ corrigirSaving ? 'Salvando...' : 'Salvar' }}
+        </button>
       </div>
     </div>
   </div>

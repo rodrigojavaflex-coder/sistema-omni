@@ -504,6 +504,17 @@
   }
 }
 
+.login-version {
+  margin: 1.25rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ion-border-color, #e2e8f0);
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ion-color-medium, #64748b);
+}
+
 @media (prefers-color-scheme: dark) {
   .login-card {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
@@ -515,5 +526,9 @@
 
   .saved-account-manage-row {
     background: var(--ion-item-background, #1e293b);
+  }
+
+  .login-version {
+    border-top-color: var(--ion-border-color, #334155);
   }
 }

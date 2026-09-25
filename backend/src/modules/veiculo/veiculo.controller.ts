@@ -54,8 +54,11 @@ export class VeiculoController {
   @Permissions(
     Permission.VEICULO_READ,
     Permission.VISTORIA_READ,
+    Permission.VISTORIA_MOBILE_LISTA_READ,
     Permission.OCORRENCIA_READ,
     Permission.OCORRENCIA_CREATE,
+    Permission.RELATORIO_PENDENCIAS_VEICULO_READ,
+    Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ,
   )
   @ApiOperation({ summary: 'Listar veículos com paginação e filtros' })
   @ApiResponse({

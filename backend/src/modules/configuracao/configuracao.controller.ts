@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   Put,
+  Delete,
   UseInterceptors,
   UploadedFile,
   Req,
@@ -16,6 +17,7 @@ import { CreateConfiguracaoDto } from './dto/create-configuracao.dto';
 import { UpdateConfiguracaoDto } from './dto/update-configuracao.dto';
 import { ErpApiKeyDto } from './dto/erp-api-key.dto';
 import { LogoRelatorioDto } from './dto/logo-relatorio.dto';
+import { MobileVersaoMinimaDto } from './dto/mobile-versao-minima.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Permissions } from '../../common/decorators/permissions.decorator';
@@ -87,6 +89,30 @@ export class ConfiguracaoController {
     return raw;
   }
 
+  private parseOdometroDiffMaxKm(raw: unknown): number | null | undefined {
+    if (raw === undefined) {
+      return undefined;
+    }
+    if (raw === null || raw === '') {
+      return null;
+    }
+    const n = Number(raw);
+    if (!Number.isFinite(n)) {
+      return null;
+    }
+    return Math.trunc(n);
+  }
+
+  private parseMobileVersaoMinima(raw: unknown): string | null | undefined {
+    if (raw === undefined) {
+      return undefined;
+    }
+    if (raw === null || raw === '') {
+      return null;
+    }
+    return String(raw).trim();
+  }
+
   @Post()
   @Permissions(Permission.CONFIGURACAO_ACCESS)
   @UseInterceptors(logoUploadInterceptor)
@@ -119,6 +145,12 @@ export class ConfiguracaoController {
       tempoFluxoConfig: this.parseTempoFluxoConfig(req.body.tempoFluxoConfig),
       emailEnvioConfig: this.parseEmailEnvioConfig(req.body.emailEnvioConfig),
       erpVistoriaConfig: this.parseErpVistoriaConfig(req.body.erpVistoriaConfig),
+      odometroDiffMaxKm: this.parseOdometroDiffMaxKm(
+        req.body.odometroDiffMaxKm,
+      ),
+      mobileVersaoMinima: this.parseMobileVersaoMinima(
+        req.body.mobileVersaoMinima,
+      ),
     };
 
     return this.configuracaoService.create(body, req?.user?.id, file);
@@ -129,6 +161,31 @@ export class ConfiguracaoController {
   @ApiOperation({ summary: 'Buscar configuração' })
   async findOne() {
     return this.configuracaoService.findOne();
+  }
+
+  @Get('mobile-versao-minima')
+  @ApiOperation({
+    summary:
+      'Versão mínima do app mobile (público — usado no boot/login do aplicativo)',
+  })
+  @ApiResponse({ status: 200, type: MobileVersaoMinimaDto })
+  findMobileVersaoMinima(): Promise<MobileVersaoMinimaDto> {
+    return this.configuracaoService.findMobileVersaoMinima();
+  }
+
+  @Delete('mobile-versoes/:version')
+  @Permissions(Permission.CONFIGURACAO_ACCESS)
+  @ApiOperation({
+    summary: 'Remove uma versão do catálogo do app (aba App na Configuração)',
+  })
+  async removeMobileVersao(
+    @Param('version') version: string,
+    @Req() req?: { user?: { id?: string } },
+  ) {
+    return this.configuracaoService.removeMobileVersaoCatalogo(
+      version,
+      req?.user?.id,
+    );
   }
 
   @Get('logo-relatorio')
@@ -207,6 +264,12 @@ export class ConfiguracaoController {
       tempoFluxoConfig: this.parseTempoFluxoConfig(req.body.tempoFluxoConfig),
       emailEnvioConfig: this.parseEmailEnvioConfig(req.body.emailEnvioConfig),
       erpVistoriaConfig: this.parseErpVistoriaConfig(req.body.erpVistoriaConfig),
+      odometroDiffMaxKm: this.parseOdometroDiffMaxKm(
+        req.body.odometroDiffMaxKm,
+      ),
+      mobileVersaoMinima: this.parseMobileVersaoMinima(
+        req.body.mobileVersaoMinima,
+      ),
     };
 
     return this.configuracaoService.update(id, body, req?.user?.id, file);

@@ -4,12 +4,14 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Configuracao } from './entities/configuracao.entity';
 import { CreateConfiguracaoDto } from './dto/create-configuracao.dto';
 import { UpdateConfiguracaoDto } from './dto/update-configuracao.dto';
+import { MobileVersaoMinimaDto } from './dto/mobile-versao-minima.dto';
 import { AuditoriaService } from '../../common/services/auditoria.service';
 import { AuditAction } from '../../common/enums/auditoria.enum';
 import {
@@ -18,6 +20,9 @@ import {
   TempoFaixaConfig,
   TempoFluxoConfig,
 } from './entities/configuracao.entity';
+import { MobileAppVersionGuard } from '../../common/guards/mobile-app-version.guard';
+import { isValidSemver } from '../../common/utils/semver.util';
+import { loadMobileAppVersionsCatalog, removeMobileAppVersionFromCatalog, MobileAppVersionEntry } from '../../common/utils/mobile-app-versions.util';
 
 @Injectable()
 export class ConfiguracaoService {
@@ -25,7 +30,52 @@ export class ConfiguracaoService {
     @InjectRepository(Configuracao)
     private readonly configuracaoRepository: Repository<Configuracao>,
     private readonly auditoriaService: AuditoriaService,
+    @Optional()
+    private readonly mobileAppVersionGuard?: MobileAppVersionGuard,
   ) {}
+
+  private normalizeOdometroDiffMaxKm(
+    input: unknown,
+  ): number | null | undefined {
+    if (input === undefined) {
+      return undefined;
+    }
+    if (input === null || input === '') {
+      return null;
+    }
+    const n = Number(input);
+    if (!Number.isInteger(n) || n < 1 || n > 999999) {
+      throw new BadRequestException(
+        'Diferença máxima entre odômetros deve ser um número inteiro entre 1 e 999999.',
+      );
+    }
+    return n;
+  }
+
+  private normalizeMobileVersaoMinima(
+    input: unknown,
+  ): string | null | undefined {
+    if (input === undefined) {
+      return undefined;
+    }
+    if (input === null || input === '') {
+      return null;
+    }
+    const texto = String(input).trim();
+    if (!texto) {
+      return null;
+    }
+    if (!isValidSemver(texto)) {
+      throw new BadRequestException(
+        'Versão mínima do app deve estar no formato x.y.z (ex.: 1.3.9).',
+      );
+    }
+    return texto;
+  }
+
+  private invalidateMobileVersionCache(): void {
+    this.mobileAppVersionGuard?.invalidateCache();
+  }
 
   private buildDefaultTempoFluxoConfig(): TempoFluxoConfig {
     const base: TempoFaixaConfig[] = [
@@ -303,12 +353,24 @@ export class ConfiguracaoService {
     logoFile?: Express.Multer.File | null,
   ): Promise<Configuracao> {
     const defaultTempoFluxo = this.buildDefaultTempoFluxoConfig();
+    const odometroDiffMaxKm = this.normalizeOdometroDiffMaxKm(
+      dto.odometroDiffMaxKm,
+    );
+    const mobileVersaoMinima = this.normalizeMobileVersaoMinima(
+      dto.mobileVersaoMinima,
+    );
     const normalizedDto: CreateConfiguracaoDto = {
       ...dto,
       tempoFluxoConfig:
         this.normalizeTempoFluxoConfig(dto.tempoFluxoConfig) ??
         defaultTempoFluxo,
       emailEnvioConfig: this.normalizeEmailEnvioConfig(dto.emailEnvioConfig),
+      ...(odometroDiffMaxKm !== undefined
+        ? { odometroDiffMaxKm }
+        : {}),
+      ...(mobileVersaoMinima !== undefined
+        ? { mobileVersaoMinima }
+        : {}),
     };
     // Não persistir path legado via multipart; bytes vêm no arquivo.
     delete normalizedDto.logoRelatorio;
@@ -345,7 +407,8 @@ export class ConfiguracaoService {
         } as Configuracao),
       });
 
-      return this.mascararConfig(configuracaoAtualizada);
+      this.invalidateMobileVersionCache();
+      return this.withMobileCatalog(configuracaoAtualizada);
     } else {
       if (dto.erpVistoriaConfig !== undefined) {
         normalizedDto.erpVistoriaConfig = this.normalizeErpVistoriaConfig(
@@ -368,18 +431,86 @@ export class ConfiguracaoService {
         } as Configuracao),
       });
 
-      return this.mascararConfig(novaConfig);
+      this.invalidateMobileVersionCache();
+      return this.withMobileCatalog(novaConfig);
     }
   }
 
-  async findOne(): Promise<Configuracao> {
+  async findOne(): Promise<
+    Configuracao & { mobileVersoesCatalogo: MobileAppVersionEntry[] }
+  > {
     const config = await this.configuracaoRepository.findOne({ where: {} });
     if (!config) throw new NotFoundException('Configuração não encontrada');
     if (!config.tempoFluxoConfig) {
       config.tempoFluxoConfig = this.buildDefaultTempoFluxoConfig();
       await this.configuracaoRepository.save(config);
     }
-    return this.mascararConfig(config);
+    return this.withMobileCatalog(config);
+  }
+
+  async findMobileVersaoMinima(): Promise<MobileVersaoMinimaDto> {
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    const raw = config?.mobileVersaoMinima?.trim() || null;
+    const versaoMinima = raw && isValidSemver(raw) ? raw : null;
+    return {
+      versaoMinima,
+      bloqueioAtivo: !!versaoMinima,
+      versoes: loadMobileAppVersionsCatalog(),
+    };
+  }
+
+  async removeMobileVersaoCatalogo(
+    version: string,
+    userId?: string,
+  ): Promise<{
+    mobileVersoesCatalogo: MobileAppVersionEntry[];
+    mobileVersaoMinima: string | null;
+  }> {
+    if (!isValidSemver(version.trim())) {
+      throw new BadRequestException(
+        'Versão inválida. Use o formato x.y.z (ex.: 1.3.9).',
+      );
+    }
+
+    let catalogo: MobileAppVersionEntry[];
+    try {
+      catalogo = removeMobileAppVersionFromCatalog(version);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new BadRequestException(msg);
+    }
+
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    let mobileVersaoMinima = config?.mobileVersaoMinima?.trim() || null;
+    if (mobileVersaoMinima === version.trim()) {
+      if (config) {
+        const dadosAnteriores = { mobileVersaoMinima: config.mobileVersaoMinima };
+        config.mobileVersaoMinima = null;
+        await this.configuracaoRepository.save(config);
+        await this.auditoriaService.createLog({
+          acao: AuditAction.UPDATE,
+          descricao: `Versão mínima do app limpa ao remover ${version} do catálogo`,
+          usuarioId: userId,
+          entidade: 'configuracoes',
+          entidadeId: config.id,
+          dadosAnteriores,
+          dadosNovos: { mobileVersaoMinima: null },
+        });
+      }
+      mobileVersaoMinima = null;
+      this.invalidateMobileVersionCache();
+    }
+
+    await this.auditoriaService.createLog({
+      acao: AuditAction.DELETE,
+      descricao: `Versão ${version} removida do catálogo do app mobile`,
+      usuarioId: userId,
+      entidade: 'configuracoes',
+      entidadeId: config?.id,
+      dadosNovos: { versaoRemovida: version, catalogo },
+    });
+
+    return { mobileVersoesCatalogo: catalogo, mobileVersaoMinima };
   }
 
   async findLogoRelatorio(): Promise<{
@@ -491,6 +622,12 @@ export class ConfiguracaoService {
     const config = await this.configuracaoRepository.findOne({ where: { id } });
     if (!config) throw new NotFoundException('Configuração não encontrada');
 
+    const odometroDiffMaxKm = this.normalizeOdometroDiffMaxKm(
+      dto.odometroDiffMaxKm,
+    );
+    const mobileVersaoMinima = this.normalizeMobileVersaoMinima(
+      dto.mobileVersaoMinima,
+    );
     const normalizedDto: UpdateConfiguracaoDto = {
       ...dto,
       tempoFluxoConfig:
@@ -508,6 +645,12 @@ export class ConfiguracaoService {
               dto.erpVistoriaConfig,
               config.erpVistoriaConfig,
             ),
+      ...(odometroDiffMaxKm !== undefined
+        ? { odometroDiffMaxKm }
+        : {}),
+      ...(mobileVersaoMinima !== undefined
+        ? { mobileVersaoMinima }
+        : {}),
     };
     delete normalizedDto.logoRelatorio;
 
@@ -533,7 +676,17 @@ export class ConfiguracaoService {
       } as Configuracao),
     });
 
-    return this.mascararConfig(configuracaoAtualizada);
+    this.invalidateMobileVersionCache();
+    return this.withMobileCatalog(configuracaoAtualizada);
+  }
+
+  private withMobileCatalog(
+    config: Configuracao,
+  ): Configuracao & { mobileVersoesCatalogo: MobileAppVersionEntry[] } {
+    return {
+      ...this.mascararConfig(config),
+      mobileVersoesCatalogo: loadMobileAppVersionsCatalog(),
+    };
   }
 
   private buildLogoDataUrlFromBytes(config: Configuracao): string | null {

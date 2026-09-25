@@ -312,6 +312,115 @@ select.form-input {
   border: none;
 }
 
+.field-error {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--danger, #dc2626);
+}
+
+.field-description code {
+  font-size: 0.8em;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--bg-tertiary, #e2e8f0);
+  color: var(--text-primary, #0f172a);
+}
+
+.subsection-title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+.section-description--compact {
+  margin-bottom: 0.75rem;
+}
+
+.mobile-catalog-block {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.catalog-empty {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #666);
+}
+
+.mobile-catalog-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobile-catalog-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-primary, #fff);
+}
+
+.mobile-catalog-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.mobile-catalog-meta strong {
+  font-size: 0.95rem;
+  color: var(--text-primary, #0f172a);
+}
+
+.mobile-catalog-date {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.mobile-catalog-date--muted {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.btn-catalog-remove {
+  flex-shrink: 0;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--danger, #dc2626);
+  background: transparent;
+  color: var(--danger, #dc2626);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn-catalog-remove:hover:not(:disabled),
+.btn-catalog-remove:focus-visible:not(:disabled) {
+  background: var(--danger, #dc2626);
+  color: #fff;
+  outline: none;
+}
+
+.btn-catalog-remove:focus-visible {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
+}
+
+.btn-catalog-remove:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* Estilos para a seção de auditoria */
 .audit-section {
   margin: 2rem 0;

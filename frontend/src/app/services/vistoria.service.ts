@@ -6,6 +6,7 @@ import {
   EnviarErpVistoriaResposta,
   ErpVistoriaStatus,
   IrregularidadeAudioResumo,
+  IrregularidadeHistoricoVeiculo,
   IrregularidadeImagemResumo,
   IrregularidadeResumo,
   SosSessaoAberta,
@@ -63,6 +64,7 @@ export class VistoriaService {
     odometro: number;
     porcentagembateria?: number;
     observacao?: string;
+    tipo?: string;
   }): Observable<VistoriaResumo> {
     return this.http.post<VistoriaResumo>(`${this.apiUrl}/sos`, payload);
   }
@@ -70,20 +72,67 @@ export class VistoriaService {
   getUltimoOdometro(
     idVeiculo: string,
     ignorarVistoriaId?: string,
-  ): Observable<{ odometro: number; datavistoria: string } | null> {
+  ): Observable<{ id: string; odometro: number; datavistoria: string } | null> {
     let params = new HttpParams();
     if (ignorarVistoriaId) {
       params = params.set('ignorarVistoriaId', ignorarVistoriaId);
     }
-    return this.http.get<{ odometro: number; datavistoria: string } | null>(
+    return this.http.get<{ id: string; odometro: number; datavistoria: string } | null>(
       `${this.apiUrl}/veiculo/${idVeiculo}/ultimo-odometro`,
       { params },
     );
   }
 
+  getParametros(): Observable<{ odometroDiffMaxKm: number }> {
+    return this.http.get<{ odometroDiffMaxKm: number }>(
+      `${this.apiUrl}/parametros`,
+    );
+  }
+
+  corrigirVistoria(
+    id: string,
+    payload: { idmotorista: string; odometro: number; tipo: string },
+  ): Observable<VistoriaResumo> {
+    return this.http.patch<VistoriaResumo>(`${this.apiUrl}/${id}/corrigir`, payload);
+  }
+
   listarIrregularidadesPendentes(idVeiculo: string): Observable<IrregularidadeResumo[]> {
     return this.http.get<IrregularidadeResumo[]>(
       `${this.apiUrl}/veiculo/${idVeiculo}/irregularidades-pendentes`,
+    );
+  }
+
+  listarHistoricoIrregularidadesNaoResolvidas(
+    idVeiculo: string,
+    filtros?: { areaId?: string; componenteId?: string },
+  ): Observable<IrregularidadeHistoricoVeiculo> {
+    let params = new HttpParams();
+    if (filtros?.areaId) {
+      params = params.set('areaId', filtros.areaId);
+    }
+    if (filtros?.componenteId) {
+      params = params.set('componenteId', filtros.componenteId);
+    }
+    return this.http.get<IrregularidadeHistoricoVeiculo>(
+      `${this.apiUrl}/veiculo/${idVeiculo}/historico-irregularidades-nao-resolvidas`,
+      { params },
+    );
+  }
+
+  baixarPdfPendenciasVeiculo(
+    idVeiculo: string,
+    filtros?: { areaId?: string; componenteId?: string },
+  ): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtros?.areaId) {
+      params = params.set('areaId', filtros.areaId);
+    }
+    if (filtros?.componenteId) {
+      params = params.set('componenteId', filtros.componenteId);
+    }
+    return this.http.get(
+      `${this.apiUrl}/veiculo/${idVeiculo}/historico-irregularidades-nao-resolvidas/pdf`,
+      { params, responseType: 'blob' },
     );
   }
 

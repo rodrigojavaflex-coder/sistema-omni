@@ -85,7 +85,7 @@ A fila web (`GET /irregularidades`) só lista irregularidades cuja vistoria est�
 - **Validações:**
   - Veículo e motorista ativos, selecionados via autocomplete
   - Odômetro > 0, ≤ 9.999.999; se existir último odômetro do veículo, deve ser maior (backend e frontend)
-  - Diferença > 200 km em relação ao último odômetro exige confirmação explícita no frontend
+  - Diferença acima do parâmetro `odometro_diff_max_km` (padrão 500 km) em relação ao último odômetro é bloqueada (sem confirmação)
   - Bateria obrigatória (0–100) para veículo elétrico; percentual de GNV obrigatório (0–100) para veículo GNV (Gás Natural); rótulo dinâmico (`% Bateria` ou `% GNV (Gás Natural)`)
   - Irregularidade: área, componente e sintoma válidos para o modelo do veículo; matriz deve existir
   - `observacao` da irregularidade obrigatória após `trim` (RN-VIS-002)

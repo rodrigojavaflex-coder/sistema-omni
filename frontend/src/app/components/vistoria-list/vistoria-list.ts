@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable, catchError, forkJoin, from, map, of, switchMap } from 'rxjs';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -21,9 +21,13 @@ import {
   IrregularidadeImagemResumo,
   IrregularidadeResumo,
   StatusErpVistoria,
+  TIPO_VISTORIA_OPCOES,
+  TipoVistoria,
   VistoriaResumo,
+  rotuloTipoVistoria,
 } from '../../models/vistoria.model';
 import { Permission, Usuario } from '../../models/usuario.model';
+import { StatusMotorista } from '../../models/status-motorista.enum';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
 import { MotoristaAutocompleteComponent } from '../shared/motorista-autocomplete/motorista-autocomplete.component';
 import { UsuarioAutocompleteComponent } from '../shared/usuario-autocomplete/usuario-autocomplete.component';
@@ -38,6 +42,7 @@ interface MapaImpressaoVista {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     VeiculoAutocompleteComponent,
     MotoristaAutocompleteComponent,
@@ -68,6 +73,24 @@ export class VistoriaListComponent implements OnInit {
   readonly canReprocessarErp = this.authService.hasPermission(
     Permission.VISTORIA_WEB_REPROCESSAR_ERP,
   );
+  readonly canCorrigir = this.authService.hasPermission(
+    Permission.VISTORIA_WEB_CORRIGIR,
+  );
+  readonly statusMotoristaAtivo = StatusMotorista.ATIVO;
+
+  showCorrigirModal = false;
+  corrigirTarget: VistoriaResumo | null = null;
+  corrigirMotoristaId = '';
+  corrigirOdometroDisplay = '';
+  corrigirOdometro: number | null = null;
+  corrigirPodeEditarOdometro = false;
+  corrigirOdometroAnterior: number | null = null;
+  odometroDiffMaxKm = 500;
+  corrigirTipo: TipoVistoria = 'CORRETIVA';
+  readonly tipoOpcoes = TIPO_VISTORIA_OPCOES;
+  corrigirLoading = false;
+  corrigirSaving = false;
+  corrigirError = '';
 
   vistorias: VistoriaResumo[] = [];
   filtered: VistoriaResumo[] = [];
@@ -87,6 +110,11 @@ export class VistoriaListComponent implements OnInit {
     { value: 'CANCELADA', label: 'Cancelada' },
   ];
 
+  tipoOptions = [
+    { value: '', label: 'Tipo: todos' },
+    ...TIPO_VISTORIA_OPCOES.map((o) => ({ value: o.value, label: o.label })),
+  ];
+
   erpStatusOptions: { value: StatusErpVistoria | ''; label: string }[] = [
     { value: '', label: 'ERP: todos' },
     { value: 'PENDENTE', label: 'ERP: pendente' },
@@ -104,6 +132,7 @@ export class VistoriaListComponent implements OnInit {
     veiculoId: [''],
     motoristaId: [''],
     status: [''],
+    tipo: [''],
     erpStatus: [''],
     usuarioId: [''],
     numeroVistoria: [''],
@@ -187,6 +216,7 @@ export class VistoriaListComponent implements OnInit {
       veiculoId,
       motoristaId,
       status,
+      tipo,
       erpStatus,
       usuarioId,
       numeroVistoria,
@@ -202,6 +232,8 @@ export class VistoriaListComponent implements OnInit {
       const matchesVeiculo = !veiculoId || vistoria.idVeiculo === veiculoId;
       const matchesMotorista = !motoristaId || vistoria.idMotorista === motoristaId;
       const matchesStatus = !status || vistoria.status === status;
+      const matchesTipo =
+        !tipo || (vistoria.tipo ?? 'CORRETIVA') === tipo;
       const matchesErpStatus = !erpStatus || vistoria.erpStatus === erpStatus;
       const matchesUsuario = !usuarioId || vistoria.idUsuario === usuarioId;
       const matchesNumero =
@@ -215,6 +247,7 @@ export class VistoriaListComponent implements OnInit {
         matchesVeiculo &&
         matchesMotorista &&
         matchesStatus &&
+        matchesTipo &&
         matchesErpStatus &&
         matchesUsuario &&
         matchesNumero &&
@@ -248,6 +281,7 @@ export class VistoriaListComponent implements OnInit {
       veiculoId: '',
       motoristaId: '',
       status: '',
+      tipo: '',
       erpStatus: '',
       usuarioId: '',
       numeroVistoria: '',
@@ -400,6 +434,194 @@ export class VistoriaListComponent implements OnInit {
     }
   }
 
+  podeCorrigir(vistoria: VistoriaResumo): boolean {
+    return this.canCorrigir && vistoria.status === 'FINALIZADA';
+  }
+
+  openCorrigirModal(vistoria: VistoriaResumo): void {
+    if (!this.podeCorrigir(vistoria)) {
+      return;
+    }
+    this.corrigirTarget = vistoria;
+    this.corrigirMotoristaId = vistoria.idMotorista || '';
+    this.corrigirOdometro = Number(vistoria.odometro);
+    this.corrigirOdometroDisplay = String(vistoria.odometro ?? '');
+    this.corrigirTipo =
+      vistoria.tipo === 'SINISTRO' || vistoria.tipo === 'PREVENTIVA'
+        ? vistoria.tipo
+        : 'CORRETIVA';
+    this.corrigirPodeEditarOdometro = false;
+    this.corrigirOdometroAnterior = null;
+    this.corrigirError = '';
+    this.corrigirSaving = false;
+    this.showCorrigirModal = true;
+    this.corrigirLoading = true;
+
+    this.vistoriaService.getParametros().subscribe({
+      next: (params) => {
+        const valor = Number(params?.odometroDiffMaxKm);
+        this.odometroDiffMaxKm =
+          Number.isFinite(valor) && valor >= 1 ? Math.trunc(valor) : 500;
+      },
+      error: () => {
+        this.odometroDiffMaxKm = 500;
+      },
+    });
+
+    this.vistoriaService.getUltimoOdometro(vistoria.idVeiculo).subscribe({
+      next: (ultima) => {
+        this.corrigirPodeEditarOdometro = !!ultima && ultima.id === vistoria.id;
+        this.corrigirLoading = false;
+        if (this.corrigirPodeEditarOdometro) {
+          this.vistoriaService
+            .getUltimoOdometro(vistoria.idVeiculo, vistoria.id)
+            .subscribe({
+              next: (anterior) => {
+                this.corrigirOdometroAnterior = anterior?.odometro ?? null;
+              },
+              error: () => {
+                this.corrigirOdometroAnterior = null;
+              },
+            });
+        }
+      },
+      error: () => {
+        this.corrigirPodeEditarOdometro = false;
+        this.corrigirLoading = false;
+        this.corrigirError =
+          'Não foi possível verificar se esta é a última vistoria do veículo.';
+      },
+    });
+  }
+
+  closeCorrigirModal(): void {
+    this.showCorrigirModal = false;
+    this.corrigirTarget = null;
+    this.corrigirMotoristaId = '';
+    this.corrigirOdometro = null;
+    this.corrigirOdometroDisplay = '';
+    this.corrigirTipo = 'CORRETIVA';
+    this.corrigirPodeEditarOdometro = false;
+    this.corrigirOdometroAnterior = null;
+    this.corrigirLoading = false;
+    this.corrigirSaving = false;
+    this.corrigirError = '';
+  }
+
+  onCorrigirOdometroInput(raw: string): void {
+    this.corrigirOdometroDisplay = raw;
+    const parsed = Number(String(raw).replace(',', '.').trim());
+    this.corrigirOdometro = Number.isFinite(parsed) ? parsed : null;
+  }
+
+  get corrigirOdometroInvalido(): boolean {
+    if (!this.corrigirPodeEditarOdometro) {
+      return false;
+    }
+    if (this.corrigirOdometro === null || this.corrigirOdometro <= 0) {
+      return true;
+    }
+    if (this.corrigirOdometro > 9999999) {
+      return true;
+    }
+    if (
+      this.corrigirOdometroAnterior !== null &&
+      this.corrigirOdometro <= this.corrigirOdometroAnterior
+    ) {
+      return true;
+    }
+    if (
+      this.corrigirOdometroAnterior !== null &&
+      this.corrigirOdometro - this.corrigirOdometroAnterior > this.odometroDiffMaxKm
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  get canSubmitCorrigir(): boolean {
+    if (!this.corrigirTarget || this.corrigirLoading || this.corrigirSaving) {
+      return false;
+    }
+    if (!this.corrigirMotoristaId) {
+      return false;
+    }
+    if (!this.corrigirTipo) {
+      return false;
+    }
+    if (this.corrigirOdometro === null || this.corrigirOdometro <= 0) {
+      return false;
+    }
+    if (this.corrigirPodeEditarOdometro && this.corrigirOdometroInvalido) {
+      return false;
+    }
+    return true;
+  }
+
+  submitCorrigir(): void {
+    if (!this.corrigirTarget || !this.canSubmitCorrigir) {
+      return;
+    }
+    this.corrigirSaving = true;
+    this.corrigirError = '';
+    this.vistoriaService
+      .corrigirVistoria(this.corrigirTarget.id, {
+        idmotorista: this.corrigirMotoristaId,
+        odometro: Number(this.corrigirOdometro),
+        tipo: this.corrigirTipo,
+      })
+      .subscribe({
+        next: (updated) => {
+          this.corrigirSaving = false;
+          this.patchVistoriaNaLista(updated);
+          this.success = 'Vistoria corrigida com sucesso.';
+          this.closeCorrigirModal();
+        },
+        error: (err: unknown) => {
+          this.corrigirSaving = false;
+          this.corrigirError = this.extractErrorMessage(
+            err,
+            'Não foi possível corrigir a vistoria.',
+          );
+        },
+      });
+  }
+
+  private patchVistoriaNaLista(updated: VistoriaResumo): void {
+    const merge = (list: VistoriaResumo[]): VistoriaResumo[] =>
+      list.map((item) =>
+        item.id === updated.id
+          ? {
+              ...item,
+              ...updated,
+              veiculo: updated.veiculo ?? item.veiculo,
+              motorista: updated.motorista ?? item.motorista,
+            }
+          : item,
+      );
+    this.vistorias = merge(this.vistorias);
+    this.applyFilters();
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    if (typeof error === 'object' && error !== null && 'error' in error) {
+      const body = (error as { error?: unknown }).error;
+      if (typeof body === 'object' && body !== null && 'message' in body) {
+        const msg = (body as { message?: string | string[] }).message;
+        if (Array.isArray(msg)) {
+          return msg.join(', ') || fallback;
+        }
+        if (typeof msg === 'string' && msg.trim()) {
+          return msg;
+        }
+      }
+      if (typeof body === 'string' && body.trim()) {
+        return body;
+      }
+    }
+    return fallback;
+  }
+
   openDrawer(vistoria: VistoriaResumo): void {
     this.selectedVistoria = vistoria;
     this.drawerOpen = true;
@@ -489,6 +711,10 @@ export class VistoriaListComponent implements OnInit {
   getStatusLabel(status?: string): string {
     const option = this.statusOptions.find((opt) => opt.value === status);
     return option?.label ?? status ?? '-';
+  }
+
+  getTipoLabel(tipo?: TipoVistoria | string | null): string {
+    return rotuloTipoVistoria(tipo);
   }
 
   getStatusClass(status?: string): string {
@@ -919,10 +1145,35 @@ export class VistoriaListComponent implements OnInit {
             .cover {
               display: grid;
               grid-template-columns: 1fr 1fr;
-              gap: 1pt 12pt;
-              font-size: 8pt;
-              color: #334155;
-              margin-bottom: 8pt;
+              gap: 5pt;
+              margin-bottom: 10pt;
+            }
+            .cover-dado {
+              grid-column: 1 / -1;
+              margin: 0;
+              padding: 5pt 7pt;
+              border-radius: 6pt;
+              background: #f1f5f9;
+              break-inside: avoid;
+            }
+            .cover-dado--half {
+              grid-column: span 1;
+            }
+            .cover-dado dt {
+              margin: 0 0 1pt;
+              font-size: 6.5pt;
+              font-weight: 600;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+              color: #64748b;
+            }
+            .cover-dado dd {
+              margin: 0;
+              font-size: 8.5pt;
+              font-weight: 600;
+              line-height: 1.3;
+              word-break: break-word;
+              color: #0f172a;
             }
             .item {
               border: 0.8pt solid #cbd5e1;
@@ -1070,20 +1321,60 @@ export class VistoriaListComponent implements OnInit {
           </div>
           <div class="header-sub">Veículo: ${this.escapeHtml(veiculoDescricao)} · Placa: ${this.escapeHtml(placa)}</div>
           <div class="header-emissao">Emissão: ${printDate}</div>
-          <div class="cover">
-            <div><strong>Status:</strong> ${this.escapeHtml(this.getStatusLabel(vistoria.status))}</div>
-            <div><strong>Data da vistoria:</strong> ${dataVistoria}</div>
-            <div><strong>Motorista:</strong> ${this.escapeHtml(motoristaNome)}</div>
-            <div><strong>Matrícula:</strong> ${this.escapeHtml(motoristaMatricula)}</div>
-            <div><strong>Vistoriador:</strong> ${this.escapeHtml(usuario)}</div>
-            <div><strong>Odômetro:</strong> ${this.formatNumero(vistoria.odometro)}</div>
-            <div><strong>${this.escapeHtml(this.rotuloPercentualVistoria(vistoria))}:</strong> ${bateriaTexto}</div>
-            <div><strong>Tempo:</strong> ${this.formatTempo(vistoria.tempo)}</div>
-            <div><strong>Observação:</strong> ${this.escapeHtml(vistoria.observacao ?? '-')}</div>
-            <div><strong>Vistoria:</strong> ${this.formatNumeroVistoria(vistoria.numeroVistoria)}</div>
-            <div><strong>Vistoria OMNI:</strong> ${this.formatErpNumero(vistoria.erpNumeroVistoria)}</div>
-            <div><strong>Erro ERP:</strong> ${this.escapeHtml(vistoria.erpUltimoErro ?? '-')}</div>
-          </div>
+          <dl class="cover">
+            <div class="cover-dado cover-dado--half">
+              <dt>Status</dt>
+              <dd>${this.escapeHtml(this.getStatusLabel(vistoria.status))}</dd>
+            </div>
+            <div class="cover-dado cover-dado--half">
+              <dt>Tipo</dt>
+              <dd>${this.escapeHtml(this.getTipoLabel(vistoria.tipo))}</dd>
+            </div>
+            <div class="cover-dado cover-dado--half">
+              <dt>Data da vistoria</dt>
+              <dd>${dataVistoria}</dd>
+            </div>
+            <div class="cover-dado">
+              <dt>Vistoriador</dt>
+              <dd>${this.escapeHtml(usuario)}</dd>
+            </div>
+            <div class="cover-dado cover-dado--half">
+              <dt>Motorista</dt>
+              <dd>${this.escapeHtml(motoristaNome)}</dd>
+            </div>
+            <div class="cover-dado cover-dado--half">
+              <dt>Matrícula</dt>
+              <dd>${this.escapeHtml(motoristaMatricula)}</dd>
+            </div>
+            <div class="cover-dado cover-dado--half">
+              <dt>Odômetro</dt>
+              <dd>${this.formatNumero(vistoria.odometro)}</dd>
+            </div>
+            <div class="cover-dado cover-dado--half">
+              <dt>${this.escapeHtml(this.rotuloPercentualVistoria(vistoria))}</dt>
+              <dd>${bateriaTexto}</dd>
+            </div>
+            <div class="cover-dado cover-dado--half">
+              <dt>Tempo</dt>
+              <dd>${this.formatTempo(vistoria.tempo)}</dd>
+            </div>
+            <div class="cover-dado cover-dado--half">
+              <dt>Vistoria</dt>
+              <dd>${this.formatNumeroVistoria(vistoria.numeroVistoria)}</dd>
+            </div>
+            <div class="cover-dado">
+              <dt>Observação</dt>
+              <dd>${this.escapeHtml(vistoria.observacao ?? '-')}</dd>
+            </div>
+            <div class="cover-dado cover-dado--half">
+              <dt>Vistoria OMNI</dt>
+              <dd>${this.formatErpNumero(vistoria.erpNumeroVistoria)}</dd>
+            </div>
+            <div class="cover-dado cover-dado--half">
+              <dt>Erro ERP</dt>
+              <dd>${this.escapeHtml(vistoria.erpUltimoErro ?? '-')}</dd>
+            </div>
+          </dl>
           ${irregularidadesHtml}
           <div class="footer">${rodapeEsquerda}</div>
           <script>

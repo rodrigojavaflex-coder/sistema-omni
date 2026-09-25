@@ -14,6 +14,7 @@ export interface SosSessaoAberta {
   idVeiculo: string;
   idMotorista: string;
   odometro: number;
+  tipo?: TipoVistoria;
   porcentagembateria: number | null;
   datavistoria: string;
   numeroVistoria?: number;
@@ -24,6 +25,23 @@ export interface SosSessaoAberta {
   irregularidades: SosSessaoIrregularidadeResumo[];
 }
 
+export type TipoVistoria = 'CORRETIVA' | 'PREVENTIVA' | 'SINISTRO';
+
+export const TIPO_VISTORIA_OPCOES: { value: TipoVistoria; label: string }[] = [
+  { value: 'CORRETIVA', label: 'Corretiva' },
+  { value: 'PREVENTIVA', label: 'Preventiva' },
+  { value: 'SINISTRO', label: 'Sinistro' },
+];
+
+export function rotuloTipoVistoria(tipo?: TipoVistoria | string | null): string {
+  if (tipo === 'SINISTRO') {
+    return 'Sinistro';
+  }
+  if (tipo === 'PREVENTIVA') {
+    return 'Preventiva';
+  }
+  return 'Corretiva';
+}
 export interface VistoriaResumo {
   id: string;
   idVeiculo: string;
@@ -36,6 +54,7 @@ export interface VistoriaResumo {
   observacao?: string;
   status?: string;
   origem?: string | null;
+  tipo?: TipoVistoria;
   veiculo?: {
     descricao?: string;
     placa?: string;
@@ -108,6 +127,44 @@ export interface IrregularidadeAudioItem {
 export interface IrregularidadeAudioResumo {
   idirregularidade: string;
   audios: IrregularidadeAudioItem[];
+}
+
+/** Mídia resumida no histórico de pendências do veículo (metadados; base64 sob demanda) */
+export interface IrregularidadeHistoricoVeiculoMidia {
+  id: string;
+  tipo: 'imagem' | 'audio';
+  nomeArquivo: string;
+  mimeType: string;
+  tamanho: number;
+  dadosBase64?: string;
+  duracaoMs?: number | null;
+}
+
+export interface IrregularidadeHistoricoVeiculoItem {
+  id: string;
+  numeroIrregularidade?: number;
+  idvistoria: string;
+  numeroVistoria: number;
+  datavistoria: string;
+  statusVistoria: string;
+  idarea: string;
+  nomeArea?: string;
+  idcomponente: string;
+  nomeComponente?: string;
+  idsintoma: string;
+  descricaoSintoma?: string;
+  observacao?: string;
+  resolvido: boolean;
+  statusAtual?: string;
+  atualizadoEm: string;
+  midias: IrregularidadeHistoricoVeiculoMidia[];
+}
+
+export interface IrregularidadeHistoricoVeiculo {
+  idveiculo: string;
+  veiculo: string;
+  total: number;
+  itens: IrregularidadeHistoricoVeiculoItem[];
 }
 
 export type StatusErpVistoria = 'NAO_APLICA' | 'PENDENTE' | 'ENVIADO' | 'FALHA';

@@ -80,24 +80,87 @@
   </ion-toolbar>
 </ion-footer>
 
-<div class="sucesso-overlay" *ngIf="sucessoVisivel" aria-modal="true" role="dialog">
+<div class="sucesso-overlay" *ngIf="sucessoVisivel" aria-modal="true" role="dialog" aria-labelledby="sucesso-titulo">
   <div class="sucesso-card">
-    <h2>Vistoria {{ resumoVistoriaNumero }} concluída com sucesso</h2>
-    <p><strong>Vistoriador:</strong> {{ resumoVistoriador }}</p>
-    <p><strong>Veículo:</strong> {{ resumoVeiculo }}</p>
-    <p><strong>Motorista:</strong> {{ resumoMotorista }}</p>
-    <p><strong>Odômetro:</strong> {{ resumoOdometro }}</p>
-    <p><strong>{{ resumoRotuloPercentual }}:</strong> {{ resumoBateria }}</p>
-    <p><strong>Irregularidades:</strong> {{ resumoIrregularidades }}</p>
+    <header class="sucesso-header">
+      <div class="sucesso-icon" aria-hidden="true">
+        <ion-icon name="checkmark-circle"></ion-icon>
+      </div>
+      <div class="sucesso-header-text">
+        <p class="sucesso-eyebrow">Vistoria {{ resumoVistoriaNumero }}</p>
+        <h2 id="sucesso-titulo">Concluída com sucesso</h2>
+      </div>
+    </header>
 
-    <div class="irregularidades-lista-overlay">
-      <p><strong>Resumo:</strong></p>
-      <p *ngIf="resumoIrregularidadesDetalhes.length === 0">- Nenhuma irregularidade registrada</p>
-      @for (detalhe of resumoIrregularidadesDetalhes; track detalhe) {
-        <p>- {{ detalhe }}</p>
-      }
+    <dl class="sucesso-dados">
+      <div class="sucesso-dado">
+        <dt>Vistoriador</dt>
+        <dd>{{ resumoVistoriador }}</dd>
+      </div>
+      <div class="sucesso-dado">
+        <dt>Veículo</dt>
+        <dd>{{ resumoVeiculo }}</dd>
+      </div>
+      <div class="sucesso-dado">
+        <dt>Motorista</dt>
+        <dd>{{ resumoMotorista }}</dd>
+      </div>
+      <div class="sucesso-dado sucesso-dado--half">
+        <dt>Odômetro</dt>
+        <dd>{{ resumoOdometro }}</dd>
+      </div>
+      <div class="sucesso-dado sucesso-dado--half">
+        <dt>{{ resumoRotuloPercentual }}</dt>
+        <dd>{{ resumoBateria }}</dd>
+      </div>
+    </dl>
+
+    <section class="sucesso-resumo" aria-label="Resumo de irregularidades">
+      <div class="sucesso-resumo-topo">
+        <h3>Irregularidades</h3>
+        <span
+          class="sucesso-badge"
+          [class.sucesso-badge--ok]="resumoIrregularidades === 0"
+          [class.sucesso-badge--alerta]="resumoIrregularidades > 0"
+        >
+          {{ resumoIrregularidades }}
+        </span>
+      </div>
+      <ul class="sucesso-lista" *ngIf="resumoIrregularidadesDetalhes.length > 0">
+        @for (detalhe of resumoIrregularidadesDetalhes; track detalhe) {
+          <li>{{ detalhe }}</li>
+        }
+      </ul>
+      <p class="sucesso-vazio" *ngIf="resumoIrregularidadesDetalhes.length === 0">
+        Nenhuma irregularidade registrada
+      </p>
+    </section>
+
+    <ion-text color="danger" *ngIf="pdfErrorMessage">
+      <p class="error-message">{{ pdfErrorMessage }}</p>
+    </ion-text>
+
+    <div class="sucesso-actions">
+      <ion-button
+        class="btn-pdf"
+        fill="outline"
+        color="danger"
+        [disabled]="!vistoriaIdPdf || gerandoPdf"
+        (click)="gerarRelatorioPdf()"
+        aria-label="Imprimir relatório PDF"
+      >
+        <ion-spinner *ngIf="gerandoPdf" name="crescent"></ion-spinner>
+        <span *ngIf="!gerandoPdf" class="pdf-mark" aria-hidden="true">PDF</span>
+      </ion-button>
+      <ion-button
+        class="btn-ok"
+        expand="block"
+        color="primary"
+        [disabled]="gerandoPdf"
+        (click)="confirmarConclusao()"
+      >
+        Fechar
+      </ion-button>
     </div>
-
-    <ion-button expand="block" (click)="confirmarConclusao()">OK</ion-button>
   </div>
 </div>

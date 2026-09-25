@@ -81,6 +81,6 @@ export const PERMISSION_MODULE_CONFIG: PermissionModuleConfig[] = [
   {
     key: 'relatorios',
     label: 'Relatórios',
-    groupKeys: ['Relatórios'],
+    groupKeys: ['Relatórios', 'Relatórios – Pendências do veículo'],
   },
 ];

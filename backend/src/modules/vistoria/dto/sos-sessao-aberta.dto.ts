@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { TipoVistoria } from '../../../common/enums/tipo-vistoria.enum';
 
 export class SosSessaoIrregularidadeDto {
   @ApiProperty()
@@ -38,6 +39,9 @@ export class SosSessaoAbertaDto {
 
   @ApiProperty()
   odometro: number;
+
+  @ApiProperty({ enum: TipoVistoria })
+  tipo: TipoVistoria;
 
   @ApiProperty({ required: false, nullable: true })
   porcentagembateria: number | null;

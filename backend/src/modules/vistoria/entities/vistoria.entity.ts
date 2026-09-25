@@ -6,11 +6,13 @@ import { Motorista } from '../../motorista/entities/motorista.entity';
 import { StatusVistoria } from '../../../common/enums/status-vistoria.enum';
 import { StatusErpVistoria } from '../../../common/enums/status-erp-vistoria.enum';
 import { OrigemVistoria } from '../../../common/enums/origem-vistoria.enum';
+import { TipoVistoria } from '../../../common/enums/tipo-vistoria.enum';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { Irregularidade } from './irregularidade.entity';
 
 @Entity('vistorias')
 @Index('IDX_VISTORIA_DATA', ['datavistoria'])
+@Index('IDX_VISTORIA_TIPO', ['tipo'])
 export class Vistoria extends BaseEntity {
   static get nomeAmigavel(): string {
     return 'Vistoria';
@@ -106,6 +108,19 @@ export class Vistoria extends BaseEntity {
   })
   @Column({ name: 'origem', type: 'varchar', length: 20, nullable: true })
   origem?: OrigemVistoria | null;
+
+  @ApiProperty({
+    description: 'Tipo da vistoria',
+    enum: TipoVistoria,
+    default: TipoVistoria.CORRETIVA,
+  })
+  @Column({
+    name: 'tipo',
+    type: 'varchar',
+    length: 20,
+    default: TipoVistoria.CORRETIVA,
+  })
+  tipo: TipoVistoria;
 
   @ApiProperty({
     description: 'Status da integração ERP da capa',

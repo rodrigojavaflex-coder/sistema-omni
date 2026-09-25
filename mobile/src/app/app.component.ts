@@ -22,6 +22,8 @@ import {
 import { addIcons } from 'ionicons';
 import {
   clipboardOutline,
+  cloudDownloadOutline,
+  documentTextOutline,
   informationCircleOutline,
   keyOutline,
   logOutOutline,
@@ -29,6 +31,8 @@ import {
   settingsOutline,
 } from 'ionicons/icons';
 import { AuthService } from './services/auth.service';
+import { AppUpdateRequiredService } from './services/app-update-required.service';
+import { MobileVersionCheckService } from './services/mobile-version-check.service';
 import { Perfil, Usuario } from './models/usuario.model';
 import { VistoriaFlowService } from './services/vistoria-flow.service';
 
@@ -61,6 +65,13 @@ export class AppComponent {
   private router = inject(Router);
   private alertController = inject(AlertController);
   private menuController = inject(MenuController);
+  private appUpdateRequired = inject(AppUpdateRequiredService);
+  private mobileVersionCheck = inject(MobileVersionCheckService);
+
+  readonly updateRequired = this.appUpdateRequired.required;
+  readonly updateMessage = this.appUpdateRequired.message;
+  readonly updateVersaoMinima = this.appUpdateRequired.versaoMinima;
+  readonly updateVersaoApp = this.appUpdateRequired.versaoApp;
 
   fecharMenu(): void {
     this.menuController.close();
@@ -72,6 +83,10 @@ export class AppComponent {
 
   get canViewHistoricoVeiculo(): boolean {
     return this.authService.hasPermission('vistoria_web_historico_veiculo:read');
+  }
+
+  get canViewVistorias(): boolean {
+    return this.authService.hasPermission('vistoria_mobile_lista:read');
   }
 
   get canStartVistoria(): boolean {
@@ -105,9 +120,11 @@ export class AppComponent {
       logOutOutline,
       settingsOutline,
       clipboardOutline,
+      documentTextOutline,
       informationCircleOutline,
       playCircleOutline,
       keyOutline,
+      cloudDownloadOutline,
     });
 
     this.authService.currentUser$.subscribe(user => {
@@ -121,6 +138,7 @@ export class AppComponent {
     });
 
     void this.configureSystemBars();
+    this.mobileVersionCheck.checkAgainstServer().subscribe();
   }
 
   private async configureSystemBars(): Promise<void> {
@@ -135,6 +153,7 @@ export class AppComponent {
     if (
       this.hasVistoriaEmAndamento &&
       (route === '/vistoria/pendencias-veiculo' ||
+        route === '/vistoria/lista' ||
         route === '/configuracoes' ||
         route === '/alterar-senha' ||
         route === '/sobre')

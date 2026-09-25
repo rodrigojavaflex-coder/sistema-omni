@@ -1,0 +1,196 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="main-menu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Vistorias</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="carregar()" [disabled]="loading" aria-label="Atualizar lista">
+        Atualizar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="content">
+    <div class="filtros">
+      <ion-item>
+        <ion-label position="stacked">Veículo</ion-label>
+        <ion-input
+          [value]="veiculoSearch"
+          placeholder="Buscar veículo (mín. 2 caracteres)"
+          type="text"
+          autocomplete="off"
+          [clearInput]="true"
+          (ionInput)="onBuscarVeiculos($event)"
+        ></ion-input>
+      </ion-item>
+      <div class="search-loading" *ngIf="loadingVeiculos">
+        <ion-spinner name="crescent"></ion-spinner>
+        <span>Buscando veículos...</span>
+      </div>
+      <ion-card *ngIf="veiculos.length > 0" class="search-results">
+        <ion-card-content>
+          <ion-item
+            *ngFor="let veiculo of veiculos"
+            lines="none"
+            button
+            (click)="selecionarVeiculo(veiculo)"
+          >
+            <ion-label>
+              <strong>{{ veiculo.descricao }}</strong>
+              <p>{{ veiculo.placa }}</p>
+            </ion-label>
+          </ion-item>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-item>
+        <ion-label position="stacked">Motorista</ion-label>
+        <ion-input
+          [value]="motoristaSearch"
+          placeholder="Buscar motorista (mín. 2 caracteres)"
+          type="text"
+          autocomplete="off"
+          [clearInput]="true"
+          (ionInput)="onBuscarMotoristas($event)"
+        ></ion-input>
+      </ion-item>
+      <div class="search-loading" *ngIf="loadingMotoristas">
+        <ion-spinner name="crescent"></ion-spinner>
+        <span>Buscando motoristas...</span>
+      </div>
+      <ion-card *ngIf="motoristas.length > 0" class="search-results">
+        <ion-card-content>
+          <ion-item
+            *ngFor="let motorista of motoristas"
+            lines="none"
+            button
+            (click)="selecionarMotorista(motorista)"
+          >
+            <ion-label>
+              <strong>{{ motorista.nome }}</strong>
+              <p>{{ motorista.matricula }}</p>
+            </ion-label>
+          </ion-item>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-item>
+        <ion-label position="stacked">Vistoria</ion-label>
+        <ion-input
+          [(ngModel)]="numeroVistoriaFiltro"
+          placeholder="Número da vistoria"
+          type="text"
+          inputmode="numeric"
+          (ionInput)="onFiltroTextoChange()"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Vistoria OMNI</ion-label>
+        <ion-input
+          [(ngModel)]="erpNumeroFiltro"
+          placeholder="Código OMNI / ERP"
+          type="text"
+          (ionInput)="onFiltroTextoChange()"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Tipo</ion-label>
+        <ion-select
+          [(ngModel)]="tipoFiltro"
+          interface="popover"
+          placeholder="Todos"
+          (ionChange)="onFiltroTextoChange()"
+          aria-label="Filtrar por tipo"
+        >
+          <ion-select-option value="">Todos</ion-select-option>
+          <ion-select-option *ngFor="let opcao of tipoOpcoes" [value]="opcao.value">
+            {{ opcao.label }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <div class="datas-row">
+        <ion-item class="data-item">
+          <ion-label position="stacked">Data início</ion-label>
+          <ion-input
+            [(ngModel)]="dataInicio"
+            type="date"
+            (ionChange)="onFiltroTextoChange()"
+          ></ion-input>
+        </ion-item>
+        <ion-item class="data-item">
+          <ion-label position="stacked">Data fim</ion-label>
+          <ion-input
+            [(ngModel)]="dataFim"
+            type="date"
+            (ionChange)="onFiltroTextoChange()"
+          ></ion-input>
+        </ion-item>
+      </div>
+
+      <ion-button
+        expand="block"
+        fill="solid"
+        color="medium"
+        class="btn-limpar"
+        (click)="limparFiltros()"
+      >
+        Limpar
+      </ion-button>
+    </div>
+
+    <ion-text color="danger" *ngIf="errorMessage">
+      <p class="error-message">{{ errorMessage }}</p>
+    </ion-text>
+    <ion-text color="danger" *ngIf="pdfErrorMessage">
+      <p class="error-message">{{ pdfErrorMessage }}</p>
+    </ion-text>
+
+    <div class="loading-block" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Carregando vistorias finalizadas...</p>
+    </div>
+
+    <p class="resultado-count" *ngIf="!loading && !errorMessage">
+      {{ filtradas.length }} vistoria(s) finalizada(s)
+    </p>
+
+    <div class="cards" *ngIf="!loading && !errorMessage">
+      <ion-card *ngFor="let vistoria of filtradas" class="vistoria-card">
+        <ion-card-content>
+          <div class="card-topo">
+            <div>
+              <p class="card-titulo">Vistoria {{ formatNumeroVistoria(vistoria.numeroVistoria) }}</p>
+              <p class="card-sub">OMNI {{ formatErpNumero(vistoria.erpNumeroVistoria) }}</p>
+            </div>
+            <ion-button
+              class="btn-pdf"
+              fill="outline"
+              color="danger"
+              size="small"
+              [disabled]="gerandoPdfId !== null"
+              (click)="gerarPdf(vistoria)"
+              aria-label="Imprimir relatório PDF"
+            >
+              <ion-spinner *ngIf="gerandoPdfId === vistoria.id" name="crescent"></ion-spinner>
+              <span *ngIf="gerandoPdfId !== vistoria.id" class="pdf-mark">PDF</span>
+            </ion-button>
+          </div>
+          <p><strong>Veículo:</strong> {{ veiculoLabel(vistoria) }}</p>
+          <p><strong>Motorista:</strong> {{ motoristaLabel(vistoria) }}</p>
+          <p><strong>Tipo:</strong> {{ formatTipo(vistoria.tipo) }}</p>
+          <p><strong>Data:</strong> {{ formatData(vistoria.datavistoria) }}</p>
+        </ion-card-content>
+      </ion-card>
+
+      <p class="vazio" *ngIf="filtradas.length === 0">
+        Nenhuma vistoria finalizada encontrada com os filtros atuais.
+      </p>
+    </div>
+  </div>
+</ion-content>

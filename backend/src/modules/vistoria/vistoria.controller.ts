@@ -23,6 +23,7 @@ import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Permission } from '../../common/enums/permission.enum';
 import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
+import { TipoVistoria } from '../../common/enums/tipo-vistoria.enum';
 import { Vistoria } from './entities/vistoria.entity';
 import { VistoriaService } from './vistoria.service';
 import { CreateVistoriaDto } from './dto/create-vistoria.dto';
@@ -31,6 +32,7 @@ import { collectUserPermissions } from '../../common/utils/irregularidade-permis
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { FinalizeVistoriaDto } from './dto/finalize-vistoria.dto';
 import { UpdateVistoriaDto } from './dto/update-vistoria.dto';
+import { CorrigirVistoriaDto } from './dto/corrigir-vistoria.dto';
 import { CreateIrregularidadeDto } from './dto/create-irregularidade.dto';
 import { IrregularidadeResumoDto } from './dto/irregularidade-resumo.dto';
 import { IrregularidadeImagemResumoDto } from './dto/irregularidade-imagem-resumo.dto';
@@ -103,6 +105,21 @@ export class VistoriaController {
   @ApiResponse({ status: 200, type: ErpVistoriaStatusDto })
   getErpStatus(): Promise<ErpVistoriaStatusDto> {
     return this.vistoriaService.getErpStatus();
+  }
+
+  @Get('parametros')
+  @Permissions(
+    Permission.VISTORIA_READ,
+    Permission.VISTORIA_WEB_READ,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+    Permission.VISTORIA_WEB_CORRIGIR,
+  )
+  @ApiOperation({
+    summary: 'Parâmetros de vistoria (diferença máx. entre odômetros, etc.)',
+  })
+  @ApiResponse({ status: 200, description: 'Parâmetros efetivos' })
+  getParametros(): Promise<{ odometroDiffMaxKm: number }> {
+    return this.vistoriaService.getParametros();
   }
 
   @Post('erp/enviar')
@@ -220,18 +237,37 @@ export class VistoriaController {
     return this.vistoriaService.update(id, dto);
   }
 
+  @Patch(':id/corrigir')
+  @Permissions(Permission.VISTORIA_WEB_CORRIGIR)
+  @ApiOperation({
+    summary:
+      'Corrigir motorista e odômetro de vistoria finalizada (web). Odômetro só na última FINALIZADA do veículo.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Vistoria corrigida',
+    type: Vistoria,
+  })
+  corrigir(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: CorrigirVistoriaDto,
+  ): Promise<Vistoria> {
+    return this.vistoriaService.corrigir(id, dto);
+  }
+
   @Get('veiculo/:id/ultimo-odometro')
   @Permissions(
     Permission.VISTORIA_READ,
     Permission.VISTORIA_WEB_READ,
     Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+    Permission.VISTORIA_WEB_CORRIGIR,
   )
   @ApiOperation({ summary: 'Buscar último odômetro por veículo' })
   @ApiResponse({ status: 200, description: 'Último odômetro encontrado' })
   findUltimoOdometro(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Query('ignorarVistoriaId') ignorarVistoriaId?: string,
-  ): Promise<{ odometro: number; datavistoria: string } | null> {
+  ): Promise<{ id: string; odometro: number; datavistoria: string } | null> {
     return this.vistoriaService.getUltimoOdometro(id, ignorarVistoriaId);
   }
 
@@ -277,7 +313,10 @@ export class VistoriaController {
   }
 
   @Get('veiculo/:id/historico-irregularidades-nao-resolvidas/pdf')
-  @Permissions(Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ)
+  @Permissions(
+    Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ,
+    Permission.RELATORIO_PENDENCIAS_VEICULO_READ,
+  )
   @ApiOperation({
     summary: 'Gerar PDF das pendências do veículo (filtros opcionais)',
   })
@@ -302,7 +341,10 @@ export class VistoriaController {
   }
 
   @Get('veiculo/:id/historico-irregularidades-nao-resolvidas')
-  @Permissions(Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ)
+  @Permissions(
+    Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ,
+    Permission.RELATORIO_PENDENCIAS_VEICULO_READ,
+  )
   @ApiOperation({
     summary:
       'Histórico de irregularidades não resolvidas do veículo (com mídias)',
@@ -322,6 +364,30 @@ export class VistoriaController {
       areaId,
       componenteId,
     );
+  }
+
+  @Get(':id/pdf')
+  @Permissions(
+    Permission.VISTORIA_READ,
+    Permission.VISTORIA_WEB_READ,
+    Permission.VISTORIA_MOBILE_LISTA_READ,
+  )
+  @ApiOperation({
+    summary: 'Gerar PDF do relatório da vistoria (capa + irregularidades)',
+  })
+  @ApiResponse({ status: 200, description: 'Arquivo PDF' })
+  async pdfVistoria(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: Request & { user?: Usuario },
+  ): Promise<StreamableFile> {
+    const pdf = await this.irregularidadeService.gerarPdfVistoria(
+      id,
+      req.user?.nome,
+    );
+    return new StreamableFile(pdf, {
+      type: 'application/pdf',
+      disposition: 'inline; filename="relatorio-vistoria.pdf"',
+    });
   }
 
   @Get(':id')
@@ -349,7 +415,11 @@ export class VistoriaController {
   }
 
   @Get()
-  @Permissions(Permission.VISTORIA_READ, Permission.VISTORIA_WEB_READ)
+  @Permissions(
+    Permission.VISTORIA_READ,
+    Permission.VISTORIA_WEB_READ,
+    Permission.VISTORIA_MOBILE_LISTA_READ,
+  )
   @ApiOperation({ summary: 'Listar vistorias (com filtro de status)' })
   @ApiResponse({
     status: 200,
@@ -360,8 +430,14 @@ export class VistoriaController {
     @Query('status') status?: StatusVistoria,
     @Query('idusuario') idusuario?: string,
     @Query('ignorarVistoriaId') ignorarVistoriaId?: string,
+    @Query('tipo') tipo?: TipoVistoria,
   ): Promise<Vistoria[]> {
-    return this.vistoriaService.findAll(status, idusuario, ignorarVistoriaId);
+    return this.vistoriaService.findAll(
+      status,
+      idusuario,
+      ignorarVistoriaId,
+      tipo,
+    );
   }
 
   @Post(':id/cancelar')

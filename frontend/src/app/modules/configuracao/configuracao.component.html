@@ -25,6 +25,22 @@
     >
       Integração ERP
     </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab === 'vistoria'"
+      (click)="activeTab = 'vistoria'"
+    >
+      Vistoria
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab === 'app'"
+      (click)="activeTab = 'app'"
+    >
+      App
+    </button>
   </div>
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="form-group" *ngIf="activeTab === 'sistema'">
@@ -259,6 +275,98 @@
             “Erro ao gravar Vistoria no OMNI”.
           </small>
         </div>
+      </div>
+    </div>
+
+    <div class="audit-section" *ngIf="activeTab === 'vistoria'">
+      <h3 class="section-title">Configurações de Vistoria</h3>
+      <p class="section-description">
+        Parâmetros aplicados na inclusão e correção de vistoria (app, SOS e web).
+      </p>
+
+      <div class="form-group">
+        <label class="form-label" for="odometroDiffMaxKm">
+          Diferença máx. entre odômetros do veículo (km)
+        </label>
+        <input
+          id="odometroDiffMaxKm"
+          type="number"
+          class="form-input"
+          formControlName="odometroDiffMaxKm"
+          min="1"
+          max="999999"
+          step="1"
+          [placeholder]="odometroDiffMaxKmPadrao.toString()"
+        />
+        <small class="field-description field-description--flush">
+          Bloqueia odômetro se a diferença em relação à última vistoria FINALIZADA
+          ultrapassar este valor. Sem configuração válida, o sistema usa
+          {{ odometroDiffMaxKmPadrao }} km.
+        </small>
+      </div>
+    </div>
+
+    <div class="audit-section" *ngIf="activeTab === 'app'">
+      <h3 class="section-title">Aplicativo mobile</h3>
+      <p class="section-description">
+        Controle de versão mínima. Defina somente depois de distribuir o APK novo
+        nos aparelhos; caso contrário a frota antiga fica sem acesso.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label" for="mobileVersaoMinima">
+          Versão mínima do app
+        </label>
+        <select
+          id="mobileVersaoMinima"
+          class="form-input form-select"
+          formControlName="mobileVersaoMinima"
+        >
+          <option value="">Não bloquear (sem versão mínima)</option>
+          @for (item of mobileVersaoOpcoes; track item.version) {
+            <option [value]="item.version">{{ formatMobileVersionLabel(item) }}</option>
+          }
+        </select>
+        <small class="field-description field-description--flush">
+          Opções vindas do catálogo gerado com
+          <code>run-emulator-clean.ps1 -NewVersion</code>.
+          Vazio = não bloqueia. Apps com <code>X-App-Version</code> abaixo do
+          valor selecionado não acessam a API.
+        </small>
+      </div>
+
+      <div class="mobile-catalog-block">
+        <h4 class="subsection-title">Catálogo de versões</h4>
+        <p class="section-description section-description--compact">
+          Remova versões antigas que não queira mais oferecer no combo.
+        </p>
+        @if (mobileVersoesCatalogo.length === 0) {
+          <p class="catalog-empty">Nenhuma versão no catálogo.</p>
+        } @else {
+          <ul class="mobile-catalog-list" role="list">
+            @for (item of mobileVersaoOpcoes; track item.version) {
+              <li class="mobile-catalog-item">
+                <span class="mobile-catalog-meta">
+                  <strong>{{ item.version }}</strong>
+                  @if (formatCatalogDate(item.date); as dataLabel) {
+                    <span class="mobile-catalog-date">{{ dataLabel }}</span>
+                  } @else {
+                    <span class="mobile-catalog-date mobile-catalog-date--muted">sem data</span>
+                  }
+                </span>
+                <button
+                  type="button"
+                  class="btn-catalog-remove"
+                  [disabled]="loading || removingMobileVersion === item.version"
+                  [attr.aria-label]="'Remover versão ' + item.version"
+                  (click)="removerVersaoCatalogo(item.version)"
+                >
+                  {{ removingMobileVersion === item.version ? 'Removendo...' : 'Remover' }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
       </div>
     </div>
 

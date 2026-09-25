@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Agent, fetch as undiciFetch } from 'undici';
 import { IntegracaoManutencaoEmpresa } from '../../common/enums/integracao-manutencao-empresa.enum';
 import { OrigemRegistroIrregularidade } from '../../common/enums/origem-vistoria.enum';
+import { TipoVistoria } from '../../common/enums/tipo-vistoria.enum';
 import { StatusIrregularidade } from '../../common/enums/status-irregularidade.enum';
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 import { Irregularidade } from './entities/irregularidade.entity';
@@ -173,10 +174,7 @@ export class BrtOsIntegrationService {
         'Solicitante não configurado na empresa de manutenção',
       );
     }
-    const tpoSrv =
-      irregularidade.origemRegistro === OrigemRegistroIrregularidade.SOS_WEB
-        ? 3
-        : 1;
+    const tpoSrv = this.resolveTpoSrv(irregularidade);
     const odom = irregularidade.vistoria?.odometro;
     const payload: BrtCriarOsPayload = {
       ten_emp: tenEmp,
@@ -199,6 +197,23 @@ export class BrtOsIntegrationService {
       payload.odo_vcl = Math.trunc(Number(odom));
     }
     return payload;
+  }
+
+  /**
+   * BRT tpo_srv: 1 corretiva, 2 preventiva, 3 SOS/socorro, 4 sinistro.
+   * Tipo na capa (SINISTRO / PREVENTIVA) tem precedência sobre origem SOS.
+   */
+  private resolveTpoSrv(irregularidade: Irregularidade): number {
+    if (irregularidade.vistoria?.tipo === TipoVistoria.SINISTRO) {
+      return 4;
+    }
+    if (irregularidade.vistoria?.tipo === TipoVistoria.PREVENTIVA) {
+      return 2;
+    }
+    if (irregularidade.origemRegistro === OrigemRegistroIrregularidade.SOS_WEB) {
+      return 3;
+    }
+    return 1;
   }
 
   async criarOs(

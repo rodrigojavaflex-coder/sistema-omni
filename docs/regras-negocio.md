@@ -153,6 +153,38 @@ Copie o bloco abaixo para cada regra nova.
 - **Origem da regra:** Requisicao de produto (alterar senha no app), 2026-09-08
 - **Status:** Implementada
 
+### RN-AUTH-007 - Versao minima do aplicativo mobile (force update)
+- **Modulo:** Autenticacao / Mobile / Configuracao
+- **Fluxo:** Release de APK → deploy backend → definir versao minima na Configuracao → apps antigos bloqueados
+- **Descricao:** O servidor exige uma versao minima do app (`mobile_versao_minima`, semver `x.y.z`) configuravel na tela Configuracao do Sistema, aba **App**, via **combobox** alimentado pelo catalogo `backend/src/data/mobile-app-versions.json`. Cada `run-emulator-clean.ps1 -NewVersion` (ou `-AppVersion`) adiciona a nova versao ao catalogo. O aplicativo envia o header `X-App-Version` em todas as requisicoes. Se o header estiver presente e a versao for inferior a minima, a API responde `426` com codigo `APP_VERSION_REQUIRED` e a mensagem «Atualize o aplicativo para continuar.»; o app exibe overlay bloqueante. Sem header (web, Postman) nao ha bloqueio. Versao minima vazia/nula (opcao «Não bloquear») desativa o bloqueio. A tela de login exibe a versao do build (`APP_VERSION`). **Processo operacional completo (tres conceitos, scripts, ordem de release e teste):** `docs/PROCESSO_VERSAO_APP_MOBILE.md`.
+- **Condicoes de entrada:** Backend com guard ativo; app com header; minima preenchida na Configuracao
+- **Validacoes:** Formato `x.y.z`; comparacao semver; cache curto da minima no guard (invalidado ao salvar Configuracao); catalogo ordenado do mais recente ao mais antigo
+- **Acoes do sistema:**
+  - Persistencia em `configuracoes.mobile_versao_minima`
+  - Catalogo de versoes no arquivo JSON com `version` + `date` (lido pela API em `mobileVersoesCatalogo`)
+  - Remocao de versao do catalogo pela aba App (`DELETE /configuracao/mobile-versoes/:version`); se a removida for a minima ativa, limpa o bloqueio
+  - `GET /configuracao/mobile-versao-minima` (publico) para checagem no boot/login
+  - Guard global rejeita requests com `X-App-Version` &lt; minima
+  - Overlay no app; login desabilitado enquanto bloqueado
+  - Bump operacional via `run-emulator-clean.ps1 -NewVersion` ou `-AppVersion x.y.z` (atualiza `app-version.ts`, gradle, package.json e catalogo); sem esses flags o script so rebuilda a versao ja gravada
+- **Mensagens ao usuario:** «Atualize o aplicativo para continuar.»; overlay com versao instalada e minima; no login, «Versão x.y.z»; combo exibe `x.y.z — dd/mm/aaaa`
+- **Permissoes envolvidas:** Leitura/gravacao da minima e remocao do catalogo: `configuracao:access` (aba App); endpoint publico de consulta sem permissao
+- **Dados impactados:** `configuracoes.mobile_versao_minima` (migration); `backend/src/data/mobile-app-versions.json` (catalogo); `mobile/src/app/constants/app-version.ts` (versao do APK); nenhum dado de negocio do usuario
+- **Rastreabilidade:** Alteracao da Configuracao e remocao no catalogo seguem auditoria existente
+- **Criterios de aceite:**
+  - [x] Aba App na Configuracao com combobox de versoes+data do catalogo (ou vazio = nao bloqueia)
+  - [x] `-NewVersion` adiciona a versao e a data ao catalogo JSON
+  - [x] Remover versao na aba App tira do combo; se era a minima, desativa bloqueio
+  - [x] App abaixo da minima nao entra e ve overlay/mensagem clara
+  - [x] App ≥ minima opera normalmente
+  - [x] Login exibe a versao do build (claro/escuro)
+  - [x] API rejeita app antigo mesmo com token (header `X-App-Version`)
+  - [x] Web/Postman sem header nao sao bloqueados
+  - [x] Processo documentado em `docs/PROCESSO_VERSAO_APP_MOBILE.md`
+- **Cenarios de excecao:** Minima vazia = liberado; falha ao consultar endpoint publico nao trava o login sozinha (bloqueio ocorre na proxima API com 426); ordem de release: distribuir APK novo antes de subir a minima; valor salvo fora do catalogo continua aparecendo no combo; remover do JSON nao altera a versao do APK
+- **Origem da regra:** Requisicao de produto — force update mobile e versao no login, 2026-09-24
+- **Status:** Implementada
+
 ### 1. Vistoria
 #### Regras
 - [x] RN-VIS-003 - Permissoes de acesso e acao por tela do fluxo de irregularidades
@@ -162,6 +194,9 @@ Copie o bloco abaixo para cada regra nova.
 - [x] RN-VIS-007 - Relatorio PDF de pendencias do veiculo
 - [x] RN-VIS-008 - Integracao assincrona da capa da vistoria com ERP legado
 - [x] RN-VIS-009 - Mapa de avaria no modelo do veiculo (vistas + marcacao no sintoma)
+- [x] RN-VIS-010 - Corrigir motorista e odometro de vistoria finalizada (web)
+- [x] RN-VIS-011 - Listar vistorias finalizadas no app com impressao PDF
+- [x] RN-VIS-012 - Tipo de vistoria (CORRETIVA / PREVENTIVA / SINISTRO) na capa e integracoes
 - [ ] RN-VIS-001 - Placeholder
 - [x] RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
 
@@ -250,7 +285,7 @@ Copie o bloco abaixo para cada regra nova.
 - **Condicoes de entrada:** Usuario autenticado com `irregularidade_tratamento:create_sos` e `irregularidade_tratamento:read`
 - **Validacoes:**
   - Veiculo e motorista ativos via autocomplete
-  - Odometro validado no frontend e backend (maior que ultimo quando existir); ultimo odometro considera apenas vistorias `FINALIZADA` (exclui `EM_ANDAMENTO` e `CANCELADA`)
+  - Odometro validado no frontend e backend (maior que ultimo quando existir); ultimo odometro considera apenas vistorias `FINALIZADA` (exclui `EM_ANDAMENTO` e `CANCELADA`); diferenca em relacao ao ultimo nao pode ultrapassar o parametro `configuracoes.odometro_diff_max_km` (padrao 500 km se nulo/nao configurado; bloqueio, sem confirmacao); odometro e inteiro (ponto/virgula removidos na digitacao e no blur no app e no SOS)
   - Percentual obrigatorio (0–100) quando o combustivel do veiculo for Eletrico (`% Bateria`) ou GNV (Gas Natural) (`% GNV (Gas Natural)`); Diesel permanece opcional/oculto; mesma regra na inclusao da vistoria no aplicativo mobile; listagens e PDF usam o rotulo dinamico conforme o combustivel
   - Descricao da irregularidade obrigatoria (RN-VIS-002); observacao da vistoria opcional
   - Matriz: `exigeFoto` e `permiteAudio`
@@ -258,7 +293,7 @@ Copie o bloco abaixo para cada regra nova.
   - Pendencia duplicada: aviso e confirmacao; sem bloqueio
 - **Acoes do sistema:**
   - Ao abrir o modal SOS, verificar sessao `EM_ANDAMENTO` com `origem = SOS_WEB` do usuario logado; se existir, oferecer continuar ou excluir (exclusao fisica em cascata)
-  - Criar vistoria `EM_ANDAMENTO` com `origem = SOS_WEB`
+  - Criar vistoria `EM_ANDAMENTO` com `origem = SOS_WEB` e `tipo` (CORRETIVA padrao, PREVENTIVA ou SINISTRO; RN-VIS-012)
   - Registrar irregularidade(s) com `origem_registro = SOS_WEB`
   - Historico `registrar_sos` com observacao «Irregularidade registrada por SOS»
   - Finalizar com tempo em minutos (minimo 1) ou cancelar SOS excluindo vistoria, irregularidades, historico e midias do banco (sem status CANCELADA)
@@ -314,7 +349,7 @@ Copie o bloco abaixo para cada regra nova.
 - **Acoes do sistema:**
   - Ramificar `iniciar-manutencao` / lote por configuracao da empresa selecionada
   - Client HTTP backend para POST `https://www.api.brtgo.com.br/v1/os` (`tpo_reg: 1` criar; `tpo_reg: 7` cancelar quando aplicavel)
-  - Mapear campos: `os_orig` (ver regra acima), `plc_vcl`, `tpo_srv` (ex.: SOS → socorro), `nom_sol`, `tel_ctt`, `loc_atd` (cadastro da empresa BRT), `comenta` (linha 1: area->componente->sintoma; linha 2: descricao do problema / observacao), `odo_vcl` opcional
+  - Mapear campos: `os_orig` (ver regra acima), `plc_vcl`, `tpo_srv` (`1` corretiva padrao; `2` preventiva; `3` SOS/socorro quando origem SOS e tipo nao for SINISTRO/PREVENTIVA; `4` quando capa `tipo = SINISTRO`; tipo na capa tem precedencia sobre SOS), `nom_sol`, `tel_ctt`, `loc_atd` (cadastro da empresa BRT), `comenta` (linha 1: area->componente->sintoma; linha 2: descricao do problema / observacao), `odo_vcl` opcional
   - PDF de preview/e-mail: se a irregularidade tiver marcacao (`id_vista` + coordenadas), desenhar a vista do modelo com circulo azul no ponto
   - Registrar historico: `enviar_api_os`, `falha_api_os`, `cancelar_api_os`, `iniciar_manutencao`, `reprovar_validacao_final`
   - Pendencias de veiculo (mobile): status `RETRABALHO_GARANTIA` continua pendente ate `VALIDADA` ou `CANCELADA` (mesma regra de exclusao de finais)
@@ -346,25 +381,32 @@ Copie o bloco abaixo para cada regra nova.
 
 ### RN-VIS-007 - Relatorio PDF de pendencias do veiculo
 - **Modulo:** Vistoria
-- **Fluxo:** App mobile — tela Pendencias do Veiculo
-- **Descricao:** Usuario com permissao de historico do veiculo gera PDF das irregularidades nao resolvidas do veiculo selecionado, no padrao de relatorio do sistema (logo em `configuracoes.logo_relatorio_bytes`, titulo, fotos das irregularidades, rodape com usuario e data). A primeira pagina mostra as vistas/partes do veiculo (ate 4 por pagina, na ordem do catalogo `vistas_veiculo`): vistas altas lado a lado e silhuetas laterais em largura total, recortando margem em branco. Circulos azuis usam indice global do veiculo (1, 2, 3…); a legenda em uma linha no formato `OS: 1:202637, 2:202639 e 3:202689`. As paginas seguintes listam as pendencias; quando a irregularidade tiver marcacao, cada card desenha a vista do modelo com o circulo do local (retrato ao lado das fotos; silhueta baixa em largura total), no mesmo padrao da impressao da vistoria na web. O relatorio impresso da vistoria na web (tela Vistorias) segue o mesmo padrao visual das fotos e, quando a irregularidade tiver marcacao, desenha a vista do modelo com o circulo do local (retrato ao lado das fotos; silhueta baixa em largura total).
-- **Condicoes de entrada:** Veiculo selecionado; permissao `vistoria_web_historico_veiculo:read`.
+- **Fluxo:** App mobile (tela Pendencias do Veiculo) e Web (menu Relatórios → Vistoria → Pendências do veículo)
+- **Descricao:** Usuario com permissao adequada gera PDF das irregularidades nao resolvidas do veiculo selecionado, no padrao de relatorio do sistema (logo em `configuracoes.logo_relatorio_bytes`, titulo, fotos das irregularidades, rodape com usuario e data). A primeira pagina mostra as vistas/partes do veiculo (ate 4 por pagina, na ordem do catalogo `vistas_veiculo`): vistas altas lado a lado e silhuetas laterais em largura total, recortando margem em branco. Circulos azuis usam indice global do veiculo por ordem crescente de `numeroIrregularidade` (1ª OS → `1.1`/`1.2`…, 2ª → `2.1`…); a legenda em uma linha agrupa por irregularidade no formato `OS: 1.X:20261, 2.X:20262 e 3.X:20263` (literal `X`, sem listar cada ponto). As paginas seguintes listam as pendencias; quando a irregularidade tiver marcacao, cada card desenha a vista do modelo com o circulo do local (retrato ao lado das fotos; silhueta baixa em largura total), no mesmo padrao da impressao da vistoria na web, usando o mesmo indice global da primeira pagina. O relatorio da vistoria (web Imprimir e app PDF) segue o mesmo padrao visual (logo, capa, fotos 3x200pt, local com circulo quando houver marcacao, rodape); a capa usa cards com label acima e valor abaixo (mesmo layout do overlay de conclusao no app), incluindo Status, Data, Vistoriador, Motorista/Matricula, Odometro/%, Tempo, numero da vistoria, Observacao, Vistoria OMNI e Erro ERP. Na web, a tela lista as pendencias com filtros de area/componente e botao para gerar/abrir o PDF; na personalizacao de atalhos o item aparece em Relatórios / Vistoria. No app, apos finalizar a vistoria, o overlay de resumo exibe botao **PDF** (mesmo modelo visual da tela Pendências) que chama `GET /vistoria/:id/pdf`.
+- **Condicoes de entrada:** Veiculo selecionado; mobile: permissao `vistoria_web_historico_veiculo:read`; web: permissao `relatorio_pendencias_veiculo:read`. PDF da vistoria: permissao `vistoria:read` ou `vistoria_web:read`.
 - **Validacoes:**
   - Sem veiculo, o botao permanece desabilitado
   - Se Area e/ou Componente estiverem filtrados, o PDF lista esses filtros aplicados
   - Sem filtro, o PDF traz todas as pendencias do veiculo
-- **Acoes do sistema:** `GET /vistoria/veiculo/:id/historico-irregularidades-nao-resolvidas/pdf`
-- **Permissoes envolvidas:** `vistoria_web_historico_veiculo:read`
+- **Acoes do sistema:** `GET /vistoria/veiculo/:id/historico-irregularidades-nao-resolvidas` (lista) e `.../pdf` (PDF); `GET /vistoria/:id/pdf` (PDF da vistoria); busca de veiculo via `GET /veiculo` autorizada tambem pelas permissoes do relatorio
+- **Permissoes envolvidas:**
+  - Mobile: `vistoria_web_historico_veiculo:read` (grupo Vistoria Mobile)
+  - Web: `relatorio_pendencias_veiculo:read` (grupo Relatórios – Pendências do veículo; concessão manual em Perfis)
+  - Endpoints de lista/PDF de pendencias aceitam qualquer uma das duas (OR)
+  - PDF da vistoria: `vistoria:read` ou `vistoria_web:read` (OR)
 - **Dados impactados:** somente leitura (`irregularidades`, `irregularidades_midias`, `vistorias`, `veiculos`, `configuracao.logo_relatorio_bytes`)
 - **Criterios de aceite:**
   - [x] PDF com logo (quando cadastrada), veiculo/placa, lista de pendencias
   - [x] Fotos de cada irregularidade no PDF (grade 3 colunas, celula 200pt); sem foto, texto "Sem imagens anexadas"
-  - [x] Primeira pagina: ate 4 vistas/partes (ordem do catalogo); laterais recortadas e em largura total; circulo azul com indice global do veiculo e legenda `OS: 1:n, 2:n e 3:n`
+  - [x] Primeira pagina: ate 4 vistas/partes (ordem do catalogo); laterais recortadas e em largura total; circulo azul com indice por `numeroIrregularidade` (`1.1`/`1.2`…) e legenda `OS: 1.X:n, 2.X:n e 3.X:n`
   - [x] Cada pendencia com marcacao: label `Local:` + vista + circulo azul (retrato ao lado das fotos; silhueta baixa em largura total); resumo do mapa permanece no inicio
   - [x] Rodape com emissao, usuario e paginacao
+  - [x] Web: menu Relatórios → Vistoria → Pendências do veículo com `relatorio_pendencias_veiculo:read`; atalho na home na categoria Relatórios / Vistoria
+  - [x] App: botao PDF no overlay de conclusao da vistoria abre `GET /vistoria/:id/pdf`
+  - [x] Capa do relatorio de vistoria (web Imprimir e PDF mobile) em cards label/valor no mesmo layout do overlay de conclusao
   - [ ] Filtros de area/componente visiveis no PDF quando aplicados
   - [ ] Impressao da vistoria na web com logo, titulo, grade 3 colunas 200pt e rodape no mesmo padrao; vista do modelo com circulo quando houver local
-- **Origem da regra:** Requisicao de produto — relatorio de pendencias no app, 2026-09-11
+- **Origem da regra:** Requisicao de produto — relatorio de pendencias no app, 2026-09-11; disponibilizacao web 2026-09-23; PDF da vistoria no app ao finalizar 2026-09-24; capa em cards alinhada ao overlay 2026-09-24
 - **Status:** Implementada
 
 ### RN-VIS-008 - Integracao assincrona da capa da vistoria com ERP legado
@@ -372,7 +414,7 @@ Copie o bloco abaixo para cada regra nova.
 - **Fluxo:** Finalizar vistoria (mobile/SOS) → fila ERP; reenvio na tela Vistorias
 - **Descricao:** Com a integracao habilitada em Configuracao do Sistema, ao finalizar vistoria com pelo menos uma irregularidade o OMNI enfileira a capa e envia `POST /api/v1/vistorias/lote` de forma assincrona (o usuario nao espera). O legado devolve `pedido.codigo_pedido`, gravado em `vistorias.erp_numero_vistoria`. Vistorias sem esse numero podem ser (re)enviadas na tela Vistorias (unitario ou massa, um POST com array). Vistoria que ja possui numero ERP nao reenvia.
 - **Condicoes de entrada:** Enfileirar: `FINALIZADA`, ≥1 irregularidade, flag ativo, URL, tenant (`X-Tenant`) e API Key (`X-API-Key`). Reenviar: mesma elegibilidade, `erp_numero_vistoria` nulo, permissao de reenvio.
-- **Validacoes:** Integracao desabilitada nao enfileira e desabilita envio na tela; sem irregularidade = `NAO_APLICA`; com nr ERP = recusar reenvio; `EM_ANDAMENTO`/`CANCELADA` nao enviam. Campo `veiculo` do legado: 2 primeiros caracteres da descricao do veiculo (≥12 → prefixo `1:`; <12 → prefixo `5:`); descricao invalida → `FALHA`. `condicao`: mobile = `1`, SOS = `5`. Sintomas ERP: `AREA-COMPONENTE-SINTOMA - (observacao)` por irregularidade (observacao = descricao do problema, RN-VIS-002; se vazia, envia so `AREA-COMPONENTE-SINTOMA`). Local de abertura: `0` Oficina / `1` Portaria. Tipo de pedido: `0` Entrada / `1` Saida.
+- **Validacoes:** Integracao desabilitada nao enfileira e desabilita envio na tela; sem irregularidade = `NAO_APLICA`; com nr ERP = recusar reenvio; `EM_ANDAMENTO`/`CANCELADA` nao enviam. Campo `veiculo` do legado: 2 primeiros caracteres da descricao do veiculo (≥12 → prefixo `1:`; <12 → prefixo `5:`); descricao invalida → `FALHA`. `condicao`: mobile = `1`, SOS = `5`, SINISTRO (`vistorias.tipo = SINISTRO`) = `2` com precedencia sobre origem SOS; PREVENTIVA usa o mesmo codigo de CORRETIVA (`1`/`5`). Sintomas ERP: `AREA-COMPONENTE-SINTOMA - (observacao)` por irregularidade (observacao = descricao do problema, RN-VIS-002; se vazia, envia so `AREA-COMPONENTE-SINTOMA`). Local de abertura: `0` Oficina / `1` Portaria. Tipo de pedido: `0` Entrada / `1` Saida.
 - **Acoes do sistema:** `finalizar` persiste mesmo se o ERP falhar depois; worker grava nr ou erro na capa; lote admite sucesso parcial.
 - **Mensagens ao usuario:** Erro no card na ordem: texto da API, senao mensagem padrao da aba Configuracao, senao `Erro ao gravar Vistoria no OMNI` (sem vazar API Key). Resumo de lote; aviso se envio estiver desabilitado.
 - **Permissoes envolvidas:** `configuracao:access` (aba); `vistoria_web:read` (consulta); `vistoria_web:reprocessar_erp` (enviar/reenviar, grupo Vistoria Web). Concessao **manual** em Perfis, sem migration de perfil.
@@ -409,12 +451,76 @@ Copie o bloco abaixo para cada regra nova.
   - [x] Flag no sintoma obriga mapa em qualquer componente; sem flag o mapa nao aparece
   - [x] Cadastro de sintoma lista modelos e vistas de forma informativa; a restrição de vistas é na matriz (componente + sintoma)
   - [x] Matriz com sintoma que exige mapa pode restringir vistas pelo ID do catálogo; nenhuma marcada = o app mostra todas as vistas do modelo
-  - [x] Overlay operacional mostra circulos `resolvido = false` da mesma vista com rotulos por irregularidade (`1.1`/`1.2`… na 1ª, `2.1`/`2.2`… na 2ª, etc., ordem por `numeroIrregularidade`) e legenda `OS: 1.1:n, 1.2:n e 2.1:n`; a irregularidade em destaque/edicao usa o proprio indice global (nao reinicia em `1`); VALIDADA/CANCELADA saem da operacao e ficam no historico
+  - [x] Overlay operacional mostra circulos `resolvido = false` da mesma vista com rotulos por irregularidade (`1.1`/`1.2`… na 1ª, `2.1`/`2.2`… na 2ª, etc., ordem por `numeroIrregularidade`) e legenda condensada `OS: 1.X:n, 2.X:n e 3.X:n`; a irregularidade em destaque/edicao usa o proprio indice global (nao reinicia em `1`); VALIDADA/CANCELADA saem da operacao e ficam no historico
   - [x] Ate 10 pontos por irregularidade na mesma vista; PDF/impressao desenham todos os pontos
   - [x] PDF de pendencias (RN-VIS-007) desenha os circulos ainda abertos no resumo e o local (vista + circulo) em cada card de irregularidade
   - [x] Impressao da vistoria na web (tela Vistorias) desenha a vista e o circulo quando a irregularidade tem local
 - **Cenarios de excecao:** Reclassificacao para sintoma que exige mapa sem marcacao → 422; vista inativa nao lista para novo registro e reabre no historico; SOS com a mesma obrigatoriedade; ERP (RN-VIS-008) nao envia coordenada
 - **Origem da regra:** Decisao de produto — mapa de avaria, 2026-09-16
+- **Status:** Implementada
+
+### RN-VIS-010 - Corrigir motorista e odometro de vistoria finalizada (web)
+- **Modulo:** Vistoria
+- **Fluxo:** Tela web Vistorias (`/vistorias`) → botão Corrigir Vistoria → modal
+- **Descricao:** Operador com permissao dedicada corrige motorista, odometro e/ou tipo de uma vistoria `FINALIZADA`. A correcao e apenas no OMNI (nao reenvia ao ERP nem a BRT). O odometro so pode ser alterado na ultima vistoria `FINALIZADA` do veiculo (ordenacao por `datavistoria` DESC). Motorista e tipo podem ser alterados em qualquer vistoria finalizada. Validacao de odometro segue RN-VIS-004: deve ser estritamente maior que o da vistoria anterior (`FINALIZADA`, excluindo a propria). Tipo segue RN-VIS-012.
+- **Condicoes de entrada:** Usuario com `vistoria_web:corrigir`; vistoria com `status = FINALIZADA`.
+- **Validacoes:**
+  - Status diferente de `FINALIZADA` → bloquear
+  - Motorista deve existir e estar ativo
+  - Tipo deve ser `CORRETIVA`, `PREVENTIVA` ou `SINISTRO`
+  - Se o odometro informado for diferente do atual: a vistoria deve ser a ultima `FINALIZADA` do veiculo; caso contrario, bloquear alteracao do odometro
+  - Odometro novo deve ser `> 0`, `<= 9.999.999`, `>` odometro da vistoria anterior (quando existir) e diferenca em relacao ao anterior `<=` parametro `odometro_diff_max_km` (padrao 500 km)
+- **Acoes do sistema:** `PATCH /vistoria/:id/corrigir` com body `{ idmotorista, odometro, tipo }`; atualiza apenas esses campos; nao reenvia ERP/BRT
+- **Mensagens ao usuario:** Erros funcionais claros (status, ultima vistoria, odometro menor/igual ao anterior, motorista inativo)
+- **Permissoes envolvidas:** `vistoria_web:corrigir` (grupo Vistoria Web; concessao manual em Perfis). A tela continua exigindo `vistoria_web:read` para listar
+- **Dados impactados:** `vistorias.idmotorista`, `vistorias.odometro`, `vistorias.tipo`
+- **Rastreabilidade:** Atualizacao via API autenticada (auditoria padrao se ativa para PATCH)
+- **Criterios de aceite:**
+  - [x] Botao Corrigir Vistoria so aparece com a permissao e status Finalizada
+  - [x] Modal com motorista (autocomplete ativos), odometro e tipo
+  - [x] Odometro editavel somente na ultima FINALIZADA do veiculo; nas demais, campo somente leitura
+  - [x] Validacao `>` anterior no frontend e backend
+  - [x] Sem reenvio automatico ao ERP/BRT ao corrigir tipo
+- **Origem da regra:** Requisicao de produto — correcao operacional de vistoria finalizada, 2026-09-24; tipo 2026-09-25
+- **Status:** Implementada
+
+### RN-VIS-011 - Listar vistorias finalizadas no app com impressao PDF
+- **Modulo:** Vistoria
+- **Fluxo:** App mobile — menu Vistorias
+- **Descricao:** Usuario com permissao dedicada acessa a lista de vistorias `FINALIZADA`, filtra por veiculo, motorista, numero da vistoria, codigo Vistoria OMNI, tipo (CORRETIVA/PREVENTIVA/SINISTRO) e intervalo de datas (sem status, ERP status nem vistoriador) e gera o mesmo PDF do relatorio de vistoria (`GET /vistoria/:id/pdf`) usado ao finalizar / Imprimir na web.
+- **Condicoes de entrada:** Usuario autenticado com `vistoria_mobile_lista:read`
+- **Validacoes:**
+  - Lista somente `status = FINALIZADA`
+  - Busca de veiculo/motorista exige minimo 2 caracteres (autocomplete)
+- **Acoes do sistema:** `GET /vistoria?status=FINALIZADA`; `GET /vistoria/:id/pdf`; busca veiculo/motorista autorizada tambem por `vistoria_mobile_lista:read`
+- **Permissoes envolvidas:** `vistoria_mobile_lista:read` (grupo Vistoria Mobile; concessao **manual** em Perfis, sem migration de perfil)
+- **Dados impactados:** somente leitura
+- **Criterios de aceite:**
+  - [x] Item de menu Vistorias visivel apenas com a permissao
+  - [x] Filtros: veiculo, motorista, Vistoria, Vistoria OMNI, tipo, datas + Limpar
+  - [x] PDF por item abre o relatorio da vistoria
+- **Origem da regra:** Requisicao de produto — lista de vistorias no app, 2026-09-24
+- **Status:** Implementada
+
+### RN-VIS-012 - Tipo de vistoria (CORRETIVA / PREVENTIVA / SINISTRO)
+- **Modulo:** Vistoria
+- **Fluxo:** Nova Vistoria (app), SOS web (etapa 1), lista Vistorias (web/app), Corrigir (web), ERP e BRT
+- **Descricao:** Toda capa de vistoria possui `tipo` `CORRETIVA`, `PREVENTIVA` ou `SINISTRO`, default `CORRETIVA` na abertura. Mapeamentos: SINISTRO → ERP `condicao = 2` e BRT `tpo_srv = 4`; PREVENTIVA → ERP igual a CORRETIVA (`1` mobile / `5` SOS) e BRT `tpo_srv = 2`; CORRETIVA → BRT `tpo_srv = 1` (SOS sem tipo especial → `3`). Tipo na capa (SINISTRO/PREVENTIVA) tem precedencia sobre origem SOS no BRT. Correcao do tipo na web nao reenvia ERP/BRT. Migration seta registros existentes como `CORRETIVA`.
+- **Condicoes de entrada:** Criacao mobile/SOS; listagem; corrigir com `vistoria_web:corrigir`.
+- **Validacoes:** Enum `CORRETIVA` | `PREVENTIVA` | `SINISTRO`; default `CORRETIVA` se omitido na criacao; obrigatorio no `PATCH /vistoria/:id/corrigir`.
+- **Acoes do sistema:** Persistir `vistorias.tipo`; filtro client-side nas listas; exibir na capa PDF/Imprimir; ERP `montarCondicao` e BRT `resolveTpoSrv` conforme mapeamento.
+- **Mensagens ao usuario:** Select Tipo nas telas de abertura e corrigir; badge/filtro nas listas.
+- **Permissoes envolvidas:** Mesmas das telas de origem (sem nova chave).
+- **Dados impactados:** `vistorias.tipo` (varchar, default CORRETIVA, indice `IDX_VISTORIA_TIPO`); migration `1746100000000-add-tipo-vistoria`
+- **Rastreabilidade:** Campo na capa; auditoria padrao em criar/corrigir
+- **Criterios de aceite:**
+  - [x] App e SOS abrem com Tipo = CORRETIVA e permitem PREVENTIVA/SINISTRO
+  - [x] Filtro Tipo nas listas web e app
+  - [x] Corrigir na web altera tipo sem reenvio ERP/BRT
+  - [x] SINISTRO → ERP `condicao=2` e BRT `tpo_srv=4`
+  - [x] PREVENTIVA → ERP igual CORRETIVA e BRT `tpo_srv=2`
+  - [x] Existentes migradas como CORRETIVA; capa PDF/Imprimir exibe Tipo
+- **Origem da regra:** Requisicao de produto — tipo de vistoria e sinistro nas integracoes, 2026-09-25; preventiva 2026-09-25
 - **Status:** Implementada
 
 ### 2. Ocorrencias
@@ -543,6 +649,22 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-09-25: App irregularidade — botão Adicionar foto oferece Câmera ou Galeria; mesma compressão (`quality 60`, máx. 1024px) nos dois caminhos.
+- 2026-09-25: RN-VIS-012 — inclui PREVENTIVA (ERP igual CORRETIVA; BRT `tpo_srv=2`; precedencia sobre SOS).
+- 2026-09-25: RN-VIS-012 — tipo CORRETIVA/SINISTRO na capa (app, SOS, corrigir, filtros); ERP `condicao=2` e BRT `tpo_srv=4` para SINISTRO; migration existentes = CORRETIVA; sem reenvio ao corrigir tipo.
+- 2026-09-25: RN-AUTH-007 — processo operacional documentado em `docs/PROCESSO_VERSAO_APP_MOBILE.md` (tres conceitos, scripts, release, teste de bloqueio).
+- 2026-09-25: RN-AUTH-007 — combobox de versoes na aba App; catalogo `mobile-app-versions.json` atualizado pelo `-NewVersion` (UTF-8 sem BOM; path do loader corrigido).
+- 2026-09-24: RN-AUTH-007 — versao minima do app mobile (aba App na Configuracao, header `X-App-Version`, HTTP 426, overlay + versao no login); script `run-emulator-clean.ps1 -NewVersion` / `-AppVersion`.
+- 2026-09-24: RN-VIS-011 — menu Vistorias no app (só FINALIZADA; filtros veículo/motorista/nº/OMNI/datas; PDF `GET /vistoria/:id/pdf`); permissão `vistoria_mobile_lista:read` (concessão manual).
+- 2026-09-24: RN-VIS-004 — odômetro no app/SOS volta a ser inteiro: remove `.`/`,` na digitação e no blur.
+- 2026-09-24: RN-VIS-004 / RN-VIS-010 — diferença máx. entre odômetros configurável em Configuração do Sistema (aba Vistoria, `odometro_diff_max_km`); padrão 500 km se não configurada.
+- 2026-09-24: RN-VIS-004 — odômetro no app/SOS passa a usar input numérico com decimal (mesmo padrão da bateria), permitindo salvar valor quebrado.
+- 2026-09-24: RN-VIS-007 — PDF da vistoria no app (overlay ao finalizar) via `GET /vistoria/:id/pdf`, mesmo padrão visual do relatório de pendências / Imprimir na web.
+- 2026-09-24: RN-VIS-004 / SOS / mobile / corrigir — removida confirmação de Δ > 200 km; bloqueio rígido quando Δ > 500 km em relação ao último odômetro FINALIZADA.
+- 2026-09-24: RN-VIS-010 — corrigir motorista/odômetro de vistoria finalizada na web (`vistoria_web:corrigir`); odômetro só na última FINALIZADA; validação `>` anterior; sem reenvio ERP.
+- 2026-09-23: RN-VIS-009 — legenda do overlay (web/mobile) condensada `N.X:numeroOS`, alinhada ao PDF de pendências.
+- 2026-09-23: RN-VIS-007 — PDF de pendências: índice das marcações por `numeroIrregularidade` (ASC); legenda condensada `N.X:numeroOS`.
+- 2026-09-23: RN-VIS-007 — relatório de pendências do veículo na web (menu Relatórios → Vistoria, permissão `relatorio_pendencias_veiculo:read`); mobile mantém `vistoria_web_historico_veiculo:read`; endpoints lista/PDF aceitam OR das duas.
 - 2026-09-21: RN-VIS-009 — pinça do mapa ancora o zoom no ponto dos dedos e mantém a posição ao soltar (app e web).
 - 2026-09-21: RN-VIS-009 — app avisa na tela de áreas e no mapa quando o sintoma exige localização e o modelo não tem desenho.
 - 2026-09-17: RN-VIS-006 / RN-VIS-007 — círculo do local preenchido na impressão da vistoria, no PDF de pendências e no PDF de manutenção.

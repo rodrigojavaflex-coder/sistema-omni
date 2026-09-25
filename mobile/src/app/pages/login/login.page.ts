@@ -13,8 +13,11 @@ import { addIcons } from 'ionicons';
 import { chevronForwardOutline, eyeOffOutline, eyeOutline, fingerPrintOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { ErrorMessageService } from '../../services/error-message.service';
+import { MobileVersionCheckService } from '../../services/mobile-version-check.service';
+import { AppUpdateRequiredService } from '../../services/app-update-required.service';
 import { SavedLoginAccount } from '../../models/usuario.model';
 import { PasswordToggleButtonComponent } from '../../components/password-toggle-button.component';
+import { APP_VERSION } from '../../constants/app-version';
 
 @Component({
   selector: 'app-login',
@@ -39,6 +42,11 @@ export class LoginPage implements OnInit {
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
   private errorMessageService = inject(ErrorMessageService);
+  private mobileVersionCheck = inject(MobileVersionCheckService);
+  private appUpdateRequired = inject(AppUpdateRequiredService);
+
+  readonly appVersion = APP_VERSION;
+  readonly updateBlocked = this.appUpdateRequired.required;
 
   @ViewChild('emailInput') emailInput?: ElementRef<HTMLInputElement>;
   @ViewChild('passwordInput') passwordInput?: ElementRef<HTMLInputElement>;
@@ -90,6 +98,7 @@ export class LoginPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    this.mobileVersionCheck.checkAgainstServer().subscribe();
     await this.bootstrapLoginState();
   }
 
@@ -100,6 +109,7 @@ export class LoginPage implements OnInit {
     this.showPassword = false;
     this.managingSavedEmails = false;
     this.loginForm.patchValue({ password: '' });
+    this.mobileVersionCheck.checkAgainstServer().subscribe();
     await this.bootstrapLoginState();
   }
 
@@ -213,7 +223,7 @@ export class LoginPage implements OnInit {
   }
 
   async onSubmit() {
-    if (this.loginForm.invalid) {
+    if (this.updateBlocked() || this.loginForm.invalid) {
       return;
     }
 
@@ -252,7 +262,12 @@ export class LoginPage implements OnInit {
   }
 
   async onBiometricLogin(): Promise<void> {
-    if (this.isBiometricLoading || this.isLoading || !this.showBiometricButton) {
+    if (
+      this.updateBlocked() ||
+      this.isBiometricLoading ||
+      this.isLoading ||
+      !this.showBiometricButton
+    ) {
       return;
     }
 
