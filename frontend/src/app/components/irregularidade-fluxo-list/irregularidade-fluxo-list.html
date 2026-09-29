@@ -503,6 +503,9 @@
             <strong>Total:</strong> {{ manutencaoPreview.resumo.totalIrregularidades }} irregularidade(s)
             em {{ manutencaoPreview.resumo.totalVeiculos }} veículo(s)
           </div>
+          <div *ngIf="getResumoOsBrtPreview() as resumoOs">
+            <strong>Integração BRT:</strong> {{ resumoOs }}
+          </div>
           <div>
             <strong>Anexos (imagens):</strong> {{ manutencaoPreview.resumo.totalAnexos }}
           </div>
@@ -639,7 +642,8 @@
           maxlength="500"
         ></textarea>
         <small class="field-description" *ngIf="modalAcao === 'cancelar-os-brt'">
-          A justificativa será enviada à API BRT. Em caso de sucesso, a irregularidade volta para Tratamento como registrada.
+          A justificativa será enviada à API BRT. Em caso de sucesso, <strong>todas</strong> as
+          irregularidades do mesmo grupo (vistoria / OS BRT) voltam para Tratamento como registradas.
         </small>
       </div>
       <div class="form-group" *ngIf="modalAcao === 'nao-procede'">

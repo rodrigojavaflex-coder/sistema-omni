@@ -1132,8 +1132,9 @@ export class VistoriaListComponent implements OnInit {
             }
             .header-sub {
               text-align: center;
-              font-size: 9pt;
-              color: #475569;
+              font-size: 12pt;
+              font-weight: 700;
+              color: #0f172a;
               margin: 1pt 0 0;
             }
             .header-emissao {

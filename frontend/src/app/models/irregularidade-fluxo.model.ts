@@ -16,6 +16,8 @@ export enum StatusIrregularidade {
 
 export interface IrregularidadeFluxoItem {
   id: string;
+  idvistoria?: string;
+  numeroVistoria?: number;
   numeroIrregularidade?: number;
   idarea: string;
   idcomponente: string;

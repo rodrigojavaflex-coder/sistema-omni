@@ -331,52 +331,57 @@ Copie o bloco abaixo para cada regra nova.
 ### RN-VIS-006 - Envio para manutencao com integracao OS externa (dual BRT)
 - **Modulo:** Vistoria
 - **Fluxo:** Tratamento (`/irregularidades/tratamento`) → Manutencao → Validacao final; registro mobile e SOS inalterados na origem
-- **Descricao:** Ao enviar irregularidade para manutencao, o operador seleciona empresa de manutencao (mesmo fluxo atual). Se a empresa estiver configurada para integracao de OS (ex.: API Consorcio BRT), o sistema cria uma OS externa **sincrona** (1 irregularidade = 1 OS), persiste `os_orig` e `numOs` retornado, e so entao transiciona para `EM_MANUTENCAO`. Se a empresa **nao** usar API, mantem-se o fluxo atual (relatorio PDF/e-mail conforme parametros). Falhas de integracao mantem a irregularidade em `REGISTRADA` na tela Tratamento, com detalhes do erro para tratamento ou cancelamento. Reprovacao na validacao final move para `RETRABALHO_GARANTIA` (retrabalho/garantia) na mesma tela Tratamento; reenvio usa `os_orig` com sufixo (`numeroIrregularidade-2`, `-3`, …) para nova OS na BRT, preservando historico das tentativas anteriores. Irregularidades sob controle da API nao permitem conclusao manual na Manutencao — a saida de `EM_MANUTENCAO` para `CONCLUIDA` ocorrera por integracao de retorno (escopo v2, API ainda nao documentada). A validacao final permanece no OMNI; aprovacao marca irregularidade como corrigida no veiculo (`VALIDADA` / `resolvido` conforme regras de pendencia).
+- **Descricao:** Ao enviar irregularidade para manutencao, o operador seleciona empresa de manutencao (mesmo fluxo atual). Se a empresa estiver configurada para integracao de OS (API Consorcio BRT), o sistema cria uma OS externa **sincrona por vistoria** (**1 vistoria OMNI = 1 OS BRT**), agregando todas as irregularidades elegiveis daquela vistoria no mesmo `os_orig` / `numOs`, e so entao transiciona o **grupo** para `EM_MANUTENCAO`. O Tratamento continua item a item (reclassificar/cancelar); apenas o envio BRT exige selecao **completa** das elegiveis da vistoria (mobile e SOS usam a mesma estrutura de vistoria). Se a empresa **nao** usar API, mantem-se o fluxo legado (relatorio PDF/e-mail; subset permitido). Falha de integracao mantem **todo o grupo** da vistoria no status de origem no Tratamento, com detalhe do erro. Reprovacao na validacao final move para `RETRABALHO_GARANTIA` (tela Tratamento); reenvio do grupo usa `os_orig` com sufixo (`numeroVistoria-2`, `-3`, …). Irregularidades sob controle da API nao permitem conclusao manual — saida de `EM_MANUTENCAO` para `CONCLUIDA` por retorno integrado (v2). Rastreio operacional na UI prioriza o `numOs` BRT; `os_orig` fica para auditoria/idempotencia. Historico 1:1 legado (`os_orig` = `numeroIrregularidade`) convive sem migracao.
 - **Condicoes de entrada:**
   - Envio: status `REGISTRADA` ou `RETRABALHO_GARANTIA`; empresa com `ehEmpresaManutencao`; permissao `irregularidade_manutencao:start` (suficiente para listar empresas no combo via `GET /empresas-terceiras`; nao exige `empresaterceira:read`)
   - Integracao BRT: empresa com tipo de integracao OS configurado e credenciais validas (`ten_emp`, `token`, URL). Certificado SSL: preferir CA no servidor; por empresa marcar `brt_allow_insecure_tls` no cadastro (exige `empresaterceira:integracao_config`); emergencia tambem via `BRT_OS_ALLOW_INSECURE_TLS=true` ou `BRT_OS_ALLOW_INSECURE_TLS_HOMOLOG=true` + empresa Homologacao
+  - Empresa BRT: a selecao deve incluir **todas** as irregularidades elegiveis (`REGISTRADA` / `RETRABALHO_GARANTIA`) de cada vistoria tocada; subset e rejeitado (UI + API)
   - Empresa sem API: mesmas pre-condicoes do fluxo legado (RN-VIS-003 e backlog epico 2)
 - **Validacoes:**
-  - Lote: cada irregularidade e processada individualmente na API; sucesso parcial e permitido (ex.: 3 em Manutencao, 2 permanecem em Tratamento com erro)
-  - Resposta BRT `201` ou `200` com `duplicada: true` conta como sucesso; persistir `numOs` informado
+  - Lote BRT: agrupa por vistoria; **1 POST por vistoria**; sucesso/falha **atomicos por vistoria** (sucesso parcial entre vistorias distintas e permitido)
+  - Resposta BRT `201` ou `200` com `duplicada: true` conta como sucesso; persistir o mesmo `numOs` em todas as irreg do grupo
   - Erros BRT (`credenciais_invalidas`, `tenant_divergente`, `veiculo_nao_encontrado`, `validacao`, `os_nao_encontrada`, `os_em_execucao` no cancelamento) mapeados para mensagens funcionais sem expor token
-  - `os_orig` enviado à API: `numeroIrregularidade` (ex.: `20267`) no 1º envio; após OS BRT criada com sucesso (incl. cancelada depois) ou em `RETRABALHO_GARANTIA`, `numeroIrregularidade-N` com N≥2; historico em `irregularidades_os_externas`
-  - Cancelamento OS BRT (`tpo_reg: 7`) na tela Manutencao: permissao `irregularidade_manutencao:cancel_os_brt`; somente irregularidade com OS ativa (`controleIntegracaoApi`, `osOrigAtual`, `numOsExternoAtual`); sucesso BRT → `REGISTRADA` (Tratamento); falha BRT → permanece `EM_MANUTENCAO`
-  - E-mail de relatorio PDF: somente se flag `enviar_email_relatorio` na empresa **e** SMTP global ativo; para trilha API, enviar apos OS criada com sucesso (itens do lote que falharam na API nao entram no anexo)
-  - Trilha API (`controle_integracao` / derivado da empresa no envio): bloquear `concluir-manutencao` e `marcar-nao-procede` manuais ate existir retorno integrado (v2)
+  - `os_orig` enviado à API: `numeroVistoria` (ex.: `2026478`) no 1º envio do grupo; apos OS BRT criada com sucesso (incl. cancelada depois) ou com item em `RETRABALHO_GARANTIA`, `numeroVistoria-N` com N≥2 (contagem de `os_orig` distintos com sucesso no ambito da vistoria); historico em `irregularidades_os_externas` (uma linha por irregularidade do grupo)
+  - Cancelamento OS BRT (`tpo_reg: 7`) na tela Manutencao: permissao `irregularidade_manutencao:cancel_os_brt`; OS ativa no grupo; **uma** chamada BRT; sucesso → **todas** as irreg do mesmo `os_orig`/`numOs` ativos voltam a `REGISTRADA`; falha → permanecem `EM_MANUTENCAO`
+  - E-mail de relatorio PDF: somente se flag `enviar_email_relatorio` na empresa **e** SMTP global ativo; para trilha API, enviar apos OS criada com sucesso (itens/vistorias que falharam nao entram no anexo)
+  - Trilha API (`controle_integracao`): bloquear `concluir-manutencao` e `marcar-nao-procede` manuais ate retorno integrado (v2)
   - Trilha sem API: transicoes manuais de Manutencao inalteradas
   - Reprovar validacao final: `CONCLUIDA` ou `NAO_PROCEDE` → `RETRABALHO_GARANTIA` (nao retornar direto a `EM_MANUTENCAO`)
 - **Acoes do sistema:**
   - Ramificar `iniciar-manutencao` / lote por configuracao da empresa selecionada
   - Client HTTP backend para POST `https://www.api.brtgo.com.br/v1/os` (`tpo_reg: 1` criar; `tpo_reg: 7` cancelar quando aplicavel)
-  - Mapear campos: `os_orig` (ver regra acima), `plc_vcl`, `tpo_srv` (`1` corretiva padrao; `2` preventiva; `3` SOS/socorro quando origem SOS e tipo nao for SINISTRO/PREVENTIVA; `4` quando capa `tipo = SINISTRO`; tipo na capa tem precedencia sobre SOS), `nom_sol`, `tel_ctt`, `loc_atd` (cadastro da empresa BRT), `comenta` (linha 1: area->componente->sintoma; linha 2: descricao do problema / observacao), `odo_vcl` opcional
+  - Mapear campos: `os_orig` (ver regra acima), `plc_vcl`, `tpo_srv` (`1` corretiva padrao; `2` preventiva; `3` SOS/socorro quando origem SOS e tipo nao for SINISTRO/PREVENTIVA; `4` quando capa `tipo = SINISTRO`; tipo na capa tem precedencia sobre SOS — um valor por vistoria), `nom_sol`, `tel_ctt`, `loc_atd` (cadastro da empresa BRT), `comenta` multilinha por irregularidade ordenada por NS (`area->componente->sintoma` + linha `Obs: …`, blocos separados por linha em branco), limite 4000 com truncate, `odo_vcl` opcional (odometro da vistoria)
   - PDF de preview/e-mail: se a irregularidade tiver marcacao (`id_vista` + coordenadas), desenhar a vista do modelo com circulo azul no ponto
   - Registrar historico: `enviar_api_os`, `falha_api_os`, `cancelar_api_os`, `iniciar_manutencao`, `reprovar_validacao_final`
   - Pendencias de veiculo (mobile): status `RETRABALHO_GARANTIA` continua pendente ate `VALIDADA` ou `CANCELADA` (mesma regra de exclusao de finais)
 - **Mensagens ao usuario:**
-  - Sucesso parcial de lote: resumo com quantidade enviada e lista de falhas com codigo/mensagem BRT
+  - Selecao incompleta (BRT): informar numero da vistoria e quantidade elegivel vs selecionada
+  - Sucesso parcial de lote: resumo com quantidade enviada e lista de falhas por vistoria/item com codigo/mensagem BRT
   - `veiculo_nao_encontrado`: orientar regularizacao da placa no cadastro do consorcio
   - Bloqueio de conclusao manual (trilha API): mensagem indicando aguardo de retorno da integracao
+  - Cancelamento OS BRT: avisar que o grupo inteiro da vistoria retorna ao Tratamento
 - **Permissoes envolvidas:** RN-VIS-003; `RETRABALHO_GARANTIA` exige `irregularidade_tratamento:read`; acoes de reenvio exigem `irregularidade_manutencao:start`; cancelamento OS BRT exige `irregularidade_manutencao:cancel_os_brt`
-- **Dados impactados:** `empresasterceiras` (integracao, e-mail, credenciais BRT), `irregularidades` (status, flags de integracao, OS ativa), historico de OS externas (nova estrutura), `irregularidade_historico`
-- **Rastreabilidade:** Historico de transicoes; log de integracao (request/response sanitizado); multiplos pares `os_orig`/`numOs` por irregularidade ao longo do tempo
+- **Dados impactados:** `empresasterceiras` (integracao, e-mail, credenciais BRT), `irregularidades` (status, flags de integracao, OS ativa), historico de OS externas, `irregularidade_historico`
+- **Rastreabilidade:** Historico de transicoes; log de integracao (request/response sanitizado); multiplos pares `os_orig`/`numOs` por irregularidade ao longo do tempo; rastreio operacional por `numOs` BRT
 - **Criterios de aceite:**
-  - [ ] Empresa sem API: comportamento equivalente ao fluxo pre-integracao; e-mail respeita flag da empresa
-  - [ ] Empresa BRT: OS criada → `EM_MANUTENCAO` + `numOs`; falha → permanece `REGISTRADA` com erro visivel no Tratamento
-  - [ ] Lote misto documentado na UI (sucesso/falha por item)
-  - [ ] Reprovar final → `RETRABALHO_GARANTIA`; reenvio gera novo `os_orig` e novo registro historico de OS
+  - [ ] Empresa sem API: comportamento equivalente ao fluxo pre-agrupamento; e-mail respeita flag da empresa
+  - [ ] Empresa BRT: selecao incompleta da vistoria bloqueada; selecao completa → 1 OS; todas as irreg do grupo em `EM_MANUTENCAO` com o mesmo `numOs`/`os_orig`
+  - [ ] Falha BRT: nenhuma irreg daquela vistoria avanca; erro visivel no Tratamento
+  - [ ] Lote com varias vistorias: N POSTs; sucesso parcial entre vistorias documentado na UI
+  - [ ] Reprovar final → `RETRABALHO_GARANTIA`; reenvio do grupo gera `numeroVistoria-N` e novo historico
   - [ ] Trilha API: botoes de conclusao manual desabilitados/bloqueados no backend
-  - [ ] Cancelamento OS BRT na Manutencao: sucesso → `REGISTRADA`; falha → permanece `EM_MANUTENCAO`; reenvio usa novo `os_orig` com sufixo
+  - [ ] Cancelamento OS BRT: sucesso → grupo inteiro `REGISTRADA`; falha → permanece `EM_MANUTENCAO`
   - [ ] Aprovacao na validacao final → `VALIDADA` e pendencia do veiculo atualizada
 - **Cenarios de excecao:**
-  - Credenciais BRT invalidas: nenhum item do lote avanca na trilha API
+  - Credenciais BRT invalidas: nenhum grupo do lote avanca na trilha API
   - Cancelamento de irregularidade sem OS criada: sem chamada BRT de cancelamento
-  - Cancelamento OS BRT na Manutencao: somente com resposta OK da API; `409 os_em_execucao` e demais erros mantem `EM_MANUTENCAO`
+  - Cancelamento OS BRT na Manutencao: somente com resposta OK da API; `409 os_em_execucao` e demais erros mantem o grupo em `EM_MANUTENCAO`
   - Homologacao OMNI sem ambiente BRT: parametros de teste na empresa quando disponiveis
 - **Escopo de implementacao:**
-  - **v1:** envio BRT, historico OS, erros no Tratamento, status `RETRABALHO_GARANTIA`, bloqueio conclusao manual trilha API, cancelamento OS BRT na Manutencao, parametros empresa
-  - **v2:** retorno integrado BRT → `CONCLUIDA`; e-mail automatico para erros de placa
-- **Origem da regra:** Integracao Consorcio BRT e fluxo dual de manutencao, decisao de produto 2026-08-03
+  - **v1:** envio BRT 1:1, historico OS, erros no Tratamento, status `RETRABALHO_GARANTIA`, bloqueio conclusao manual, cancelamento OS, parametros empresa
+  - **v1.1 (Entrega 1):** agrupamento por vistoria; `os_orig` = `numeroVistoria`; selecao all-or-nothing; `comenta` multilinha; cancelamento em grupo — ver `docs/PLANO_BRT_OS_AGRUPAMENTO_VISTORIA.md`
+  - **v2:** retorno integrado BRT → `CONCLUIDA` (grupo); e-mail automatico para erros de placa
+- **Origem da regra:** Integracao Consorcio BRT e fluxo dual de manutencao, decisao de produto 2026-08-03; agrupamento por vistoria 2026-09-29
 - **Status:** Implementada (retorno automático BRT → `CONCLUIDA` previsto v2)
 
 ### RN-VIS-007 - Relatorio PDF de pendencias do veiculo
@@ -649,6 +654,8 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-09-29: RN-VIS-006 — `comenta` BRT sem prefixo `[numeroIrregularidade]`; blocos separados por linha em branco.
+- 2026-09-29: RN-VIS-006 — Entrega 1: OS BRT agrupada por vistoria (`os_orig` = `numeroVistoria`, selecao completa obrigatoria, `comenta` multilinha, cancelamento em grupo); plano em `docs/PLANO_BRT_OS_AGRUPAMENTO_VISTORIA.md`.
 - 2026-09-25: App irregularidade — botão Adicionar foto oferece Câmera ou Galeria; mesma compressão (`quality 60`, máx. 1024px) nos dois caminhos.
 - 2026-09-25: RN-VIS-012 — inclui PREVENTIVA (ERP igual CORRETIVA; BRT `tpo_srv=2`; precedencia sobre SOS).
 - 2026-09-25: RN-VIS-012 — tipo CORRETIVA/SINISTRO na capa (app, SOS, corrigir, filtros); ERP `condicao=2` e BRT `tpo_srv=4` para SINISTRO; migration existentes = CORRETIVA; sem reenvio ao corrigir tipo.

@@ -25,7 +25,6 @@ export function toEmpresaTerceiraResponse(
   const { brtToken, ...rest } = entidade;
   if (!includeIntegracao) {
     const {
-      integracaoManutencao: _i,
       brtUrlBase: _u,
       brtTenEmp: _t,
       brtAmbiente: _a,
@@ -35,6 +34,8 @@ export function toEmpresaTerceiraResponse(
       brtLocAtd: _loc,
       ...publicFields
     } = rest;
+    // integracaoManutencao permanece público (NENHUMA|BRT_OS) para o combo de envio;
+    // credenciais e parâmetros sensíveis ficam só com integracao_config.
     return publicFields as EmpresaTerceiraResponse;
   }
   const response: EmpresaTerceiraResponse = {

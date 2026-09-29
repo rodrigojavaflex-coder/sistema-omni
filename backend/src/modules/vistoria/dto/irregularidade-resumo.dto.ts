@@ -30,6 +30,13 @@ export class IrregularidadeResumoDto {
   idvistoria?: string;
 
   @ApiProperty({
+    description: 'Número da vistoria OMNI (chave do grupo OS BRT)',
+    required: false,
+    example: 2026478,
+  })
+  numeroVistoria?: number;
+
+  @ApiProperty({
     description: 'Número único da irregularidade (ano + sequencial)',
     example: 20261,
   })

@@ -941,6 +941,7 @@ export class IrregularidadeService {
     const vistoriaInfoById = new Map<
       string,
       {
+        numeroVistoria?: number;
         veiculoDescricao?: string;
         veiculoPlaca?: string;
         veiculoModelo?: string;
@@ -956,6 +957,7 @@ export class IrregularidadeService {
         .leftJoin('v.usuario', 'usuario')
         .leftJoin('v.motorista', 'motorista')
         .select('v.id', 'id')
+        .addSelect('v.numeroVistoria', 'numeroVistoria')
         .addSelect('veiculo.descricao', 'veiculoDescricao')
         .addSelect('veiculo.placa', 'veiculoPlaca')
         .addSelect('modeloVeiculo.nome', 'veiculoModelo')
@@ -964,6 +966,7 @@ export class IrregularidadeService {
         .where('v.id IN (:...ids)', { ids: vistoriaIds })
         .getRawMany<{
           id: string;
+          numeroVistoria?: number | string;
           veiculoDescricao?: string;
           veiculoPlaca?: string;
           veiculoModelo?: string;
@@ -973,6 +976,10 @@ export class IrregularidadeService {
 
       for (const row of vistoriaRows) {
         vistoriaInfoById.set(row.id, {
+          numeroVistoria:
+            row.numeroVistoria != null
+              ? Number(row.numeroVistoria)
+              : undefined,
           veiculoDescricao: row.veiculoDescricao,
           veiculoPlaca: row.veiculoPlaca,
           veiculoModelo: row.veiculoModelo,
@@ -1024,7 +1031,7 @@ export class IrregularidadeService {
       const entradaStatusEm = entradaStatusByKey.get(
         `${item.id}|${item.statusAtual}`,
       );
-      return this.toResumo(
+      const resumo = this.toResumo(
         item,
         raw?.matriz_gravidade,
         counts?.foto ?? 0,
@@ -1039,6 +1046,11 @@ export class IrregularidadeService {
         raw?.irregularidade_criado_em,
         entradaStatusEm,
       );
+      resumo.idvistoria = item.idVistoria;
+      if (vistoriaInfo?.numeroVistoria != null) {
+        resumo.numeroVistoria = vistoriaInfo.numeroVistoria;
+      }
+      return resumo;
     });
   }
 
@@ -1686,6 +1698,12 @@ export class IrregularidadeService {
       );
     }
 
+    if (this.manutencaoEnvioService.usesIntegracaoApi(empresa)) {
+      await this.manutencaoEnvioService.assertSelecaoCompletaVistoriasBrt(
+        irregularidades,
+      );
+    }
+
     return { empresa, irregularidades };
   }
 
@@ -2161,9 +2179,9 @@ export class IrregularidadeService {
           align: 'center',
         });
       doc
-        .font('Helvetica')
-        .fontSize(11)
-        .fillColor('#475569')
+        .font('Helvetica-Bold')
+        .fontSize(14)
+        .fillColor('#0f172a')
         .text(
           `Veículo: ${params.veiculoDescricao} · Placa: ${params.veiculoPlaca}`,
           marginX,
@@ -3801,6 +3819,8 @@ export class IrregularidadeService {
 
     return {
       id: item.id,
+      idvistoria: item.idVistoria,
+      numeroVistoria: item.vistoria?.numeroVistoria,
       numeroIrregularidade: item.numeroIrregularidade,
       idarea: item.idArea,
       nomeArea: item.area?.nome,

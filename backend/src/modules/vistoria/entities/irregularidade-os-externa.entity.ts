@@ -15,7 +15,7 @@ export class IrregularidadeOsExterna extends BaseEntity {
 
   @ApiProperty({
     description:
-      'Identificador enviado à API externa (os_orig) = numeroIrregularidade no OMNI',
+      'Identificador enviado à API externa (os_orig) = numeroVistoria no OMNI (legado 1:1 podia ser numeroIrregularidade)',
   })
   @Column({ name: 'os_orig', type: 'varchar', length: 80 })
   osOrig: string;

@@ -5,14 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, IsNull, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import { StatusIrregularidade } from '../../common/enums/status-irregularidade.enum';
 import { EmpresaTerceiraService } from '../empresa-terceira/empresa-terceira.service';
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 import { Configuracao } from '../configuracao/entities/configuracao.entity';
 import { BrtOsIntegrationService } from './brt-os-integration.service';
 import { Irregularidade } from './entities/irregularidade.entity';
-import { IrregularidadeHistorico } from './entities/irregularidade-historico.entity';
 import { IrregularidadeOsExterna } from './entities/irregularidade-os-externa.entity';
 import {
   EnvioManutencaoFalhaItemDto,
@@ -78,6 +77,35 @@ export class IrregularidadeManutencaoEnvioService {
     return this.brtOsIntegrationService.usesBrtIntegration(empresa);
   }
 
+  /**
+   * Empresa BRT: a seleção deve incluir todas as elegíveis de cada vistoria tocada.
+   */
+  async assertSelecaoCompletaVistoriasBrt(
+    selecionadas: Irregularidade[],
+  ): Promise<void> {
+    const porVistoria = this.agruparPorVistoria(selecionadas);
+    for (const [idVistoria, grupo] of porVistoria) {
+      const elegiveis = await this.irregularidadeRepository.find({
+        where: {
+          idVistoria,
+          statusAtual: In(STATUS_ENVIO_MANUTENCAO),
+        },
+        select: ['id', 'numeroIrregularidade'],
+      });
+      const selecionadosIds = new Set(grupo.map((item) => item.id));
+      const faltantes = elegiveis.filter((item) => !selecionadosIds.has(item.id));
+      if (faltantes.length > 0 || elegiveis.length !== grupo.length) {
+        const numeroVistoria =
+          grupo[0]?.vistoria?.numeroVistoria ??
+          (await this.resolverNumeroVistoria(idVistoria));
+        throw new BadRequestException(
+          `A vistoria ${numeroVistoria} tem ${elegiveis.length} irregularidade(s) elegível(is) para envio à BRT; ` +
+            `selecione todas (${grupo.length} selecionada(s), faltam ${faltantes.length || elegiveis.length - grupo.length}).`,
+        );
+      }
+    }
+  }
+
   async executarEnvioLote(
     empresa: EmpresaTerceira,
     irregularidades: Irregularidade[],
@@ -89,19 +117,21 @@ export class IrregularidadeManutencaoEnvioService {
     let enviadasEntidades: Irregularidade[] = [];
 
     if (this.usesIntegracaoApi(empresa)) {
+      await this.assertSelecaoCompletaVistoriasBrt(irregularidades);
       const empresaComToken =
         await this.empresaTerceiraService.findOneForIntegracao(empresa.id);
 
-      for (const irregularidade of irregularidades) {
-        const outcome = await this.tentarEnvioBrt(
+      const grupos = [...this.agruparPorVistoria(irregularidades).values()];
+      for (const grupo of grupos) {
+        const outcome = await this.tentarEnvioBrtGrupo(
           empresaComToken,
-          irregularidade,
+          grupo,
           ctx,
         );
         if (outcome.ok) {
-          enviadasEntidades.push(outcome.irregularidade);
+          enviadasEntidades.push(...outcome.irregularidades);
         } else {
-          falhas.push(outcome.falha);
+          falhas.push(...outcome.falhas);
         }
       }
 
@@ -201,15 +231,16 @@ export class IrregularidadeManutencaoEnvioService {
     }
 
     if (this.usesIntegracaoApi(empresa)) {
-      const outcome = await this.tentarEnvioBrt(
+      await this.assertSelecaoCompletaVistoriasBrt([irregularidade]);
+      const outcome = await this.tentarEnvioBrtGrupo(
         empresa,
-        irregularidade,
+        [irregularidade],
         ctx,
       );
       if (!outcome.ok) {
-        throw new BadRequestException(outcome.falha.mensagem);
+        throw new BadRequestException(outcome.falhas[0]?.mensagem ?? 'Falha na integração BRT');
       }
-      return outcome.irregularidade;
+      return outcome.irregularidades[0];
     }
 
     if (empresa.enviarEmailRelatorio) {
@@ -237,141 +268,166 @@ export class IrregularidadeManutencaoEnvioService {
     return saved;
   }
 
-  private async tentarEnvioBrt(
+  private async tentarEnvioBrtGrupo(
     empresa: EmpresaTerceira,
-    irregularidade: Irregularidade,
+    irregularidades: Irregularidade[],
     ctx: ManutencaoEnvioContext,
   ): Promise<
-    | { ok: true; irregularidade: Irregularidade }
-    | { ok: false; falha: EnvioManutencaoFalhaItemDto }
+    | { ok: true; irregularidades: Irregularidade[] }
+    | { ok: false; falhas: EnvioManutencaoFalhaItemDto[] }
   > {
-    const statusOrigem = irregularidade.statusAtual;
+    const grupo = [...irregularidades].sort(
+      (a, b) =>
+        (a.numeroIrregularidade ?? 0) - (b.numeroIrregularidade ?? 0),
+    );
+    const numeroVistoria = grupo[0]?.vistoria?.numeroVistoria;
+    const statusPorId = new Map(
+      grupo.map((item) => [item.id, item.statusAtual] as const),
+    );
+
     let osOrig: string;
     let payload;
     try {
-      const integracoesSucessoAnteriores =
-        await this.osExternaRepository.count({
-          where: {
-            idIrregularidade: irregularidade.id,
-            sucesso: true,
-            codigoErro: IsNull(),
-          },
-        });
-      osOrig = this.brtOsIntegrationService.buildOsOrig(
-        irregularidade,
-        integracoesSucessoAnteriores,
+      if (numeroVistoria === undefined || numeroVistoria === null) {
+        throw new Error('Número da vistoria não informado para os_orig');
+      }
+      const sucessosAnteriores =
+        await this.contarSucessosOsOrigVistoria(numeroVistoria);
+      const forcarSufixo = grupo.some(
+        (item) =>
+          item.statusAtual === StatusIrregularidade.RETRABALHO_GARANTIA,
       );
-      payload = this.brtOsIntegrationService.buildPayload(
+      osOrig = this.brtOsIntegrationService.buildOsOrig(
+        numeroVistoria,
+        sucessosAnteriores,
+        forcarSufixo,
+      );
+      payload = this.brtOsIntegrationService.buildPayloadGrupo(
         empresa,
-        irregularidade,
+        grupo,
         osOrig,
       );
     } catch (err) {
       const mensagem = err instanceof Error ? err.message : String(err);
-      const osOrigFallback = String(irregularidade.numeroIrregularidade ?? '');
-      await this.registrarFalhaIntegracao(
-        irregularidade,
-        osOrigFallback,
-        mensagem,
-        'validacao_local',
-        undefined,
-      );
+      const osOrigFallback = String(numeroVistoria ?? '');
+      for (const item of grupo) {
+        await this.registrarFalhaIntegracao(
+          item,
+          osOrigFallback,
+          mensagem,
+          'validacao_local',
+          undefined,
+        );
+      }
       return {
         ok: false,
-        falha: {
-          id: irregularidade.id,
-          numeroIrregularidade: irregularidade.numeroIrregularidade,
+        falhas: grupo.map((item) => ({
+          id: item.id,
+          numeroIrregularidade: item.numeroIrregularidade,
           codigoErro: 'validacao_local',
           mensagem,
-        },
+        })),
       };
     }
 
     const result = await this.brtOsIntegrationService.criarOs(empresa, payload);
 
     if (!result.ok) {
-      await this.registrarFalhaIntegracao(
-        irregularidade,
-        osOrig,
-        result.mensagem,
-        result.codigoErro,
-        result.httpStatus,
-      );
-      await this.osExternaRepository.save(
-        this.osExternaRepository.create({
-          idIrregularidade: irregularidade.id,
+      for (const item of grupo) {
+        await this.registrarFalhaIntegracao(
+          item,
           osOrig,
-          numOsExterno: null,
-          integrador: 'BRT',
-          sucesso: false,
-          codigoErro: result.codigoErro,
-          mensagemErro: result.mensagem,
-          httpStatus: result.httpStatus,
-        }),
-      );
+          result.mensagem,
+          result.codigoErro,
+          result.httpStatus,
+        );
+        await this.osExternaRepository.save(
+          this.osExternaRepository.create({
+            idIrregularidade: item.id,
+            osOrig,
+            numOsExterno: null,
+            integrador: 'BRT',
+            sucesso: false,
+            codigoErro: result.codigoErro,
+            mensagemErro: result.mensagem,
+            httpStatus: result.httpStatus,
+          }),
+        );
+      }
       return {
         ok: false,
-        falha: {
-          id: irregularidade.id,
-          numeroIrregularidade: irregularidade.numeroIrregularidade,
+        falhas: grupo.map((item) => ({
+          id: item.id,
+          numeroIrregularidade: item.numeroIrregularidade,
           codigoErro: result.codigoErro,
           mensagem: result.mensagem,
           httpStatus: result.httpStatus,
-        },
+        })),
       };
     }
 
     const saved = await this.irregularidadeRepository.manager.transaction(
       async (manager) => {
         const repo = manager.getRepository(Irregularidade);
-        const item = await repo.findOne({ where: { id: irregularidade.id } });
-        if (!item) {
-          throw new NotFoundException('Irregularidade não encontrada');
+        const osRepo = manager.getRepository(IrregularidadeOsExterna);
+        const persisted: Irregularidade[] = [];
+        const iniciadaEm = new Date();
+
+        for (const item of grupo) {
+          const entity = await repo.findOne({ where: { id: item.id } });
+          if (!entity) {
+            throw new NotFoundException('Irregularidade não encontrada');
+          }
+          const statusOrigem =
+            statusPorId.get(item.id) ?? entity.statusAtual;
+          entity.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
+          entity.idEmpresaManutencao = empresa.id;
+          entity.iniciadaManutencaoEm = iniciadaEm;
+          entity.resolvido = false;
+          entity.controleIntegracaoApi = true;
+          entity.osOrigAtual = osOrig;
+          entity.numOsExternoAtual = result.numOs;
+          entity.ultimoErroIntegracao = null;
+          entity.ultimoErroIntegracaoEm = null;
+          const savedItem = await repo.save(entity);
+          persisted.push(savedItem);
+
+          await osRepo.save(
+            osRepo.create({
+              idIrregularidade: savedItem.id,
+              osOrig,
+              numOsExterno: result.numOs,
+              integrador: 'BRT',
+              sucesso: true,
+              httpStatus: result.httpStatus,
+            }),
+          );
+
+          await ctx.registrarHistorico(manager, {
+            idIrregularidade: savedItem.id,
+            statusOrigem,
+            statusDestino: StatusIrregularidade.EM_MANUTENCAO,
+            acao: result.duplicada
+              ? 'enviar_api_os_duplicada'
+              : 'enviar_api_os',
+            idUsuario: ctx.actor?.id,
+            idEmpresaEvento: empresa.id,
+            observacao: `os_orig=${osOrig}; numOs=${result.numOs}; vistoria=${numeroVistoria}; grupo=${grupo.length}`,
+          });
+          await ctx.registrarHistorico(manager, {
+            idIrregularidade: savedItem.id,
+            statusOrigem: StatusIrregularidade.EM_MANUTENCAO,
+            statusDestino: StatusIrregularidade.EM_MANUTENCAO,
+            acao: 'iniciar_manutencao',
+            idUsuario: ctx.actor?.id,
+            idEmpresaEvento: empresa.id,
+          });
         }
-        item.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
-        item.idEmpresaManutencao = empresa.id;
-        item.iniciadaManutencaoEm = new Date();
-        item.resolvido = false;
-        item.controleIntegracaoApi = true;
-        item.osOrigAtual = osOrig;
-        item.numOsExternoAtual = result.numOs;
-        item.ultimoErroIntegracao = null;
-        item.ultimoErroIntegracaoEm = null;
-        const persisted = await repo.save(item);
-
-        await manager.getRepository(IrregularidadeOsExterna).save(
-          manager.getRepository(IrregularidadeOsExterna).create({
-            idIrregularidade: item.id,
-            osOrig,
-            numOsExterno: result.numOs,
-            integrador: 'BRT',
-            sucesso: true,
-            httpStatus: result.httpStatus,
-          }),
-        );
-
-        await ctx.registrarHistorico(manager, {
-          idIrregularidade: item.id,
-          statusOrigem,
-          statusDestino: StatusIrregularidade.EM_MANUTENCAO,
-          acao: result.duplicada ? 'enviar_api_os_duplicada' : 'enviar_api_os',
-          idUsuario: ctx.actor?.id,
-          idEmpresaEvento: empresa.id,
-          observacao: `os_orig=${osOrig}; numOs=${result.numOs}`,
-        });
-        await ctx.registrarHistorico(manager, {
-          idIrregularidade: item.id,
-          statusOrigem: StatusIrregularidade.EM_MANUTENCAO,
-          statusDestino: StatusIrregularidade.EM_MANUTENCAO,
-          acao: 'iniciar_manutencao',
-          idUsuario: ctx.actor?.id,
-          idEmpresaEvento: empresa.id,
-        });
         return persisted;
       },
     );
 
-    return { ok: true, irregularidade: saved };
+    return { ok: true, irregularidades: saved };
   }
 
   async executarCancelamentoOsBrt(
@@ -405,6 +461,21 @@ export class IrregularidadeManutencaoEnvioService {
 
     const osOrig = irregularidade.osOrigAtual.trim();
     const numOsCancelado = irregularidade.numOsExternoAtual;
+
+    const grupo = await this.irregularidadeRepository.find({
+      where: {
+        statusAtual: StatusIrregularidade.EM_MANUTENCAO,
+        controleIntegracaoApi: true,
+        osOrigAtual: osOrig,
+        numOsExternoAtual: numOsCancelado,
+      },
+    });
+    if (!grupo.length) {
+      throw new BadRequestException(
+        'Nenhuma irregularidade ativa encontrada para a OS BRT informada',
+      );
+    }
+
     let payload;
     try {
       payload = this.brtOsIntegrationService.buildCancelarPayload(
@@ -423,57 +494,120 @@ export class IrregularidadeManutencaoEnvioService {
     );
 
     if (!result.ok) {
-      await this.registrarFalhaIntegracao(
-        irregularidade,
-        osOrig,
-        result.mensagem,
-        result.codigoErro,
-        result.httpStatus,
-      );
-      await this.osExternaRepository.save(
-        this.osExternaRepository.create({
-          idIrregularidade: irregularidade.id,
+      for (const item of grupo) {
+        await this.registrarFalhaIntegracao(
+          item,
           osOrig,
-          numOsExterno: numOsCancelado,
-          integrador: 'BRT',
-          sucesso: false,
-          codigoErro: result.codigoErro,
-          mensagemErro: result.mensagem,
-          httpStatus: result.httpStatus,
-        }),
-      );
+          result.mensagem,
+          result.codigoErro,
+          result.httpStatus,
+        );
+        await this.osExternaRepository.save(
+          this.osExternaRepository.create({
+            idIrregularidade: item.id,
+            osOrig,
+            numOsExterno: numOsCancelado,
+            integrador: 'BRT',
+            sucesso: false,
+            codigoErro: result.codigoErro,
+            mensagemErro: result.mensagem,
+            httpStatus: result.httpStatus,
+          }),
+        );
+      }
       throw new BadRequestException(result.mensagem);
     }
 
-    const statusOrigem = irregularidade.statusAtual;
     return this.irregularidadeRepository.manager.transaction(async (manager) => {
       const repo = manager.getRepository(Irregularidade);
-      const item = await repo.findOne({ where: { id: irregularidade.id } });
-      if (!item) {
-        throw new NotFoundException('Irregularidade não encontrada');
+      let representante: Irregularidade | null = null;
+
+      for (const item of grupo) {
+        const entity = await repo.findOne({ where: { id: item.id } });
+        if (!entity) {
+          continue;
+        }
+        const statusOrigem = entity.statusAtual;
+        entity.statusAtual = StatusIrregularidade.REGISTRADA;
+        entity.controleIntegracaoApi = false;
+        entity.osOrigAtual = null;
+        entity.numOsExternoAtual = null;
+        entity.ultimoErroIntegracao = null;
+        entity.ultimoErroIntegracaoEm = null;
+        entity.resolvido = false;
+        const persisted = await repo.save(entity);
+        if (persisted.id === irregularidade.id) {
+          representante = persisted;
+        }
+
+        await ctx.registrarHistorico(manager, {
+          idIrregularidade: persisted.id,
+          statusOrigem,
+          statusDestino: StatusIrregularidade.REGISTRADA,
+          acao: 'cancelar_api_os',
+          idUsuario: ctx.actor?.id,
+          idEmpresaEvento: empresa.id,
+          observacao: `os_orig=${osOrig}; numOs=${numOsCancelado}; motivo=${motivo.trim()}; grupo=${grupo.length}`,
+        });
       }
 
-      item.statusAtual = StatusIrregularidade.REGISTRADA;
-      item.controleIntegracaoApi = false;
-      item.osOrigAtual = null;
-      item.numOsExternoAtual = null;
-      item.ultimoErroIntegracao = null;
-      item.ultimoErroIntegracaoEm = null;
-      item.resolvido = false;
-      const persisted = await repo.save(item);
-
-      await ctx.registrarHistorico(manager, {
-        idIrregularidade: item.id,
-        statusOrigem,
-        statusDestino: StatusIrregularidade.REGISTRADA,
-        acao: 'cancelar_api_os',
-        idUsuario: ctx.actor?.id,
-        idEmpresaEvento: empresa.id,
-        observacao: `os_orig=${osOrig}; numOs=${numOsCancelado}; motivo=${motivo.trim()}`,
-      });
-
-      return persisted;
+      if (!representante) {
+        throw new NotFoundException('Irregularidade não encontrada');
+      }
+      return representante;
     });
+  }
+
+  private agruparPorVistoria(
+    irregularidades: Irregularidade[],
+  ): Map<string, Irregularidade[]> {
+    const map = new Map<string, Irregularidade[]>();
+    for (const item of irregularidades) {
+      const key = item.idVistoria;
+      if (!key) {
+        throw new BadRequestException(
+          'Irregularidade sem vistoria vinculada não pode ser enviada à BRT',
+        );
+      }
+      const lista = map.get(key) ?? [];
+      lista.push(item);
+      map.set(key, lista);
+    }
+    return map;
+  }
+
+  private async resolverNumeroVistoria(idVistoria: string): Promise<string> {
+    const row = await this.irregularidadeRepository.manager
+      .getRepository(Irregularidade)
+      .createQueryBuilder('i')
+      .innerJoin('i.vistoria', 'v')
+      .select('v.numeroVistoria', 'numero')
+      .where('i.idVistoria = :idVistoria', { idVistoria })
+      .limit(1)
+      .getRawOne<{ numero?: number }>();
+    return row?.numero != null ? String(row.numero) : idVistoria.slice(0, 8);
+  }
+
+  /**
+   * Quantidade de ciclos de OS com sucesso já registrados para a base numeroVistoria
+   * (inclui legado 1:1 quando os_orig coincidia com o número da vistoria).
+   */
+  private async contarSucessosOsOrigVistoria(
+    numeroVistoria: number,
+  ): Promise<number> {
+    const base = String(numeroVistoria);
+    const raw = await this.osExternaRepository
+      .createQueryBuilder('e')
+      .select('COUNT(DISTINCT e.osOrig)', 'cnt')
+      .where('e.sucesso = true')
+      .andWhere('e.codigoErro IS NULL')
+      .andWhere('e.integrador = :integrador', { integrador: 'BRT' })
+      .andWhere('(e.osOrig = :base OR e.osOrig LIKE :prefix)', {
+        base,
+        prefix: `${base}-%`,
+      })
+      .getRawOne<{ cnt?: string }>();
+    return Number(raw?.cnt ?? 0);
   }
 
   private async registrarFalhaIntegracao(

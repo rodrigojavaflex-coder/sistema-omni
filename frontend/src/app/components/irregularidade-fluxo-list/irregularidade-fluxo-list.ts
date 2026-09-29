@@ -596,6 +596,19 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   }
 
   getModalScopeLabel(): string {
+    if (this.modalAcao === 'iniciar-manutencao') {
+      const resumoBrt = this.getResumoSelecaoBrtOs();
+      if (resumoBrt) {
+        return resumoBrt;
+      }
+    }
+    if (this.modalAcao === 'cancelar-os-brt') {
+      const grupos = this.contarGruposOsBrtSelecionados();
+      if (grupos > 0) {
+        const n = this.actionTargetIds.length;
+        return `Cancelará ${grupos} OS BRT e devolverá ${n} irregularidade(s) ao Tratamento.`;
+      }
+    }
     if (this.actionTargetIds.length <= 1) {
       return '';
     }
@@ -683,6 +696,11 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     let fallbackError = 'Erro ao executar ação.';
 
     if (this.modalAcao === 'iniciar-manutencao') {
+      const erroSelecao = this.validarSelecaoCompletaVistoriasBrtLocal();
+      if (erroSelecao) {
+        this.modalError = erroSelecao;
+        return;
+      }
       const payload: IniciarManutencaoLotePayload = {
         idEmpresaManutencao: this.modalIdEmpresaManutencao,
         idsIrregularidades: itemIds,
@@ -738,7 +756,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       }
       fallbackError = 'Erro ao cancelar irregularidade.';
     } else if (this.modalAcao === 'cancelar-os-brt') {
-      for (const itemId of itemIds) {
+      const idsRepresentantes = this.getIdsRepresentantesCancelamentoOsBrt(itemIds);
+      for (const itemId of idsRepresentantes) {
         requests.push(
           this.irregularidadeService.cancelarOsBrt(itemId, {
             motivo: this.modalMotivoCancelamento.trim(),
@@ -810,6 +829,13 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const erroSelecao = this.validarSelecaoCompletaVistoriasBrtLocal();
+    if (erroSelecao) {
+      this.modalError = erroSelecao;
+      this.manutencaoPreview = null;
+      return;
+    }
+
     this.modalError = '';
     this.manutencaoEtapa = 'gerando';
     this.manutencaoPreviewLoading = true;
@@ -831,7 +857,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
           this.manutencaoPreview = preview;
         },
         error: (err) => {
-          this.modalError = err?.error?.message || 'Erro ao gerar pré-visualização do relatório.';
+          this.modalError =
+            err?.error?.message || 'Erro ao gerar pré-visualização do relatório.';
         },
       });
   }
@@ -1163,6 +1190,128 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       return omni ? `${omni} / BRT ${item.numOsExternoAtual}` : `BRT ${item.numOsExternoAtual}`;
     }
     return omni ? String(omni) : '-';
+  }
+
+  /** Texto do preview do modal (integração BRT). */
+  getResumoOsBrtPreview(): string | null {
+    const empresa = this.getEmpresaManutencaoSelecionada();
+    if (!this.isEmpresaBrtOs(empresa) || !this.actionTargetIds.length) {
+      return null;
+    }
+    const selecionadas = this.items.filter((item) =>
+      this.actionTargetIds.includes(item.id),
+    );
+    const vistorias = new Set(
+      selecionadas.map((i) => i.idvistoria).filter((id): id is string => !!id),
+    );
+    return `${vistorias.size} OS (1 por vistoria)`;
+  }
+
+  private getEmpresaManutencaoSelecionada(): EmpresaTerceira | undefined {
+    return this.empresas.find((e) => e.id === this.modalIdEmpresaManutencao);
+  }
+
+  private isEmpresaBrtOs(empresa?: EmpresaTerceira): boolean {
+    return empresa?.integracaoManutencao === 'BRT_OS';
+  }
+
+  /**
+   * Validação local (lista carregada). Backend é a fonte da verdade.
+   */
+  private validarSelecaoCompletaVistoriasBrtLocal(): string | null {
+    const empresa = this.getEmpresaManutencaoSelecionada();
+    if (!this.isEmpresaBrtOs(empresa)) {
+      return null;
+    }
+    const selecionadas = this.items.filter((item) =>
+      this.actionTargetIds.includes(item.id),
+    );
+    const porVistoria = new Map<string, IrregularidadeFluxoItem[]>();
+    for (const item of selecionadas) {
+      const key = item.idvistoria ?? '';
+      if (!key) {
+        return 'Há irregularidade sem vistoria vinculada na seleção.';
+      }
+      const lista = porVistoria.get(key) ?? [];
+      lista.push(item);
+      porVistoria.set(key, lista);
+    }
+
+    const elegiveisStatus = new Set([
+      StatusIrregularidade.REGISTRADA,
+      StatusIrregularidade.RETRABALHO_GARANTIA,
+    ]);
+
+    for (const [idVistoria, grupo] of porVistoria) {
+      const elegiveisNaLista = this.items.filter(
+        (item) =>
+          item.idvistoria === idVistoria &&
+          elegiveisStatus.has(item.statusAtual),
+      );
+      const selecionadosIds = new Set(grupo.map((i) => i.id));
+      const faltantes = elegiveisNaLista.filter((i) => !selecionadosIds.has(i.id));
+      if (faltantes.length > 0 || elegiveisNaLista.length !== grupo.length) {
+        const numero =
+          grupo[0]?.numeroVistoria ??
+          elegiveisNaLista[0]?.numeroVistoria ??
+          idVistoria.slice(0, 8);
+        return (
+          `A vistoria ${numero} tem ${elegiveisNaLista.length} irregularidade(s) elegível(is) na lista; ` +
+          `selecione todas para enviar à BRT (${grupo.length} selecionada(s)).`
+        );
+      }
+    }
+    return null;
+  }
+
+  private getResumoSelecaoBrtOs(): string {
+    const empresa = this.getEmpresaManutencaoSelecionada();
+    if (!this.isEmpresaBrtOs(empresa) || !this.actionTargetIds.length) {
+      if (this.actionTargetIds.length <= 1) {
+        return '';
+      }
+      return `Aplicando em ${this.actionTargetIds.length} irregularidades selecionadas.`;
+    }
+    const selecionadas = this.items.filter((item) =>
+      this.actionTargetIds.includes(item.id),
+    );
+    const vistorias = new Set(
+      selecionadas.map((i) => i.idvistoria).filter((id): id is string => !!id),
+    );
+    return (
+      `${selecionadas.length} irregularidade(s) em ${vistorias.size} vistoria(s) → ` +
+      `${vistorias.size} OS na BRT.`
+    );
+  }
+
+  private contarGruposOsBrtSelecionados(): number {
+    const selected = this.items.filter((item) =>
+      this.actionTargetIds.includes(item.id),
+    );
+    const seen = new Set<string>();
+    for (const item of selected) {
+      if (!item.osOrigAtual || item.numOsExternoAtual == null) {
+        continue;
+      }
+      seen.add(`${item.osOrigAtual}|${item.numOsExternoAtual}`);
+    }
+    return seen.size;
+  }
+
+  /** Um representante por OS BRT (backend cancela o grupo inteiro). */
+  private getIdsRepresentantesCancelamentoOsBrt(itemIds: string[]): string[] {
+    const selected = this.items.filter((item) => itemIds.includes(item.id));
+    const seen = new Set<string>();
+    const ids: string[] = [];
+    for (const item of selected) {
+      const key = `${item.osOrigAtual ?? ''}|${item.numOsExternoAtual ?? ''}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      ids.push(item.id);
+    }
+    return ids.length ? ids : itemIds.slice(0, 1);
   }
 
   get canReclassificarSelecionado(): boolean {

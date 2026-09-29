@@ -32,15 +32,15 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 | `REGISTRADA` | Corrigir classificacao | `REGISTRADA` | Destino valido e autorizado | `422` destino invalido |
 | `REGISTRADA` | Cancelar irregularidade | `CANCELADA` | Motivo obrigatorio | `400` motivo obrigatorio |
 | `REGISTRADA` | Enviar para manutencao (sem API) | `EM_MANUTENCAO` | Empresa de manutencao definida | `422` transicao invalida |
-| `REGISTRADA` | Enviar para manutencao (com API) | `EM_MANUTENCAO` | POST OS externa OK ou duplicada idempotente | Permanece `REGISTRADA` + erro integracao |
+| `REGISTRADA` | Enviar para manutencao (com API) | `EM_MANUTENCAO` | Selecao completa da vistoria; POST OS externa OK ou duplicada idempotente (1 vistoria = 1 OS) | Grupo permanece `REGISTRADA` + erro integracao |
 | `RETRABALHO_GARANTIA` | Corrigir classificacao | `RETRABALHO_GARANTIA` | Destino valido e autorizado | `422` destino invalido |
 | `RETRABALHO_GARANTIA` | Cancelar irregularidade | `CANCELADA` | Motivo obrigatorio | `400` motivo obrigatorio |
-| `RETRABALHO_GARANTIA` | Reenviar para manutencao | `EM_MANUTENCAO` | `os_orig` = `numeroIrregularidade-N` (N≥2); empresa configurada | Erro API: permanece `RETRABALHO_GARANTIA` |
+| `RETRABALHO_GARANTIA` | Reenviar para manutencao | `EM_MANUTENCAO` | Grupo completo da vistoria; `os_orig` = `numeroVistoria-N` (N≥2); empresa configurada | Erro API: grupo permanece `RETRABALHO_GARANTIA` / `REGISTRADA` |
 | `EM_MANUTENCAO` | Concluir manutencao (sem controle API) | `CONCLUIDA` | Evidencia minima quando obrigatoria | `422` pendencia |
 | `EM_MANUTENCAO` | Concluir manutencao (controle API) | `CONCLUIDA` | **v2:** apenas via retorno integrado | `422` bloqueio manual |
 | `EM_MANUTENCAO` | Marcar nao procede (sem controle API) | `NAO_PROCEDE` | Justificativa obrigatoria | `400` justificativa obrigatoria |
 | `EM_MANUTENCAO` | Marcar nao procede (controle API) | — | **Bloqueado** ate regra v2 | `422` bloqueio manual |
-| `EM_MANUTENCAO` | Cancelar OS BRT (controle API) | `REGISTRADA` | POST cancelamento BRT OK; permissao `cancel_os_brt`; OS ativa | Permanece `EM_MANUTENCAO` + erro BRT |
+| `EM_MANUTENCAO` | Cancelar OS BRT (controle API) | `REGISTRADA` | POST cancelamento BRT OK; permissao `cancel_os_brt`; OS ativa; **grupo** da vistoria | Grupo permanece `EM_MANUTENCAO` + erro BRT |
 | `NAO_PROCEDE` | Encaminhar para validacao final | `CONCLUIDA` | Justificativa preenchida | `422` pendencia |
 | `CONCLUIDA` | Validar final | `VALIDADA` | Conferencia aprovada | `422` pendencia |
 | `CONCLUIDA` | Reprovar final | `RETRABALHO_GARANTIA` | Observacao obrigatoria | `400` observacao obrigatoria |
@@ -358,7 +358,8 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 - Flags: tipo integracao, enviar e-mail relatorio, credenciais BRT (homolog/prod), URL base.
 
 ### US4.2 - Enviar irregularidade/lote com ramificacao API
-- 1:1 OS; resposta parcial; erros permanecem no Tratamento com detalhe.
+- **Entrega 1:** 1 vistoria = 1 OS BRT; `os_orig` = `numeroVistoria` (+ `-N` no reenvio); selecao all-or-nothing das elegiveis da vistoria; `comenta` multilinha; sucesso/falha atomicos por vistoria; sucesso parcial entre vistorias no lote; erros no Tratamento com detalhe.
+- Plano: `docs/PLANO_BRT_OS_AGRUPAMENTO_VISTORIA.md`.
 
 ### US4.3 - Historico de OS externas
 - Multiplos `os_orig`/`numOs` por irregularidade; OS ativa vs tentativas anteriores.
