@@ -1,0 +1,214 @@
+.veiculo-3d-content {
+  --background: var(--ion-background-color, #f8fafc);
+}
+
+.veiculo-3d-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.veiculo-3d-hint,
+.veiculo-3d-gestos,
+.veiculo-3d-hint-meshy {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ion-text-color, #0f172a);
+}
+
+.veiculo-3d-hint-meshy {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.veiculo-3d-erro {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ion-color-danger, #eb445a);
+}
+
+.veiculo-3d-loading-marcas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ion-color-medium, #64748b);
+}
+
+.veiculo-3d-gestos {
+  opacity: 0.75;
+  font-size: 13px;
+}
+
+.Hotspot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 4px;
+  border: 1.5px solid #ffffff;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 1px 5px color-mix(in srgb, var(--ion-text-color, #0f172a) 30%, transparent);
+  cursor: pointer;
+  white-space: nowrap;
+  /* Orbit + normal da face (data-visible) do model-viewer. */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.Hotspot:not(.Hotspot--oculto)[data-visible] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.Hotspot--oculto {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.Hotspot:focus-visible {
+  outline: 2px solid var(--ion-color-primary, #3880ff);
+  outline-offset: 2px;
+}
+
+.veiculo-3d-legenda {
+  border: 1px solid var(--ion-border-color, rgba(15, 23, 42, 0.12));
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--ion-card-background, var(--ion-background-color, #ffffff));
+}
+
+.veiculo-3d-legenda ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.veiculo-3d-legenda li {
+  font-size: 13px;
+  color: var(--ion-text-color, #0f172a);
+  line-height: 1.35;
+}
+
+.veiculo-3d-legenda small {
+  display: block;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.legenda-indice {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--ion-color-primary, #3880ff);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.veiculo-3d-seletores {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.veiculo-3d-seletor-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ion-color-medium, #64748b);
+}
+
+.veiculo-3d-seletores ion-segment {
+  --background: var(--ion-card-background, var(--ion-background-color, #ffffff));
+  border: 1px solid var(--ion-border-color, rgba(15, 23, 42, 0.12));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.veiculo-3d-seletores ion-segment-button {
+  --indicator-color: var(--ion-color-primary, #3880ff);
+  min-height: 40px;
+  font-size: 13px;
+  text-transform: none;
+}
+
+.veiculo-3d-segment-cor ion-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cor-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--ion-text-color, #0f172a) 20%, transparent);
+  flex-shrink: 0;
+}
+
+.cor-swatch-verde {
+  background: linear-gradient(180deg, #b4d800 45%, #1f4d2e 45%);
+}
+
+.cor-swatch-azul {
+  background: linear-gradient(180deg, #f4f7fa 34%, #4aa9e8 34% 55%, #0c2f6e 55%);
+}
+
+.veiculo-3d-viewer-wrap {
+  flex: 1;
+  min-height: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--ion-border-color, rgba(15, 23, 42, 0.12));
+  background: var(--ion-card-background, var(--ion-background-color, #ffffff));
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ion-text-color, #0f172a) 8%, transparent);
+}
+
+.veiculo-3d-viewer {
+  width: 100%;
+  height: min(52vh, 480px);
+  min-height: 280px;
+  --poster-color: transparent;
+  background: transparent;
+}
+
+.veiculo-3d-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--ion-color-medium, #64748b);
+  font-size: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .veiculo-3d-viewer-wrap,
+  .veiculo-3d-seletores ion-segment,
+  .veiculo-3d-legenda {
+    border-color: color-mix(in srgb, var(--ion-text-color, #e2e8f0) 18%, transparent);
+  }
+}

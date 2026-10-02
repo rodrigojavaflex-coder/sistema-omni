@@ -37,6 +37,7 @@ import { Permission } from '../../models/usuario.model';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
 import { PeriodoFluxoFilterComponent, PeriodoIntervaloPayload } from '../periodo-fluxo-filter/periodo-fluxo-filter.component';
 import { MapaAvariaComponent } from '../mapa-avaria/mapa-avaria';
+import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
 import { Veiculo } from '../../models/veiculo.model';
 import { ConfiguracaoService } from '../../services/configuracao.service';
 import { TempoFaixaConfig, TempoFluxoConfig } from '../../models/configuracao.model';
@@ -67,6 +68,7 @@ type ModalAcao =
     VeiculoAutocompleteComponent,
     PeriodoFluxoFilterComponent,
     MapaAvariaComponent,
+    ConfirmationModalComponent,
   ],
   templateUrl: './irregularidade-fluxo-list.html',
   styleUrls: ['./irregularidade-fluxo-list.css'],
@@ -104,8 +106,11 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   loading = false;
   error = '';
   items: IrregularidadeFluxoItem[] = [];
-  expandedCardIds = new Set<string>();
   empresas: EmpresaTerceira[] = [];
+  currentPage = 1;
+  pageSize = 50;
+  totalItems = 0;
+  totalPages = 0;
 
   modo: FluxoModo = 'tratamento';
   titulo = 'Fluxo de Irregularidades';
@@ -126,6 +131,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   statusOptions: StatusIrregularidade[] = Object.values(StatusIrregularidade);
   info = '';
   showActionModal = false;
+  showDetalheModal = false;
+  detalheItem: IrregularidadeFluxoItem | null = null;
   modalAcao: ModalAcao | null = null;
   selectedItemForAction: IrregularidadeFluxoItem | null = null;
   actionTargetIds: string[] = [];
@@ -151,18 +158,33 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     idVista: string;
     pontos: Array<{ posXPct: number; posYPct: number }>;
   } | null = null;
+  /** Quando false, o mapa fica só em visualização até o usuário ativar edição. */
+  reclassMapaEdicaoAtiva = false;
   reclassAreaBusca = '';
   reclassComponenteBusca = '';
   reclassSintomaBusca = '';
   showReclassAreaOptions = false;
   showReclassComponenteOptions = false;
   showReclassSintomaOptions = false;
+  /** Usuário já aceitou remover marcações nesta reclassificação. */
+  reclassRemocaoMarcacoesAceita = false;
+  showReclassRemocaoMarcacoesModal = false;
+  private pendingReclassSintoma: {
+    id: string;
+    descricao: string;
+    exigeMarcacaoMapa?: boolean;
+  } | null = null;
+  private pendingReclassSubmit = false;
+  readonly reclassRemocaoMarcacoesMessage =
+    'O sintoma selecionado não exige marcação no mapa. As marcações atuais serão removidas. Deseja continuar?';
   reclassLoading = false;
   manutencaoPreviewLoading = false;
   manutencaoPreview: RelatorioManutencaoPreview | null = null;
   manutencaoEtapa: 'idle' | 'gerando' | 'enviando' = 'idle';
   imagemAmpliadaSrc = '';
   imagemAmpliadaTitulo = '';
+  fotosPreview: IrregularidadeMidiaFluxoItem[] = [];
+  fotoPreviewIndex = 0;
   tempoFaixasAtivas: TempoFaixaConfig[] = [];
   showHistoricoModal = false;
   historicoLoading = false;
@@ -255,7 +277,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
 
   private configureModo(): void {
     if (this.modo === 'tratamento') {
-      this.titulo = 'Tratamento de Irregularidades';
+      this.titulo = 'Tratamento';
       this.descricao = '';
       this.statusFiltro = [StatusIrregularidade.REGISTRADA];
       this.statusOptions = this.buildTratamentoStatusPorPermissao();
@@ -271,7 +293,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       this.statusFiltro = [StatusIrregularidade.EM_MANUTENCAO];
       return;
     }
-    this.titulo = 'Validação Final';
+    this.titulo = 'Validação';
     this.descricao = '';
     this.statusFiltro = [StatusIrregularidade.CONCLUIDA, StatusIrregularidade.NAO_PROCEDE];
   }
@@ -311,6 +333,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         dataFim: this.filtroDataFim || undefined,
         referenciaPeriodo: this.referenciaPeriodoParaListagem(),
         origemRegistro: this.filtroOrigemRegistro || undefined,
+        page: this.currentPage,
+        limit: this.pageSize,
       })
       .pipe(finalize(() => {
         if (!silent) {
@@ -318,9 +342,18 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         }
       }))
       .subscribe({
-        next: (items) => {
+        next: (response) => {
           this.pollingAtivo = true;
-          this.items = this.sortItemsFluxo(items ?? []);
+          const pageItems = response?.data ?? [];
+          this.items = this.sortItemsFluxo(pageItems);
+          this.totalItems = response?.meta?.total ?? pageItems.length;
+          this.totalPages = response?.meta?.totalPages ?? 1;
+          this.currentPage = response?.meta?.page ?? this.currentPage;
+          if (this.totalPages > 0 && this.currentPage > this.totalPages) {
+            this.currentPage = this.totalPages;
+            this.loadItems(avisoPosEmail, silent);
+            return;
+          }
           if (silent && selecaoAnterior) {
             this.selectedIds = new Set(
               this.items.filter((item) => selecaoAnterior.has(item.id)).map((item) => item.id),
@@ -373,6 +406,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       this.loading ||
       this.showActionModal ||
       this.showHistoricoModal ||
+      this.showDetalheModal ||
       !!this.imagemAmpliadaSrc ||
       this.isSosModalOpen()
     );
@@ -388,7 +422,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   onPeriodoAplicado(intervalo: PeriodoIntervaloPayload): void {
     this.filtroDataInicio = intervalo.dataInicio;
     this.filtroDataFim = intervalo.dataFim;
-    this.loadItems();
+    this.resetPageAndLoad();
   }
 
   /** Debounce para não disparar listagem a cada dígito no filtro de O.S. */
@@ -398,7 +432,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     }
     this.ordemServicoFiltroDebounce = setTimeout(() => {
       this.ordemServicoFiltroDebounce = undefined;
-      this.loadItems();
+      this.resetPageAndLoad();
     }, 400);
   }
 
@@ -415,7 +449,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   onVeiculoSelected(veiculo: Veiculo): void {
     this.filtroVeiculoId = veiculo.id;
     this.filtroVeiculoDescricao = veiculo.descricao;
-    this.loadItems();
+    this.resetPageAndLoad();
   }
 
   clearFilters(): void {
@@ -431,9 +465,27 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.selectedIds.clear();
     this.error = '';
     this.info = '';
+    this.currentPage = 1;
   }
 
   onComboFilterChange(): void {
+    this.resetPageAndLoad();
+  }
+
+  onPageChange(page: number): void {
+    if (page < 1 || (this.totalPages > 0 && page > this.totalPages)) {
+      return;
+    }
+    if (page === this.currentPage) {
+      return;
+    }
+    this.currentPage = page;
+    this.selectedIds.clear();
+    this.loadItems();
+  }
+
+  private resetPageAndLoad(): void {
+    this.currentPage = 1;
     this.loadItems();
   }
 
@@ -443,6 +495,68 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
 
   openReclassificarModal(item: IrregularidadeFluxoItem): void {
     this.openActionModal(item, 'reclassificar', [item.id]);
+  }
+
+  canReclassificarNoDetalhe(item: IrregularidadeFluxoItem): boolean {
+    if (!this.canTratamentoUpdate || !this.canShowTratamentoActions) {
+      return false;
+    }
+    return (
+      item.statusAtual === StatusIrregularidade.REGISTRADA ||
+      item.statusAtual === StatusIrregularidade.RETRABALHO_GARANTIA
+    );
+  }
+
+  canConcluirNoDetalhe(item: IrregularidadeFluxoItem): boolean {
+    return (
+      this.modo === 'manutencao' &&
+      this.canManutencaoFinish &&
+      item.statusAtual === StatusIrregularidade.EM_MANUTENCAO
+    );
+  }
+
+  canNaoProcedeNoDetalhe(item: IrregularidadeFluxoItem): boolean {
+    return (
+      this.modo === 'manutencao' &&
+      this.canManutencaoNaoProcede &&
+      item.statusAtual === StatusIrregularidade.EM_MANUTENCAO
+    );
+  }
+
+  canCancelarOsBrtNoDetalhe(item: IrregularidadeFluxoItem): boolean {
+    return (
+      this.modo === 'manutencao' &&
+      this.canManutencaoCancelOsBrt &&
+      !!item.controleIntegracaoApi &&
+      item.numOsExternoAtual != null &&
+      !!item.osOrigAtual
+    );
+  }
+
+  canValidarFinalNoDetalhe(item: IrregularidadeFluxoItem): boolean {
+    return (
+      this.modo === 'validacao-final' &&
+      this.canValidacaoFinalUpdate &&
+      (item.statusAtual === StatusIrregularidade.CONCLUIDA ||
+        item.statusAtual === StatusIrregularidade.NAO_PROCEDE)
+    );
+  }
+
+  canReprovarFinalNoDetalhe(item: IrregularidadeFluxoItem): boolean {
+    return this.canValidarFinalNoDetalhe(item);
+  }
+
+  itemManutencaoIntegracao(item: IrregularidadeFluxoItem): boolean {
+    return !!item.controleIntegracaoApi;
+  }
+
+  reclassificarDoDetalhe(item: IrregularidadeFluxoItem): void {
+    this.acaoDoDetalhe(item, 'reclassificar');
+  }
+
+  acaoDoDetalhe(item: IrregularidadeFluxoItem, acao: ModalAcao): void {
+    this.closeDetalheModal();
+    this.openActionModal(item, acao, [item.id]);
   }
 
   openConcluirManutencaoModal(item: IrregularidadeFluxoItem): void {
@@ -507,12 +621,17 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       }
       return { idVista, pontos };
     })();
+    this.reclassMapaEdicaoAtiva = false;
     this.reclassAreaBusca = item.nomeArea ?? '';
     this.reclassComponenteBusca = item.nomeComponente ?? '';
     this.reclassSintomaBusca = item.descricaoSintoma ?? '';
     this.showReclassAreaOptions = false;
     this.showReclassComponenteOptions = false;
     this.showReclassSintomaOptions = false;
+    this.reclassRemocaoMarcacoesAceita = false;
+    this.showReclassRemocaoMarcacoesModal = false;
+    this.pendingReclassSintoma = null;
+    this.pendingReclassSubmit = false;
     this.reclassLoading = false;
     if (acao === 'reclassificar') {
       void this.prepareReclassificacaoOptions(item);
@@ -534,12 +653,17 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.reclassSintomas = [];
     this.reclassModeloId = '';
     this.reclassMarca = null;
+    this.reclassMapaEdicaoAtiva = false;
     this.reclassAreaBusca = '';
     this.reclassComponenteBusca = '';
     this.reclassSintomaBusca = '';
     this.showReclassAreaOptions = false;
     this.showReclassComponenteOptions = false;
     this.showReclassSintomaOptions = false;
+    this.reclassRemocaoMarcacoesAceita = false;
+    this.showReclassRemocaoMarcacoesModal = false;
+    this.pendingReclassSintoma = null;
+    this.pendingReclassSubmit = false;
     this.reclassLoading = false;
   }
 
@@ -595,6 +719,33 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     }
   }
 
+  getModalOsAlvoLabel(): string {
+    if (
+      this.modalAcao !== 'concluir' &&
+      this.modalAcao !== 'nao-procede' &&
+      this.modalAcao !== 'validar-final' &&
+      this.modalAcao !== 'reprovar-final'
+    ) {
+      return '';
+    }
+    const selecionados = this.items.filter((item) =>
+      this.actionTargetIds.includes(item.id),
+    );
+    const itens =
+      selecionados.length > 0
+        ? selecionados
+        : this.selectedItemForAction
+          ? [this.selectedItemForAction]
+          : [];
+    const oss = itens
+      .map((item) => this.formatOrdemServico(item))
+      .filter((os) => !!os && os !== '-');
+    if (!oss.length) {
+      return '';
+    }
+    return oss.length === 1 ? `OS ${oss[0]}` : `OSs ${oss.join(', ')}`;
+  }
+
   getModalScopeLabel(): string {
     if (this.modalAcao === 'iniciar-manutencao') {
       const resumoBrt = this.getResumoSelecaoBrtOs();
@@ -623,10 +774,14 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (this.modalAcao === 'reclassificar') {
       const destExigeMapa = !!this.reclassSintomas.find((s) => s.id === this.modalIdSintoma)
         ?.exigeMarcacaoMapa;
+      const sintomaValidoNoComponente = this.reclassSintomas.some(
+        (s) => s.id === this.modalIdSintoma,
+      );
       return !!(
         this.modalIdArea.trim() &&
         this.modalIdComponente.trim() &&
         this.modalIdSintoma.trim() &&
+        sintomaValidoNoComponente &&
         (!destExigeMapa || this.reclassMarca)
       );
     }
@@ -644,9 +799,24 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return !!this.reclassSintomas.find((s) => s.id === this.modalIdSintoma)?.exigeMarcacaoMapa;
   }
 
+  /** Modal amplo quando há mapa a editar (destino exige ou item já tem marcações). */
+  get isReclassModalAmplo(): boolean {
+    if (this.modalAcao !== 'reclassificar' || !this.selectedItemForAction) {
+      return false;
+    }
+    return this.reclassDestinoExigeMapa || this.itemTemMarcacoes(this.selectedItemForAction);
+  }
+
   get reclassIdVistas(): string[] {
     return (
       this.reclassSintomas.find((s) => s.id === this.modalIdSintoma)?.idVistas ?? []
+    );
+  }
+
+  itemTemMarcacoes(item: IrregularidadeFluxoItem): boolean {
+    return !!(
+      (item.marcacoes && item.marcacoes.length > 0) ||
+      item.marcacao
     );
   }
 
@@ -657,6 +827,25 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     } | null,
   ): void {
     this.reclassMarca = marca;
+  }
+
+  ativarEdicaoMarcacoesReclass(): void {
+    this.reclassMapaEdicaoAtiva = true;
+  }
+
+  bloquearEdicaoMarcacoesReclass(): void {
+    this.reclassMapaEdicaoAtiva = false;
+  }
+
+  get reclassMapaSomenteLeitura(): boolean {
+    return !this.reclassMapaEdicaoAtiva;
+  }
+
+  get reclassTextoBotaoEdicaoMapa(): string {
+    if (this.reclassMarca?.pontos?.length) {
+      return this.reclassMapaEdicaoAtiva ? 'Bloquear marcações' : 'Alterar marcações';
+    }
+    return this.reclassMapaEdicaoAtiva ? 'Bloquear marcações' : 'Marcar no mapa';
   }
 
   marcaInicialDoItem(item: IrregularidadeFluxoItem): {
@@ -728,6 +917,18 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         });
       return;
     } else if (this.modalAcao === 'reclassificar') {
+      const item = this.selectedItemForAction;
+      if (
+        item &&
+        !this.reclassDestinoExigeMapa &&
+        this.itemTemMarcacoes(item) &&
+        !this.reclassRemocaoMarcacoesAceita
+      ) {
+        this.pendingReclassSubmit = true;
+        this.pendingReclassSintoma = null;
+        this.showReclassRemocaoMarcacoesModal = true;
+        return;
+      }
       for (const itemId of itemIds) {
         requests.push(
           this.irregularidadeService.reclassificar(itemId, {
@@ -735,13 +936,14 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
             idcomponente: this.modalIdComponente.trim(),
             idsintoma: this.modalIdSintoma.trim(),
             observacao: this.modalObservacao.trim() || undefined,
-            marcacoes: this.reclassMarca
-              ? this.reclassMarca.pontos.map((p) => ({
-                  idVista: this.reclassMarca!.idVista,
-                  posXPct: p.posXPct,
-                  posYPct: p.posYPct,
-                }))
-              : undefined,
+            marcacoes:
+              this.reclassDestinoExigeMapa && this.reclassMarca
+                ? this.reclassMarca.pontos.map((p) => ({
+                    idVista: this.reclassMarca!.idVista,
+                    posXPct: p.posXPct,
+                    posYPct: p.posYPct,
+                  }))
+                : undefined,
           }),
         );
       }
@@ -977,10 +1179,12 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       this.reclassComponentes.find((c) => c.id === this.modalIdComponente)?.nome ||
       item.nomeComponente ||
       '';
-    const sintomaAtual =
-      this.reclassSintomas.find((s) => s.id === this.modalIdSintoma)?.descricao ||
-      item.descricaoSintoma ||
-      '';
+    // Só preenche sintoma se o id atual existir na lista do componente (evita
+    // manter texto do sintoma antigo após troca de componente).
+    const sintomaAtual = this.modalIdSintoma
+      ? this.reclassSintomas.find((s) => s.id === this.modalIdSintoma)?.descricao ||
+        ''
+      : '';
     this.reclassAreaBusca = areaAtual;
     this.reclassComponenteBusca = componenteAtual;
     this.reclassSintomaBusca = sintomaAtual;
@@ -1000,7 +1204,12 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     );
   }
 
-  get filteredReclassSintomas(): Array<{ id: string; descricao: string }> {
+  get filteredReclassSintomas(): Array<{
+    id: string;
+    descricao: string;
+    exigeMarcacaoMapa?: boolean;
+    idVistas?: string[];
+  }> {
     const termo = this.reclassSintomaBusca.trim().toLowerCase();
     if (!termo) return this.reclassSintomas;
     return this.reclassSintomas.filter((s) =>
@@ -1043,6 +1252,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.modalIdSintoma = '';
     this.reclassSintomaBusca = '';
     this.reclassSintomas = [];
+    this.reclassMarca = null;
+    this.reclassMapaEdicaoAtiva = false;
+    this.reclassRemocaoMarcacoesAceita = false;
     void this.loadComponentesByArea(this.modalIdArea).then(() => {
       this.showReclassComponenteOptions = true;
     });
@@ -1054,12 +1266,82 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.showReclassComponenteOptions = false;
     this.modalIdSintoma = '';
     this.reclassSintomaBusca = '';
-    void this.loadSintomasByComponente(this.modalIdComponente);
+    this.reclassMarca = null;
+    this.reclassMapaEdicaoAtiva = false;
+    this.reclassRemocaoMarcacoesAceita = false;
+    void this.loadSintomasByComponente(this.modalIdComponente).then(() => {
+      this.showReclassSintomaOptions = true;
+    });
   }
 
-  selectReclassSintoma(sint: { id: string; descricao: string }): void {
-    this.reclassSintomaBusca = sint.descricao;
+  selectReclassSintoma(sint: {
+    id: string;
+    descricao: string;
+    exigeMarcacaoMapa?: boolean;
+  }): void {
+    const item = this.selectedItemForAction;
+    const destinoExigeMapa = !!sint.exigeMarcacaoMapa;
+    const tinhaMarcacoes = !!item && this.itemTemMarcacoes(item);
+
+    if (item && tinhaMarcacoes && !destinoExigeMapa && !this.reclassRemocaoMarcacoesAceita) {
+      this.pendingReclassSintoma = sint;
+      this.pendingReclassSubmit = false;
+      this.showReclassSintomaOptions = false;
+      this.showReclassRemocaoMarcacoesModal = true;
+      return;
+    }
+
+    this.applyReclassSintomaSelection(sint);
+  }
+
+  onReclassRemocaoMarcacoesConfirmed(): void {
+    this.showReclassRemocaoMarcacoesModal = false;
+    this.reclassRemocaoMarcacoesAceita = true;
+    this.reclassMarca = null;
+    const sintPendente = this.pendingReclassSintoma;
+    const submitPendente = this.pendingReclassSubmit;
+    this.pendingReclassSintoma = null;
+    this.pendingReclassSubmit = false;
+
+    if (sintPendente) {
+      this.applyReclassSintomaSelection(sintPendente);
+      return;
+    }
+    if (submitPendente) {
+      this.submitActionModal();
+    }
+  }
+
+  onReclassRemocaoMarcacoesCancelled(): void {
+    this.showReclassRemocaoMarcacoesModal = false;
+    this.pendingReclassSintoma = null;
+    this.pendingReclassSubmit = false;
+  }
+
+  private applyReclassSintomaSelection(sint: {
+    id: string;
+    descricao: string;
+    exigeMarcacaoMapa?: boolean;
+  }): void {
+    const item = this.selectedItemForAction;
+    const destinoExigeMapa = !!sint.exigeMarcacaoMapa;
+
+    if (!destinoExigeMapa) {
+      this.reclassMarca = null;
+      this.reclassMapaEdicaoAtiva = false;
+    } else if (item && !this.reclassMarca) {
+      this.reclassRemocaoMarcacoesAceita = false;
+      this.reclassMarca = this.marcaInicialDoItem(item);
+      // Sem pontos: libera edição para o usuário marcar; com pontos: começa bloqueado.
+      this.reclassMapaEdicaoAtiva = !this.reclassMarca;
+    } else if (destinoExigeMapa) {
+      this.reclassRemocaoMarcacoesAceita = false;
+      this.reclassMapaEdicaoAtiva = !this.reclassMarca;
+    }
+
+    // id antes do texto: evita ngModelChange reentrar em selectReclassSintoma
     this.modalIdSintoma = sint.id;
+    this.reclassSintomaBusca = sint.descricao;
     this.showReclassSintomaOptions = false;
   }
 
@@ -1075,6 +1357,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.modalIdSintoma = '';
     this.reclassSintomaBusca = '';
     this.reclassSintomas = [];
+    this.reclassMarca = null;
+    this.reclassMapaEdicaoAtiva = false;
+    this.reclassRemocaoMarcacoesAceita = false;
     if (this.modalIdArea) {
       void this.loadComponentesByArea(this.modalIdArea);
     } else {
@@ -1091,6 +1376,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.modalIdComponente = found?.id ?? '';
     this.modalIdSintoma = '';
     this.reclassSintomaBusca = '';
+    this.reclassMarca = null;
+    this.reclassMapaEdicaoAtiva = false;
+    this.reclassRemocaoMarcacoesAceita = false;
     if (this.modalIdComponente) {
       void this.loadSintomasByComponente(this.modalIdComponente);
     } else {
@@ -1104,7 +1392,14 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     const found = this.reclassSintomas.find(
       (s) => s.descricao.trim().toLowerCase() === termo,
     );
-    this.modalIdSintoma = found?.id ?? '';
+    if (!found) {
+      this.modalIdSintoma = '';
+      return;
+    }
+    if (found.id === this.modalIdSintoma) {
+      return;
+    }
+    this.selectReclassSintoma(found);
   }
 
   visualizarPreviewRelatorio(): void {
@@ -1358,19 +1653,17 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (target.closest('button, input, select, textarea, a, label, audio, img')) {
       return;
     }
-    this.toggleCardExpanded(itemId);
+    this.toggleItemSelection(itemId, !this.selectedIds.has(itemId));
   }
 
-  isCardExpanded(itemId: string): boolean {
-    return this.expandedCardIds.has(itemId);
+  openDetalheModal(item: IrregularidadeFluxoItem): void {
+    this.detalheItem = item;
+    this.showDetalheModal = true;
   }
 
-  toggleCardExpanded(itemId: string): void {
-    if (this.expandedCardIds.has(itemId)) {
-      this.expandedCardIds.delete(itemId);
-      return;
-    }
-    this.expandedCardIds.add(itemId);
+  closeDetalheModal(): void {
+    this.showDetalheModal = false;
+    this.detalheItem = null;
   }
 
   getImageSrc(item: IrregularidadeMidiaFluxoItem): string {
@@ -1383,14 +1676,50 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return `data:${mime};base64,${item.dadosBase64}`;
   }
 
-  openImagePreview(item: IrregularidadeMidiaFluxoItem): void {
-    this.imagemAmpliadaSrc = this.getImageSrc(item);
-    this.imagemAmpliadaTitulo = item.nomeArquivo;
+  openImagePreview(
+    item: IrregularidadeMidiaFluxoItem,
+    fotos: IrregularidadeMidiaFluxoItem[] = [],
+  ): void {
+    this.fotosPreview = fotos.length > 0 ? fotos : [item];
+    const idx = this.fotosPreview.findIndex((foto) => foto.id === item.id);
+    this.fotoPreviewIndex = idx >= 0 ? idx : 0;
+    this.aplicarFotoPreviewAtual();
   }
 
   closeImagePreview(): void {
     this.imagemAmpliadaSrc = '';
     this.imagemAmpliadaTitulo = '';
+    this.fotosPreview = [];
+    this.fotoPreviewIndex = 0;
+  }
+
+  prevFotoPreview(): void {
+    if (this.fotosPreview.length <= 1) {
+      return;
+    }
+    this.fotoPreviewIndex =
+      (this.fotoPreviewIndex - 1 + this.fotosPreview.length) %
+      this.fotosPreview.length;
+    this.aplicarFotoPreviewAtual();
+  }
+
+  nextFotoPreview(): void {
+    if (this.fotosPreview.length <= 1) {
+      return;
+    }
+    this.fotoPreviewIndex =
+      (this.fotoPreviewIndex + 1) % this.fotosPreview.length;
+    this.aplicarFotoPreviewAtual();
+  }
+
+  private aplicarFotoPreviewAtual(): void {
+    const foto = this.fotosPreview[this.fotoPreviewIndex];
+    if (!foto) {
+      this.closeImagePreview();
+      return;
+    }
+    this.imagemAmpliadaSrc = this.getImageSrc(foto);
+    this.imagemAmpliadaTitulo = foto.nomeArquivo;
   }
 
   openHistoricoModal(item: IrregularidadeFluxoItem): void {
@@ -1646,6 +1975,13 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       return `${horas}h ${minutos}min`;
     }
     return `${minutos}min`;
+  }
+
+  linhasObservacaoHistorico(observacao?: string | null): string[] {
+    if (!observacao) {
+      return [];
+    }
+    return observacao.replace(/\r\n/g, '\n').split('\n');
   }
 
   /**

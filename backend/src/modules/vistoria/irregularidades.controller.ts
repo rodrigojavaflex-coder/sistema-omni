@@ -4,6 +4,7 @@ import {
   Get,
   Delete,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -43,6 +44,7 @@ import { ValidacaoFinalIrregularidadeDto } from './dto/validacao-final-irregular
 import { ReprovarValidacaoFinalIrregularidadeDto } from './dto/reprovar-validacao-final-irregularidade.dto';
 import { IrregularidadeResumoDto } from './dto/irregularidade-resumo.dto';
 import { IrregularidadeHistoricoDto } from './dto/irregularidade-historico.dto';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import {
   RelatorioManutencaoExecucaoDto,
   RelatorioManutencaoPreviewDto,
@@ -73,7 +75,14 @@ export class IrregularidadesController {
     description:
       'Trecho do número da O.S. (numeroIrregularidade): busca parcial nos dígitos, ex.: 2026 corresponde a 202601, 202619, etc.',
   })
-  @ApiResponse({ status: 200, type: [IrregularidadeResumoDto] })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Itens por página (padrão 20, máx. 100)',
+  })
+  @ApiResponse({ status: 200, type: PaginatedResponseDto })
   @ApiResponse({
     status: 403,
     description: 'Sem permissão de leitura para a etapa consultada',
@@ -88,8 +97,18 @@ export class IrregularidadesController {
     @Query('referenciaPeriodo') referenciaPeriodo?: string,
     @Query('ordemServico') ordemServico?: string,
     @Query('origemRegistro') origemRegistro?: string,
+    @Query(
+      'page',
+      new ParseIntPipe({ optional: true }),
+    )
+    page?: number,
+    @Query(
+      'limit',
+      new ParseIntPipe({ optional: true }),
+    )
+    limit?: number,
     @Req() req?: Request & { user?: Usuario },
-  ): Promise<IrregularidadeResumoDto[]> {
+  ): Promise<PaginatedResponseDto<IrregularidadeResumoDto>> {
     const statuses = (status ?? '')
       .split(',')
       .map((s) => s.trim())
@@ -118,6 +137,10 @@ export class IrregularidadesController {
           ? ('MOBILE' as const)
           : undefined;
 
+    const pageNum = page != null && page > 0 ? page : 1;
+    const limitNum =
+      limit != null && limit > 0 ? Math.min(100, limit) : 20;
+
     const filtrosLista = {
       idVeiculo,
       gravidade: gravidades,
@@ -126,6 +149,8 @@ export class IrregularidadesController {
       referenciaPeriodo: refPeriodo,
       ordemServico: ordemServicoDigits,
       origemRegistro: origemFiltro,
+      page: pageNum,
+      limit: limitNum,
     };
 
     if (statuses.length === 0) {

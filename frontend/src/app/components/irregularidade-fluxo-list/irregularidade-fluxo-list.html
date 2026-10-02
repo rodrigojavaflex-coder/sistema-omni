@@ -1,164 +1,190 @@
 <div class="list-container">
-  <div class="list-header">
-    <h2>{{ titulo }}</h2>
-  </div>
-  <p class="subtitle" *ngIf="descricao">{{ descricao }}</p>
+  <div class="fluxo-sticky-top">
+    <p class="subtitle" *ngIf="descricao">{{ descricao }}</p>
 
-  <div class="filters-panel">
-    <div class="filters-row">
-      <input
-        type="text"
-        inputmode="numeric"
-        class="form-input filter-ordem-servico"
-        [(ngModel)]="filtroOrdemServico"
-        (ngModelChange)="onOrdemServicoFiltroChange()"
-        aria-label="Ordem de Serviço (número)"
-        placeholder="Buscar O.S. (ex.: 2026)"
-        autocomplete="off"
-      />
-      <app-veiculo-autocomplete
-        class="filter-veiculo"
-        placeholder="Buscar veículo..."
-        (veiculoSelected)="onVeiculoSelected($event)"
-      ></app-veiculo-autocomplete>
-      <select
-        class="form-select"
-        [(ngModel)]="filtroGravidade"
-        (ngModelChange)="onComboFilterChange()"
-      >
-        <option value="">Gravidade (todas)</option>
-        <option *ngFor="let g of gravidadeOptions" [value]="g">
-          {{ getGravidadeLabel(g) }}
-        </option>
-      </select>
-      <select
-        class="form-select"
-        [(ngModel)]="filtroOrigemRegistro"
-        (ngModelChange)="onComboFilterChange()"
-        aria-label="Filtrar por origem"
-      >
-        <option value="">Origem (todas)</option>
-        <option value="SOS_WEB">Somente SOS</option>
-        <option value="MOBILE">Somente mobile</option>
-      </select>
-      <select
-        class="form-select"
-        *ngIf="modo === 'tratamento'"
-        [(ngModel)]="filtroStatus"
-        (ngModelChange)="onComboFilterChange()"
-      >
-        <option [ngValue]="''">Todos</option>
-        <option *ngFor="let status of statusOptions" [ngValue]="status">
-          {{ getStatusLabel(status) }}
-        </option>
-      </select>
-      <app-periodo-fluxo-filter
-        class="filter-periodo filter-periodo--compact"
-        [clearSeq]="filtroPeriodoClearSeq"
-        (periodoAplicado)="onPeriodoAplicado($event)"
-      ></app-periodo-fluxo-filter>
-      <button class="btn btn-secondary" (click)="clearFilters()">Limpar</button>
+    <div class="filters-panel">
+      <div class="filters-row">
+        <h2 class="fluxo-titulo">{{ titulo }}</h2>
+        <input
+          type="text"
+          inputmode="numeric"
+          class="form-input filter-ordem-servico"
+          [(ngModel)]="filtroOrdemServico"
+          (ngModelChange)="onOrdemServicoFiltroChange()"
+          aria-label="OS (número)"
+          placeholder="Buscar OS (ex.: 2026)"
+          autocomplete="off"
+        />
+        <app-veiculo-autocomplete
+          class="filter-veiculo"
+          placeholder="Buscar veículo..."
+          (veiculoSelected)="onVeiculoSelected($event)"
+        ></app-veiculo-autocomplete>
+        <select
+          class="form-select"
+          [(ngModel)]="filtroGravidade"
+          (ngModelChange)="onComboFilterChange()"
+        >
+          <option value="">Gravidade (todas)</option>
+          <option *ngFor="let g of gravidadeOptions" [value]="g">
+            {{ getGravidadeLabel(g) }}
+          </option>
+        </select>
+        <select
+          class="form-select"
+          [(ngModel)]="filtroOrigemRegistro"
+          (ngModelChange)="onComboFilterChange()"
+          aria-label="Filtrar por origem"
+        >
+          <option value="">Origem (todas)</option>
+          <option value="SOS_WEB">Somente SOS</option>
+          <option value="MOBILE">Somente mobile</option>
+        </select>
+        <select
+          class="form-select"
+          *ngIf="modo === 'tratamento'"
+          [(ngModel)]="filtroStatus"
+          (ngModelChange)="onComboFilterChange()"
+        >
+          <option [ngValue]="''">Todos</option>
+          <option *ngFor="let status of statusOptions" [ngValue]="status">
+            {{ getStatusLabel(status) }}
+          </option>
+        </select>
+        <app-periodo-fluxo-filter
+          class="filter-periodo filter-periodo--compact"
+          [clearSeq]="filtroPeriodoClearSeq"
+          (periodoAplicado)="onPeriodoAplicado($event)"
+        ></app-periodo-fluxo-filter>
+        <button class="btn btn-secondary" (click)="clearFilters()">Limpar</button>
+      </div>
     </div>
-  </div>
 
-  <div class="actions-panel">
-    <div class="buttons-row">
-      <button
-        class="btn btn-warning btn-sos-registrar"
-        *ngIf="modo === 'tratamento' && canTratamentoCreateSos"
-        type="button"
-        (click)="openSosModal()"
-      >
-        Registrar SOS
-      </button>
-      <button
-        class="btn btn-primary"
-        *ngIf="canShowTratamentoActions && canManutencaoStart"
-        [disabled]="!hasSelectedItems"
-        (click)="openBulkActionModal('iniciar-manutencao')"
-      >
-        <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-        Enviar para manutenção
-      </button>
-      <button
-        class="btn btn-secondary btn-reclassificar"
-        *ngIf="canShowTratamentoActions && canTratamentoUpdate"
-        [disabled]="!canReclassificarSelecionado"
-        (click)="openBulkActionModal('reclassificar')"
-      >
-        <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-        </svg>
-        Reclassificar
-      </button>
-      <button
-        class="btn btn-danger"
-        *ngIf="canShowTratamentoActions && canTratamentoUpdate"
-        [disabled]="!hasSelectedItems"
-        (click)="openBulkActionModal('cancelar')"
-      >
-        Cancelar
-      </button>
-      <button
-        class="btn btn-danger"
-        *ngIf="modo === 'manutencao' && canManutencaoCancelOsBrt"
-        [disabled]="!manutencaoCancelOsBrtSelecionada"
-        (click)="openBulkActionModal('cancelar-os-brt')"
-      >
-        Cancelar OS BRT
-      </button>
-      <button
-        class="btn btn-primary"
-        *ngIf="modo === 'manutencao' && canManutencaoFinish"
-        [disabled]="!hasSelectedItems || manutencaoIntegracaoSelecionada"
-        (click)="openBulkActionModal('concluir')"
-      >
-        Concluir
-      </button>
-      <button
-        class="btn btn-warning"
-        *ngIf="modo === 'manutencao' && canManutencaoNaoProcede"
-        [disabled]="!hasSelectedItems || manutencaoIntegracaoSelecionada"
-        (click)="openBulkActionModal('nao-procede')"
-      >
-        Não procede
-      </button>
-      <button
-        class="btn btn-success"
-        *ngIf="modo === 'validacao-final' && canValidacaoFinalUpdate"
-        [disabled]="!hasSelectedItems"
-        (click)="openBulkActionModal('validar-final')"
-      >
-        <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-        Validar final
-      </button>
-      <button
-        class="btn btn-danger"
-        *ngIf="modo === 'validacao-final' && canValidacaoFinalUpdate"
-        [disabled]="!hasSelectedItems"
-        (click)="openBulkActionModal('reprovar-final')"
-      >
-        <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="15" y1="9" x2="9" y2="15"></line>
-          <line x1="9" y1="9" x2="15" y2="15"></line>
-        </svg>
-        Reprovar
-      </button>
-      <span class="buttons-row-summary" *ngIf="modo === 'tratamento' || modo === 'validacao-final'">
-        {{ items.length }} irregularidade(s) | {{ getSelectedIds().length }} irregularidade(s) selecionada(s)
+    <div class="actions-panel">
+      <div class="buttons-row">
+        <button
+          class="btn btn-warning btn-sos-registrar"
+          *ngIf="modo === 'tratamento' && canTratamentoCreateSos"
+          type="button"
+          (click)="openSosModal()"
+        >
+          Registrar SOS
+        </button>
+        <button
+          class="btn btn-primary"
+          *ngIf="canShowTratamentoActions && canManutencaoStart"
+          [disabled]="!hasSelectedItems"
+          (click)="openBulkActionModal('iniciar-manutencao')"
+        >
+          <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+          Enviar para manutenção
+        </button>
+        <button
+          class="btn btn-secondary btn-reclassificar"
+          *ngIf="canShowTratamentoActions && canTratamentoUpdate"
+          [disabled]="!canReclassificarSelecionado"
+          (click)="openBulkActionModal('reclassificar')"
+        >
+          <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+          </svg>
+          Reclassificar
+        </button>
+        <button
+          class="btn btn-danger"
+          *ngIf="canShowTratamentoActions && canTratamentoUpdate"
+          [disabled]="!hasSelectedItems"
+          (click)="openBulkActionModal('cancelar')"
+        >
+          Cancelar
+        </button>
+        <button
+          class="btn btn-danger"
+          *ngIf="modo === 'manutencao' && canManutencaoCancelOsBrt"
+          [disabled]="!manutencaoCancelOsBrtSelecionada"
+          (click)="openBulkActionModal('cancelar-os-brt')"
+        >
+          Cancelar OS BRT
+        </button>
+        <button
+          class="btn btn-primary"
+          *ngIf="modo === 'manutencao' && canManutencaoFinish"
+          [disabled]="!hasSelectedItems || manutencaoIntegracaoSelecionada"
+          (click)="openBulkActionModal('concluir')"
+        >
+          Concluir
+        </button>
+        <button
+          class="btn btn-warning"
+          *ngIf="modo === 'manutencao' && canManutencaoNaoProcede"
+          [disabled]="!hasSelectedItems || manutencaoIntegracaoSelecionada"
+          (click)="openBulkActionModal('nao-procede')"
+        >
+          Não procede
+        </button>
+        <button
+          class="btn btn-success"
+          *ngIf="modo === 'validacao-final' && canValidacaoFinalUpdate"
+          [disabled]="!hasSelectedItems"
+          (click)="openBulkActionModal('validar-final')"
+        >
+          <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          Validar final
+        </button>
+        <button
+          class="btn btn-danger"
+          *ngIf="modo === 'validacao-final' && canValidacaoFinalUpdate"
+          [disabled]="!hasSelectedItems"
+          (click)="openBulkActionModal('reprovar-final')"
+        >
+          <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+          Reprovar
+        </button>
+        <span class="buttons-row-summary">
+          {{ totalItems }} OS | {{ getSelectedIds().length }} OS selecionada(s)
+        </span>
+      </div>
+    </div>
+
+    <div *ngIf="!error && info" class="info-container">
+      <p>{{ info }}</p>
+    </div>
+
+    <div
+      class="irregularidade-list-header"
+      *ngIf="!loading && !error"
+      [class.irregularidade-list-header--tratamento]="modo === 'tratamento'"
+      [class.irregularidade-list-header--com-codigo]="modo === 'manutencao' || modo === 'validacao-final'"
+    >
+      <span class="col-select form-check">
+        <input
+          type="checkbox"
+          class="row-select-checkbox"
+          [checked]="isAllSelected()"
+          (change)="toggleSelectAll($any($event.target).checked)"
+          aria-label="Selecionar todas irregularidades"
+        />
       </span>
+      <span>Veículo</span>
+      <span *ngIf="modo === 'tratamento' || modo === 'manutencao' || modo === 'validacao-final'">OS</span>
+      <span>Irregularidade</span>
+      <span>Gravidade</span>
+      <span>Registrado</span>
+      <span>Etapa atual</span>
+      <span>Tempo total</span>
+      <span>Status</span>
+      <span></span>
     </div>
-  </div>
-
-  <div *ngIf="!error && info" class="info-container">
-    <p>{{ info }}</p>
   </div>
 
   <div *ngIf="loading" class="loading-container">
@@ -173,35 +199,10 @@
   <div *ngIf="!loading && !error" class="cards-container">
     <div class="irregularidade-card-list irregularidade-card-list--flat">
       <div
-        class="irregularidade-list-header"
-        [class.irregularidade-list-header--tratamento]="modo === 'tratamento'"
-        [class.irregularidade-list-header--com-codigo]="modo === 'manutencao' || modo === 'validacao-final'"
-      >
-        <span class="col-select form-check">
-          <input
-            type="checkbox"
-            class="row-select-checkbox"
-            [checked]="isAllSelected()"
-            (change)="toggleSelectAll($any($event.target).checked)"
-            aria-label="Selecionar todas irregularidades"
-          />
-        </span>
-        <span>Veículo</span>
-        <span *ngIf="modo === 'tratamento' || modo === 'manutencao' || modo === 'validacao-final'">Ordem de Serviço</span>
-        <span>Irregularidade</span>
-        <span>Gravidade</span>
-        <span>Registrado</span>
-        <span>Etapa atual</span>
-        <span>Tempo total</span>
-        <span>Status</span>
-        <span></span>
-      </div>
-      <div
         class="irregularidade-card irregularidade-card--flat"
         *ngFor="let item of items"
         (click)="onCardClick($event, item.id)"
         [class.irregularidade-card--selected]="selectedIds.has(item.id)"
-        [class.irregularidade-card--expanded]="isCardExpanded(item.id)"
       >
         <div
           class="irregularidade-row-grid"
@@ -244,7 +245,12 @@
               </svg>
               SOS
             </span>
-            {{ formatOrdemServico(item) }}
+            <div class="os-stack">
+              <div class="os-vistoria" *ngIf="item.numeroVistoria != null">
+                Vistoria {{ item.numeroVistoria }}
+              </div>
+              <div class="os-numero">{{ formatOrdemServico(item) }}</div>
+            </div>
           </div>
           <div class="col-irregularidade">
             <span class="irregularidade-main-line">
@@ -286,14 +292,13 @@
               <button
                 type="button"
                 class="btn-inline-toggle"
-                (click)="$event.stopPropagation(); toggleCardExpanded(item.id)"
+                (click)="$event.stopPropagation(); openDetalheModal(item)"
               >
                 <svg class="btn-inline-toggle__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                  <line *ngIf="!isCardExpanded(item.id)" x1="12" y1="8" x2="12" y2="16"></line>
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-                {{ isCardExpanded(item.id) ? 'Ver menos' : 'Ver mais' }}
+                Ver mais
               </button>
               <button
                 type="button"
@@ -322,76 +327,216 @@
             </div>
           </div>
         </div>
-
-        <div *ngIf="isCardExpanded(item.id)">
-          <div class="irregularidade-details-grid">
-            <div class="detail-item">
-              <span class="detail-label">Motorista</span>
-              <span class="detail-value">{{ item.motoristaNome || '-' }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Vistoriador</span>
-              <span class="detail-value">{{ item.vistoriadorNome || '-' }}</span>
-            </div>
-          </div>
-
-          <div class="irregularidade-card-observacao">
-            <span class="detail-label">Descrição do problema</span>
-            <p class="descricao-problema-texto">{{ item.observacao || '-' }}</p>
-          </div>
-
-          <div
-            class="mapa-fluxo"
-            *ngIf="(item.marcacoes?.length || item.marcacao) && item.veiculoModeloId && item.idVeiculo"
-          >
-            <span class="detail-label">Mapa de avaria</span>
-            <app-mapa-avaria
-              [modeloId]="item.veiculoModeloId"
-              [veiculoId]="item.idVeiculo"
-              [somenteAbertas]="false"
-              [readonly]="true"
-              [destaqueId]="item.id"
-              [marcaInicial]="marcaInicialDoItem(item)"
-            ></app-mapa-avaria>
-          </div>
-
-          <div class="media-section">
-            <div class="media-block">
-              <strong>Fotos: {{ item.quantidadeFotos ?? (item.fotos ?? []).length }}</strong>
-              <div class="thumb-list" *ngIf="(item.fotos ?? []).length; else semFotos">
-                <button
-                  type="button"
-                  class="thumb-button"
-                  *ngFor="let foto of item.fotos ?? []"
-                  (click)="$event.stopPropagation(); openImagePreview(foto)"
-                  title="Clique para ampliar"
-                >
-                  <img [src]="getImageSrc(foto)" [alt]="foto.nomeArquivo" />
-                </button>
-              </div>
-              <ng-template #semFotos>
-                <div class="media-empty">Sem fotos</div>
-              </ng-template>
-            </div>
-
-            <div class="media-block">
-              <strong>Áudios: {{ item.quantidadeAudios ?? (item.audios ?? []).length }}</strong>
-              <div class="audio-list" *ngIf="(item.audios ?? []).length; else semAudios">
-                <div class="audio-item" *ngFor="let audio of item.audios ?? []">
-                  <audio controls [src]="getAudioSrc(audio)"></audio>
-                </div>
-              </div>
-              <ng-template #semAudios>
-                <div class="media-empty">Sem áudios</div>
-              </ng-template>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
     <div class="table-empty-cell" *ngIf="items.length === 0">
       Nenhuma irregularidade encontrada para esta fila.
+    </div>
+  </div>
+
+  <div class="fluxo-pagination" *ngIf="!loading && !error && totalItems > 0">
+    <button
+      type="button"
+      class="btn btn-primary btn-pagination"
+      (click)="onPageChange(currentPage - 1)"
+      [disabled]="currentPage <= 1"
+    >
+      Anterior
+    </button>
+    <span class="page-info">
+      Página {{ currentPage }} de {{ totalPages || 1 }} ({{ totalItems }} itens)
+    </span>
+    <button
+      type="button"
+      class="btn btn-primary btn-pagination"
+      (click)="onPageChange(currentPage + 1)"
+      [disabled]="currentPage >= totalPages"
+    >
+      Próxima
+    </button>
+  </div>
+</div>
+
+<div
+  *ngIf="showDetalheModal && detalheItem"
+  class="modal-overlay modal-overlay--fullscreen"
+>
+  <div
+    class="modal-container modal-container-fullscreen"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Detalhe da irregularidade ' + (detalheItem.numeroIrregularidade || '')"
+  >
+    <div class="modal-header">
+      <h3>
+        Irregularidade
+        <span *ngIf="detalheItem.numeroIrregularidade">#{{ detalheItem.numeroIrregularidade }}</span>
+      </h3>
+      <button type="button" class="btn-close" (click)="closeDetalheModal()" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body detalhe-modal-body">
+      <div class="detalhe-resumo">
+        <div class="detail-item">
+          <span class="detail-label">Veículo</span>
+          <span class="detail-value">{{ detalheItem.veiculoDescricao || '-' }}</span>
+          <small class="row-subtitle" *ngIf="detalheItem.veiculoPlaca || detalheItem.veiculoModelo">
+            {{
+              detalheItem.veiculoPlaca && detalheItem.veiculoModelo
+                ? detalheItem.veiculoPlaca + ' · ' + detalheItem.veiculoModelo
+                : detalheItem.veiculoPlaca || detalheItem.veiculoModelo
+            }}
+          </small>
+        </div>
+        <div class="detail-item" *ngIf="detalheItem.numeroVistoria != null || detalheItem.numeroIrregularidade">
+          <span class="detail-label">OS</span>
+          <span class="detail-value" *ngIf="detalheItem.numeroVistoria != null">
+            Vistoria {{ detalheItem.numeroVistoria }}
+          </span>
+          <span class="detail-value">{{ formatOrdemServico(detalheItem) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Classificação</span>
+          <span class="detail-value">
+            {{ detalheItem.nomeArea || '-' }} - {{ detalheItem.nomeComponente || '-' }} - {{ detalheItem.descricaoSintoma || '-' }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Status</span>
+          <span [class]="getStatusClass(detalheItem.statusAtual)">
+            {{ getStatusLabel(detalheItem.statusAtual) }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Gravidade</span>
+          <span [class]="getGravidadeClass(detalheItem.gravidade)">
+            {{ detalheItem.gravidade || '-' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="irregularidade-details-grid">
+        <div class="detail-item">
+          <span class="detail-label">Motorista</span>
+          <span class="detail-value">{{ detalheItem.motoristaNome || '-' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Vistoriador</span>
+          <span class="detail-value">{{ detalheItem.vistoriadorNome || '-' }}</span>
+        </div>
+      </div>
+
+      <div class="irregularidade-card-observacao">
+        <span class="detail-label">Descrição do problema</span>
+        <p class="descricao-problema-texto">{{ detalheItem.observacao || '-' }}</p>
+      </div>
+
+      <div
+        class="mapa-fluxo"
+        *ngIf="(detalheItem.marcacoes?.length || detalheItem.marcacao) && detalheItem.veiculoModeloId && detalheItem.idVeiculo"
+      >
+        <span class="detail-label">Mapa de avaria</span>
+        <app-mapa-avaria
+          [modeloId]="detalheItem.veiculoModeloId"
+          [veiculoId]="detalheItem.idVeiculo"
+          [somenteAbertas]="false"
+          [readonly]="true"
+          [destaqueId]="detalheItem.id"
+          [marcaInicial]="marcaInicialDoItem(detalheItem)"
+        ></app-mapa-avaria>
+      </div>
+
+      <div class="media-section">
+        <div class="media-block">
+          <strong>Fotos: {{ detalheItem.quantidadeFotos ?? (detalheItem.fotos ?? []).length }}</strong>
+          <div class="thumb-list" *ngIf="(detalheItem.fotos ?? []).length; else semFotosDetalhe">
+            <button
+              type="button"
+              class="thumb-button"
+              *ngFor="let foto of detalheItem.fotos ?? []"
+              (click)="openImagePreview(foto, detalheItem.fotos ?? [])"
+              title="Clique para ampliar"
+            >
+              <img [src]="getImageSrc(foto)" [alt]="foto.nomeArquivo" />
+            </button>
+          </div>
+          <ng-template #semFotosDetalhe>
+            <div class="media-empty">Sem fotos</div>
+          </ng-template>
+        </div>
+
+        <div class="media-block">
+          <strong>Áudios: {{ detalheItem.quantidadeAudios ?? (detalheItem.audios ?? []).length }}</strong>
+          <div class="audio-list" *ngIf="(detalheItem.audios ?? []).length; else semAudiosDetalhe">
+            <div class="audio-item" *ngFor="let audio of detalheItem.audios ?? []">
+              <audio controls [src]="getAudioSrc(audio)"></audio>
+            </div>
+          </div>
+          <ng-template #semAudiosDetalhe>
+            <div class="media-empty">Sem áudios</div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" *ngIf="detalheItem as itemDetalhe">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="openHistoricoModal(itemDetalhe)"
+      >
+        Histórico
+      </button>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        *ngIf="canReclassificarNoDetalhe(itemDetalhe)"
+        (click)="reclassificarDoDetalhe(itemDetalhe)"
+      >
+        Reclassificar
+      </button>
+      <button
+        type="button"
+        class="btn btn-danger"
+        *ngIf="canCancelarOsBrtNoDetalhe(itemDetalhe)"
+        (click)="acaoDoDetalhe(itemDetalhe, 'cancelar-os-brt')"
+      >
+        Cancelar OS BRT
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        *ngIf="canConcluirNoDetalhe(itemDetalhe)"
+        [disabled]="itemManutencaoIntegracao(itemDetalhe)"
+        (click)="acaoDoDetalhe(itemDetalhe, 'concluir')"
+      >
+        Concluir
+      </button>
+      <button
+        type="button"
+        class="btn btn-warning"
+        *ngIf="canNaoProcedeNoDetalhe(itemDetalhe)"
+        [disabled]="itemManutencaoIntegracao(itemDetalhe)"
+        (click)="acaoDoDetalhe(itemDetalhe, 'nao-procede')"
+      >
+        Não procede
+      </button>
+      <button
+        type="button"
+        class="btn btn-success"
+        *ngIf="canValidarFinalNoDetalhe(itemDetalhe)"
+        (click)="acaoDoDetalhe(itemDetalhe, 'validar-final')"
+      >
+        Validar final
+      </button>
+      <button
+        type="button"
+        class="btn btn-danger"
+        *ngIf="canReprovarFinalNoDetalhe(itemDetalhe)"
+        (click)="acaoDoDetalhe(itemDetalhe, 'reprovar-final')"
+      >
+        Reprovar
+      </button>
+      <button type="button" class="btn btn-primary" (click)="closeDetalheModal()">Fechar</button>
     </div>
   </div>
 </div>
@@ -450,7 +595,15 @@
             <span>Tempo na etapa: {{ formatTempoEtapa(evento.tempoEtapaMs) }}</span>
           </div>
           <div class="historico-item-row" *ngIf="evento.observacao">
-            <span>Observação: {{ evento.observacao }}</span>
+            <span class="historico-observacao">Observação:</span>
+            <div class="historico-observacao-texto">
+              <ng-container
+                *ngFor="let linha of linhasObservacaoHistorico(evento.observacao); let last = last"
+              >
+                <span>{{ linha.length ? linha : '\u00A0' }}</span>
+                <br *ngIf="!last" />
+              </ng-container>
+            </div>
           </div>
         </div>
       </div>
@@ -462,9 +615,30 @@
 </div>
 
 <div *ngIf="showActionModal && selectedItemForAction && modalAcao" class="modal-overlay" (click)="onActionModalOverlayClick()">
-  <div class="modal-container modal-container-sm" (click)="$event.stopPropagation()">
+  <div
+    class="modal-container"
+    [class.modal-container-sm]="!isReclassModalAmplo"
+    [class.modal-container-reclass-mapa]="isReclassModalAmplo"
+    (click)="$event.stopPropagation()"
+  >
     <div class="modal-header">
-      <h3>{{ getModalTitle() }}</h3>
+      <div class="modal-header-title-block">
+        <h3>{{ getModalTitle() }}</h3>
+        <p
+          class="modal-header-meta"
+          *ngIf="modalAcao === 'reclassificar' && selectedItemForAction as itemReclass"
+        >
+          <span *ngIf="itemReclass.numeroVistoria != null">
+            Vistoria {{ itemReclass.numeroVistoria }}
+          </span>
+          <span *ngIf="itemReclass.numeroIrregularidade != null">
+            Irregularidade #{{ itemReclass.numeroIrregularidade }}
+          </span>
+        </p>
+        <p class="modal-header-meta" *ngIf="getModalOsAlvoLabel() as osAlvo">
+          {{ osAlvo }}
+        </p>
+      </div>
       <button class="btn-close" (click)="closeActionModal()">×</button>
     </div>
     <div class="modal-body">
@@ -617,12 +791,50 @@
             Nenhum sintoma encontrado.
           </div>
         </div>
+        <small
+          class="field-description reclass-aviso-marcacao"
+          *ngIf="
+            modalIdSintoma &&
+            !reclassDestinoExigeMapa &&
+            selectedItemForAction &&
+            itemTemMarcacoes(selectedItemForAction)
+          "
+        >
+          As marcações atuais serão removidas ao confirmar a reclassificação.
+        </small>
+      </div>
+      <div class="form-group" *ngIf="modalAcao === 'reclassificar'">
+        <label>Descrição do Problema</label>
+        <textarea
+          class="form-control"
+          [(ngModel)]="modalObservacao"
+          rows="3"
+          maxlength="1000"
+        ></textarea>
       </div>
       <div
         class="form-group"
         *ngIf="modalAcao === 'reclassificar' && reclassDestinoExigeMapa && reclassModeloId && selectedItemForAction.idVeiculo"
       >
         <label>Local no veículo *</label>
+        <div class="mapa-edicao-bar">
+          <button
+            type="button"
+            class="btn"
+            [class.btn-primary]="!reclassMapaEdicaoAtiva"
+            [class.btn-secondary]="reclassMapaEdicaoAtiva"
+            (click)="reclassMapaEdicaoAtiva ? bloquearEdicaoMarcacoesReclass() : ativarEdicaoMarcacoesReclass()"
+          >
+            {{ reclassTextoBotaoEdicaoMapa }}
+          </button>
+          <small class="field-description mapa-edicao-hint">
+            {{
+              reclassMapaEdicaoAtiva
+                ? 'Edição liberada: clique, arraste ou remova pontos no mapa.'
+                : 'Mapa em visualização. Ative a edição para alterar as marcações.'
+            }}
+          </small>
+        </div>
         <app-mapa-avaria
           [modeloId]="reclassModeloId"
           [veiculoId]="selectedItemForAction.idVeiculo"
@@ -630,6 +842,7 @@
           [destaqueId]="selectedItemForAction.id"
           [marcaInicial]="reclassMarca"
           [idsCatalogoPermitidos]="reclassIdVistas"
+          [readonly]="reclassMapaSomenteLeitura"
           (marcaChange)="onReclassMarca($event)"
         ></app-mapa-avaria>
       </div>
@@ -655,7 +868,15 @@
           maxlength="500"
         ></textarea>
       </div>
-      <div class="form-group" *ngIf="modalAcao !== 'cancelar' && modalAcao !== 'cancelar-os-brt' && modalAcao !== 'iniciar-manutencao'">
+      <div
+        class="form-group"
+        *ngIf="
+          modalAcao !== 'cancelar' &&
+          modalAcao !== 'cancelar-os-brt' &&
+          modalAcao !== 'iniciar-manutencao' &&
+          modalAcao !== 'reclassificar'
+        "
+      >
         <label>
           {{
             modalAcao === 'validar-final'
@@ -693,14 +914,53 @@
   </div>
 </div>
 
+<app-confirmation-modal
+  [isVisible]="showReclassRemocaoMarcacoesModal"
+  title="Remover marcações"
+  [message]="reclassRemocaoMarcacoesMessage"
+  confirmText="Continuar"
+  cancelText="Cancelar"
+  (confirmed)="onReclassRemocaoMarcacoesConfirmed()"
+  (cancelled)="onReclassRemocaoMarcacoesCancelled()"
+></app-confirmation-modal>
+
 <div *ngIf="imagemAmpliadaSrc" class="modal-overlay" (click)="closeImagePreview()">
   <div class="image-preview-modal" (click)="$event.stopPropagation()">
     <div class="image-preview-header">
-      <h4>{{ imagemAmpliadaTitulo || 'Visualização da foto' }}</h4>
-      <button class="btn-close" (click)="closeImagePreview()">×</button>
+      <h4>
+        {{ imagemAmpliadaTitulo || 'Visualização da foto' }}
+        <span class="image-preview-counter" *ngIf="fotosPreview.length > 1">
+          {{ fotoPreviewIndex + 1 }} / {{ fotosPreview.length }}
+        </span>
+      </h4>
+      <button class="btn-close" type="button" (click)="closeImagePreview()" aria-label="Fechar">×</button>
     </div>
     <div class="image-preview-body">
+      <button
+        type="button"
+        class="btn btn-primary image-preview-nav image-preview-nav--prev"
+        *ngIf="fotosPreview.length > 1"
+        (click)="prevFotoPreview()"
+        aria-label="Foto anterior"
+        title="Anterior"
+      >
+        <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
       <img [src]="imagemAmpliadaSrc" alt="Foto ampliada" />
+      <button
+        type="button"
+        class="btn btn-primary image-preview-nav image-preview-nav--next"
+        *ngIf="fotosPreview.length > 1"
+        (click)="nextFotoPreview()"
+        aria-label="Próxima foto"
+        title="Próxima"
+      >
+        <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
     </div>
   </div>
 </div>

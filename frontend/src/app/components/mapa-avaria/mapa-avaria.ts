@@ -67,6 +67,9 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   @ViewChild('viewport') private viewport?: ElementRef<HTMLElement>;
   @ViewChild('mapaImg') private mapaImg?: ElementRef<HTMLImageElement>;
 
+  /** Espelha @Input readonly em signal para recomputar hint/toolbar. */
+  readonly somenteLeitura = signal(false);
+
   readonly vistas = signal<ModeloVeiculoVista[]>([]);
   readonly vistaId = signal<string | null>(null);
   readonly imagemUrl = signal<string | null>(null);
@@ -125,8 +128,8 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   });
   readonly indiceArrastando = signal<number | null>(null);
   readonly textoAjudaMapa = computed(() => {
-    if (this.readonly) {
-      return 'Vermelho = irregularidade atual. Azul = demais (1ª = 1.1/1.2…, 2ª = 2.1/2.2…).';
+    if (this.somenteLeitura()) {
+      return 'Vermelho = irregularidade atual. Azul = demais (1ª = 1.1/1.2…, 2ª = 2.1/2.2…). Ative a edição para alterar pontos.';
     }
     if (this.indiceArrastando() !== null) {
       return 'Solte o ponto na nova posição.';
@@ -151,6 +154,9 @@ export class MapaAvariaComponent implements OnChanges, AfterViewInit, OnDestroy 
   private readonly onTouchEndBound = (event: TouchEvent) => this.onTouchEnd(event);
 
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
+    if (changes['readonly']) {
+      this.somenteLeitura.set(!!this.readonly);
+    }
     if (!this.modeloId) {
       return;
     }

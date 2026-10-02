@@ -204,21 +204,25 @@ Copie o bloco abaixo para cada regra nova.
 ### RN-VIS-001 - Reclassificar irregularidade por cascata
 - **Modulo:** Vistoria
 - **Fluxo:** Reclassificacao
-- **Descricao:** Ao reclassificar, o usuario deve selecionar area, depois componente da area e depois sintoma do componente.
-- **Condicoes de entrada:** Irregularidade em status permitido para reclassificacao.
-- **Validacoes:** Nao permitir componente sem area valida; nao permitir sintoma sem componente valido.
-- **Acoes do sistema:** Atualizar area/componente/sintoma e registrar historico.
-- **Mensagens ao usuario:** Exibir erro quando selecao for invalida.
-- **Permissoes envolvidas:** IRREGULARIDADE_TRATAMENTO_UPDATE.
-- **Dados impactados:** irregularidades.idarea, irregularidades.idcomponente, irregularidades.idsintoma.
-- **Rastreabilidade:** Evento de historico com usuario, data e observacao.
+- **Descricao:** Ao reclassificar, o usuario deve selecionar area, depois componente da area e depois sintoma do componente. Troca de area/componente zera o sintoma e exige nova escolha explicita. Se o sintoma de destino nao exige marcacao no mapa (`exigeMarcacaoMapa = false`) e a irregularidade possui marcações, o sistema informa que as marcações serão removidas e, após confirmação, remove `id_vista`/`pos_*` e registros em `irregularidades_marcacoes`.
+- **Condicoes de entrada:** Irregularidade em status permitido para reclassificacao (`REGISTRADA` ou `RETRABALHO_GARANTIA`).
+- **Validacoes:** Nao permitir componente sem area valida; nao permitir sintoma sem componente valido (matriz); sintoma com mapa exige marcacao (RN-VIS-009).
+- **Acoes do sistema:** Atualizar area/componente/sintoma; limpar marcações quando destino nao exige mapa; registrar historico com observacao acumulando o que mudou na mesma acao: classificacao (de/para), descricao (de/para) e/ou `Marcação alterada`. Reclassificar nao altera o relogio da etapa: `entradaStatusEm` (coluna Etapa atual) so muda em transicao real de status (Tratamento → Manutencao, Manutencao → Validacao, Validacao → Retrabalho). Tempo total continua a contar desde `criadoEm`.
+- **Mensagens ao usuario:** Exibir erro quando selecao for invalida; confirmar remocao de marcações quando aplicavel ("O sintoma selecionado não exige marcação no mapa. As marcações atuais serão removidas. Deseja continuar?").
+- **Permissoes envolvidas:** `irregularidade_tratamento:update`.
+- **Dados impactados:** irregularidades.idarea, irregularidades.idcomponente, irregularidades.idsintoma, irregularidades.id_vista, pos_x_pct, pos_y_pct; irregularidades_marcacoes; irregularidade_historico.observacao.
+- **Rastreabilidade:** Evento unico de historico por reclassificacao, com observacao contendo todas as alteracoes detectadas (classificacao, descricao e/ou marcacao).
 - **Criterios de aceite:**
-  - [ ] Area lista opcoes por modelo do veiculo.
-  - [ ] Componente depende da area.
-  - [ ] Sintoma depende do componente.
-- **Cenarios de excecao:** Area sem componentes vinculados.
-- **Origem da regra:** <ticket/decisao>.
-- **Status:** Aprovada.
+  - [x] Area lista opcoes por modelo do veiculo.
+  - [x] Componente depende da area.
+  - [x] Sintoma depende do componente; troca de componente limpa sintoma selecionado.
+  - [x] Destino sem mapa + irregularidade com marcações → confirmacao; ao confirmar, marcações removidas.
+  - [x] Modal de reclassificacao amplia quando ha mapa/marcações a editar.
+  - [x] Historico de reclassificar grava na mesma observacao todas as mudancas da acao (classificacao, descricao e/ou marcacao).
+  - [x] Reclassificar nao zera Etapa atual nem Tempo total.
+- **Cenarios de excecao:** Area sem componentes vinculados; usuario cancela a remocao de marcações (nao altera).
+- **Origem da regra:** Operacao Tratamento / mapa de avaria.
+- **Status:** Implementada.
 
 ### RN-VIS-002 - Descricao obrigatoria do problema na irregularidade (vistoria)
 - **Modulo:** Vistoria
@@ -654,6 +658,7 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-10-02: RN-VIS-001 — reclassificar nao reinicia Etapa atual; relogio so muda em transicao de status entre filas.
 - 2026-09-29: RN-VIS-006 — `comenta` BRT sem prefixo `[numeroIrregularidade]`; blocos separados por linha em branco.
 - 2026-09-29: RN-VIS-006 — Entrega 1: OS BRT agrupada por vistoria (`os_orig` = `numeroVistoria`, selecao completa obrigatoria, `comenta` multilinha, cancelamento em grupo); plano em `docs/PLANO_BRT_OS_AGRUPAMENTO_VISTORIA.md`.
 - 2026-09-25: App irregularidade — botão Adicionar foto oferece Câmera ou Galeria; mesma compressão (`quality 60`, máx. 1024px) nos dois caminhos.

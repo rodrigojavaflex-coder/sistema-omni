@@ -27,6 +27,7 @@
     "@capacitor/core": "^8.0.0",
     "@capacitor/filesystem": "^8.0.0",
     "@capacitor/preferences": "^8.0.0",
+    "@google/model-viewer": "^4.3.1",
     "@ionic/angular": "^7.0.0",
     "capacitor-secure-storage-plugin": "^0.13.0",
     "capacitor-voice-recorder": "^7.0.6",
@@ -41,6 +42,7 @@
     "@angular/compiler": "20.3.20",
     "@angular/compiler-cli": "20.3.20",
     "@capacitor/cli": "^8.0.0",
+    "three": "^0.186.1",
     "typescript": "~5.9.2"
   },
   "overrides": {

@@ -34,6 +34,10 @@ import { IrregularidadeHistoricoDto } from './dto/irregularidade-historico.dto';
 import { IrregularidadeImagemResumoDto } from './dto/irregularidade-imagem-resumo.dto';
 import { IrregularidadeAudioResumoDto } from './dto/irregularidade-audio-resumo.dto';
 import {
+  PaginatedResponseDto,
+  PaginationMetaDto,
+} from '../../common/dto/paginated-response.dto';
+import {
   IrregularidadeHistoricoVeiculoDto,
   IrregularidadeHistoricoVeiculoItemDto,
 } from './dto/irregularidade-historico-veiculo.dto';
@@ -723,7 +727,8 @@ export class IrregularidadeService {
       async (manager) => {
         irregularidade.observacao =
           dto.observacao ?? irregularidade.observacao;
-        irregularidade.idVista = marcacao.idVista;
+        Reflect.deleteProperty(irregularidade, 'vista');
+        irregularidade.idVista = marcacao.idVista ?? null;
         irregularidade.posXPct = primeiro?.posXPct ?? null;
         irregularidade.posYPct = primeiro?.posYPct ?? null;
         const saved = await manager
@@ -754,30 +759,27 @@ export class IrregularidadeService {
       referenciaPeriodo?: 'CRIADO_EM' | 'ENTRADA_STATUS';
       /** Filtra por origem do registro (`SOS_WEB` ou `MOBILE` para null). */
       origemRegistro?: 'SOS_WEB' | 'MOBILE';
+      page?: number;
+      limit?: number;
     },
-  ): Promise<IrregularidadeResumoDto[]> {
+  ): Promise<PaginatedResponseDto<IrregularidadeResumoDto>> {
+    const page = Math.max(1, Number(filters?.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(filters?.limit) || 20));
+    // NÃO fazer leftJoinAndSelect em i.marcacoes aqui.
+    // Join OneToMany multiplica linhas e o TypeORM mistura veículo/OS entre
+    // irregularidades da mesma página (ex.: item com 3 marcações contamina os demais).
     let qb = this.irregularidadeRepository
       .createQueryBuilder('i')
       .leftJoinAndSelect('i.area', 'area')
       .leftJoinAndSelect('i.componente', 'componente')
       .leftJoinAndSelect('i.sintoma', 'sintoma')
       .leftJoinAndSelect('i.vista', 'vista')
-      .leftJoinAndSelect('i.marcacoes', 'marcacoesPontos')
       .leftJoinAndSelect('i.vistoria', 'v')
-      .leftJoinAndSelect('v.veiculo', 'veiculo')
-      .leftJoinAndSelect('v.usuario', 'vistoriador')
-      .leftJoinAndSelect('v.motorista', 'motorista')
-      .addSelect('veiculo.descricao', 'veiculo_descricao')
-      .addSelect('veiculo.placa', 'veiculo_placa')
-      .addSelect('vistoriador.nome', 'vistoriador_nome')
-      .addSelect('motorista.nome', 'motorista_nome')
-      .addSelect('i.criadoEm', 'irregularidade_criado_em')
       .leftJoin(
         MatrizCriticidade,
         'matriz',
         'matriz.idComponente = i.idComponente AND matriz.idSintoma = i.idSintoma',
       )
-      .addSelect('matriz.gravidade', 'matriz_gravidade')
       .where('i.statusAtual IN (:...status)', { status })
       .andWhere('v.status = :statusFinalizada', {
         statusFinalizada: StatusVistoria.FINALIZADA,
@@ -830,8 +832,9 @@ export class IrregularidadeService {
     }
     const useEntradaStatus = filters?.referenciaPeriodo === 'ENTRADA_STATUS';
     /**
-     * ENTRADA_STATUS: instante da última transição para o status atual no histórico,
-     * com fallback em criadoEm (igual ao cálculo de entradaStatusEm no retorno desta lista).
+     * ENTRADA_STATUS: instante da última transição real para o status atual
+     * (statusOrigem distinto de statusDestino). Reclassificar não reinicia o relógio.
+     * Fallback em criadoEm (igual ao cálculo de entradaStatusEm no retorno desta lista).
      * CRIADO_EM: data de criação do registro (fila de tratamento).
      */
     const dataRefSql = useEntradaStatus
@@ -840,6 +843,7 @@ export class IrregularidadeService {
           FROM "irregularidade_historico" hist
           WHERE hist."idIrregularidade" = "i"."id"
             AND hist."statusDestino" = "i"."status_atual"
+            AND (hist."statusOrigem" IS NULL OR hist."statusOrigem" <> hist."statusDestino")
         ), "i"."criadoEm")`
       : '"i"."criadoEm"';
 
@@ -854,16 +858,90 @@ export class IrregularidadeService {
       }
     }
 
-    const result = await qb
+    qb = qb.setParameter(
+      'sosOrigemOrdem',
+      OrigemRegistroIrregularidade.SOS_WEB,
+    );
+
+    // Contagem sem ORDER BY (evita conflito com paginação).
+    const total = await qb.clone().orderBy().getCount();
+
+    // Paginação por IDs: skip/take + ORDER BY CASE quebra no TypeORM (alias inválido).
+    const idRows = await qb
+      .clone()
+      .select('i.id', 'id')
       .orderBy(
-        `CASE WHEN "i"."origem_registro" = :sosOrigemOrdem THEN 0 ELSE 1 END`,
+        `CASE WHEN i.origem_registro = :sosOrigemOrdem THEN 0 ELSE 1 END`,
         'ASC',
       )
       .addOrderBy(dataRefSql, 'ASC')
-      .addOrderBy('"i"."id"', 'ASC')
-      .setParameter('sosOrigemOrdem', OrigemRegistroIrregularidade.SOS_WEB)
-      .getRawAndEntities();
-    const ids = result.entities.map((i) => i.id);
+      .addOrderBy('i.id', 'ASC')
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .getRawMany<{ id: string }>();
+
+    const ids = idRows
+      .map((row) => {
+        const raw = row as Record<string, unknown>;
+        const value = raw.id ?? raw.i_id;
+        return typeof value === 'string' ? value : undefined;
+      })
+      .filter((id): id is string => !!id);
+    if (ids.length === 0) {
+      return new PaginatedResponseDto(
+        [],
+        new PaginationMetaDto(page, limit, total),
+      );
+    }
+
+    const entitiesUnordered = await qb
+      .clone()
+      .andWhere('i.id IN (:...pageIds)', { pageIds: ids })
+      .getMany();
+    const entityById = new Map(
+      entitiesUnordered.map((item) => [item.id, item]),
+    );
+    const entities = ids
+      .map((id) => entityById.get(id))
+      .filter((item): item is Irregularidade => !!item);
+
+    // Marcações em query separada (evita produto cartesiano na listagem).
+    if (ids.length > 0) {
+      const marcacoes = await this.marcacaoRepository.find({
+        where: { idIrregularidade: In(ids) },
+        order: { ordem: 'ASC' },
+      });
+      const marcacoesById = new Map<string, IrregularidadeMarcacao[]>();
+      for (const m of marcacoes) {
+        const list = marcacoesById.get(m.idIrregularidade) ?? [];
+        list.push(m);
+        marcacoesById.set(m.idIrregularidade, list);
+      }
+      for (const item of entities) {
+        item.marcacoes = marcacoesById.get(item.id) ?? [];
+      }
+    }
+
+    const gravidadeById = new Map<string, GravidadeCriticidade>();
+    if (ids.length > 0) {
+      const matrizRows = await this.matrizRepository
+        .createQueryBuilder('matriz')
+        .innerJoin(
+          Irregularidade,
+          'i',
+          'matriz.idComponente = i.idComponente AND matriz.idSintoma = i.idSintoma',
+        )
+        .select('i.id', 'id')
+        .addSelect('matriz.gravidade', 'gravidade')
+        .where('i.id IN (:...ids)', { ids })
+        .getRawMany<{ id: string; gravidade: GravidadeCriticidade }>();
+
+      for (const row of matrizRows) {
+        if (row.id && row.gravidade) {
+          gravidadeById.set(row.id, row.gravidade);
+        }
+      }
+    }
 
     const countsByIrregularidade = new Map<
       string,
@@ -936,15 +1014,17 @@ export class IrregularidadeService {
     }
 
     const vistoriaIds = Array.from(
-      new Set(result.entities.map((i) => i.idVistoria)),
+      new Set(entities.map((i) => i.idVistoria)),
     );
     const vistoriaInfoById = new Map<
       string,
       {
         numeroVistoria?: number;
+        idVeiculo?: string;
         veiculoDescricao?: string;
         veiculoPlaca?: string;
         veiculoModelo?: string;
+        veiculoModeloId?: string;
         vistoriadorNome?: string;
         motoristaNome?: string;
       }
@@ -958,31 +1038,40 @@ export class IrregularidadeService {
         .leftJoin('v.motorista', 'motorista')
         .select('v.id', 'id')
         .addSelect('v.numeroVistoria', 'numeroVistoria')
+        .addSelect('v.idVeiculo', 'idVeiculo')
         .addSelect('veiculo.descricao', 'veiculoDescricao')
         .addSelect('veiculo.placa', 'veiculoPlaca')
+        .addSelect('veiculo.idModelo', 'veiculoModeloId')
         .addSelect('modeloVeiculo.nome', 'veiculoModelo')
         .addSelect('usuario.nome', 'vistoriadorNome')
         .addSelect('motorista.nome', 'motoristaNome')
         .where('v.id IN (:...ids)', { ids: vistoriaIds })
         .getRawMany<{
-          id: string;
+          id?: string;
+          v_id?: string;
           numeroVistoria?: number | string;
+          idVeiculo?: string;
           veiculoDescricao?: string;
           veiculoPlaca?: string;
           veiculoModelo?: string;
+          veiculoModeloId?: string;
           vistoriadorNome?: string;
           motoristaNome?: string;
         }>();
 
       for (const row of vistoriaRows) {
-        vistoriaInfoById.set(row.id, {
+        const vistoriaId = row.id ?? row.v_id;
+        if (!vistoriaId) continue;
+        vistoriaInfoById.set(vistoriaId, {
           numeroVistoria:
             row.numeroVistoria != null
               ? Number(row.numeroVistoria)
               : undefined,
+          idVeiculo: row.idVeiculo,
           veiculoDescricao: row.veiculoDescricao,
           veiculoPlaca: row.veiculoPlaca,
           veiculoModelo: row.veiculoModelo,
+          veiculoModeloId: row.veiculoModeloId,
           vistoriadorNome: row.vistoriadorNome,
           motoristaNome: row.motoristaNome,
         });
@@ -997,6 +1086,9 @@ export class IrregularidadeService {
         .addSelect('hist.statusDestino', 'statusDestino')
         .addSelect('MAX(hist.dataEvento)', 'entradaStatusEm')
         .where('hist.idIrregularidade IN (:...ids)', { ids })
+        .andWhere(
+          '(hist.statusOrigem IS NULL OR hist.statusOrigem <> hist.statusDestino)',
+        )
         .groupBy('hist.idIrregularidade')
         .addGroupBy('hist.statusDestino')
         .getRawMany<{
@@ -1015,16 +1107,7 @@ export class IrregularidadeService {
       }
     }
 
-    return result.entities.map((item, index) => {
-      const raw = result.raw[index] as {
-        matriz_gravidade?: GravidadeCriticidade;
-        veiculo_descricao?: string;
-        veiculo_placa?: string;
-        veiculo_modelo?: string;
-        vistoriador_nome?: string;
-        motorista_nome?: string;
-        irregularidade_criado_em?: string;
-      };
+    const data = entities.map((item) => {
       const counts = countsByIrregularidade.get(item.id);
       const midias = midiasByIrregularidade.get(item.id);
       const vistoriaInfo = vistoriaInfoById.get(item.idVistoria);
@@ -1033,25 +1116,52 @@ export class IrregularidadeService {
       );
       const resumo = this.toResumo(
         item,
-        raw?.matriz_gravidade,
+        gravidadeById.get(item.id),
         counts?.foto ?? 0,
         counts?.audio ?? 0,
         midias?.fotos ?? [],
         midias?.audios ?? [],
-        raw?.veiculo_descricao ?? vistoriaInfo?.veiculoDescricao,
-        raw?.veiculo_placa ?? vistoriaInfo?.veiculoPlaca,
-        raw?.veiculo_modelo ?? vistoriaInfo?.veiculoModelo,
-        raw?.vistoriador_nome ?? vistoriaInfo?.vistoriadorNome,
-        raw?.motorista_nome ?? vistoriaInfo?.motoristaNome,
-        raw?.irregularidade_criado_em,
+        vistoriaInfo?.veiculoDescricao,
+        vistoriaInfo?.veiculoPlaca,
+        vistoriaInfo?.veiculoModelo,
+        vistoriaInfo?.vistoriadorNome,
+        vistoriaInfo?.motoristaNome,
+        undefined,
         entradaStatusEm,
       );
       resumo.idvistoria = item.idVistoria;
+      // Sobrescreve qualquer relação hidratada: fonte única = query de vistoria.
       if (vistoriaInfo?.numeroVistoria != null) {
         resumo.numeroVistoria = vistoriaInfo.numeroVistoria;
       }
+      if (vistoriaInfo?.idVeiculo) {
+        resumo.idVeiculo = vistoriaInfo.idVeiculo;
+      }
+      if (vistoriaInfo?.veiculoModeloId) {
+        resumo.veiculoModeloId = vistoriaInfo.veiculoModeloId;
+      }
+      if (vistoriaInfo?.veiculoDescricao != null) {
+        resumo.veiculoDescricao = vistoriaInfo.veiculoDescricao;
+      }
+      if (vistoriaInfo?.veiculoPlaca != null) {
+        resumo.veiculoPlaca = vistoriaInfo.veiculoPlaca;
+      }
+      if (vistoriaInfo?.veiculoModelo != null) {
+        resumo.veiculoModelo = vistoriaInfo.veiculoModelo;
+      }
+      if (vistoriaInfo?.vistoriadorNome != null) {
+        resumo.vistoriadorNome = vistoriaInfo.vistoriadorNome;
+      }
+      if (vistoriaInfo?.motoristaNome != null) {
+        resumo.motoristaNome = vistoriaInfo.motoristaNome;
+      }
       return resumo;
     });
+
+    return new PaginatedResponseDto(
+      data,
+      new PaginationMetaDto(page, limit, total),
+    );
   }
 
   async reclassificar(
@@ -1074,12 +1184,40 @@ export class IrregularidadeService {
     await this.ensureComponenteNaArea(dto.idarea, dto.idcomponente);
     await this.ensureMatriz(dto.idcomponente, dto.idsintoma);
     const vistoria = await this.getVistoriaOrFail(irregularidade.idVistoria);
+    const classificacaoAlterada =
+      irregularidade.idArea !== dto.idarea ||
+      irregularidade.idComponente !== dto.idcomponente ||
+      irregularidade.idSintoma !== dto.idsintoma;
+    const descricaoAnterior = (irregularidade.observacao ?? '').trim();
+    const descricaoNova = (dto.observacao ?? irregularidade.observacao ?? '').trim();
+    const descricaoAlterada = descricaoAnterior !== descricaoNova;
+    const marcacaoAnterior = this.snapshotMarcacao(irregularidade);
     const marcacao = await this.resolveMarcacoes(
       vistoria,
       dto.idcomponente,
       dto.idsintoma,
       dto,
       irregularidade,
+    );
+    const marcacaoAlterada =
+      this.assinaturaMarcacao(
+        marcacaoAnterior.idVista,
+        marcacaoAnterior.pontos,
+      ) !== this.assinaturaMarcacao(marcacao.idVista, marcacao.pontos);
+    const observacaoHistorico = await this.montarObservacaoHistoricoReclassificacao(
+      {
+        classificacaoAlterada,
+        idAreaOrigem: irregularidade.idArea,
+        idComponenteOrigem: irregularidade.idComponente,
+        idSintomaOrigem: irregularidade.idSintoma,
+        idAreaDestino: dto.idarea,
+        idComponenteDestino: dto.idcomponente,
+        idSintomaDestino: dto.idsintoma,
+        descricaoAlterada,
+        descricaoAnterior,
+        descricaoNova,
+        marcacaoAlterada,
+      },
     );
     const statusOrigemReclass = irregularidade.statusAtual;
     const primeiro = marcacao.pontos[0];
@@ -1089,8 +1227,11 @@ export class IrregularidadeService {
         irregularidade.idArea = dto.idarea;
         irregularidade.idComponente = dto.idcomponente;
         irregularidade.idSintoma = dto.idsintoma;
+        // Relações hidratadas sobrescrevem FK no save do TypeORM (ex.: limpar mapa).
+        Reflect.deleteProperty(irregularidade, 'sintoma');
+        Reflect.deleteProperty(irregularidade, 'vista');
         irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
-        irregularidade.idVista = marcacao.idVista;
+        irregularidade.idVista = marcacao.idVista ?? null;
         irregularidade.posXPct = primeiro?.posXPct ?? null;
         irregularidade.posYPct = primeiro?.posYPct ?? null;
         const saved = await manager
@@ -1111,7 +1252,7 @@ export class IrregularidadeService {
             acao: 'reclassificar',
             idUsuario: actor?.id,
             idEmpresaEvento: actor?.idEmpresa,
-            observacao: dto.observacao,
+            observacao: observacaoHistorico,
           },
         );
         return saved;
@@ -3999,23 +4140,7 @@ export class IrregularidadeService {
     const existenteCompleta = pontosExistentes.length > 0;
 
     if (!sintoma.exigeMarcacaoMapa) {
-      if (enviouMarcacao) {
-        return this.validarPontosMarcacao(
-          vistoria,
-          idComponente,
-          idSintoma,
-          pontosDto,
-        );
-      }
-      if (existenteCompleta) {
-        return {
-          idVista: pontosExistentes[0].idVista,
-          pontos: pontosExistentes.map((p) => ({
-            posXPct: p.posXPct,
-            posYPct: p.posYPct,
-          })),
-        };
-      }
+      // Destino sem mapa: remove marcações existentes (UI confirma antes de enviar).
       return { idVista: null, pontos: [] };
     }
 
@@ -4259,6 +4384,97 @@ export class IrregularidadeService {
     await historicoRepository.save(evento);
   }
 
+  private async formatClassificacaoLabel(
+    idArea: string,
+    idComponente: string,
+    idSintoma: string,
+  ): Promise<string> {
+    const [area, componente, sintoma] = await Promise.all([
+      this.areaRepository.findOne({ where: { id: idArea } }),
+      this.componenteRepository.findOne({ where: { id: idComponente } }),
+      this.sintomaRepository.findOne({ where: { id: idSintoma } }),
+    ]);
+    return `${area?.nome?.trim() || '-'} - ${componente?.nome?.trim() || '-'} - ${sintoma?.descricao?.trim() || '-'}`;
+  }
+
+  private snapshotMarcacao(irregularidade: Irregularidade): {
+    idVista: string | null;
+    pontos: Array<{ posXPct: number; posYPct: number }>;
+  } {
+    const pontos = this.mapMarcacoes(irregularidade);
+    if (pontos.length === 0) {
+      return { idVista: null, pontos: [] };
+    }
+    return {
+      idVista: pontos[0].idVista,
+      pontos: pontos.map((p) => ({
+        posXPct: p.posXPct,
+        posYPct: p.posYPct,
+      })),
+    };
+  }
+
+  private assinaturaMarcacao(
+    idVista: string | null | undefined,
+    pontos: Array<{ posXPct: number; posYPct: number }>,
+  ): string {
+    const vista = idVista ?? '';
+    const contato = pontos
+      .map(
+        (p) =>
+          `${Number(p.posXPct).toFixed(2)},${Number(p.posYPct).toFixed(2)}`,
+      )
+      .join(';');
+    return `${vista}|${contato}`;
+  }
+
+  private async montarObservacaoHistoricoReclassificacao(params: {
+    classificacaoAlterada: boolean;
+    idAreaOrigem: string;
+    idComponenteOrigem: string;
+    idSintomaOrigem: string;
+    idAreaDestino: string;
+    idComponenteDestino: string;
+    idSintomaDestino: string;
+    descricaoAlterada: boolean;
+    descricaoAnterior: string;
+    descricaoNova: string;
+    marcacaoAlterada: boolean;
+  }): Promise<string | undefined> {
+    const partes: string[] = [];
+
+    if (params.classificacaoAlterada) {
+      const [origem, destino] = await Promise.all([
+        this.formatClassificacaoLabel(
+          params.idAreaOrigem,
+          params.idComponenteOrigem,
+          params.idSintomaOrigem,
+        ),
+        this.formatClassificacaoLabel(
+          params.idAreaDestino,
+          params.idComponenteDestino,
+          params.idSintomaDestino,
+        ),
+      ]);
+      partes.push(`${origem}\nalterado para\n${destino}`);
+    }
+
+    if (params.descricaoAlterada) {
+      const anterior = params.descricaoAnterior || '(sem descrição)';
+      const nova = params.descricaoNova || '(sem descrição)';
+      partes.push(`${anterior}\nalterado para\n${nova}`);
+    }
+
+    if (params.marcacaoAlterada) {
+      partes.push('Marcação alterada');
+    }
+
+    if (partes.length === 0) {
+      return undefined;
+    }
+    return partes.join('\n\n');
+  }
+
   private async ensureArea(id: string): Promise<void> {
     const area = await this.areaRepository.findOne({ where: { id } });
     if (!area) {
@@ -4335,7 +4551,9 @@ export class IrregularidadeService {
   private async getIrregularidadeOrFail(id: string): Promise<Irregularidade> {
     const irregularidade = await this.irregularidadeRepository.findOne({
       where: { id },
-      relations: ['vista', 'marcacoes', 'sintoma'],
+      // Não hidratar `sintoma`/`componente`/`area`: no save o TypeORM prioriza a
+      // relação carregada e pode ignorar alteração de FK (ex.: reclassificar).
+      relations: ['vista', 'marcacoes'],
     });
     if (!irregularidade) {
       throw new NotFoundException('Irregularidade não encontrada');

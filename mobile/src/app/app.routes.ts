@@ -43,6 +43,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'prototipo/veiculo-3d',
+    loadComponent: () =>
+      import('./pages/prototipo-veiculo-3d/prototipo-veiculo-3d.page').then(
+        (m) => m.PrototipoVeiculo3dPage,
+      ),
+    canActivate: [authGuard],
+  },
+  {
     path: 'vistoria/inicio',
     loadComponent: () =>
       import('./pages/vistoria/vistoria-inicio.page').then(m => m.VistoriaInicioPage),

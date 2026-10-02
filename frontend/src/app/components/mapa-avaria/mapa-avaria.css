@@ -71,9 +71,31 @@
 
 .mapa-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.mapa-toolbar-sep {
+  width: 1px;
+  align-self: stretch;
+  min-height: 1.5rem;
+  background: var(--mapa-border, var(--border-color, #cbd5e1));
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.mapa-toolbar .btn,
+.mapa-toolbar .mapa-zoom-label {
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .mapa-toolbar {
+    flex-wrap: wrap;
+  }
 }
 
 .mapa-zoom-label {

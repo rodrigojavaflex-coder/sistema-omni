@@ -9,6 +9,7 @@ import {
   IniciarManutencaoLotePayload,
   IrregularidadeHistoricoItem,
   IrregularidadeFluxoItem,
+  IrregularidadeFluxoPaginated,
   RelatorioManutencaoExecucao,
   RelatorioManutencaoPreview,
   NaoProcedePayload,
@@ -29,7 +30,7 @@ export class IrregularidadeService {
   listarPorStatus(
     status: StatusIrregularidade[],
     filtros?: ListarIrregularidadeFiltros,
-  ): Observable<IrregularidadeFluxoItem[]> {
+  ): Observable<IrregularidadeFluxoPaginated> {
     let params = new HttpParams().set('status', status.join(','));
     if (filtros?.ordemServico) {
       params = params.set('ordemServico', filtros.ordemServico);
@@ -52,7 +53,13 @@ export class IrregularidadeService {
     if (filtros?.origemRegistro) {
       params = params.set('origemRegistro', filtros.origemRegistro);
     }
-    return this.http.get<IrregularidadeFluxoItem[]>(this.apiUrl, { params });
+    if (filtros?.page != null) {
+      params = params.set('page', String(filtros.page));
+    }
+    if (filtros?.limit != null) {
+      params = params.set('limit', String(filtros.limit));
+    }
+    return this.http.get<IrregularidadeFluxoPaginated>(this.apiUrl, { params });
   }
 
   reclassificar(id: string, payload: ReclassificarPayload): Observable<IrregularidadeFluxoItem> {

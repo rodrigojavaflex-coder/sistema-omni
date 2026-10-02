@@ -1,0 +1,8 @@
+Modelos 3D do protótipo OMNI
+============================
+
+- articulado-verde.glb — Meshy AI biometano (~3 MB, comprimido)
+  Origem: Meshy_AI__0929175010_texture-compressed.glb
+- articulado-azul.glb, biarticulado-*.glb — procedurais (script gerar-onibus-3d.mjs)
+
+Uso apenas para teste de visualização. Conferir licença Meshy antes de produção.

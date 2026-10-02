@@ -1,0 +1,122 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start" *ngIf="isNative">
+      <ion-menu-button menu="main-menu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Protótipo 3D</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="solid" (click)="voltar()">Voltar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="veiculo-3d-content">
+  <div class="veiculo-3d-page">
+    <p class="veiculo-3d-hint">
+      Protótipo — visualização 3D. As marcações continuam no mapa 2D.
+    </p>
+    <p class="veiculo-3d-hint-meshy" *ngIf="usandoMeshy()">
+      Articulado verde: modelo Meshy biometano (~3 MB).
+    </p>
+    <p class="veiculo-3d-hint-meshy" *ngIf="veiculoLabel() && mostrarMarcacoes()">
+      Marcações do veículo: {{ veiculoLabel() }}
+    </p>
+    <p class="veiculo-3d-erro" *ngIf="erroMarcacoes()">{{ erroMarcacoes() }}</p>
+    <div class="veiculo-3d-loading-marcas" *ngIf="carregandoMarcacoes()">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Carregando marcações…</span>
+    </div>
+
+    <div class="veiculo-3d-seletores">
+      <label class="veiculo-3d-seletor-label">Tipo</label>
+      <ion-segment
+        [value]="tipo()"
+        (ionChange)="onTipoChange($any($event).detail.value)"
+        mode="md"
+      >
+        <ion-segment-button value="articulado">
+          <ion-label>Articulado</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="biarticulado">
+          <ion-label>Biarticulado</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+
+      <label class="veiculo-3d-seletor-label">Cor</label>
+      <ion-segment
+        [value]="cor()"
+        (ionChange)="onCorChange($any($event).detail.value)"
+        mode="md"
+        class="veiculo-3d-segment-cor"
+      >
+        <ion-segment-button value="verde">
+          <ion-label>
+            <span class="cor-swatch cor-swatch-verde" aria-hidden="true"></span>
+            Verde
+          </ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="azul">
+          <ion-label>
+            <span class="cor-swatch cor-swatch-azul" aria-hidden="true"></span>
+            Azul
+          </ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
+
+    <div class="veiculo-3d-viewer-wrap">
+      <model-viewer
+        #modelViewer
+        class="veiculo-3d-viewer"
+        [attr.src]="modelSrc()"
+        [attr.alt]="modelAlt()"
+        camera-controls
+        touch-action="none"
+        shadow-intensity="0.7"
+        exposure="1"
+        interaction-prompt="auto"
+        [attr.camera-orbit]="cameraOrbit()"
+        [attr.min-camera-orbit]="minCameraOrbit"
+        [attr.max-camera-orbit]="maxCameraOrbit"
+        (load)="onModelLoad()"
+      >
+        <div slot="poster" class="veiculo-3d-loading">Carregando modelo…</div>
+
+        <button
+          *ngFor="let h of hotspots()"
+          type="button"
+          class="Hotspot"
+          [class.Hotspot--oculto]="!hotspotVisivel(h.face)"
+          [attr.slot]="h.slot"
+          [attr.data-position]="h.position"
+          [attr.data-normal]="h.normal"
+          data-visibility-attribute="visible"
+          [attr.title]="h.titulo"
+        >
+          {{ h.label }}
+        </button>
+      </model-viewer>
+    </div>
+
+    <p class="veiculo-3d-gestos">
+      Arraste para girar · Pinça para zoom
+    </p>
+
+    <div class="veiculo-3d-legenda" *ngIf="mostrarMarcacoes() && hotspots().length > 0">
+      <p class="veiculo-3d-seletor-label">Legenda (aproximação 2D→3D)</p>
+      <ul>
+        <li *ngFor="let h of hotspots()">
+          <span class="legenda-indice">{{ h.label }}</span>
+          {{ h.titulo }}
+          <small>· {{ h.descricaoVista }}</small>
+        </li>
+      </ul>
+    </div>
+    <p
+      class="veiculo-3d-hint-meshy"
+      *ngIf="mostrarMarcacoes() && !carregandoMarcacoes() && !erroMarcacoes() && hotspots().length === 0"
+    >
+      Nenhuma irregularidade pendente com marcação no mapa para este veículo.
+    </p>
+  </div>
+</ion-content>

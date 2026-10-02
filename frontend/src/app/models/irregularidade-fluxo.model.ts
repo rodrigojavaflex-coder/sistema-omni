@@ -99,6 +99,20 @@ export interface ListarIrregularidadeFiltros {
   dataInicio?: string;
   dataFim?: string;
   referenciaPeriodo?: ReferenciaPeriodoIrregularidade;
+  page?: number;
+  limit?: number;
+}
+
+export interface IrregularidadeFluxoPaginated {
+  data: IrregularidadeFluxoItem[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
+  };
 }
 
 export interface IniciarManutencaoPayload {

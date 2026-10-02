@@ -1,7 +1,7 @@
 # Plano: Visualização 3D do veículo (marcações de irregularidade)
 
 **Data:** 28/09/2026  
-**Status:** Adiado (protótipo removido do app mobile)  
+**Status:** Em teste no mobile (viewer retomado; articulado verde = Meshy ~3 MB)  
 **Objetivo:** Permitir visualizar em 3D o veículo (articulado / biarticulado) e, em fase posterior, projetar as marcações já gravadas no mapa 2D (`idVista` + `posXPct`/`posYPct`) sem alterar o fluxo de registro.
 
 **Escopo futuro:** App Mobile (Ionic) e/ou Web; assets GLB; viewer 3D; opcionalmente calibração vista 2D → face 3D.  
@@ -24,12 +24,22 @@ Em set/2026 foi feito um **protótipo gratuito** no mobile (`model-viewer` + GLB
 | Tema | Decisão |
 |------|--------|
 | Marcação | Continua só no mapa **2D** (fonte da verdade) |
-| 3D | Viewer de leitura; pins = fase 2 |
+| 3D | Viewer de leitura; pins = projeção aproximada das marcações 2D |
 | Custo de ferramenta | Preferir stack gratuita (`@google/model-viewer` Apache 2.0 ou Three.js MIT) |
-| Tipos | Articulado e biarticulado |
-| Cores | Duas paletas de referência (verde lima/escuro; azul BRT branco/faixa/royal) |
-| Assets | GLB embutido ou por `modelo_veiculo` (fase posterior) |
+| Tipos | Articulado e biarticulado (e demais silhuetas da frota via asset) |
+| Cores | Paletas de referência; asset final pode já trazer a pintura do modelo |
+| **Assets GLB** | **Embutidos no app mobile** (~9 modelos × ~3 MB ≈ 30 MB). Catálogo fixo versionado com o APK |
+| **Vínculo** | Cada registro em `modelos_veiculo` aponta para **um** arquivo GLB do combo (campo novo, ex.: `arquivo_glb` / chave do asset) |
 | Auto-rotate | Desligado (usuário controla orbit/zoom) |
+| Update de GLB | Troca de mesh ⇒ nova versão do app (assets estáveis; sem CDN na v1) |
+
+### Combo GLB embutido + cadastro de modelo
+
+1. Pasta no mobile (ex.: `public/3d/`) com um `.glb` por modelo de veículo da frota (meta ≤ ~3–4 MB cada).
+2. Tela/cadastro de **Modelo de veículo**: combo/select listando os GLBs embutidos; valor persistido em `modelos_veiculo` (migration: coluna texto/varchar com nome do arquivo ou chave estável).
+3. No viewer: `veiculo.idModelo` → `modelo.arquivoGlb` → carrega `/3d/{arquivo}`.
+4. Sem GLB cadastrado: fallback (placeholder procedural ou mensagem “modelo sem visualização 3D”).
+5. Fora da v1: download remoto/CDN (só se o pacote ou a frequência de troca de asset crescer).
 
 ---
 
@@ -52,16 +62,19 @@ Em set/2026 foi feito um **protótipo gratuito** no mobile (`model-viewer` + GLB
 3. Seletores tipo/cor ou vínculo a `modelo_veiculo`
 4. Tema claro/escuro; sem auto-rotate
 
-### Fase B — Assets reais
-1. GLB articulado e biarticulado mais fiéis (compra / artista / conversão)
-2. Cadastro opcional de asset por modelo de veículo
-3. Orçamento e licença comercial documentados
+### Fase B — Assets reais embutidos + cadastro
+1. Montar combo de ~9 GLBs comprimidos (≤ ~3–4 MB) em `public/3d/`
+2. Migration em `modelos_veiculo`: campo para chave/arquivo GLB (ex.: `arquivo_glb varchar`)
+3. UI de Modelo de veículo: select com os GLBs do pacote do app
+4. Viewer resolve o GLB pelo modelo do veículo selecionado
+5. Documentar licenças dos assets no `LICENSE` / plano
 
 ### Fase C — Pins das marcações 2D
-1. Calibração `id_vista` / catálogo → face/UV do GLB
-2. Projetar `posXPct`/`posYPct` como hotspots (CSS2D ou sprites)
-3. Clique no pin → detalhe da irregularidade
-4. **Não** alterar create/update de irregularidade nem PDF 2D
+1. Projetar `posXPct`/`posYPct` + face da vista como hotspots
+2. Ocultar pin cuja normal não aponta para a câmera (frente/trás não “vazam” no perfil lateral)
+3. Calibração fina por modelo GLB se necessário
+4. Clique no pin → detalhe da irregularidade
+5. **Não** alterar create/update de irregularidade nem PDF 2D
 
 ---
 
@@ -80,10 +93,11 @@ Em set/2026 foi feito um **protótipo gratuito** no mobile (`model-viewer` + GLB
 | Item | Ação |
 |------|------|
 | Dependência | `@google/model-viewer` (ou Three.js) |
-| Assets | `public/3d/*.glb` + licença |
-| Rotas / permissão | Definir entrada no fluxo real (não demo na Home) |
-| Backend | Nenhuma mudança na Fase A; Fase B pode exigir campo de asset no modelo |
-| RN | Atualizar `docs/regras-negocio.md` se pins 3D virarem regra oficial |
+| Assets | Combo `public/3d/*.glb` embutido no APK (~30 MB para 9 modelos) |
+| Cadastro | `modelos_veiculo.arquivo_glb` (ou equivalente) + combo na tela de modelos |
+| Rotas / permissão | Entrada no fluxo real (pendências/histórico); protótipo só para teste |
+| Backend | Migration + DTO/Swagger do campo GLB no modelo |
+| RN | Atualizar `docs/regras-negocio.md` se pins 3D / asset por modelo virarem regra oficial |
 
 ---
 
@@ -107,3 +121,7 @@ Para regenerar GLBs procedurais no futuro, recriar script Three.js + `GLTFExport
 | 2026-09-25 | Protótipo inicial (viewer + GLB único procedural) |
 | 2026-09-28 | Tipos articulado/biarticulado × cores; ajustes de frente/rodas/sanfona |
 | 2026-09-28 | Protótipo removido do mobile; plano adiado neste documento |
+| 2026-09-29 | Viewer retomado para teste; `articulado-verde.glb` = Meshy biometano comprimido (~2,9 MB) |
+| 2026-09-29 | Pins: carrega marcações pendentes do veículo **1210** no articulado (mapa 2D→hotspot aproximado; 4 vistas) |
+| 2026-09-29 | Decisão: combo de GLBs **embutidos no app** e setados em `modelos_veiculo` |
+| 2026-09-29 | Pins frente/trás: filtro por orbit (face dominante) + `data-visible`; U% alinhado às laterais |
