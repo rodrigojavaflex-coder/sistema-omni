@@ -71,9 +71,18 @@ export class Vistoria extends BaseEntity {
   porcentagembateria: number | null;
 
   @ApiProperty({
-    description: 'Número único da vistoria (ano + sequencial, ex: 2026001)',
+    description:
+      'Número da vistoria (ano + sequencial sem teto, ex: 2026001, 20261000)',
+    example: 20261000,
   })
-  @Column({ name: 'numero_vistoria', type: 'integer' })
+  @Column({
+    name: 'numero_vistoria',
+    type: 'bigint',
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string | number) => Number(value),
+    },
+  })
   numeroVistoria: number;
 
   @ApiProperty({ description: 'Data/hora da vistoria' })

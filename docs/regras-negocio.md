@@ -658,6 +658,7 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-10-07: Numeracao de vistoria — `numero_vistoria` passa a `ano + sequencial` sem teto de 999 (ex.: apos `2026999` segue `20261000`); coluna `bigint`; sem remediação das duplicatas `2027000`.
 - 2026-10-02: RN-VIS-001 — reclassificar nao reinicia Etapa atual; relogio so muda em transicao de status entre filas.
 - 2026-09-29: RN-VIS-006 — `comenta` BRT sem prefixo `[numeroIrregularidade]`; blocos separados por linha em branco.
 - 2026-09-29: RN-VIS-006 — Entrega 1: OS BRT agrupada por vistoria (`os_orig` = `numeroVistoria`, selecao completa obrigatoria, `comenta` multilinha, cancelamento em grupo); plano em `docs/PLANO_BRT_OS_AGRUPAMENTO_VISTORIA.md`.

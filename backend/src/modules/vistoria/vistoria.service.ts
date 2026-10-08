@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, In, Repository } from 'typeorm';
+import { Brackets, EntityManager, In, Repository } from 'typeorm';
 import { Vistoria } from './entities/vistoria.entity';
 import { Veiculo } from '../veiculo/entities/veiculo.entity';
 import { Motorista } from '../motorista/entities/motorista.entity';
@@ -105,35 +105,27 @@ export class VistoriaService {
     }
 
     const dataVistoria = new Date(dto.datavistoria);
-    const ano = dataVistoria.getFullYear();
-    const anoInicio = ano * 1000;
-    const anoFim = (ano + 1) * 1000;
 
-    const maxResult = await this.vistoriaRepository
-      .createQueryBuilder('v')
-      .select('MAX(v.numeroVistoria)', 'maxNum')
-      .where('v.numeroVistoria >= :anoInicio', { anoInicio })
-      .andWhere('v.numeroVistoria < :anoFim', { anoFim })
-      .getRawOne<{ maxNum: number | null }>();
-
-    const proximoNumero =
-      maxResult?.maxNum != null ? maxResult.maxNum + 1 : anoInicio + 1;
-
-    const vistoria = this.vistoriaRepository.create({
-      idUsuario: dto.idusuario,
-      idVeiculo: dto.idveiculo,
-      idMotorista: dto.idmotorista,
-      odometro: dto.odometro,
-      porcentagembateria:
-        dto.porcentagembateria === undefined ? null : dto.porcentagembateria,
-      numeroVistoria: proximoNumero,
-      datavistoria: dataVistoria,
-      tempo: 0,
-      status: StatusVistoria.EM_ANDAMENTO,
-      tipo: dto.tipo ?? TipoVistoria.CORRETIVA,
+    return this.vistoriaRepository.manager.transaction(async (manager) => {
+      const proximoNumero = await this.generateNumeroVistoria(
+        manager,
+        dataVistoria,
+      );
+      const vistoria = manager.getRepository(Vistoria).create({
+        idUsuario: dto.idusuario,
+        idVeiculo: dto.idveiculo,
+        idMotorista: dto.idmotorista,
+        odometro: dto.odometro,
+        porcentagembateria:
+          dto.porcentagembateria === undefined ? null : dto.porcentagembateria,
+        numeroVistoria: proximoNumero,
+        datavistoria: dataVistoria,
+        tempo: 0,
+        status: StatusVistoria.EM_ANDAMENTO,
+        tipo: dto.tipo ?? TipoVistoria.CORRETIVA,
+      });
+      return manager.getRepository(Vistoria).save(vistoria);
     });
-
-    return this.vistoriaRepository.save(vistoria);
   }
 
   async createSos(
@@ -147,9 +139,6 @@ export class VistoriaService {
     );
 
     const dataVistoria = new Date();
-    const ano = dataVistoria.getFullYear();
-    const anoInicio = ano * 1000;
-    const anoFim = (ano + 1) * 1000;
 
     const veiculo = await this.veiculoRepository.findOne({
       where: { id: dto.idveiculo },
@@ -191,33 +180,30 @@ export class VistoriaService {
       throw new BadRequestException('Usuário inativo');
     }
 
-    const maxResult = await this.vistoriaRepository
-      .createQueryBuilder('v')
-      .select('MAX(v.numeroVistoria)', 'maxNum')
-      .where('v.numeroVistoria >= :anoInicio', { anoInicio })
-      .andWhere('v.numeroVistoria < :anoFim', { anoFim })
-      .getRawOne<{ maxNum: number | null }>();
+    return this.vistoriaRepository.manager.transaction(async (manager) => {
+      const proximoNumero = await this.generateNumeroVistoria(
+        manager,
+        dataVistoria,
+      );
 
-    const proximoNumero =
-      maxResult?.maxNum != null ? maxResult.maxNum + 1 : anoInicio + 1;
+      const vistoria = manager.getRepository(Vistoria).create({
+        idUsuario,
+        idVeiculo: dto.idveiculo,
+        idMotorista: dto.idmotorista,
+        odometro: dto.odometro,
+        porcentagembateria:
+          dto.porcentagembateria === undefined ? null : dto.porcentagembateria,
+        numeroVistoria: proximoNumero,
+        datavistoria: dataVistoria,
+        tempo: 0,
+        status: StatusVistoria.EM_ANDAMENTO,
+        origem: OrigemVistoria.SOS_WEB,
+        observacao: dto.observacao?.trim() || undefined,
+        tipo: dto.tipo ?? TipoVistoria.CORRETIVA,
+      });
 
-    const vistoria = this.vistoriaRepository.create({
-      idUsuario,
-      idVeiculo: dto.idveiculo,
-      idMotorista: dto.idmotorista,
-      odometro: dto.odometro,
-      porcentagembateria:
-        dto.porcentagembateria === undefined ? null : dto.porcentagembateria,
-      numeroVistoria: proximoNumero,
-      datavistoria: dataVistoria,
-      tempo: 0,
-      status: StatusVistoria.EM_ANDAMENTO,
-      origem: OrigemVistoria.SOS_WEB,
-      observacao: dto.observacao?.trim() || undefined,
-      tipo: dto.tipo ?? TipoVistoria.CORRETIVA,
+      return manager.getRepository(Vistoria).save(vistoria);
     });
-
-    return this.vistoriaRepository.save(vistoria);
   }
 
   async getOdometroDiffMaxKm(): Promise<number> {
@@ -859,5 +845,43 @@ export class VistoriaService {
       .setParameter('idModelo', modeloFiltro)
       .orderBy('area.ordemVisual', 'ASC')
       .getMany();
+  }
+
+  /**
+   * Gera numero_vistoria = `${ano}${sequencia}` sem teto de 999
+   * (mesmo padrão de numero_irregularidade). Não remedia duplicatas 2027000.
+   */
+  private async generateNumeroVistoria(
+    manager: EntityManager,
+    dataVistoria: Date,
+  ): Promise<number> {
+    const anoAtual = dataVistoria.getFullYear();
+    const lockKey = `vistoria_numero_${anoAtual}`;
+    await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+      lockKey,
+    ]);
+
+    const prefixoAno = `${anoAtual}`;
+    const rows = await manager.query(
+      `
+        SELECT
+          MAX(numero_vistoria) AS max_num
+        FROM vistorias
+        WHERE numero_vistoria IS NOT NULL
+          AND numero_vistoria::text LIKE $1
+      `,
+      [`${prefixoAno}%`],
+    );
+
+    const maxNumRaw = rows?.[0]?.max_num;
+    const maxNum =
+      maxNumRaw === null || maxNumRaw === undefined ? 0 : Number(maxNumRaw);
+    const maxNumTexto = maxNum > 0 ? String(maxNum) : '';
+    const maxSeq = maxNumTexto.startsWith(prefixoAno)
+      ? Number(maxNumTexto.slice(prefixoAno.length) || '0')
+      : 0;
+    const proximaSequencia = maxSeq + 1;
+
+    return Number(`${prefixoAno}${proximaSequencia}`);
   }
 }

@@ -11,11 +11,9 @@ export class VistoriaFlowService {
   private veiculoModeloNome: string | null = null;
   private dataVistoriaIso: string | null = null;
 
-  /** Formata numero_vistoria para exibição: 2026001 -> "20261" */
+  /** Exibe numero_vistoria (ano + sequencial sem teto, ex.: 2026001, 20261000). */
   static formatNumeroVistoria(n: number): string {
-    const year = Math.floor(n / 1000);
-    const seq = n % 1000;
-    return `${year}${seq}`;
+    return String(n);
   }
 
   iniciar(

@@ -1191,14 +1191,81 @@ export class AreaVistoriadaListComponent extends BaseListComponent<AreaVistoriad
       });
   }
 
+  override exportToExcel(): void {
+    this.loading = true;
+    this.loadAllItemsForExport()
+      .pipe(
+        switchMap((areas) => {
+          if (areas.length === 0) {
+            return of({
+              headers: ['Área', 'Componente', 'Status'],
+              data: [] as string[][],
+            });
+          }
+          return forkJoin(
+            areas.map((area) => this.areaService.listComponentes(area.id)),
+          ).pipe(
+            map((compsPerArea) => this.buildAreaComponenteExcel(areas, compsPerArea)),
+          );
+        }),
+      )
+      .subscribe({
+        next: (exportData) => {
+          this.exportService.exportToExcel(exportData, this.getExportFileName()).subscribe({
+            next: () => (this.loading = false),
+            error: (err) => {
+              console.error('Erro ao exportar para Excel:', err);
+              this.errorModalService.show('Erro ao exportar para Excel');
+              this.loading = false;
+            },
+          });
+        },
+        error: (err) => {
+          console.error('Erro ao carregar dados para exportação:', err);
+          this.errorModalService.show('Erro ao carregar dados para exportação');
+          this.loading = false;
+        },
+      });
+  }
+
   protected loadAllItemsForExport(): import('rxjs').Observable<AreaVistoriada[]> {
     return of(this.applyFilters(this.allItems));
   }
 
+  private buildAreaComponenteExcel(
+    areas: AreaVistoriada[],
+    compsPerArea: AreaComponente[][],
+  ): { headers: string[]; data: string[][] } {
+    const data: string[][] = [];
+    areas.forEach((area, index) => {
+      const comps = [...(compsPerArea[index] ?? [])].sort(
+        (a, b) => (a.ordemVisual ?? 0) - (b.ordemVisual ?? 0),
+      );
+      if (comps.length === 0) {
+        data.push([area.nome, '-', this.getStatusLabel(area)]);
+        return;
+      }
+      for (const vinculo of comps) {
+        const nomeComponente = vinculo.componente?.nome?.trim() || '-';
+        const statusComponente =
+          vinculo.componente == null
+            ? this.getStatusLabel(area)
+            : vinculo.componente.ativo
+              ? 'Ativo'
+              : 'Inativo';
+        data.push([area.nome, nomeComponente, statusComponente]);
+      }
+    });
+    return {
+      headers: ['Área', 'Componente', 'Status'],
+      data,
+    };
+  }
+
   protected getExportDataExcel(items: AreaVistoriada[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Descrição', 'Ordem', 'Status'],
-      data: items.map((item) => [item.nome, item.ordemVisual, this.getStatusLabel(item)]),
+      headers: ['Área', 'Componente', 'Status'],
+      data: items.map((item) => [item.nome, '-', this.getStatusLabel(item)]),
     };
   }
 
