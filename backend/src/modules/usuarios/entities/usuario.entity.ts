@@ -13,6 +13,7 @@ import { Perfil } from '../../perfil/entities/perfil.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { DepartamentoUsuario } from '../../departamento/entities/departamento-usuario.entity';
 import { EmpresaTerceira } from '../../empresa-terceira/entities/empresa-terceira.entity';
+import { UsuarioEmpresaManutencao } from './usuario-empresa-manutencao.entity';
 
 @Entity('usuarios')
 @Index(['email'], { unique: true })
@@ -69,7 +70,8 @@ export class Usuario extends BaseEntity {
   departamentosUsuario?: DepartamentoUsuario[];
 
   @ApiProperty({
-    description: 'Empresa vinculada ao usuário',
+    description:
+      'Empresa legada (1ª vinculada). Preferir empresasManutencao / idsEmpresasManutencao.',
     required: false,
     type: () => EmpresaTerceira,
   })
@@ -78,13 +80,27 @@ export class Usuario extends BaseEntity {
   empresa?: EmpresaTerceira | null;
 
   @ApiProperty({
-    description: 'ID da empresa vinculada ao usuário',
+    description:
+      'ID da empresa legada (sincronizado com a 1ª de idsEmpresasManutencao)',
     required: false,
     format: 'uuid',
     nullable: true,
   })
   @Column({ type: 'uuid', nullable: true })
   idEmpresa?: string | null;
+
+  @OneToMany(
+    () => UsuarioEmpresaManutencao,
+    (vinculo) => vinculo.usuario,
+    { cascade: false },
+  )
+  empresasManutencaoVinculos?: UsuarioEmpresaManutencao[];
+
+  /** Empresas de manutenção vinculadas (populadas em serviços/auth). */
+  empresasManutencao?: { id: string; descricao: string }[];
+
+  /** IDs das empresas de manutenção vinculadas (populados em serviços/auth). */
+  idsEmpresasManutencao?: string[];
 
   @ApiProperty({
     description: 'Tema preferido do usuário',

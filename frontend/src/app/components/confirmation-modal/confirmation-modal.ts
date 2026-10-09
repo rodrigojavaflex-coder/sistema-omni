@@ -26,7 +26,7 @@ import { SafeHtml } from '@angular/platform-browser';
           <button *ngIf="cancelText" class="btn btn-secondary" (click)="onCancel()">
             {{ cancelText }}
           </button>
-          <button class="btn {{ cancelText ? 'btn-danger' : 'btn-primary' }}" (click)="onConfirm()">
+          <button class="btn {{ resolveConfirmButtonClass() }}" (click)="onConfirm()">
             {{ confirmText }}
           </button>
         </div>
@@ -45,9 +45,18 @@ export class ConfirmationModalComponent {
   @Input() detailLines: string[] | null = null;
   @Input() confirmText = 'Sim';
   @Input() cancelText = 'Cancelar';
+  /** Override da classe do botão confirmar (ex.: `btn-primary`). Sem valor: danger se há cancelar, senão primary. */
+  @Input() confirmButtonClass: string | null = null;
   
   @Output() confirmed = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
+
+  resolveConfirmButtonClass(): string {
+    if (this.confirmButtonClass?.trim()) {
+      return this.confirmButtonClass.trim();
+    }
+    return this.cancelText ? 'btn-danger' : 'btn-primary';
+  }
 
   onConfirm(): void {
     this.confirmed.emit();

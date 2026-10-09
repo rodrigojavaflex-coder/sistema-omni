@@ -37,7 +37,7 @@
               [checked]="isSelected(option)"
               (change)="toggleItem(option)"
             >
-            <span>{{ option }}</span>
+            <span>{{ getOptionLabel(option) }}</span>
           </label>
         }
         @if (options.length === 0) {

@@ -42,11 +42,7 @@ import { VistaMarcacaoItemDto } from './dto/irregularidade-marcacao.dto';
 import { SosSessaoAbertaDto } from './dto/sos-sessao-aberta.dto';
 import { IrregularidadeService } from './irregularidade.service';
 import { Request } from 'express';
-import { EnviarErpVistoriaDto } from './dto/enviar-erp-vistoria.dto';
-import {
-  EnviarErpVistoriaRespostaDto,
-  ErpVistoriaStatusDto,
-} from './dto/enviar-erp-vistoria-resultado.dto';
+import { ErpVistoriaStatusDto } from './dto/enviar-erp-vistoria-resultado.dto';
 
 @ApiTags('vistorias')
 @ApiBearerAuth()
@@ -120,16 +116,6 @@ export class VistoriaController {
   @ApiResponse({ status: 200, description: 'Parâmetros efetivos' })
   getParametros(): Promise<{ odometroDiffMaxKm: number }> {
     return this.vistoriaService.getParametros();
-  }
-
-  @Post('erp/enviar')
-  @Permissions(Permission.VISTORIA_WEB_REPROCESSAR_ERP)
-  @ApiOperation({ summary: 'Enviar ou reenviar capas de vistoria ao ERP' })
-  @ApiResponse({ status: 201, type: EnviarErpVistoriaRespostaDto })
-  enviarErp(
-    @Body() dto: EnviarErpVistoriaDto,
-  ): Promise<EnviarErpVistoriaRespostaDto> {
-    return this.vistoriaService.enviarAoErp(dto.ids);
   }
 
   @Post(':id/irregularidades')

@@ -75,6 +75,7 @@ export const PERMISSION_MODULE_CONFIG: PermissionModuleConfig[] = [
       'Irregularidades – Tratamento',
       'Irregularidades – Manutenção',
       'Irregularidades – Validação',
+      'Irregularidades – Gestão OS',
       'BI — Acesso',
     ],
   },

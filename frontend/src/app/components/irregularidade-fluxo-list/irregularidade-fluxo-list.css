@@ -111,6 +111,18 @@
   padding-right: 1.65rem;
 }
 
+.filters-row .filter-status {
+  flex: 0 1 11.5rem;
+  min-width: 9.5rem;
+  max-width: 14rem;
+}
+
+.filters-row .filter-status ::ng-deep .multi-select-button {
+  min-height: 2.15rem;
+  padding: 0.38rem 0.5rem;
+  font-size: 0.82rem;
+}
+
 .filters-row .btn-secondary {
   flex-shrink: 0;
   padding: 0.38rem 0.65rem;
@@ -151,6 +163,12 @@
   flex: 0 1 8.5rem;
   min-width: 7.5rem;
   max-width: 9rem;
+}
+
+.filters-row .filter-classificacao {
+  flex: 0 1 11rem;
+  min-width: 9.5rem;
+  max-width: 13rem;
 }
 
 @media (max-width: 1100px) {
@@ -391,15 +409,16 @@
 .irregularidade-list-header--com-codigo {
   grid-template-columns:
     32px
-    minmax(170px, 1.5fr)
-    minmax(140px, 0.95fr)
-    minmax(240px, 2fr)
-    minmax(110px, 0.8fr)
-    minmax(150px, 0.95fr)
-    minmax(110px, 0.8fr)
-    minmax(100px, 0.75fr)
+    minmax(150px, 1.3fr)
+    minmax(130px, 0.9fr)
     minmax(120px, 0.85fr)
-    minmax(110px, 0.8fr);
+    minmax(200px, 1.8fr)
+    minmax(100px, 0.75fr)
+    minmax(140px, 0.9fr)
+    minmax(100px, 0.75fr)
+    minmax(90px, 0.7fr)
+    minmax(110px, 0.8fr)
+    minmax(100px, 0.75fr);
 }
 
 .irregularidade-card {
@@ -452,15 +471,22 @@
 .irregularidade-row-grid--com-codigo {
   grid-template-columns:
     32px
-    minmax(170px, 1.5fr)
-    minmax(140px, 0.95fr)
-    minmax(240px, 2fr)
-    minmax(110px, 0.8fr)
-    minmax(150px, 0.95fr)
-    minmax(110px, 0.8fr)
-    minmax(100px, 0.75fr)
+    minmax(150px, 1.3fr)
+    minmax(130px, 0.9fr)
     minmax(120px, 0.85fr)
-    minmax(110px, 0.8fr);
+    minmax(200px, 1.8fr)
+    minmax(100px, 0.75fr)
+    minmax(140px, 0.9fr)
+    minmax(100px, 0.75fr)
+    minmax(90px, 0.7fr)
+    minmax(110px, 0.8fr)
+    minmax(100px, 0.75fr);
+}
+
+.col-empresa {
+  font-size: 0.82rem;
+  color: var(--text-secondary, #4b5563);
+  word-break: break-word;
 }
 
 .col-select {
@@ -545,6 +571,13 @@
   font-size: 0.88rem;
   font-weight: 700;
   color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.os-externa {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1331,7 +1364,8 @@ textarea.form-control {
   color: var(--text-primary, #e2e8f0);
 }
 
-:host-context(body.theme-dark) .os-vistoria {
+:host-context(body.theme-dark) .os-vistoria,
+:host-context(body.theme-dark) .os-externa {
   color: var(--text-secondary, #94a3b8);
 }
 :host-context(body.theme-dark) .detail-value,

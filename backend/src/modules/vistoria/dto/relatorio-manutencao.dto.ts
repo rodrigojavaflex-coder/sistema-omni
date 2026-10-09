@@ -5,10 +5,22 @@ export class RelatorioManutencaoItemDto {
   id: string;
 
   @ApiProperty({
-    description: 'Ordem de serviço da irregularidade',
+    description: 'Ordem de serviço da irregularidade (numeroIrregularidade)',
     example: 20261,
   })
   ordemServico: number;
+
+  @ApiProperty({
+    description: 'Código do pedido ERP / OS OMNI',
+    required: false,
+  })
+  erpCodigoPedido?: string;
+
+  @ApiProperty({
+    description: 'Número da OS BRT (num_os_externo_atual)',
+    required: false,
+  })
+  numOsExternoAtual?: number | null;
 
   @ApiProperty({ description: 'Descrição da irregularidade' })
   irregularidade: string;
@@ -93,6 +105,19 @@ export class RelatorioManutencaoExecucaoDto extends RelatorioManutencaoPreviewDt
       'True quando o SMTP enviou o PDF com sucesso; se o envio falhar em fluxo legado com e-mail obrigatório, a operação retorna erro',
   })
   emailEnviado: boolean;
+
+  @ApiProperty({
+    description:
+      'True quando a impressão RAW foi enviada com sucesso (flag de impressão ativa)',
+    required: false,
+  })
+  impressaoEnviada?: boolean;
+
+  @ApiProperty({
+    description: 'Mensagem de erro da impressão (não bloqueia a manutenção)',
+    required: false,
+  })
+  impressaoErro?: string;
 
   @ApiProperty({
     description: 'Itens que não foram encaminhados (integração API)',

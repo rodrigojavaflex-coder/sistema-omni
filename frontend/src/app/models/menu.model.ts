@@ -397,6 +397,13 @@ export const MENU_CONFIGURATION: MenuConfig = {
                 Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
               ],
               parentMenu: 'Gestão'
+            },
+            {
+              label: 'Gestão OS',
+              route: '/irregularidades/gestao-os',
+              icon: 'feather-search',
+              requiredPermissions: [Permission.IRREGULARIDADE_GESTAO_OS_READ],
+              parentMenu: 'Gestão'
             }
           ]
         },

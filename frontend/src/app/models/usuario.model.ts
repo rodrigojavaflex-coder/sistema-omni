@@ -126,13 +126,17 @@ export enum Permission {
   IRREGULARIDADE_TRATAMENTO_READ = 'irregularidade_tratamento:read',
   IRREGULARIDADE_TRATAMENTO_UPDATE = 'irregularidade_tratamento:update',
   IRREGULARIDADE_TRATAMENTO_CREATE_SOS = 'irregularidade_tratamento:create_sos',
+  IRREGULARIDADE_TRATAMENTO_PRINT = 'irregularidade_tratamento:print',
   IRREGULARIDADE_MANUTENCAO_READ = 'irregularidade_manutencao:read',
   IRREGULARIDADE_MANUTENCAO_START = 'irregularidade_manutencao:start',
   IRREGULARIDADE_MANUTENCAO_FINISH = 'irregularidade_manutencao:finish',
   IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING = 'irregularidade_manutencao:mark_not_proceeding',
   IRREGULARIDADE_MANUTENCAO_CANCEL_OS_BRT = 'irregularidade_manutencao:cancel_os_brt',
+  IRREGULARIDADE_MANUTENCAO_PRINT = 'irregularidade_manutencao:print',
   IRREGULARIDADE_VALIDACAO_FINAL_READ = 'irregularidade_validacao_final:read',
   IRREGULARIDADE_VALIDACAO_FINAL_UPDATE = 'irregularidade_validacao_final:update',
+  IRREGULARIDADE_VALIDACAO_FINAL_PRINT = 'irregularidade_validacao_final:print',
+  IRREGULARIDADE_GESTAO_OS_READ = 'irregularidade_gestao_os:read',
   AREAVISTORIADA_CREATE = 'areavistoriada:create',
   AREAVISTORIADA_READ = 'areavistoriada:read',
   AREAVISTORIADA_UPDATE = 'areavistoriada:update',
@@ -222,6 +226,9 @@ export interface Usuario {
   departamentos?: { id: string; nomeDepartamento: string }[];
   idEmpresa?: string;
   empresa?: { id: string; descricao: string };
+  /** Empresas de manutenção vinculadas (N:N). */
+  empresasManutencao?: { id: string; descricao: string }[];
+  idsEmpresasManutencao?: string[];
 }
 
 export interface ChangePasswordDto {
@@ -238,6 +245,9 @@ export interface CreateUsuarioDto {
   tema?: string; // Tema preferido (Claro ou Escuro)
   perfilIds: string[]; // IDs dos perfis do usuário
   departamentoIds?: string[];
+  /** IDs das empresas de manutenção (ehEmpresaManutencao). */
+  idsEmpresasManutencao?: string[];
+  /** Legado: preferir idsEmpresasManutencao. */
   idEmpresa?: string | null;
 }
 
@@ -249,6 +259,7 @@ export interface UpdateUsuarioDto {
   tema?: string; // Permitir atualizar tema do usuário (Claro ou Escuro)
   perfilIds?: string[]; // Atualizar perfis do usuário
   departamentoIds?: string[];
+  idsEmpresasManutencao?: string[];
   idEmpresa?: string | null;
 }
 

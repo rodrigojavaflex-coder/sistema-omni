@@ -41,6 +41,14 @@ export interface ErpVistoriaConfig {
   timeoutMs?: number;
 }
 
+/** Impressão automática do PDF após envio à manutenção (RAW/JetDirect). */
+export interface ImpressaoManutencaoConfig {
+  ativo: boolean;
+  impressoraIp: string;
+  impressoraPorta: number;
+  timeoutMs?: number;
+}
+
 @Entity('configuracoes')
 export class Configuracao extends BaseEntity {
   /**
@@ -90,6 +98,9 @@ export class Configuracao extends BaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   erpVistoriaConfig?: ErpVistoriaConfig;
+
+  @Column({ name: 'impressao_manutencao_config', type: 'jsonb', nullable: true })
+  impressaoManutencaoConfig?: ImpressaoManutencaoConfig;
 
   /**
    * Diferença máxima permitida (km) entre o odômetro informado e o da última

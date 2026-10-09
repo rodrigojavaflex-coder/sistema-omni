@@ -9,9 +9,43 @@
     <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
   </div>
 
+  <div class="fluxo-tabs" role="tablist" aria-label="Seções do cadastro de empresa">
+    <button
+      type="button"
+      class="tab-btn"
+      role="tab"
+      [class.tab-btn--active]="activeTab === 'geral'"
+      [attr.aria-selected]="activeTab === 'geral'"
+      (click)="setActiveTab('geral')"
+    >
+      Geral
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      role="tab"
+      [class.tab-btn--active]="activeTab === 'escopo'"
+      [attr.aria-selected]="activeTab === 'escopo'"
+      (click)="setActiveTab('escopo')"
+    >
+      Escopo de atendimento
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      role="tab"
+      *ngIf="podeConfigurarIntegracao"
+      [class.tab-btn--active]="activeTab === 'integracao'"
+      [attr.aria-selected]="activeTab === 'integracao'"
+      (click)="setActiveTab('integracao')"
+    >
+      Integração
+    </button>
+  </div>
+
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="form-section">
-      <h3>Informações</h3>
+    <div class="form-section" *ngIf="activeTab === 'geral'" role="tabpanel">
+      <h3>Informações gerais</h3>
       <div class="form-group">
         <label class="form-label">Descrição *</label>
         <input type="text" formControlName="descricao" class="form-input" />
@@ -24,12 +58,9 @@
           <input type="checkbox" formControlName="ehEmpresaManutencao" />
           Empresa de manutenção
         </label>
-      </div>
-      <div class="form-group" *ngIf="form.value.ehEmpresaManutencao">
-        <label class="form-label checkbox-inline">
-          <input type="checkbox" formControlName="enviarEmailRelatorio" />
-          Enviar relatório PDF por e-mail ao encaminhar
-        </label>
+        <small class="form-hint">
+          Habilita envio de irregularidades, escopo de atendimento e integração de OS.
+        </small>
       </div>
       <div class="form-group">
         <label class="form-label">E-mails para relatório</label>
@@ -41,90 +72,159 @@
         />
         <small class="form-hint">Separe múltiplos e-mails por vírgula.</small>
       </div>
+      <div class="form-group" *ngIf="form.value.ehEmpresaManutencao">
+        <label class="form-label checkbox-inline">
+          <input type="checkbox" formControlName="enviarEmailRelatorio" />
+          Enviar relatório PDF por e-mail ao encaminhar
+        </label>
+      </div>
+    </div>
+
+    <div class="form-section" *ngIf="activeTab === 'escopo'" role="tabpanel">
+      <h3>Escopo de atendimento</h3>
+      <div class="tab-empty-hint" *ngIf="!form.value.ehEmpresaManutencao">
+        <p>
+          Marque <strong>Empresa de manutenção</strong> na aba Geral para definir
+          combustíveis e áreas atendidos.
+        </p>
+        <button type="button" class="btn btn-secondary" (click)="setActiveTab('geral')">
+          Ir para Geral
+        </button>
+      </div>
+      <ng-container *ngIf="form.value.ehEmpresaManutencao">
+        <p class="section-description">
+          Defina o que esta empresa pode receber no envio para manutenção.
+          Listas vazias = sem restrição; com seleção, só o que estiver marcado.
+        </p>
+        <div class="form-group">
+          <label class="form-label">Combustíveis atendidos</label>
+          <app-multi-select
+            [options]="combustivelOptions"
+            [(ngModel)]="combustiveisSelecionados"
+            (selectionChange)="combustiveisSelecionados = $event"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Todos (sem restrição)"
+          ></app-multi-select>
+          <small class="form-hint">
+            Vazio = atende todos. Com seleção, só irregularidades desses combustíveis podem ser enviadas.
+          </small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Áreas atendidas</label>
+          <app-multi-select
+            [options]="areaOptions"
+            [optionLabelFn]="labelAreaFiltro"
+            [(ngModel)]="areasSelecionadas"
+            (selectionChange)="areasSelecionadas = $event"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Todas (sem restrição)"
+          ></app-multi-select>
+          <small class="form-hint">
+            Vazio = atende todas. Com seleção, só irregularidades dessas áreas podem ser enviadas.
+          </small>
+        </div>
+      </ng-container>
     </div>
 
     <div
       class="form-section"
-      *ngIf="form.value.ehEmpresaManutencao && podeConfigurarIntegracao"
+      *ngIf="activeTab === 'integracao' && podeConfigurarIntegracao"
+      role="tabpanel"
     >
-      <h3>Integração</h3>
-      <div class="form-group">
-        <label class="form-label">Integração de OS</label>
-        <select class="form-select" formControlName="integracaoManutencao">
-          <option value="NENHUMA">Nenhuma (fluxo interno / e-mail)</option>
-          <option value="BRT_OS">Consórcio BRT — API de OS</option>
-        </select>
+      <h3>Integração de OS</h3>
+      <div class="tab-empty-hint" *ngIf="!form.value.ehEmpresaManutencao">
+        <p>
+          Marque <strong>Empresa de manutenção</strong> na aba Geral para configurar a integração.
+        </p>
+        <button type="button" class="btn btn-secondary" (click)="setActiveTab('geral')">
+          Ir para Geral
+        </button>
       </div>
-      <ng-container *ngIf="form.value.integracaoManutencao === 'BRT_OS'">
-      <div class="form-group">
-        <label class="form-label">URL da API</label>
-        <input
-          type="text"
-          formControlName="brtUrlBase"
-          class="form-input"
-          placeholder="https://www.api.brtgo.com.br/v1/os"
-        />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Tenant *</label>
-        <input type="text" formControlName="brtTenEmp" class="form-input" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Token BRT</label>
-        <div class="input-eye-wrapper">
-          <input
-            [type]="showBrtToken ? 'text' : 'password'"
-            formControlName="brtToken"
-            class="form-input"
-            autocomplete="new-password"
-            [disabled]="brtTokenLoading"
-            (focus)="onBrtTokenFocus()"
-          />
-          <button
-            type="button"
-            class="btn-eye"
-            (click)="toggleBrtTokenVisibility()"
-            [disabled]="brtTokenLoading"
-            tabindex="-1"
-            [attr.aria-label]="showBrtToken ? 'Ocultar token' : 'Mostrar token'"
-          >
-            <i class="fas" [ngClass]="showBrtToken ? 'fa-eye-slash' : 'fa-eye'"></i>
-          </button>
+      <ng-container *ngIf="form.value.ehEmpresaManutencao">
+        <div class="form-group">
+          <label class="form-label">Tipo de integração</label>
+          <select class="form-select" formControlName="integracaoManutencao">
+            <option value="NENHUMA">Nenhuma (fluxo interno / e-mail)</option>
+            <option value="BRT_OS">Consórcio BRT — API de OS</option>
+          </select>
         </div>
-        <small class="form-hint" *ngIf="editMode && brtTokenLoading">
-          Carregando token do banco…
-        </small>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Solicitante *</label>
-        <input type="text" formControlName="brtNomSol" class="form-input" maxlength="200" />
-        <small class="form-hint">Nome enviado à API BRT em toda criação de OS.</small>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Telefone</label>
-        <input type="text" formControlName="brtTelCtt" class="form-input" maxlength="40" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Local de atendimento</label>
-        <input type="text" formControlName="brtLocAtd" class="form-input" maxlength="500" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Ambiente</label>
-        <select class="form-select" formControlName="brtAmbiente">
-          <option value="">Não informado</option>
-          <option value="HOMOLOG">Homologação</option>
-          <option value="PROD">Produção</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label checkbox-inline">
-          <input type="checkbox" formControlName="brtAllowInsecureTls" />
-          Permitir certificado SSL não confiável
-        </label>
-        <small class="form-hint">
-          Use só se a API BRT tiver certificado inválido/autoassinado. Preferível instalar a CA no servidor.
-        </small>
-      </div>
+        <ng-container *ngIf="form.value.integracaoManutencao === 'BRT_OS'">
+          <div class="form-inline">
+            <div class="form-group">
+              <label class="form-label">URL da API</label>
+              <input
+                type="text"
+                formControlName="brtUrlBase"
+                class="form-input"
+                placeholder="https://www.api.brtgo.com.br/v1/os"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ambiente</label>
+              <select class="form-select" formControlName="brtAmbiente">
+                <option value="">Não informado</option>
+                <option value="HOMOLOG">Homologação</option>
+                <option value="PROD">Produção</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-inline">
+            <div class="form-group">
+              <label class="form-label">Tenant *</label>
+              <input type="text" formControlName="brtTenEmp" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Token BRT</label>
+              <div class="input-eye-wrapper">
+                <input
+                  [type]="showBrtToken ? 'text' : 'password'"
+                  formControlName="brtToken"
+                  class="form-input"
+                  autocomplete="new-password"
+                  [disabled]="brtTokenLoading"
+                  (focus)="onBrtTokenFocus()"
+                />
+                <button
+                  type="button"
+                  class="btn-eye"
+                  (click)="toggleBrtTokenVisibility()"
+                  [disabled]="brtTokenLoading"
+                  tabindex="-1"
+                  [attr.aria-label]="showBrtToken ? 'Ocultar token' : 'Mostrar token'"
+                >
+                  <i class="fas" [ngClass]="showBrtToken ? 'fa-eye-slash' : 'fa-eye'"></i>
+                </button>
+              </div>
+              <small class="form-hint" *ngIf="editMode && brtTokenLoading">
+                Carregando token do banco…
+              </small>
+            </div>
+          </div>
+          <div class="form-inline">
+            <div class="form-group">
+              <label class="form-label">Solicitante *</label>
+              <input type="text" formControlName="brtNomSol" class="form-input" maxlength="200" />
+              <small class="form-hint">Nome enviado à API BRT em toda criação de OS.</small>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telefone</label>
+              <input type="text" formControlName="brtTelCtt" class="form-input" maxlength="40" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Local de atendimento</label>
+            <input type="text" formControlName="brtLocAtd" class="form-input" maxlength="500" />
+          </div>
+          <div class="form-group">
+            <label class="form-label checkbox-inline">
+              <input type="checkbox" formControlName="brtAllowInsecureTls" />
+              Permitir certificado SSL não confiável
+            </label>
+            <small class="form-hint">
+              Use só se a API BRT tiver certificado inválido/autoassinado. Preferível instalar a CA no servidor.
+            </small>
+          </div>
+        </ng-container>
       </ng-container>
     </div>
 

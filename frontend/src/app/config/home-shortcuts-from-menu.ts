@@ -34,6 +34,7 @@ const ROUTE_TO_SHORTCUT_ID: Record<string, string> = {
   '/irregularidades/tratamento': 'tratamento',
   '/irregularidades/manutencao': 'manutencao',
   '/irregularidades/validacao-final': 'validacao-final',
+  '/irregularidades/gestao-os': 'gestao-os',
   '/meta/dashboard': 'painel-metas',
   '/ocorrencia/painel': 'painel-ocorrencias',
   '/reports': 'relatorios',

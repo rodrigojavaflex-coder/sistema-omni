@@ -39,6 +39,7 @@ import { ReclassificarIrregularidadeDto } from './dto/reclassificar-irregularida
 import { CancelarIrregularidadeDto } from './dto/cancelar-irregularidade.dto';
 import { IniciarManutencaoIrregularidadeDto } from './dto/iniciar-manutencao-irregularidade.dto';
 import { IniciarManutencaoLoteDto } from './dto/iniciar-manutencao-lote.dto';
+import { RelatorioIrregularidadesLoteDto } from './dto/relatorio-irregularidades-lote.dto';
 import { NaoProcedeIrregularidadeDto } from './dto/nao-procede-irregularidade.dto';
 import { ValidacaoFinalIrregularidadeDto } from './dto/validacao-final-irregularidade.dto';
 import { ReprovarValidacaoFinalIrregularidadeDto } from './dto/reprovar-validacao-final-irregularidade.dto';
@@ -53,7 +54,10 @@ import {
   assertUserHasAllPermissions,
   collectUserPermissions,
   getRequiredReadPermissionsForStatuses,
+  IRREGULARIDADE_FLUXO_PRINT_PERMISSIONS,
   IRREGULARIDADE_FLUXO_READ_PERMISSIONS,
+  STATUS_ESCOPO_EMPRESA,
+  userHasPermission,
 } from '../../common/utils/irregularidade-permissions.util';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 
@@ -75,6 +79,52 @@ export class IrregularidadesController {
     description:
       'Trecho do número da O.S. (numeroIrregularidade): busca parcial nos dígitos, ex.: 2026 corresponde a 202601, 202619, etc.',
   })
+  @ApiQuery({
+    name: 'erpCodigoPedido',
+    required: false,
+    type: String,
+    description:
+      'Trecho da OS OMNI / pedido ERP (erp_codigo_pedido): busca parcial',
+  })
+  @ApiQuery({
+    name: 'numOsExterno',
+    required: false,
+    type: String,
+    description:
+      'Trecho do número da OS BRT (num_os_externo_atual): busca parcial nos dígitos',
+  })
+  @ApiQuery({
+    name: 'numeroVistoria',
+    required: false,
+    type: String,
+    description:
+      'Trecho do número da vistoria: busca parcial nos dígitos',
+  })
+  @ApiQuery({
+    name: 'idEmpresaManutencao',
+    required: false,
+    type: String,
+    description:
+      'Filtro obrigatório nas filas Manutenção/Validação: empresa de manutenção (uma por vez)',
+  })
+  @ApiQuery({
+    name: 'idArea',
+    required: false,
+    type: String,
+    description: 'Filtro por área vistoriada (UUID)',
+  })
+  @ApiQuery({
+    name: 'idComponente',
+    required: false,
+    type: String,
+    description: 'Filtro por componente (UUID)',
+  })
+  @ApiQuery({
+    name: 'idSintoma',
+    required: false,
+    type: String,
+    description: 'Filtro por sintoma (UUID)',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (padrão 1)' })
   @ApiQuery({
     name: 'limit',
@@ -91,12 +141,19 @@ export class IrregularidadesController {
   findByStatus(
     @Query('status') status?: string,
     @Query('idVeiculo') idVeiculo?: string,
+    @Query('idEmpresaManutencao') idEmpresaManutencao?: string,
     @Query('gravidade') gravidade?: string,
     @Query('dataInicio') dataInicio?: string,
     @Query('dataFim') dataFim?: string,
     @Query('referenciaPeriodo') referenciaPeriodo?: string,
     @Query('ordemServico') ordemServico?: string,
+    @Query('erpCodigoPedido') erpCodigoPedido?: string,
+    @Query('numOsExterno') numOsExterno?: string,
+    @Query('numeroVistoria') numeroVistoria?: string,
     @Query('origemRegistro') origemRegistro?: string,
+    @Query('idArea') idArea?: string,
+    @Query('idComponente') idComponente?: string,
+    @Query('idSintoma') idSintoma?: string,
     @Query(
       'page',
       new ParseIntPipe({ optional: true }),
@@ -114,11 +171,15 @@ export class IrregularidadesController {
       .map((s) => s.trim())
       .filter(Boolean) as StatusIrregularidade[];
 
-    const requiredReads = getRequiredReadPermissionsForStatuses(statuses);
-    assertUserHasAllPermissions(
-      collectUserPermissions(req?.user?.perfis),
-      requiredReads,
+    const userPermissions = collectUserPermissions(req?.user?.perfis);
+    const isGestaoOs = userHasPermission(
+      userPermissions,
+      Permission.IRREGULARIDADE_GESTAO_OS_READ,
     );
+    if (!isGestaoOs) {
+      const requiredReads = getRequiredReadPermissionsForStatuses(statuses);
+      assertUserHasAllPermissions(userPermissions, requiredReads);
+    }
     const gravidades = (gravidade ?? '')
       .split(',')
       .map((s) => s.trim())
@@ -130,6 +191,9 @@ export class IrregularidadesController {
         : ('CRIADO_EM' as const);
 
     const ordemServicoDigits = this.parseOrdemServicoQuery(ordemServico);
+    const erpCodigoPedidoFiltro = this.parseTextoParcialQuery(erpCodigoPedido);
+    const numOsExternoDigits = this.parseOrdemServicoQuery(numOsExterno);
+    const numeroVistoriaDigits = this.parseOrdemServicoQuery(numeroVistoria);
     const origemFiltro =
       origemRegistro === 'SOS_WEB'
         ? ('SOS_WEB' as const)
@@ -141,36 +205,46 @@ export class IrregularidadesController {
     const limitNum =
       limit != null && limit > 0 ? Math.min(100, limit) : 20;
 
+    const idsEmpresas =
+      req?.user?.idsEmpresasManutencao?.length
+        ? req.user.idsEmpresasManutencao
+        : req?.user?.idEmpresa
+          ? [req.user.idEmpresa]
+          : [];
+
     const filtrosLista = {
       idVeiculo,
+      idEmpresaManutencao: idEmpresaManutencao?.trim() || undefined,
       gravidade: gravidades,
       dataInicio,
       dataFim,
       referenciaPeriodo: refPeriodo,
       ordemServico: ordemServicoDigits,
+      erpCodigoPedido: erpCodigoPedidoFiltro,
+      numOsExterno: numOsExternoDigits,
+      numeroVistoria: numeroVistoriaDigits,
       origemRegistro: origemFiltro,
+      idArea: this.parseUuidQuery(idArea),
+      idComponente: this.parseUuidQuery(idComponente),
+      idSintoma: this.parseUuidQuery(idSintoma),
       page: pageNum,
       limit: limitNum,
     };
 
-    if (statuses.length === 0) {
-      return this.irregularidadeService.listByStatus(
-        [StatusIrregularidade.REGISTRADA],
-        { idEmpresa: req?.user?.idEmpresa ?? undefined, scopeByEmpresa: false },
-        filtrosLista,
-      );
-    }
+    const statusesConsulta =
+      statuses.length > 0
+        ? statuses
+        : isGestaoOs
+          ? Object.values(StatusIrregularidade)
+          : [StatusIrregularidade.REGISTRADA];
 
-    const requiresScope = statuses.some((s) =>
-      [
-        StatusIrregularidade.EM_MANUTENCAO,
-        StatusIrregularidade.NAO_PROCEDE,
-      ].includes(s),
-    );
+    const requiresScope =
+      !isGestaoOs &&
+      statusesConsulta.some((s) => STATUS_ESCOPO_EMPRESA.includes(s));
     return this.irregularidadeService.listByStatus(
-      statuses,
+      statusesConsulta,
       {
-        idEmpresa: req?.user?.idEmpresa ?? undefined,
+        idsEmpresasManutencao: idsEmpresas,
         scopeByEmpresa: requiresScope,
       },
       filtrosLista,
@@ -188,6 +262,25 @@ export class IrregularidadesController {
     return digits.length > 0 ? digits : undefined;
   }
 
+  private parseUuidQuery(raw?: string): string | undefined {
+    const value = raw?.trim();
+    if (!value) {
+      return undefined;
+    }
+    const uuidRe =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRe.test(value) ? value : undefined;
+  }
+
+  /** Texto parcial trimado (pedido ERP pode ter formato alfanumérico). */
+  private parseTextoParcialQuery(raw?: string): string | undefined {
+    if (raw === undefined || raw === null) {
+      return undefined;
+    }
+    const texto = String(raw).trim();
+    return texto.length > 0 ? texto : undefined;
+  }
+
   @Get(':id/historico')
   @ApiOperation({ summary: 'Listar histórico da irregularidade' })
   @ApiResponse({ status: 200, type: [IrregularidadeHistoricoDto] })
@@ -196,6 +289,30 @@ export class IrregularidadesController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<IrregularidadeHistoricoDto[]> {
     return this.irregularidadeService.listHistoricoByIrregularidade(id);
+  }
+
+  @Post('lote/relatorio-pdf')
+  @ApiOperation({
+    summary:
+      'Gerar PDF do relatório de serviço(s) das irregularidades selecionadas (Tratamento, Manutenção ou Validação)',
+  })
+  @ApiResponse({ status: 200, description: 'Arquivo PDF' })
+  @Permissions(...IRREGULARIDADE_FLUXO_PRINT_PERMISSIONS)
+  async gerarRelatorioPdfLote(
+    @Body() dto: RelatorioIrregularidadesLoteDto,
+    @Req()
+    req: Request & {
+      user?: Usuario & { nome?: string; perfis?: Array<{ permissoes?: string[] }> };
+    },
+  ): Promise<StreamableFile> {
+    const pdf = await this.irregularidadeService.gerarRelatorioPdfLote(
+      dto,
+      req.user,
+    );
+    return new StreamableFile(pdf, {
+      type: 'application/pdf',
+      disposition: 'inline; filename="relatorio-servicos.pdf"',
+    });
   }
 
   @Post('lote/iniciar-manutencao/preview')
@@ -454,13 +571,27 @@ export class IrregularidadesController {
 
 function mapFluxoActor(
   user?: Usuario,
-): { id?: string; idEmpresa?: string; nome?: string } | undefined {
+):
+  | {
+      id?: string;
+      idEmpresa?: string;
+      idsEmpresasManutencao?: string[];
+      nome?: string;
+    }
+  | undefined {
   if (!user) {
     return undefined;
   }
+  const idsEmpresas =
+    user.idsEmpresasManutencao?.length
+      ? user.idsEmpresasManutencao
+      : user.idEmpresa
+        ? [user.idEmpresa]
+        : [];
   return {
     id: user.id,
-    idEmpresa: user.idEmpresa ?? undefined,
+    idEmpresa: user.idEmpresa ?? idsEmpresas[0] ?? undefined,
+    idsEmpresasManutencao: idsEmpresas,
     nome: user.nome,
   };
 }

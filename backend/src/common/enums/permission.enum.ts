@@ -130,13 +130,17 @@ export enum Permission {
   IRREGULARIDADE_TRATAMENTO_READ = 'irregularidade_tratamento:read',
   IRREGULARIDADE_TRATAMENTO_UPDATE = 'irregularidade_tratamento:update',
   IRREGULARIDADE_TRATAMENTO_CREATE_SOS = 'irregularidade_tratamento:create_sos',
+  IRREGULARIDADE_TRATAMENTO_PRINT = 'irregularidade_tratamento:print',
   IRREGULARIDADE_MANUTENCAO_READ = 'irregularidade_manutencao:read',
   IRREGULARIDADE_MANUTENCAO_START = 'irregularidade_manutencao:start',
   IRREGULARIDADE_MANUTENCAO_FINISH = 'irregularidade_manutencao:finish',
   IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING = 'irregularidade_manutencao:mark_not_proceeding',
   IRREGULARIDADE_MANUTENCAO_CANCEL_OS_BRT = 'irregularidade_manutencao:cancel_os_brt',
+  IRREGULARIDADE_MANUTENCAO_PRINT = 'irregularidade_manutencao:print',
   IRREGULARIDADE_VALIDACAO_FINAL_READ = 'irregularidade_validacao_final:read',
   IRREGULARIDADE_VALIDACAO_FINAL_UPDATE = 'irregularidade_validacao_final:update',
+  IRREGULARIDADE_VALIDACAO_FINAL_PRINT = 'irregularidade_validacao_final:print',
+  IRREGULARIDADE_GESTAO_OS_READ = 'irregularidade_gestao_os:read',
 
   // Áreas Vistoriadas (catálogo)
   AREAVISTORIADA_CREATE = 'areavistoriada:create',
@@ -415,6 +419,10 @@ export const PERMISSION_GROUPS = {
       key: Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
       label: 'Tratamento: registrar irregularidade SOS (web)',
     },
+    {
+      key: Permission.IRREGULARIDADE_TRATAMENTO_PRINT,
+      label: 'Tratamento: imprimir relatório das selecionadas',
+    },
   ],
   'Irregularidades – Manutenção': [
     {
@@ -433,6 +441,10 @@ export const PERMISSION_GROUPS = {
       key: Permission.IRREGULARIDADE_MANUTENCAO_CANCEL_OS_BRT,
       label: 'Manutenção: cancelar OS na integração BRT',
     },
+    {
+      key: Permission.IRREGULARIDADE_MANUTENCAO_PRINT,
+      label: 'Manutenção: imprimir relatório das selecionadas',
+    },
   ],
   'Irregularidades – Validação': [
     {
@@ -442,6 +454,17 @@ export const PERMISSION_GROUPS = {
     {
       key: Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
       label: 'Validação: aprovar (validar final) ou reprovar e devolver para manutenção',
+    },
+    {
+      key: Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT,
+      label: 'Validação: imprimir relatório das selecionadas',
+    },
+  ],
+  'Irregularidades – Gestão OS': [
+    {
+      key: Permission.IRREGULARIDADE_GESTAO_OS_READ,
+      label:
+        'Acessar tela Gestão OS (consultar todas as irregularidades e imprimir)',
     },
   ],
   'Áreas Vistoriadas': [

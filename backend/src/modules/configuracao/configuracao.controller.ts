@@ -89,6 +89,20 @@ export class ConfiguracaoController {
     return raw;
   }
 
+  private parseImpressaoManutencaoConfig(raw: unknown) {
+    if (!raw) {
+      return undefined;
+    }
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return undefined;
+      }
+    }
+    return raw;
+  }
+
   private parseOdometroDiffMaxKm(raw: unknown): number | null | undefined {
     if (raw === undefined) {
       return undefined;
@@ -145,6 +159,9 @@ export class ConfiguracaoController {
       tempoFluxoConfig: this.parseTempoFluxoConfig(req.body.tempoFluxoConfig),
       emailEnvioConfig: this.parseEmailEnvioConfig(req.body.emailEnvioConfig),
       erpVistoriaConfig: this.parseErpVistoriaConfig(req.body.erpVistoriaConfig),
+      impressaoManutencaoConfig: this.parseImpressaoManutencaoConfig(
+        req.body.impressaoManutencaoConfig,
+      ),
       odometroDiffMaxKm: this.parseOdometroDiffMaxKm(
         req.body.odometroDiffMaxKm,
       ),
@@ -264,6 +281,9 @@ export class ConfiguracaoController {
       tempoFluxoConfig: this.parseTempoFluxoConfig(req.body.tempoFluxoConfig),
       emailEnvioConfig: this.parseEmailEnvioConfig(req.body.emailEnvioConfig),
       erpVistoriaConfig: this.parseErpVistoriaConfig(req.body.erpVistoriaConfig),
+      impressaoManutencaoConfig: this.parseImpressaoManutencaoConfig(
+        req.body.impressaoManutencaoConfig,
+      ),
       odometroDiffMaxKm: this.parseOdometroDiffMaxKm(
         req.body.odometroDiffMaxKm,
       ),

@@ -38,17 +38,20 @@ import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/vei
 import { PeriodoFluxoFilterComponent, PeriodoIntervaloPayload } from '../periodo-fluxo-filter/periodo-fluxo-filter.component';
 import { MapaAvariaComponent } from '../mapa-avaria/mapa-avaria';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
+import { MultiSelectComponent } from '../shared/multi-select/multi-select.component';
 import { Veiculo } from '../../models/veiculo.model';
 import { ConfiguracaoService } from '../../services/configuracao.service';
 import { TempoFaixaConfig, TempoFluxoConfig } from '../../models/configuracao.model';
 import { AreaVistoriadaService } from '../../services/area-vistoriada.service';
 import { MatrizCriticidadeService } from '../../services/matriz-criticidade.service';
+import { ComponenteService } from '../../services/componente.service';
+import { SintomaService } from '../../services/sintoma.service';
 import { VeiculoService } from '../../services/veiculo.service';
 import { AreaVistoriada, AreaComponente } from '../../models/area-vistoriada.model';
 import { MatrizCriticidade } from '../../models/matriz-criticidade.model';
 import { firstValueFrom } from 'rxjs';
 
-type FluxoModo = 'tratamento' | 'manutencao' | 'validacao-final';
+type FluxoModo = 'tratamento' | 'manutencao' | 'validacao-final' | 'gestao-os';
 type ModalAcao =
   | 'iniciar-manutencao'
   | 'reclassificar'
@@ -69,6 +72,7 @@ type ModalAcao =
     PeriodoFluxoFilterComponent,
     MapaAvariaComponent,
     ConfirmationModalComponent,
+    MultiSelectComponent,
   ],
   templateUrl: './irregularidade-fluxo-list.html',
   styleUrls: ['./irregularidade-fluxo-list.css'],
@@ -83,6 +87,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   private readonly configuracaoService = inject(ConfiguracaoService);
   private readonly areaService = inject(AreaVistoriadaService);
   private readonly matrizService = inject(MatrizCriticidadeService);
+  private readonly componenteService = inject(ComponenteService);
+  private readonly sintomaService = inject(SintomaService);
   private readonly veiculoService = inject(VeiculoService);
   private readonly appRef = inject(ApplicationRef);
   private readonly environmentInjector = inject(EnvironmentInjector);
@@ -120,13 +126,33 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   /** Filtro por número da Ordem de Serviço (numeroIrregularidade); texto livre, aplicado com debounce. */
   filtroOrdemServico = '';
   private ordemServicoFiltroDebounce?: ReturnType<typeof setTimeout>;
+  /** Filtro por OS OMNI (pedido ERP); debounce. */
+  filtroErpCodigoPedido = '';
+  private erpCodigoFiltroDebounce?: ReturnType<typeof setTimeout>;
+  /** Filtro por OS BRT; debounce. */
+  filtroNumOsExterno = '';
+  private numOsExternoFiltroDebounce?: ReturnType<typeof setTimeout>;
+  /** Filtro por número da vistoria; debounce. */
+  filtroNumeroVistoria = '';
+  private numeroVistoriaFiltroDebounce?: ReturnType<typeof setTimeout>;
   filtroVeiculoId = '';
   filtroVeiculoDescricao = '';
   filtroDataInicio = '';
   filtroDataFim = '';
   filtroGravidade = '';
   filtroOrigemRegistro: '' | FiltroOrigemRegistro = '';
-  filtroStatus: StatusIrregularidade | '' = StatusIrregularidade.REGISTRADA;
+  filtroIdArea = '';
+  filtroIdComponente = '';
+  filtroIdSintoma = '';
+  filtroAreas: Array<{ id: string; nome: string }> = [];
+  filtroComponentes: Array<{ id: string; nome: string }> = [];
+  filtroSintomas: Array<{ id: string; descricao: string }> = [];
+  private filtroComponentesTodos: Array<{ id: string; nome: string }> = [];
+  private filtroSintomasTodos: Array<{ id: string; descricao: string }> = [];
+  /** Empresa de manutenção (obrigatória em Manutenção/Validação). */
+  filtroIdEmpresaManutencao = '';
+  /** Tratamento: vazio recai no padrão Registrada + Não procede. Gestão OS: vazio = todos. */
+  filtroStatus: StatusIrregularidade[] = [];
   gravidadeOptions: GravidadeCriticidade[] = ['VERDE', 'AMARELO', 'VERMELHO'];
   statusOptions: StatusIrregularidade[] = Object.values(StatusIrregularidade);
   info = '';
@@ -177,6 +203,13 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   private pendingReclassSubmit = false;
   readonly reclassRemocaoMarcacoesMessage =
     'O sintoma selecionado não exige marcação no mapa. As marcações atuais serão removidas. Deseja continuar?';
+  showEscopoEmpresaModal = false;
+  escopoEmpresaModalMessage = '';
+  escopoEmpresaModalDetails: string[] = [];
+  /** True quando há pelo menos uma OS elegível para continuar no modal de escopo. */
+  escopoEmpresaPodeContinuar = false;
+  /** Empresa escolhida enquanto o modal de escopo está aberto. */
+  private pendingEscopoEmpresaId = '';
   reclassLoading = false;
   manutencaoPreviewLoading = false;
   manutencaoPreview: RelatorioManutencaoPreview | null = null;
@@ -223,15 +256,27 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   canTratamentoCreateSos = this.authService.hasPermission(
     Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
   );
+  canImprimirTratamento = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_TRATAMENTO_PRINT,
+  );
+  canImprimirManutencao = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_MANUTENCAO_PRINT,
+  );
+  canImprimirValidacao = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT,
+  );
+  canGestaoOsRead = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_GESTAO_OS_READ,
+  );
+  isPrintingRelatorio = false;
   readonly OrigemRegistroIrregularidade = OrigemRegistroIrregularidade;
 
   ngOnInit(): void {
     this.modo = (this.route.snapshot.data['modo'] as FluxoModo) ?? 'tratamento';
     this.configureModo();
     this.loadTempoFaixas();
-    if (this.modo === 'tratamento') {
-      this.loadEmpresas();
-    }
+    this.loadEmpresas();
+    this.loadFiltrosClassificacao();
     this.iniciarListPoll();
     this.document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
@@ -241,6 +286,15 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.document.removeEventListener('visibilitychange', this.onVisibilityChange);
     if (this.ordemServicoFiltroDebounce) {
       clearTimeout(this.ordemServicoFiltroDebounce);
+    }
+    if (this.erpCodigoFiltroDebounce) {
+      clearTimeout(this.erpCodigoFiltroDebounce);
+    }
+    if (this.numOsExternoFiltroDebounce) {
+      clearTimeout(this.numOsExternoFiltroDebounce);
+    }
+    if (this.numeroVistoriaFiltroDebounce) {
+      clearTimeout(this.numeroVistoriaFiltroDebounce);
     }
     this.destroySosModal();
   }
@@ -261,7 +315,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       return [];
     }
     const list =
-      this.modo === 'tratamento'
+      this.modo === 'tratamento' || this.modo === 'gestao-os'
         ? config.tratamento
         : this.modo === 'manutencao'
           ? config.manutencao
@@ -279,32 +333,105 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (this.modo === 'tratamento') {
       this.titulo = 'Tratamento';
       this.descricao = '';
-      this.statusFiltro = [StatusIrregularidade.REGISTRADA];
-      this.statusOptions = this.buildTratamentoStatusPorPermissao();
-      this.sanitizeFiltroStatusTratamento();
-      if (!this.filtroStatus) {
-        this.filtroStatus = StatusIrregularidade.REGISTRADA;
-      }
+      this.statusFiltro = this.statusPadraoTratamento();
+      this.statusOptions = this.buildTratamentoStatusOptions();
+      this.filtroStatus = [...this.statusPadraoTratamento()];
       return;
     }
     if (this.modo === 'manutencao') {
       this.titulo = 'Manutenção';
       this.descricao = '';
       this.statusFiltro = [StatusIrregularidade.EM_MANUTENCAO];
+      this.ensureFiltroEmpresaManutencao();
+      return;
+    }
+    if (this.modo === 'gestao-os') {
+      this.titulo = 'Gestão OS';
+      this.descricao = '';
+      this.statusFiltro = Object.values(StatusIrregularidade);
+      this.statusOptions = Object.values(StatusIrregularidade);
+      this.filtroStatus = [];
+      this.filtroIdEmpresaManutencao = '';
       return;
     }
     this.titulo = 'Validação';
     this.descricao = '';
-    this.statusFiltro = [StatusIrregularidade.CONCLUIDA, StatusIrregularidade.NAO_PROCEDE];
+    this.statusFiltro = [StatusIrregularidade.CONCLUIDA];
+    this.ensureFiltroEmpresaManutencao();
+  }
+
+  /** Empresas do combo de filtro: interseção cadastro × vínculo do usuário. */
+  get empresasFiltroEscopo(): EmpresaTerceira[] {
+    const idsUser = this.getIdsEmpresasUsuario();
+    if (!idsUser.length) {
+      return [];
+    }
+    const allowed = new Set(idsUser);
+    return this.empresas.filter((e) => allowed.has(e.id));
+  }
+
+  get exigeFiltroEmpresa(): boolean {
+    return this.modo === 'manutencao' || this.modo === 'validacao-final';
+  }
+
+  get mostraFiltroEmpresa(): boolean {
+    return this.exigeFiltroEmpresa || this.modo === 'gestao-os';
+  }
+
+  get mostraColunaEmpresa(): boolean {
+    return this.mostraFiltroEmpresa;
+  }
+
+  get mostraFiltroStatus(): boolean {
+    return this.modo === 'tratamento' || this.modo === 'gestao-os';
+  }
+
+  get empresasFiltroOpcoes(): EmpresaTerceira[] {
+    if (this.modo === 'gestao-os') {
+      return this.empresas;
+    }
+    return this.empresasFiltroEscopo;
+  }
+
+  private getIdsEmpresasUsuario(): string[] {
+    const user = this.authService.getCurrentUser();
+    if (user?.idsEmpresasManutencao?.length) {
+      return user.idsEmpresasManutencao;
+    }
+    if (user?.empresasManutencao?.length) {
+      return user.empresasManutencao.map((e) => e.id);
+    }
+    return user?.idEmpresa ? [user.idEmpresa] : [];
+  }
+
+  private ensureFiltroEmpresaManutencao(): void {
+    if (!this.exigeFiltroEmpresa) {
+      return;
+    }
+    const idsUser = this.getIdsEmpresasUsuario();
+    if (!idsUser.length) {
+      this.filtroIdEmpresaManutencao = '';
+      return;
+    }
+    const opcoes = this.empresasFiltroEscopo;
+    const candidatos = opcoes.length ? opcoes.map((e) => e.id) : idsUser;
+    if (
+      !this.filtroIdEmpresaManutencao ||
+      !candidatos.includes(this.filtroIdEmpresaManutencao)
+    ) {
+      this.filtroIdEmpresaManutencao = candidatos[0];
+    }
   }
 
   private loadEmpresas(): void {
     this.empresaService.getAll({ somenteManutencao: true }).subscribe({
       next: (empresas) => {
         this.empresas = empresas ?? [];
+        this.ensureFiltroEmpresaManutencao();
       },
       error: () => {
         this.empresas = [];
+        this.ensureFiltroEmpresaManutencao();
       },
     });
   }
@@ -312,6 +439,30 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   loadItems(avisoPosEmail?: string, silent = false): void {
     if (silent && (this.loading || this.isAutoRefreshPausado())) {
       return;
+    }
+
+    if (this.exigeFiltroEmpresa) {
+      this.ensureFiltroEmpresaManutencao();
+      if (!this.getIdsEmpresasUsuario().length) {
+        if (!silent) {
+          this.loading = false;
+          this.items = [];
+          this.totalItems = 0;
+          this.totalPages = 0;
+          this.error = '';
+          this.info =
+            'Usuário sem empresa de manutenção vinculada. Não há registros para exibir.';
+        }
+        return;
+      }
+      if (!this.filtroIdEmpresaManutencao) {
+        if (!silent) {
+          this.loading = false;
+          this.items = [];
+          this.error = 'Selecione a empresa de manutenção para listar a fila.';
+        }
+        return;
+      }
     }
 
     const selecaoAnterior = silent ? new Set(this.selectedIds) : null;
@@ -325,7 +476,16 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.irregularidadeService
       .listarPorStatus(this.resolveStatusFiltro(), {
         ordemServico: this.ordemServicoParaApi(),
+        erpCodigoPedido: this.erpCodigoPedidoParaApi(),
+        numOsExterno: this.numOsExternoParaApi(),
+        numeroVistoria: this.numeroVistoriaParaApi(),
         idVeiculo: this.filtroVeiculoId,
+        idEmpresaManutencao: this.mostraFiltroEmpresa
+          ? this.filtroIdEmpresaManutencao || undefined
+          : undefined,
+        idArea: this.filtroIdArea || undefined,
+        idComponente: this.filtroIdComponente || undefined,
+        idSintoma: this.filtroIdSintoma || undefined,
         gravidade: this.filtroGravidade
           ? [this.filtroGravidade as GravidadeCriticidade]
           : undefined,
@@ -436,9 +596,54 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     }, 400);
   }
 
+  onErpCodigoPedidoFiltroChange(): void {
+    if (this.erpCodigoFiltroDebounce) {
+      clearTimeout(this.erpCodigoFiltroDebounce);
+    }
+    this.erpCodigoFiltroDebounce = setTimeout(() => {
+      this.erpCodigoFiltroDebounce = undefined;
+      this.resetPageAndLoad();
+    }, 400);
+  }
+
+  onNumOsExternoFiltroChange(): void {
+    if (this.numOsExternoFiltroDebounce) {
+      clearTimeout(this.numOsExternoFiltroDebounce);
+    }
+    this.numOsExternoFiltroDebounce = setTimeout(() => {
+      this.numOsExternoFiltroDebounce = undefined;
+      this.resetPageAndLoad();
+    }, 400);
+  }
+
+  onNumeroVistoriaFiltroChange(): void {
+    if (this.numeroVistoriaFiltroDebounce) {
+      clearTimeout(this.numeroVistoriaFiltroDebounce);
+    }
+    this.numeroVistoriaFiltroDebounce = setTimeout(() => {
+      this.numeroVistoriaFiltroDebounce = undefined;
+      this.resetPageAndLoad();
+    }, 400);
+  }
+
   /** Trecho da O.S.: apenas dígitos são enviados; busca parcial no servidor. */
   private ordemServicoParaApi(): string | undefined {
     const digits = (this.filtroOrdemServico ?? '').replace(/\D/g, '');
+    return digits.length > 0 ? digits : undefined;
+  }
+
+  private erpCodigoPedidoParaApi(): string | undefined {
+    const texto = (this.filtroErpCodigoPedido ?? '').trim();
+    return texto.length > 0 ? texto : undefined;
+  }
+
+  private numOsExternoParaApi(): string | undefined {
+    const digits = (this.filtroNumOsExterno ?? '').replace(/\D/g, '');
+    return digits.length > 0 ? digits : undefined;
+  }
+
+  private numeroVistoriaParaApi(): string | undefined {
+    const digits = (this.filtroNumeroVistoria ?? '').replace(/\D/g, '');
     return digits.length > 0 ? digits : undefined;
   }
 
@@ -456,20 +661,127 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.filtroVeiculoId = '';
     this.filtroVeiculoDescricao = '';
     this.filtroOrdemServico = '';
+    this.filtroErpCodigoPedido = '';
+    this.filtroNumOsExterno = '';
+    this.filtroNumeroVistoria = '';
     this.filtroPeriodoClearSeq += 1;
     this.filtroGravidade = '';
     this.filtroOrigemRegistro = '';
+    this.filtroIdArea = '';
+    this.filtroIdComponente = '';
+    this.filtroIdSintoma = '';
+    this.filtroComponentes = [...this.filtroComponentesTodos];
+    this.filtroSintomas = [...this.filtroSintomasTodos];
     if (this.modo === 'tratamento') {
-      this.filtroStatus = StatusIrregularidade.REGISTRADA;
+      this.filtroStatus = [...this.statusPadraoTratamento()];
+    }
+    if (this.modo === 'gestao-os') {
+      this.filtroStatus = [];
+    }
+    if (this.modo === 'gestao-os') {
+      this.filtroIdEmpresaManutencao = '';
+    }
+    if (this.exigeFiltroEmpresa) {
+      this.ensureFiltroEmpresaManutencao();
     }
     this.selectedIds.clear();
     this.error = '';
     this.info = '';
-    this.currentPage = 1;
+    this.resetPageAndLoad();
   }
 
   onComboFilterChange(): void {
     this.resetPageAndLoad();
+  }
+
+  onFiltroAreaChange(): void {
+    this.filtroIdComponente = '';
+    this.filtroIdSintoma = '';
+    void this.refreshFiltroComponentes().then(() => {
+      this.filtroSintomas = [...this.filtroSintomasTodos];
+      this.resetPageAndLoad();
+    });
+  }
+
+  onFiltroComponenteChange(): void {
+    this.filtroIdSintoma = '';
+    void this.refreshFiltroSintomas().then(() => this.resetPageAndLoad());
+  }
+
+  private loadFiltrosClassificacao(): void {
+    forkJoin({
+      areas: this.areaService.getAll(undefined, true),
+      componentes: this.componenteService.getAll(true),
+      sintomas: this.sintomaService.getAll(true),
+    }).subscribe({
+      next: ({ areas, componentes, sintomas }) => {
+        this.filtroAreas = (areas ?? [])
+          .map((a) => ({ id: a.id, nome: a.nome }))
+          .sort((a, b) => a.nome.localeCompare(b.nome));
+        this.filtroComponentesTodos = (componentes ?? [])
+          .map((c) => ({ id: c.id, nome: c.nome }))
+          .sort((a, b) => a.nome.localeCompare(b.nome));
+        this.filtroSintomasTodos = (sintomas ?? [])
+          .map((s) => ({ id: s.id, descricao: s.descricao }))
+          .sort((a, b) => a.descricao.localeCompare(b.descricao));
+        this.filtroComponentes = [...this.filtroComponentesTodos];
+        this.filtroSintomas = [...this.filtroSintomasTodos];
+      },
+      error: () => {
+        this.filtroAreas = [];
+        this.filtroComponentesTodos = [];
+        this.filtroSintomasTodos = [];
+        this.filtroComponentes = [];
+        this.filtroSintomas = [];
+      },
+    });
+  }
+
+  private async refreshFiltroComponentes(): Promise<void> {
+    if (!this.filtroIdArea) {
+      this.filtroComponentes = [...this.filtroComponentesTodos];
+      return;
+    }
+    try {
+      const vinculados = await firstValueFrom(
+        this.areaService.listComponentes(this.filtroIdArea),
+      );
+      this.filtroComponentes = (vinculados ?? [])
+        .map((v: AreaComponente | Record<string, unknown>) => {
+          const raw = v as Record<string, unknown>;
+          const id = String(raw['idComponente'] ?? raw['idcomponente'] ?? '').trim();
+          const componente = raw['componente'] as Record<string, unknown> | undefined;
+          const nome = String(componente?.['nome'] ?? raw['nomeComponente'] ?? id).trim();
+          return { id, nome };
+        })
+        .filter((c) => !!c.id)
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+    } catch {
+      this.filtroComponentes = [];
+    }
+  }
+
+  private async refreshFiltroSintomas(): Promise<void> {
+    if (!this.filtroIdComponente) {
+      this.filtroSintomas = [...this.filtroSintomasTodos];
+      return;
+    }
+    try {
+      const matriz = await firstValueFrom(
+        this.matrizService.getAll(this.filtroIdComponente),
+      );
+      const map = new Map<string, string>();
+      (matriz ?? []).forEach((m: MatrizCriticidade) => {
+        if (m.idSintoma) {
+          map.set(m.idSintoma, m.sintoma?.descricao ?? m.idSintoma);
+        }
+      });
+      this.filtroSintomas = Array.from(map.entries())
+        .map(([id, descricao]) => ({ id, descricao }))
+        .sort((a, b) => a.descricao.localeCompare(b.descricao));
+    } catch {
+      this.filtroSintomas = [];
+    }
   }
 
   onPageChange(page: number): void {
@@ -503,7 +815,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     }
     return (
       item.statusAtual === StatusIrregularidade.REGISTRADA ||
-      item.statusAtual === StatusIrregularidade.RETRABALHO_GARANTIA
+      item.statusAtual === StatusIrregularidade.RETRABALHO_GARANTIA ||
+      item.statusAtual === StatusIrregularidade.NAO_PROCEDE
     );
   }
 
@@ -537,8 +850,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return (
       this.modo === 'validacao-final' &&
       this.canValidacaoFinalUpdate &&
-      (item.statusAtual === StatusIrregularidade.CONCLUIDA ||
-        item.statusAtual === StatusIrregularidade.NAO_PROCEDE)
+      item.statusAtual === StatusIrregularidade.CONCLUIDA
     );
   }
 
@@ -630,6 +942,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.showReclassSintomaOptions = false;
     this.reclassRemocaoMarcacoesAceita = false;
     this.showReclassRemocaoMarcacoesModal = false;
+    this.fecharEscopoEmpresaModal();
     this.pendingReclassSintoma = null;
     this.pendingReclassSubmit = false;
     this.reclassLoading = false;
@@ -662,6 +975,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.showReclassSintomaOptions = false;
     this.reclassRemocaoMarcacoesAceita = false;
     this.showReclassRemocaoMarcacoesModal = false;
+    this.fecharEscopoEmpresaModal();
     this.pendingReclassSintoma = null;
     this.pendingReclassSubmit = false;
     this.reclassLoading = false;
@@ -1069,9 +1383,76 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.manutencaoPreview = null;
     this.modalError = '';
     this.manutencaoEtapa = 'idle';
-    if (this.modalIdEmpresaManutencao) {
-      this.gerarPreviewManutencao();
+    if (!this.modalIdEmpresaManutencao) {
+      return;
     }
+    const empresa = this.getEmpresaManutencaoSelecionada();
+    if (!empresa) {
+      return;
+    }
+    const selecionadas = this.items.filter((item) =>
+      this.actionTargetIds.includes(item.id),
+    );
+    const bloqueadas = this.listarOsForaDoEscopo(empresa, selecionadas);
+    if (bloqueadas.length > 0) {
+      const foraCount = this.contarOsForaDoEscopo(empresa, selecionadas);
+      const elegiveisCount = selecionadas.length - foraCount;
+      this.pendingEscopoEmpresaId = empresa.id;
+      this.escopoEmpresaPodeContinuar = elegiveisCount > 0;
+      this.escopoEmpresaModalMessage =
+        `A empresa "${empresa.descricao}" não pode receber ${foraCount} OS da seleção. ` +
+        (elegiveisCount > 0
+          ? `Você pode continuar só com as ${elegiveisCount} OS elegíveis (as demais ficam no Tratamento).`
+          : 'Nenhuma OS da seleção está no escopo desta empresa. Escolha outra empresa ou ajuste a seleção.');
+      this.escopoEmpresaModalDetails = bloqueadas;
+      this.showEscopoEmpresaModal = true;
+      this.modalIdEmpresaManutencao = '';
+      return;
+    }
+    this.gerarPreviewManutencao();
+  }
+
+  fecharEscopoEmpresaModal(): void {
+    this.showEscopoEmpresaModal = false;
+    this.escopoEmpresaModalMessage = '';
+    this.escopoEmpresaModalDetails = [];
+    this.escopoEmpresaPodeContinuar = false;
+    this.pendingEscopoEmpresaId = '';
+  }
+
+  /** Remove OS fora do escopo e segue o envio com as elegíveis. */
+  continuarSoComOsElegiveisEscopo(): void {
+    const empresaId = this.pendingEscopoEmpresaId;
+    const empresa = this.empresas.find((e) => e.id === empresaId);
+    this.fecharEscopoEmpresaModal();
+    if (!empresa) {
+      this.modalError = 'Empresa de manutenção não encontrada.';
+      return;
+    }
+    const elegiveis = this.items.filter(
+      (item) =>
+        this.actionTargetIds.includes(item.id) &&
+        this.itemNoEscopoEmpresa(empresa, item),
+    );
+    if (!elegiveis.length) {
+      this.modalError =
+        'Nenhuma OS da seleção está no escopo desta empresa. Ajuste a seleção ou o cadastro.';
+      this.modalIdEmpresaManutencao = '';
+      return;
+    }
+    this.actionTargetIds = elegiveis.map((item) => item.id);
+    this.selectedIds = new Set(this.actionTargetIds);
+    this.modalIdEmpresaManutencao = empresa.id;
+    this.modalError = '';
+    this.gerarPreviewManutencao();
+  }
+
+  onEscopoEmpresaModalConfirmed(): void {
+    if (this.escopoEmpresaPodeContinuar) {
+      this.continuarSoComOsElegiveisEscopo();
+      return;
+    }
+    this.fecharEscopoEmpresaModal();
   }
 
   onActionModalOverlayClick(): void {
@@ -1454,6 +1835,77 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       });
   }
 
+  get canShowImprimir(): boolean {
+    if (this.modo === 'tratamento') {
+      return this.canImprimirTratamento;
+    }
+    if (this.modo === 'manutencao') {
+      return this.canImprimirManutencao;
+    }
+    if (this.modo === 'validacao-final') {
+      return this.canImprimirValidacao;
+    }
+    if (this.modo === 'gestao-os') {
+      return this.canGestaoOsRead;
+    }
+    return false;
+  }
+
+  imprimirSelecionados(): void {
+    const ids = this.getSelectedIds();
+    if (!ids.length || this.isPrintingRelatorio || !this.canShowImprimir) {
+      return;
+    }
+    this.isPrintingRelatorio = true;
+    this.error = '';
+    this.irregularidadeService.gerarRelatorioPdfLote(ids).subscribe({
+      next: async (blob) => {
+        this.isPrintingRelatorio = false;
+        if (!blob?.size) {
+          this.error = 'O servidor retornou um PDF vazio.';
+          return;
+        }
+        const head = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+        const isPdf =
+          head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46;
+        if (!isPdf) {
+          try {
+            const text = await blob.text();
+            const parsed = JSON.parse(text) as { message?: string };
+            this.error = parsed?.message ?? 'Resposta inválida ao gerar o PDF.';
+          } catch {
+            this.error =
+              'Não foi possível abrir o PDF (arquivo corrompido ou formato inválido).';
+          }
+          return;
+        }
+        const pdfBlob =
+          blob.type === 'application/pdf'
+            ? blob
+            : new Blob([blob], { type: 'application/pdf' });
+        const url = URL.createObjectURL(pdfBlob);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: (err) => {
+        this.isPrintingRelatorio = false;
+        const body = err?.error;
+        if (body instanceof Blob) {
+          void body.text().then((text) => {
+            try {
+              const parsed = JSON.parse(text) as { message?: string };
+              this.error = parsed?.message ?? 'Erro ao gerar o relatório em PDF.';
+            } catch {
+              this.error = text || 'Erro ao gerar o relatório em PDF.';
+            }
+          });
+          return;
+        }
+        this.error = err?.error?.message || 'Erro ao gerar o relatório em PDF.';
+      },
+    });
+  }
+
   get hasSelectedItems(): boolean {
     return this.getSelectedIds().length > 0;
   }
@@ -1480,11 +1932,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   }
 
   formatOrdemServico(item: IrregularidadeFluxoItem): string {
-    const omni = item.numeroIrregularidade;
-    if (item.numOsExternoAtual) {
-      return omni ? `${omni} / BRT ${item.numOsExternoAtual}` : `BRT ${item.numOsExternoAtual}`;
-    }
-    return omni ? String(omni) : '-';
+    return item.numeroIrregularidade != null
+      ? String(item.numeroIrregularidade)
+      : '-';
   }
 
   /** Texto do preview do modal (integração BRT). */
@@ -1504,6 +1954,77 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
 
   private getEmpresaManutencaoSelecionada(): EmpresaTerceira | undefined {
     return this.empresas.find((e) => e.id === this.modalIdEmpresaManutencao);
+  }
+
+  /** Empresas de manutenção disponíveis no combo de envio. */
+  get empresasElegiveisEnvio(): EmpresaTerceira[] {
+    return this.empresas.filter((e) => e.ehEmpresaManutencao);
+  }
+
+  /**
+   * Retorna linhas "OS xxx (veículo) — motivo" para itens fora do escopo da empresa.
+   */
+  private listarOsForaDoEscopo(
+    empresa: EmpresaTerceira,
+    itens: IrregularidadeFluxoItem[],
+  ): string[] {
+    const linhas: string[] = [];
+    for (const item of itens) {
+      if (this.itemNoEscopoEmpresa(empresa, item)) {
+        continue;
+      }
+      const prefixo = `OS ${this.formatOrdemServico(item)} (${this.formatCodigoVeiculoOs(item)})`;
+      const combustiveis = empresa.combustiveisAtendidos ?? [];
+      const areas = empresa.idsAreasAtendidas ?? [];
+      if (combustiveis.length > 0) {
+        const combustivel = item.veiculoCombustivel?.trim();
+        if (!combustivel || !combustiveis.includes(combustivel)) {
+          linhas.push(
+            `${prefixo} — não atende veículos com combustível "${combustivel || 'não informado'}"`,
+          );
+        }
+      }
+      if (areas.length > 0 && !areas.includes(item.idarea)) {
+        const nomeArea = item.nomeArea?.trim() || item.idarea;
+        linhas.push(`${prefixo} — não atende área "${nomeArea}"`);
+      }
+    }
+    return linhas;
+  }
+
+  private contarOsForaDoEscopo(
+    empresa: EmpresaTerceira,
+    itens: IrregularidadeFluxoItem[],
+  ): number {
+    return itens.filter((item) => !this.itemNoEscopoEmpresa(empresa, item)).length;
+  }
+
+  private itemNoEscopoEmpresa(
+    empresa: EmpresaTerceira,
+    item: IrregularidadeFluxoItem,
+  ): boolean {
+    const combustiveis = empresa.combustiveisAtendidos ?? [];
+    const areas = empresa.idsAreasAtendidas ?? [];
+    if (combustiveis.length > 0) {
+      const combustivel = item.veiculoCombustivel?.trim();
+      if (!combustivel || !combustiveis.includes(combustivel)) {
+        return false;
+      }
+    }
+    if (areas.length > 0 && !areas.includes(item.idarea)) {
+      return false;
+    }
+    return true;
+  }
+
+  /** Código do veículo (primeiro token da descrição, ex.: 1210). */
+  private formatCodigoVeiculoOs(item: IrregularidadeFluxoItem): string {
+    const descricao = item.veiculoDescricao?.trim();
+    if (!descricao) {
+      return item.veiculoPlaca?.trim() || '-';
+    }
+    const codigo = descricao.split(/\s+/)[0]?.trim();
+    return codigo || '-';
   }
 
   private isEmpresaBrtOs(empresa?: EmpresaTerceira): boolean {
@@ -1535,13 +2056,19 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     const elegiveisStatus = new Set([
       StatusIrregularidade.REGISTRADA,
       StatusIrregularidade.RETRABALHO_GARANTIA,
+      StatusIrregularidade.NAO_PROCEDE,
     ]);
+    if (!empresa) {
+      return 'Selecione a empresa de manutenção.';
+    }
 
     for (const [idVistoria, grupo] of porVistoria) {
+      // Elegíveis BRT = status ok + dentro do escopo da empresa (split por empresa).
       const elegiveisNaLista = this.items.filter(
         (item) =>
           item.idvistoria === idVistoria &&
-          elegiveisStatus.has(item.statusAtual),
+          elegiveisStatus.has(item.statusAtual) &&
+          this.itemNoEscopoEmpresa(empresa, item),
       );
       const selecionadosIds = new Set(grupo.map((i) => i.id));
       const faltantes = elegiveisNaLista.filter((i) => !selecionadosIds.has(i.id));
@@ -1551,7 +2078,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
           elegiveisNaLista[0]?.numeroVistoria ??
           idVistoria.slice(0, 8);
         return (
-          `A vistoria ${numero} tem ${elegiveisNaLista.length} irregularidade(s) elegível(is) na lista; ` +
+          `A vistoria ${numero} tem ${elegiveisNaLista.length} irregularidade(s) elegível(is) no escopo de ${empresa.descricao}; ` +
           `selecione todas para enviar à BRT (${grupo.length} selecionada(s)).`
         );
       }
@@ -1617,11 +2144,12 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (this.modo !== 'tratamento') {
       return false;
     }
-    return (
-      this.filtroStatus === '' ||
-      this.filtroStatus === StatusIrregularidade.REGISTRADA ||
-      this.filtroStatus === StatusIrregularidade.RETRABALHO_GARANTIA
-    );
+    const acionaveis = new Set([
+      StatusIrregularidade.REGISTRADA,
+      StatusIrregularidade.RETRABALHO_GARANTIA,
+      StatusIrregularidade.NAO_PROCEDE,
+    ]);
+    return this.resolveStatusFiltro().some((status) => acionaveis.has(status));
   }
 
   getSelectedIds(): string[] {
@@ -2067,55 +2595,34 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     };
   }
 
+  readonly labelStatusFiltro = (value: string): string =>
+    this.getStatusLabel(value as StatusIrregularidade);
+
   private resolveStatusFiltro(): StatusIrregularidade[] {
+    const selecionados = (this.filtroStatus ?? []).filter(Boolean);
+    if (this.modo === 'gestao-os') {
+      return selecionados.length > 0 ? selecionados : this.statusOptions;
+    }
     if (this.modo !== 'tratamento') {
       return this.statusFiltro;
     }
-    const permitidos = this.buildTratamentoStatusPorPermissao();
-    if (!this.filtroStatus) {
-      return permitidos;
-    }
-    if (!permitidos.includes(this.filtroStatus)) {
-      return [StatusIrregularidade.REGISTRADA];
-    }
-    return [this.filtroStatus];
+    const permitidos = this.buildTratamentoStatusOptions();
+    const validos = selecionados.filter((status) => permitidos.includes(status));
+    return validos.length > 0 ? validos : this.statusPadraoTratamento();
   }
 
-  /**
-   * Status disponíveis na tela Tratamento conforme permissões :read do usuário.
-   * tratamento:read → REGISTRADA, RETRABALHO_GARANTIA, CANCELADA
-   * manutencao:read → EM_MANUTENCAO
-   * validacao_final:read → CONCLUIDA, NAO_PROCEDE, VALIDADA
-   */
-  private buildTratamentoStatusPorPermissao(): StatusIrregularidade[] {
-    const statuses: StatusIrregularidade[] = [];
-    if (this.canTratamentoRead) {
-      statuses.push(
-        StatusIrregularidade.REGISTRADA,
-        StatusIrregularidade.RETRABALHO_GARANTIA,
-        StatusIrregularidade.CANCELADA,
-      );
-    }
-    if (this.canManutencaoRead) {
-      statuses.push(StatusIrregularidade.EM_MANUTENCAO);
-    }
-    if (this.canValidacaoFinalRead) {
-      statuses.push(
-        StatusIrregularidade.CONCLUIDA,
-        StatusIrregularidade.NAO_PROCEDE,
-        StatusIrregularidade.VALIDADA,
-      );
-    }
-    return statuses;
+  private statusPadraoTratamento(): StatusIrregularidade[] {
+    return [StatusIrregularidade.REGISTRADA, StatusIrregularidade.NAO_PROCEDE];
   }
 
-  private sanitizeFiltroStatusTratamento(): void {
-    if (this.modo !== 'tratamento' || !this.filtroStatus) {
-      return;
-    }
-    if (!this.statusOptions.includes(this.filtroStatus)) {
-      this.filtroStatus = StatusIrregularidade.REGISTRADA;
-    }
+  /** Combo do Tratamento: padrão operacional + retrabalho/cancelada (não no «Todos»). */
+  private buildTratamentoStatusOptions(): StatusIrregularidade[] {
+    return [
+      StatusIrregularidade.REGISTRADA,
+      StatusIrregularidade.NAO_PROCEDE,
+      StatusIrregularidade.RETRABALHO_GARANTIA,
+      StatusIrregularidade.CANCELADA,
+    ];
   }
 
   private buildMensagemSucessoManutencao(res: RelatorioManutencaoExecucao): string {
@@ -2128,6 +2635,11 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     }
     if (res?.emailEnviado) {
       msg += '. E-mail com relatório enviado';
+    }
+    if (res?.impressaoEnviada) {
+      msg += '. Relatório enviado à impressora';
+    } else if (res?.impressaoErro) {
+      msg += `. Impressão não concluída: ${res.impressaoErro}`;
     }
     msg += '.';
     if (falhas.length > 0) {

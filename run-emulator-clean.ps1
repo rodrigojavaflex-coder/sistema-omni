@@ -219,14 +219,20 @@ if ($NewVersion -or -not [string]::IsNullOrWhiteSpace($AppVersion)) {
 Invoke-Step -Title "Build e sync (mobile - $buildConfig)" -Action {
   Set-Location $mobileDir
   npm run build -- --configuration $buildConfig
+  if ($LASTEXITCODE -ne 0) { throw "Falha no build Angular (exit $LASTEXITCODE)." }
   npx cap sync android
+  if ($LASTEXITCODE -ne 0) { throw "Falha no cap sync android (exit $LASTEXITCODE)." }
+  npm run fix:agp9-proguard
+  if ($LASTEXITCODE -ne 0) { throw "Falha no fix AGP9 proguard (exit $LASTEXITCODE)." }
 }
 
 Invoke-Step -Title "Clean e assembleDebug (android)" -Action {
   Set-Location $androidDir
   .\gradlew --stop
   .\gradlew clean --no-daemon
+  if ($LASTEXITCODE -ne 0) { throw "Falha no gradle clean (exit $LASTEXITCODE)." }
   .\gradlew assembleDebug --no-daemon
+  if ($LASTEXITCODE -ne 0) { throw "Falha no gradle assembleDebug (exit $LASTEXITCODE)." }
 }
 
 Invoke-Step -Title "Configurar adb na sessao (se necessario)" -Action {

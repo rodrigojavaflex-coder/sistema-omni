@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { MobileAppVersionGuard } from './guards/mobile-app-version.guard';
 import { Usuario } from '../modules/usuarios/entities/usuario.entity';
+import { UsuarioEmpresaManutencao } from '../modules/usuarios/entities/usuario-empresa-manutencao.entity';
 import { Perfil } from '../modules/perfil/entities/perfil.entity';
 import { Configuracao } from '../modules/configuracao/entities/configuracao.entity';
 
@@ -14,7 +15,7 @@ import { Configuracao } from '../modules/configuracao/entities/configuracao.enti
   imports: [
     AuthModule,
     ConfigModule,
-    TypeOrmModule.forFeature([Usuario, Perfil, Configuracao]),
+    TypeOrmModule.forFeature([Usuario, UsuarioEmpresaManutencao, Perfil, Configuracao]),
   ],
   providers: [
     MobileAppVersionGuard,

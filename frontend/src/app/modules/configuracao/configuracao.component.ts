@@ -22,7 +22,8 @@ export class ConfiguracaoComponent implements OnInit {
   error: string | null = null;
   success: string | null = null;
   logoPreview: string | null = null;
-  activeTab: 'sistema' | 'email' | 'erp' | 'vistoria' | 'app' = 'sistema';
+  activeTab: 'sistema' | 'email' | 'erp' | 'impressao' | 'vistoria' | 'app' =
+    'sistema';
   showErpApiKey = false;
   erpApiKeyConfigured = false;
   erpApiKeyLoading = false;
@@ -59,6 +60,10 @@ export class ConfiguracaoComponent implements OnInit {
       erpTipoPedido: [0],
       erpMensagemErroPadrao: [''],
       erpTimeoutMs: [30000],
+      impressaoAtivo: [false],
+      impressoraIp: [''],
+      impressoraPorta: [9100],
+      impressaoTimeoutMs: [10000],
       odometroDiffMaxKm: [500],
       mobileVersaoMinima: [''],
     });
@@ -152,6 +157,10 @@ export class ConfiguracaoComponent implements OnInit {
           erpTipoPedido: config.erpVistoriaConfig?.tipoPedido ?? 0,
           erpMensagemErroPadrao: config.erpVistoriaConfig?.mensagemErroPadrao ?? '',
           erpTimeoutMs: config.erpVistoriaConfig?.timeoutMs ?? 30000,
+          impressaoAtivo: config.impressaoManutencaoConfig?.ativo ?? false,
+          impressoraIp: config.impressaoManutencaoConfig?.impressoraIp ?? '',
+          impressoraPorta: config.impressaoManutencaoConfig?.impressoraPorta ?? 9100,
+          impressaoTimeoutMs: config.impressaoManutencaoConfig?.timeoutMs ?? 10000,
           odometroDiffMaxKm:
             config.odometroDiffMaxKm ?? this.odometroDiffMaxKmPadrao,
           mobileVersaoMinima: config.mobileVersaoMinima ?? '',
@@ -194,6 +203,26 @@ export class ConfiguracaoComponent implements OnInit {
         'Com o envio ao ERP ativo, preencha URL, tenant e API Key.';
       return;
     }
+    const impressaoAtivo = !!this.form.value.impressaoAtivo;
+    const impressoraIp = (this.form.value.impressoraIp ?? '').trim();
+    const impressoraPorta = Number(this.form.value.impressoraPorta ?? 9100);
+    const ipv4 =
+      /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)$/;
+    if (impressaoAtivo) {
+      if (!impressoraIp || !ipv4.test(impressoraIp)) {
+        this.error =
+          'Com a impressão ativa, informe um IP IPv4 válido da impressora.';
+        return;
+      }
+      if (
+        !Number.isFinite(impressoraPorta) ||
+        impressoraPorta < 1 ||
+        impressoraPorta > 65535
+      ) {
+        this.error = 'Porta da impressora deve estar entre 1 e 65535.';
+        return;
+      }
+    }
     this.loading = true;
     const formData = new FormData();
     formData.append('nomeCliente', this.form.value.nomeCliente);
@@ -233,6 +262,15 @@ export class ConfiguracaoComponent implements OnInit {
         mensagemErroPadrao:
           (this.form.value.erpMensagemErroPadrao ?? '').trim() || undefined,
         timeoutMs: Number(this.form.value.erpTimeoutMs ?? 30000),
+      }),
+    );
+    formData.append(
+      'impressaoManutencaoConfig',
+      JSON.stringify({
+        ativo: impressaoAtivo,
+        impressoraIp,
+        impressoraPorta: Number.isFinite(impressoraPorta) ? impressoraPorta : 9100,
+        timeoutMs: Number(this.form.value.impressaoTimeoutMs ?? 10000),
       }),
     );
     const odometroDiffRaw = this.form.value.odometroDiffMaxKm;

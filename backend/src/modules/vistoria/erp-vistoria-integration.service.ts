@@ -1,16 +1,13 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { fetch as undiciFetch } from 'undici';
-import { StatusErpVistoria } from '../../common/enums/status-erp-vistoria.enum';
-import { StatusVistoria } from '../../common/enums/status-vistoria.enum';
 import { OrigemVistoria } from '../../common/enums/origem-vistoria.enum';
 import { TipoVistoria } from '../../common/enums/tipo-vistoria.enum';
 import {
   Configuracao,
   ErpVistoriaConfig,
 } from '../configuracao/entities/configuracao.entity';
-import { EnviarErpVistoriaRespostaDto } from './dto/enviar-erp-vistoria-resultado.dto';
 import { Irregularidade } from './entities/irregularidade.entity';
 import { Vistoria } from './entities/vistoria.entity';
 
@@ -52,6 +49,10 @@ interface ErpLoteResposta {
   vistorias?: ErpLoteItemResposta[];
 }
 
+export type ErpEnvioVeiculoResultado =
+  | { ok: true; codigoPedido: string; jaExistia: boolean }
+  | { ok: false; erro: string };
+
 @Injectable()
 export class ErpVistoriaIntegrationService {
   private readonly logger = new Logger(ErpVistoriaIntegrationService.name);
@@ -65,162 +66,105 @@ export class ErpVistoriaIntegrationService {
     private readonly configuracaoRepository: Repository<Configuracao>,
   ) {}
 
+  /**
+   * Integração habilitada e credenciais prontas (pronta para POST).
+   */
   async isIntegracaoAtiva(): Promise<boolean> {
     const config = await this.carregarConfig();
     return this.configPronta(config);
   }
 
-  async enfileirarAposFinalizar(vistoriaId: string): Promise<void> {
-    const vistoria = await this.vistoriaRepository.findOne({
-      where: { id: vistoriaId },
-    });
-    if (!vistoria || vistoria.status !== StatusVistoria.FINALIZADA) {
-      return;
+  /**
+   * Flag «Habilitar envio ao ERP» ligada (pode estar incompleta).
+   */
+  async isEnvioHabilitado(): Promise<boolean> {
+    const config = await this.carregarConfig();
+    return !!config?.ativo;
+  }
+
+  /**
+   * Quando a flag está ativa mas URL/tenant/key faltam.
+   */
+  async obterErroConfigIncompleta(): Promise<string | null> {
+    const config = await this.carregarConfig();
+    if (!config?.ativo) {
+      return null;
+    }
+    if (this.configPronta(config)) {
+      return null;
+    }
+    return 'Configure URL, tenant e API Key da integração ERP.';
+  }
+
+  /**
+   * Envia (ou reaproveita) o pedido ERP do grupo de irregularidades do mesmo veículo.
+   * Idempotente: se todas já têm o mesmo erp_codigo_pedido, não chama a API.
+   */
+  async garantirEnvioGrupoVeiculo(
+    irregularidades: Irregularidade[],
+  ): Promise<ErpEnvioVeiculoResultado> {
+    if (irregularidades.length === 0) {
+      return { ok: false, erro: 'Nenhuma irregularidade para envio ao ERP' };
     }
 
-    const qtd = await this.irregularidadeRepository.count({
-      where: { idVistoria: vistoriaId },
-    });
-    if (qtd === 0) {
-      vistoria.erpStatus = StatusErpVistoria.NAO_APLICA;
-      vistoria.erpUltimoErro = null;
-      await this.vistoriaRepository.save(vistoria);
-      return;
+    const codigos = new Set(
+      irregularidades
+        .map((item) => item.erpCodigoPedido?.trim())
+        .filter((item): item is string => !!item),
+    );
+    if (
+      codigos.size === 1 &&
+      irregularidades.every((item) => !!item.erpCodigoPedido?.trim())
+    ) {
+      const codigoPedido = [...codigos][0];
+      return { ok: true, codigoPedido, jaExistia: true };
     }
 
     const config = await this.carregarConfig();
     if (!config?.ativo) {
-      return;
+      return { ok: false, erro: 'Envio ao ERP desabilitado na configuração do sistema' };
     }
     if (!this.configPronta(config)) {
-      await this.marcarFalha(
-        vistoria,
-        this.resolverMensagemErro(undefined, config),
-      );
-      return;
+      return {
+        ok: false,
+        erro: 'Configure URL, tenant e API Key da integração ERP.',
+      };
     }
 
-    vistoria.erpStatus = StatusErpVistoria.PENDENTE;
-    vistoria.erpUltimoErro = null;
-    await this.vistoriaRepository.save(vistoria);
-    await this.enviarIds([vistoriaId], { exigirAtivo: false });
-  }
-
-  async enviarIds(
-    ids: string[],
-    opcoes?: { exigirAtivo?: boolean },
-  ): Promise<EnviarErpVistoriaRespostaDto> {
-    const exigirAtivo = opcoes?.exigirAtivo !== false;
-    const config = await this.carregarConfig();
-    if (exigirAtivo && !config?.ativo) {
-      throw new BadRequestException(
-        'Envio ao ERP desabilitado na configuração do sistema',
-      );
-    }
-    if (!this.configPronta(config)) {
-      throw new BadRequestException(
-        'Configure URL, tenant e API Key da integração ERP.',
-      );
+    const montagem = this.montarPayloadGrupoVeiculo(irregularidades, config);
+    if (!montagem.ok) {
+      await this.marcarFalhaGrupo(irregularidades, montagem.erro);
+      return { ok: false, erro: montagem.erro };
     }
 
-    const unicos = [...new Set(ids)];
-    const itens: EnviarErpVistoriaRespostaDto['itens'] = [];
-    const paraEnviar: Array<{ vistoria: Vistoria; payload: ErpLoteItemPayload }> =
-      [];
-
-    for (const id of unicos) {
-      const vistoria = await this.carregarCapaParaEnvio(id);
-      if (!vistoria) {
-        itens.push({
-          id,
-          resultado: 'IGNORADA',
-          erro: 'Vistoria não encontrada',
-        });
-        continue;
-      }
-      const motivo = await this.motivoInelegivel(vistoria);
-      if (motivo) {
-        itens.push({ id, resultado: 'IGNORADA', erro: motivo });
-        continue;
-      }
-
-      const montagem = this.montarPayloadItem(vistoria, config);
-      if (!montagem.ok) {
-        await this.marcarFalha(vistoria, montagem.erro);
-        itens.push({ id, resultado: 'FALHA', erro: montagem.erro });
-        continue;
-      }
-      paraEnviar.push({ vistoria, payload: montagem.payload });
+    const lote = await this.postarLote(config, [montagem.payload]);
+    if (lote.falhaGeral) {
+      const erro = this.resolverMensagemErro(lote.mensagemGeral, config);
+      await this.marcarFalhaGrupo(irregularidades, erro);
+      return { ok: false, erro };
     }
 
-    if (paraEnviar.length > 0) {
-      const loteItens = await this.postarLote(
+    const respostaItem = lote.porIndice.get(1) ?? null;
+    const codigo = respostaItem?.pedido?.codigo_pedido;
+    const sucessoItem = respostaItem?.sucesso !== false && codigo != null;
+    if (!sucessoItem) {
+      const erro = this.resolverMensagemErro(
+        this.extrairMensagemItem(respostaItem),
         config,
-        paraEnviar.map((item) => item.payload),
       );
-      for (let i = 0; i < paraEnviar.length; i++) {
-        const { vistoria } = paraEnviar[i];
-        const respostaItem = loteItens.porIndice.get(i + 1) ?? null;
-        if (loteItens.falhaGeral) {
-          const erro = this.resolverMensagemErro(
-            loteItens.mensagemGeral,
-            config,
-          );
-          await this.marcarFalha(vistoria, erro);
-          itens.push({ id: vistoria.id, resultado: 'FALHA', erro });
-          continue;
-        }
-        const codigo = respostaItem?.pedido?.codigo_pedido;
-        const sucessoItem = respostaItem?.sucesso !== false && codigo != null;
-        if (sucessoItem) {
-          const numero = String(codigo);
-          await this.marcarEnviado(vistoria, numero);
-          itens.push({
-            id: vistoria.id,
-            resultado: 'ENVIADO',
-            erpNumeroVistoria: numero,
-          });
-          continue;
-        }
-        const erro = this.resolverMensagemErro(
-          this.extrairMensagemItem(respostaItem),
-          config,
-        );
-        await this.marcarFalha(vistoria, erro);
-        itens.push({ id: vistoria.id, resultado: 'FALHA', erro });
-      }
+      await this.marcarFalhaGrupo(irregularidades, erro);
+      return { ok: false, erro };
     }
 
-    return {
-      enviadas: itens.filter((item) => item.resultado === 'ENVIADO').length,
-      falhas: itens.filter((item) => item.resultado === 'FALHA').length,
-      ignoradas: itens.filter((item) => item.resultado === 'IGNORADA').length,
-      itens,
-    };
+    const codigoPedido = String(codigo);
+    await this.marcarEnviadoGrupo(irregularidades, codigoPedido);
+    return { ok: true, codigoPedido, jaExistia: false };
   }
 
-  async anexarElegibilidade(vistorias: Vistoria[]): Promise<Vistoria[]> {
-    if (vistorias.length === 0) {
-      return vistorias;
-    }
-    const ids = vistorias.map((item) => item.id);
-    const rows = await this.irregularidadeRepository
-      .createQueryBuilder('i')
-      .select('i.idVistoria', 'id')
-      .addSelect('COUNT(*)', 'qtd')
-      .where('i.idVistoria IN (:...ids)', { ids })
-      .groupBy('i.idVistoria')
-      .getRawMany<{ id: string; qtd: string }>();
-    const comIrregularidade = new Set(
-      rows.filter((row) => Number(row.qtd) > 0).map((row) => row.id),
-    );
-    for (const vistoria of vistorias) {
-      vistoria.erpElegivel = this.ehElegivel(
-        vistoria,
-        comIrregularidade.has(vistoria.id),
-      );
-    }
-    return vistorias;
+  limparVinculoErp(irregularidade: Irregularidade): void {
+    irregularidade.erpCodigoPedido = null;
+    irregularidade.erpEnviadoEm = null;
+    irregularidade.erpUltimoErro = null;
   }
 
   montarVeiculoErp(descricao: string): string | null {
@@ -236,37 +180,34 @@ export class ErpVistoriaIntegrationService {
     return `${empresa}:${texto}`;
   }
 
-  private ehElegivel(vistoria: Vistoria, temIrregularidade: boolean): boolean {
-    return (
-      vistoria.status === StatusVistoria.FINALIZADA &&
-      !vistoria.erpNumeroVistoria &&
-      temIrregularidade
-    );
+  /**
+   * Capa do payload: vistoria mais recente do grupo (datavistoria DESC).
+   */
+  private escolherCapa(irregularidades: Irregularidade[]): Vistoria | null {
+    const capas = irregularidades
+      .map((item) => item.vistoria)
+      .filter((item): item is Vistoria => !!item);
+    if (capas.length === 0) {
+      return null;
+    }
+    return [...capas].sort((a, b) => {
+      const ta = new Date(a.datavistoria).getTime();
+      const tb = new Date(b.datavistoria).getTime();
+      return tb - ta;
+    })[0];
   }
 
-  private async motivoInelegivel(vistoria: Vistoria): Promise<string | null> {
-    if (vistoria.status !== StatusVistoria.FINALIZADA) {
-      return 'Somente vistorias finalizadas podem ser enviadas ao ERP';
-    }
-    if (vistoria.erpNumeroVistoria) {
-      return 'Vistoria já possui número do ERP';
-    }
-    const qtd = await this.irregularidadeRepository.count({
-      where: { idVistoria: vistoria.id },
-    });
-    if (qtd === 0) {
-      return 'Vistoria sem irregularidade';
-    }
-    return null;
-  }
-
-  private montarPayloadItem(
-    vistoria: Vistoria,
+  private montarPayloadGrupoVeiculo(
+    irregularidades: Irregularidade[],
     config: ErpVistoriaConfig,
   ):
     | { ok: true; payload: ErpLoteItemPayload }
     | { ok: false; erro: string } {
-    const descricao = vistoria.veiculo?.descricao ?? '';
+    const capa = this.escolherCapa(irregularidades);
+    if (!capa) {
+      return { ok: false, erro: 'Vistoria não carregada para envio ao ERP' };
+    }
+    const descricao = capa.veiculo?.descricao ?? '';
     const veiculo = this.montarVeiculoErp(descricao);
     if (!veiculo) {
       return {
@@ -274,7 +215,7 @@ export class ErpVistoriaIntegrationService {
         erro: 'Descrição do veículo inválida para o ERP',
       };
     }
-    const matriculaRaw = (vistoria.motorista?.matricula ?? '').trim();
+    const matriculaRaw = (capa.motorista?.matricula ?? '').trim();
     const matricula = Number(matriculaRaw);
     if (!matriculaRaw || !Number.isFinite(matricula)) {
       return {
@@ -282,30 +223,33 @@ export class ErpVistoriaIntegrationService {
         erro: 'Matrícula do motorista inválida para o ERP',
       };
     }
-    const sintomas =
-      vistoria.irregularidades
-        ?.map((item) => this.montarSintomaErp(item))
-        .filter((item): item is string => !!item) ?? [];
+    const sintomas = irregularidades
+      .map((item) => this.montarSintomaErp(item))
+      .filter((item): item is string => !!item);
+    if (sintomas.length === 0) {
+      return {
+        ok: false,
+        erro: 'Nenhum sintoma válido para envio ao ERP',
+      };
+    }
     return {
       ok: true,
       payload: {
         veiculo,
-        data_vistoria: this.formatarDataVistoria(vistoria.datavistoria),
+        data_vistoria: this.formatarDataVistoria(capa.datavistoria),
         local_abertura: config.localAbertura,
         tipo_pedido: config.tipoPedido,
-        condicao: this.montarCondicao(vistoria),
-        motorista: vistoria.motorista?.nome?.trim() ?? '',
+        condicao: this.montarCondicao(capa),
+        motorista: capa.motorista?.nome?.trim() ?? '',
         matricula_motorista: matricula,
-        vistoriador: vistoria.usuario?.nome?.trim() ?? '',
-        odometro: Math.trunc(Number(vistoria.odometro) || 0),
+        vistoriador: capa.usuario?.nome?.trim() ?? '',
+        odometro: Math.trunc(Number(capa.odometro) || 0),
         sintomas,
       },
     };
   }
 
   private montarCondicao(vistoria: Vistoria): number {
-    // SINISTRO tem precedência sobre origem SOS (legado: 2 = sinistro).
-    // PREVENTIVA usa o mesmo código ERP de CORRETIVA (mobile=1 / SOS=5).
     if (vistoria.tipo === TipoVistoria.SINISTRO) {
       return 2;
     }
@@ -330,21 +274,6 @@ export class ErpVistoriaIntegrationService {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
 
-  private async carregarCapaParaEnvio(id: string): Promise<Vistoria | null> {
-    return this.vistoriaRepository.findOne({
-      where: { id },
-      relations: [
-        'veiculo',
-        'motorista',
-        'usuario',
-        'irregularidades',
-        'irregularidades.area',
-        'irregularidades.componente',
-        'irregularidades.sintoma',
-      ],
-    });
-  }
-
   private async postarLote(
     config: ErpVistoriaConfig,
     vistorias: ErpLoteItemPayload[],
@@ -354,7 +283,8 @@ export class ErpVistoriaIntegrationService {
     porIndice: Map<number, ErpLoteItemResposta>;
   }> {
     const url = `${config.url.replace(/\/+$/, '')}${ERP_VISTORIA_LOTE_PATH}`;
-    const timeoutMs = config.timeoutMs && config.timeoutMs > 0 ? config.timeoutMs : 30_000;
+    const timeoutMs =
+      config.timeoutMs && config.timeoutMs > 0 ? config.timeoutMs : 30_000;
     this.logger.log(`ERP vistoria POST lote qtd=${vistorias.length} url=${url}`);
 
     let response: { status: number; json: () => Promise<unknown> };
@@ -412,7 +342,9 @@ export class ErpVistoriaIntegrationService {
     return texto?.trim() || undefined;
   }
 
-  private extrairMensagemItem(item: ErpLoteItemResposta | null): string | undefined {
+  private extrairMensagemItem(
+    item: ErpLoteItemResposta | null,
+  ): string | undefined {
     if (!item) {
       return undefined;
     }
@@ -434,18 +366,27 @@ export class ErpVistoriaIntegrationService {
     return ERP_VISTORIA_MENSAGEM_FALLBACK;
   }
 
-  private async marcarEnviado(vistoria: Vistoria, numero: string): Promise<void> {
-    vistoria.erpStatus = StatusErpVistoria.ENVIADO;
-    vistoria.erpNumeroVistoria = numero;
-    vistoria.erpEnviadoEm = new Date();
-    vistoria.erpUltimoErro = null;
-    await this.vistoriaRepository.save(vistoria);
+  private async marcarEnviadoGrupo(
+    irregularidades: Irregularidade[],
+    codigoPedido: string,
+  ): Promise<void> {
+    const agora = new Date();
+    for (const item of irregularidades) {
+      item.erpCodigoPedido = codigoPedido;
+      item.erpEnviadoEm = agora;
+      item.erpUltimoErro = null;
+      await this.irregularidadeRepository.save(item);
+    }
   }
 
-  private async marcarFalha(vistoria: Vistoria, erro: string): Promise<void> {
-    vistoria.erpStatus = StatusErpVistoria.FALHA;
-    vistoria.erpUltimoErro = erro;
-    await this.vistoriaRepository.save(vistoria);
+  private async marcarFalhaGrupo(
+    irregularidades: Irregularidade[],
+    erro: string,
+  ): Promise<void> {
+    for (const item of irregularidades) {
+      item.erpUltimoErro = erro;
+      await this.irregularidadeRepository.save(item);
+    }
   }
 
   private configPronta(

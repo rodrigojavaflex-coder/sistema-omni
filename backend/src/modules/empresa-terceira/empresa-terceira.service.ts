@@ -5,8 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { Combustivel } from '../../common/enums/combustivel.enum';
 import { IntegracaoManutencaoEmpresa } from '../../common/enums/integracao-manutencao-empresa.enum';
+import { AreaVistoriada } from '../vistoria/entities/area-vistoriada.entity';
+import { Irregularidade } from '../vistoria/entities/irregularidade.entity';
 import { EmpresaTerceira } from './entities/empresa-terceira.entity';
 import { CreateEmpresaTerceiraDto } from './dto/create-empresa-terceira.dto';
 import { UpdateEmpresaTerceiraDto } from './dto/update-empresa-terceira.dto';
@@ -29,7 +32,113 @@ export class EmpresaTerceiraService {
   constructor(
     @InjectRepository(EmpresaTerceira)
     private readonly repository: Repository<EmpresaTerceira>,
+    @InjectRepository(AreaVistoriada)
+    private readonly areaRepository: Repository<AreaVistoriada>,
   ) {}
+
+  private normalizeCombustiveisAtendidos(
+    input?: Combustivel[] | string[] | null,
+  ): string[] {
+    if (!input?.length) {
+      return [];
+    }
+    return Array.from(new Set(input.map((c) => String(c).trim()).filter(Boolean)));
+  }
+
+  private async normalizeIdsAreasAtendidas(
+    input?: string[] | null,
+  ): Promise<string[]> {
+    if (!input?.length) {
+      return [];
+    }
+    const unique = Array.from(
+      new Set(input.map((id) => id.trim()).filter(Boolean)),
+    );
+    if (!unique.length) {
+      return [];
+    }
+    const existentes = await this.areaRepository.find({
+      where: { id: In(unique) },
+      select: ['id'],
+    });
+    if (existentes.length !== unique.length) {
+      throw new BadRequestException(
+        'Uma ou mais áreas selecionadas não existem no catálogo',
+      );
+    }
+    return unique;
+  }
+
+  /**
+   * Allowlist: lista vazia = sem restrição; preenchida = só o que está na lista.
+   */
+  irregularidadeNoEscopo(
+    empresa: EmpresaTerceira,
+    item: Irregularidade,
+  ): boolean {
+    const combustiveis = this.normalizeCombustiveisAtendidos(
+      empresa.combustiveisAtendidos,
+    );
+    const areasAllow = Array.from(
+      new Set(
+        (empresa.idsAreasAtendidas ?? [])
+          .map((id) => String(id).trim())
+          .filter(Boolean),
+      ),
+    );
+    if (combustiveis.length > 0) {
+      const combustivel = item.vistoria?.veiculo?.combustivel;
+      if (!combustivel || !combustiveis.includes(String(combustivel))) {
+        return false;
+      }
+    }
+    if (areasAllow.length > 0 && !areasAllow.includes(item.idArea)) {
+      return false;
+    }
+    return true;
+  }
+
+  assertEscopoAtendimento(
+    empresa: EmpresaTerceira,
+    irregularidades: Irregularidade[],
+  ): void {
+    const erros: string[] = [];
+    for (const item of irregularidades) {
+      if (this.irregularidadeNoEscopo(empresa, item)) {
+        continue;
+      }
+      const codigoVeiculo =
+        item.vistoria?.veiculo?.descricao?.trim().split(/\s+/)[0] ||
+        item.vistoria?.veiculo?.placa?.trim() ||
+        '-';
+      const prefixo = `OS ${item.numeroIrregularidade} (${codigoVeiculo})`;
+      const combustiveis = this.normalizeCombustiveisAtendidos(
+        empresa.combustiveisAtendidos,
+      );
+      const areasAllow = Array.from(
+        new Set(
+          (empresa.idsAreasAtendidas ?? [])
+            .map((id) => String(id).trim())
+            .filter(Boolean),
+        ),
+      );
+      const combustivel = item.vistoria?.veiculo?.combustivel;
+      if (combustiveis.length > 0) {
+        if (!combustivel || !combustiveis.includes(String(combustivel))) {
+          erros.push(
+            `${prefixo} — não atende veículos com combustível "${combustivel ?? 'não informado'}"`,
+          );
+        }
+      }
+      if (areasAllow.length > 0 && !areasAllow.includes(item.idArea)) {
+        const nomeArea = item.area?.nome?.trim() || item.idArea;
+        erros.push(`${prefixo} — não atende área "${nomeArea}"`);
+      }
+    }
+    if (erros.length > 0) {
+      throw new BadRequestException(erros.join('; '));
+    }
+  }
 
   private normalizeEmailsRelatorio(input?: string): string | undefined {
     if (!input) {
@@ -111,10 +220,18 @@ export class EmpresaTerceiraService {
         'Informe o token BRT para integração de OS',
       );
     }
+    const combustiveisAtendidos = this.normalizeCombustiveisAtendidos(
+      effectiveDto.combustiveisAtendidos,
+    );
+    const idsAreasAtendidas = await this.normalizeIdsAreasAtendidas(
+      effectiveDto.idsAreasAtendidas,
+    );
     const entidade = this.repository.create({
       descricao: descricaoNorm,
       emailsRelatorio: this.normalizeEmailsRelatorio(effectiveDto.emailsRelatorio),
       ehEmpresaManutencao: !!effectiveDto.ehEmpresaManutencao,
+      combustiveisAtendidos,
+      idsAreasAtendidas,
       integracaoManutencao: normalizeIntegracaoManutencao(
         effectiveDto.integracaoManutencao,
       ),
@@ -224,6 +341,16 @@ export class EmpresaTerceiraService {
     }
     if (effectiveDto.ehEmpresaManutencao !== undefined) {
       entidade.ehEmpresaManutencao = !!effectiveDto.ehEmpresaManutencao;
+    }
+    if (effectiveDto.combustiveisAtendidos !== undefined) {
+      entidade.combustiveisAtendidos = this.normalizeCombustiveisAtendidos(
+        effectiveDto.combustiveisAtendidos,
+      );
+    }
+    if (effectiveDto.idsAreasAtendidas !== undefined) {
+      entidade.idsAreasAtendidas = await this.normalizeIdsAreasAtendidas(
+        effectiveDto.idsAreasAtendidas,
+      );
     }
     if (effectiveDto.integracaoManutencao !== undefined) {
       entidade.integracaoManutencao = normalizeIntegracaoManutencao(

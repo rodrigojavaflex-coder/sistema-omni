@@ -1,11 +1,15 @@
 import {
+  ArrayUnique,
+  IsArray,
   IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
 } from 'class-validator';
+import { Combustivel } from '../../../common/enums/combustivel.enum';
 import { IntegracaoManutencaoEmpresa } from '../../../common/enums/integracao-manutencao-empresa.enum';
 
 export class CreateEmpresaTerceiraDto {
@@ -26,6 +30,21 @@ export class CreateEmpresaTerceiraDto {
     message: 'Campo empresa de manutenção deve ser verdadeiro ou falso',
   })
   ehEmpresaManutencao?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsEnum(Combustivel, {
+    each: true,
+    message: 'Combustível atendido inválido',
+  })
+  combustiveisAtendidos?: Combustivel[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsUUID('4', { each: true, message: 'Área atendida inválida' })
+  idsAreasAtendidas?: string[];
 
   @IsOptional()
   @IsEnum(IntegracaoManutencaoEmpresa)

@@ -66,13 +66,7 @@ export class VistoriaListComponent implements OnInit {
   drawerOpen = false;
   loadingFilters = false;
   usuariosLoaded = false;
-  enviandoErp = false;
   imprimindoId: string | null = null;
-  erpIntegracaoAtiva = false;
-  selectedIds = new Set<string>();
-  readonly canReprocessarErp = this.authService.hasPermission(
-    Permission.VISTORIA_WEB_REPROCESSAR_ERP,
-  );
   readonly canCorrigir = this.authService.hasPermission(
     Permission.VISTORIA_WEB_CORRIGIR,
   );
@@ -147,14 +141,6 @@ export class VistoriaListComponent implements OnInit {
     this.loadUsuarios();
 
     this.filterForm.valueChanges.subscribe(() => this.applyFilters());
-    this.vistoriaService.getErpStatus().subscribe({
-      next: (status) => {
-        this.erpIntegracaoAtiva = !!status?.ativo;
-      },
-      error: () => {
-        this.erpIntegracaoAtiva = false;
-      },
-    });
   }
 
   private loadUsuarios(): void {
@@ -288,109 +274,6 @@ export class VistoriaListComponent implements OnInit {
       erpNumeroVistoria: '',
       dataInicio: '',
       dataFim: '',
-    });
-  }
-
-  podeSelecionar(vistoria: VistoriaResumo): boolean {
-    return (
-      this.canReprocessarErp &&
-      this.erpIntegracaoAtiva &&
-      !!vistoria.erpElegivel
-    );
-  }
-
-  isSelected(id: string): boolean {
-    return this.selectedIds.has(id);
-  }
-
-  toggleSelecao(vistoria: VistoriaResumo, checked: boolean): void {
-    if (!this.podeSelecionar(vistoria)) {
-      this.selectedIds.delete(vistoria.id);
-      return;
-    }
-    if (checked) {
-      this.selectedIds.add(vistoria.id);
-    } else {
-      this.selectedIds.delete(vistoria.id);
-    }
-  }
-
-  get visiveisElegiveis(): VistoriaResumo[] {
-    return this.paged.filter((item) => this.podeSelecionar(item));
-  }
-
-  get allVisibleSelected(): boolean {
-    const visiveis = this.visiveisElegiveis;
-    return visiveis.length > 0 && visiveis.every((item) => this.selectedIds.has(item.id));
-  }
-
-  toggleSelectVisible(checked: boolean): void {
-    this.visiveisElegiveis.forEach((item) => {
-      if (checked) {
-        this.selectedIds.add(item.id);
-      } else {
-        this.selectedIds.delete(item.id);
-      }
-    });
-  }
-
-  onToggleSelectVisible(event: Event): void {
-    const target = event.target as HTMLInputElement | null;
-    this.toggleSelectVisible(!!target?.checked);
-  }
-
-  onToggleSelecao(vistoria: VistoriaResumo, event: Event): void {
-    const target = event.target as HTMLInputElement | null;
-    this.toggleSelecao(vistoria, !!target?.checked);
-  }
-
-  get selectedCount(): number {
-    return this.selectedIds.size;
-  }
-
-  enviarSelecionadas(): void {
-    const ids = [...this.selectedIds].filter((id) => {
-      const item = this.vistorias.find((vistoria) => vistoria.id === id);
-      return !!item && this.podeSelecionar(item);
-    });
-    this.enviarAoErp(ids);
-  }
-
-  enviarVistoria(vistoria: VistoriaResumo): void {
-    if (!this.podeSelecionar(vistoria)) {
-      return;
-    }
-    this.enviarAoErp([vistoria.id]);
-  }
-
-  private enviarAoErp(ids: string[]): void {
-    if (ids.length === 0 || this.enviandoErp) {
-      return;
-    }
-    if (!this.erpIntegracaoAtiva) {
-      this.error = 'Envio ao ERP desabilitado na configuração do sistema.';
-      this.success = '';
-      return;
-    }
-    this.enviandoErp = true;
-    this.error = '';
-    this.success = '';
-    this.vistoriaService.enviarAoErp(ids).subscribe({
-      next: (resposta) => {
-        this.enviandoErp = false;
-        this.selectedIds.clear();
-        this.success = `Envio ao ERP: ${resposta.enviadas} enviada(s), ${resposta.falhas} falha(s), ${resposta.ignoradas} ignorada(s).`;
-        this.loading = true;
-        this.loadVistorias();
-      },
-      error: (err: { error?: { message?: string }; message?: string }) => {
-        this.enviandoErp = false;
-        this.success = '';
-        this.error =
-          err?.error?.message ||
-          err?.message ||
-          'Erro ao enviar vistorias ao ERP.';
-      },
     });
   }
 

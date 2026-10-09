@@ -31,20 +31,19 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 | --- | --- | --- | --- | --- |
 | `REGISTRADA` | Corrigir classificacao | `REGISTRADA` | Destino valido e autorizado | `422` destino invalido |
 | `REGISTRADA` | Cancelar irregularidade | `CANCELADA` | Motivo obrigatorio | `400` motivo obrigatorio |
-| `REGISTRADA` | Enviar para manutencao (sem API) | `EM_MANUTENCAO` | Empresa de manutencao definida | `422` transicao invalida |
-| `REGISTRADA` | Enviar para manutencao (com API) | `EM_MANUTENCAO` | Selecao completa da vistoria; POST OS externa OK ou duplicada idempotente (1 vistoria = 1 OS) | Grupo permanece `REGISTRADA` + erro integracao |
+| `REGISTRADA` | Enviar para manutencao (sem API) | `EM_MANUTENCAO` | Empresa de manutencao definida; combustivel/area no escopo da empresa (allowlist) | `400` fora do escopo; `422` transicao invalida |
+| `REGISTRADA` | Enviar para manutencao (com API) | `EM_MANUTENCAO` | Escopo combustivel/area OK; selecao completa da vistoria **no escopo da empresa** (OS fora do escopo podem ficar no Tratamento); ERP (se ativo) OK por veiculo; POST OS BRT OK ou duplicada (1 vistoria = 1 OS) | `400` fora do escopo; grupo permanece `REGISTRADA` + erro ERP/BRT; reenvio idempotente |
 | `RETRABALHO_GARANTIA` | Corrigir classificacao | `RETRABALHO_GARANTIA` | Destino valido e autorizado | `422` destino invalido |
 | `RETRABALHO_GARANTIA` | Cancelar irregularidade | `CANCELADA` | Motivo obrigatorio | `400` motivo obrigatorio |
 | `RETRABALHO_GARANTIA` | Reenviar para manutencao | `EM_MANUTENCAO` | Grupo completo da vistoria; `os_orig` = `numeroVistoria-N` (N≥2); empresa configurada | Erro API: grupo permanece `RETRABALHO_GARANTIA` / `REGISTRADA` |
 | `EM_MANUTENCAO` | Concluir manutencao (sem controle API) | `CONCLUIDA` | Evidencia minima quando obrigatoria | `422` pendencia |
-| `EM_MANUTENCAO` | Concluir manutencao (controle API) | `CONCLUIDA` | **v2:** apenas via retorno integrado | `422` bloqueio manual |
+| `EM_MANUTENCAO` | Concluir manutencao (controle API) | `CONCLUIDA` | Conclusao manual permitida; nao chama BRT; vinculos OS/ERP permanecem para rastreio | `400` status/empresa |
 | `EM_MANUTENCAO` | Marcar nao procede (sem controle API) | `NAO_PROCEDE` | Justificativa obrigatoria | `400` justificativa obrigatoria |
-| `EM_MANUTENCAO` | Marcar nao procede (controle API) | — | **Bloqueado** ate regra v2 | `422` bloqueio manual |
+| `EM_MANUTENCAO` | Marcar nao procede (controle API) | — | **Bloqueado** ate regra v2 | `400` bloqueio manual |
 | `EM_MANUTENCAO` | Cancelar OS BRT (controle API) | `REGISTRADA` | POST cancelamento BRT OK; permissao `cancel_os_brt`; OS ativa; **grupo** da vistoria | Grupo permanece `EM_MANUTENCAO` + erro BRT |
-| `NAO_PROCEDE` | Encaminhar para validacao final | `CONCLUIDA` | Justificativa preenchida | `422` pendencia |
+| `NAO_PROCEDE` | Reclassificar / cancelar / reenviar manutencao | `NAO_PROCEDE` / `CANCELADA` / `EM_MANUTENCAO` | Fila Tratamento; sem empresa vinculada | `400` motivo / empresa |
 | `CONCLUIDA` | Validar final | `VALIDADA` | Conferencia aprovada | `422` pendencia |
 | `CONCLUIDA` | Reprovar final | `RETRABALHO_GARANTIA` | Observacao obrigatoria | `400` observacao obrigatoria |
-| `NAO_PROCEDE` | Reprovar final (quando aplicavel) | `RETRABALHO_GARANTIA` | Observacao obrigatoria | `400` observacao obrigatoria |
 
 ### Matriz de transicao final (permitido/proibido)
 
@@ -54,22 +53,24 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 | `RETRABALHO_GARANTIA` | Proibido | Permitido (reclassificar) | Permitido | Permitido (reenvio) | Proibido | Proibido | Proibido |
 | `CANCELADA` | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido |
 | `EM_MANUTENCAO` | Proibido*** | Proibido | Proibido | Proibido | Permitido* | Permitido* | Proibido |
-| `NAO_PROCEDE` | Proibido | Proibido | Proibido | Proibido | Proibido | Permitido | Proibido |
+| `NAO_PROCEDE` | Proibido | Proibido | Permitido | Permitido (reenvio) | Permitido (reclassificar) | Proibido | Proibido |
 | `CONCLUIDA` | Proibido | Permitido (reprovacao final) | Proibido | Proibido** | Proibido | Proibido | Permitido |
 | `VALIDADA` | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido |
 
-\* Somente trilha **sem** controle API, ou via integracao de retorno (v2) na trilha API.
+\* `NAO_PROCEDE`: somente trilha **sem** controle API (ou retorno integrado v2). `CONCLUIDA`: permitido tambem por conclusao manual na trilha API.
 
 \*\*\* Permitido para trilha API via cancelamento OS BRT (`EM_MANUTENCAO` → `REGISTRADA`).
 
 \*\* Transicao historica `CONCLUIDA` → `EM_MANUTENCAO` na reprovacao **substituida** por `CONCLUIDA` → `RETRABALHO_GARANTIA` (RN-VIS-006). Codigo legado deve ser alinhado na implementacao.
 
-### Integracao OS (BRT) — efeito no envio a partir de `REGISTRADA` / `RETRABALHO_GARANTIA`
+### Integracao ERP + OS (BRT) — efeito no envio a partir de `REGISTRADA` / `RETRABALHO_GARANTIA`
 
-| Resultado HTTP / corpo | Status OMNI | Tela |
+Pipeline: ERP (flag global) → BRT (empresa API) → transicao. Atomico **por veiculo**.
+
+| Resultado | Status OMNI | Tela |
 | --- | --- | --- |
-| `201` success ou `200` duplicada | `EM_MANUTENCAO` | Manutencao |
-| Erro (`401`, `403`, `422`, etc.) | Inalterado (`REGISTRADA` ou `RETRABALHO_GARANTIA`) | Tratamento (detalhe do erro) |
+| ERP OK (ou off) + BRT `201`/`200` duplicada (ou sem BRT) | `EM_MANUTENCAO` | Manutencao |
+| Falha ERP ou BRT | Inalterado (`REGISTRADA` ou `RETRABALHO_GARANTIA`); vinculo parcial persistido | Tratamento (detalhe do erro; reenvio so do lado faltante) |
 
 ---
 
@@ -82,7 +83,7 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 **Para** corrigir rapidamente casos que exigem ajuste
 
 **Criterios de aceite**
-- Filtros por veiculo, data, area, componente, sintoma e status.
+- Filtros por veiculo, data, area, componente, sintoma e status (cascata area → componente → sintoma na UI das 4 telas do fluxo).
 - Ordenacao por mais antiga.
 - Paginacao e totalizadores.
 - Se nao houver ajuste, item segue fluxo normal para manutencao.
@@ -193,13 +194,13 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 
 **Como** usuario da manutencao  
 **Quero** marcar que a irregularidade nao foi encontrada  
-**Para** seguir para validacao final com justificativa tecnica
+**Para** devolver a irregularidade ao Tratamento com justificativa tecnica
 
 **Criterios de aceite**
 - Transicao: `EM_MANUTENCAO -> NAO_PROCEDE`.
 - Justificativa tecnica obrigatoria.
 - Registro de evidencias opcional.
-- Item `NAO_PROCEDE` deve aparecer na fila de validacao final.
+- Item `NAO_PROCEDE` volta a fila Tratamento; limpa `idEmpresaManutencao` / ERP / BRT; historico registra a empresa que devolveu.
 
 **Tarefas tecnicas**
 - Endpoint `POST /irregularidades/:id/nao-procede`.
@@ -231,7 +232,7 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 ### US3.1 - Listar fila de validacao final
 
 **Como** analista  
-**Quero** listar irregularidades `CONCLUIDA` e `NAO_PROCEDE`  
+**Quero** listar irregularidades `CONCLUIDA`  
 **Para** validar o resultado da manutencao
 
 **Criterios de aceite**
@@ -239,7 +240,7 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 - Exibir contexto tecnico e evidencias da manutencao.
 
 **Tarefas tecnicas**
-- Endpoint `GET /irregularidades?status=CONCLUIDA,NAO_PROCEDE`.
+- Endpoint `GET /irregularidades?status=CONCLUIDA`.
 - Tela web "Fila de validacao final".
 
 ---
@@ -252,7 +253,6 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 
 **Criterios de aceite**
 - Transicao: `CONCLUIDA -> VALIDADA`.
-- Transicao: `NAO_PROCEDE -> VALIDADA`.
 - Irregularidade `VALIDADA` nao aparece mais como pendencia.
 - Registrar usuario, data/hora e observacao da validacao final.
 
@@ -358,17 +358,18 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 - Flags: tipo integracao, enviar e-mail relatorio, credenciais BRT (homolog/prod), URL base.
 
 ### US4.2 - Enviar irregularidade/lote com ramificacao API
-- **Entrega 1:** 1 vistoria = 1 OS BRT; `os_orig` = `numeroVistoria` (+ `-N` no reenvio); selecao all-or-nothing das elegiveis da vistoria; `comenta` multilinha; sucesso/falha atomicos por vistoria; sucesso parcial entre vistorias no lote; erros no Tratamento com detalhe.
+- **Entrega 1:** 1 vistoria = 1 OS BRT; `os_orig` = `numeroVistoria` (+ `-N` no reenvio); selecao all-or-nothing das elegiveis **no escopo da empresa** (OS fora do escopo podem ficar no Tratamento / outra empresa); `comenta` multilinha; sucesso/falha atomicos por vistoria; sucesso parcial entre vistorias no lote; erros no Tratamento com detalhe.
 - Plano: `docs/PLANO_BRT_OS_AGRUPAMENTO_VISTORIA.md`.
 
 ### US4.3 - Historico de OS externas
 - Multiplos `os_orig`/`numOs` por irregularidade; OS ativa vs tentativas anteriores.
 
-### US4.4 - Bloqueio de conclusao manual (trilha API)
-- Manutencao somente leitura/acompanhamento ate retorno integrado (v2).
+### US4.4 - Conclusao manual na trilha API
+- `concluir-manutencao` permitido tambem com `controleIntegracaoApi` (nao chama BRT; vinculos permanecem).
+- `marcar-nao-procede` manual continua bloqueado ate retorno integrado (v2).
 
 ### US4.5 - Retorno integrado BRT (v2)
-- Transicao automatica para `CONCLUIDA` e fila de Validacao Final.
+- Transicao automatica para `CONCLUIDA` e fila de Validacao Final (quando houver retorno); conclusao manual ja disponivel como alternativa operacional.
 
 ---
 

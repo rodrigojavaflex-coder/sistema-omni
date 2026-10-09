@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -30,7 +29,6 @@ import { OrigemVistoria } from '../../common/enums/origem-vistoria.enum';
 import { TipoVistoria } from '../../common/enums/tipo-vistoria.enum';
 import { CreateVistoriaSosDto } from './dto/create-vistoria-sos.dto';
 import { SosSessaoAbertaDto } from './dto/sos-sessao-aberta.dto';
-import { EnviarErpVistoriaRespostaDto } from './dto/enviar-erp-vistoria-resultado.dto';
 import { IrregularidadeMidia } from './entities/irregularidade-midia.entity';
 import { IrregularidadeHistorico } from './entities/irregularidade-historico.entity';
 import { ErpVistoriaIntegrationService } from './erp-vistoria-integration.service';
@@ -39,8 +37,6 @@ import { DEFAULT_ODOMETRO_DIFF_MAX_KM } from '../../common/constants/odometro.co
 
 @Injectable()
 export class VistoriaService {
-  private readonly logger = new Logger(VistoriaService.name);
-
   constructor(
     @InjectRepository(Vistoria)
     private readonly vistoriaRepository: Repository<Vistoria>,
@@ -406,9 +402,7 @@ export class VistoriaService {
     if (!reloaded) {
       throw new NotFoundException('Vistoria não encontrada');
     }
-    const [comFlag] =
-      await this.erpVistoriaIntegrationService.anexarElegibilidade([reloaded]);
-    return comFlag;
+    return reloaded;
   }
 
   async getSosSessaoAberta(
@@ -523,16 +517,7 @@ export class VistoriaService {
       vistoria.observacao = dto.observacao;
     }
     vistoria.status = StatusVistoria.FINALIZADA;
-    const saved = await this.vistoriaRepository.save(vistoria);
-    void this.erpVistoriaIntegrationService
-      .enfileirarAposFinalizar(saved.id)
-      .catch((err: unknown) => {
-        const detalhe = err instanceof Error ? err.message : String(err);
-        this.logger.warn(
-          `Falha ao enfileirar vistoria ${saved.id} no ERP: ${detalhe}`,
-        );
-      });
-    return saved;
+    return this.vistoriaRepository.save(vistoria);
   }
 
   async cancel(vistoriaId: string): Promise<Vistoria> {
@@ -654,19 +639,17 @@ export class VistoriaService {
       where.tipo = tipo;
     }
     if (!ignorarVistoriaId) {
-      const lista = await this.vistoriaRepository.find({
+      return this.vistoriaRepository.find({
         where,
         order: { datavistoria: 'DESC' },
       });
-      return this.erpVistoriaIntegrationService.anexarElegibilidade(lista);
     }
-    const lista = await this.vistoriaRepository
+    return this.vistoriaRepository
       .createQueryBuilder('vistoria')
       .where(where)
       .andWhere('vistoria.id != :ignorarVistoriaId', { ignorarVistoriaId })
       .orderBy('vistoria.datavistoria', 'DESC')
       .getMany();
-    return this.erpVistoriaIntegrationService.anexarElegibilidade(lista);
   }
 
   async findOne(id: string): Promise<Vistoria> {
@@ -674,21 +657,13 @@ export class VistoriaService {
     if (!vistoria) {
       throw new NotFoundException('Vistoria não encontrada');
     }
-    const [comFlag] =
-      await this.erpVistoriaIntegrationService.anexarElegibilidade([vistoria]);
-    return comFlag;
+    return vistoria;
   }
 
   getErpStatus(): Promise<{ ativo: boolean }> {
-    return this.erpVistoriaIntegrationService.isIntegracaoAtiva().then((ativo) => ({
+    return this.erpVistoriaIntegrationService.isEnvioHabilitado().then((ativo) => ({
       ativo,
     }));
-  }
-
-  enviarAoErp(ids: string[]): Promise<EnviarErpVistoriaRespostaDto> {
-    return this.erpVistoriaIntegrationService.enviarIds(ids, {
-      exigirAtivo: true,
-    });
   }
 
   async getBootstrap(vistoriaId: string): Promise<Record<string, unknown>> {

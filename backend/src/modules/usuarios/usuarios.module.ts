@@ -10,6 +10,7 @@ import { Departamento } from '../departamento/entities/departamento.entity';
 import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
+import { UsuarioEmpresaManutencao } from './entities/usuario-empresa-manutencao.entity';
 import { BiAcessoModule } from '../bi-acesso/bi-acesso.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { BiAcessoModule } from '../bi-acesso/bi-acesso.module';
       Departamento,
       DepartamentoUsuario,
       EmpresaTerceira,
+      UsuarioEmpresaManutencao,
     ]),
     JwtModule,
     ConfigModule,

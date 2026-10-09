@@ -28,10 +28,12 @@ export interface IrregularidadeFluxoItem {
   observacao?: string;
   statusAtual: StatusIrregularidade;
   idEmpresaManutencao?: string;
+  empresaManutencaoDescricao?: string;
   idVeiculo?: string;
   veiculoDescricao?: string;
   veiculoPlaca?: string;
   veiculoModelo?: string;
+  veiculoCombustivel?: string;
   veiculoModeloId?: string;
   vistoriadorNome?: string;
   motoristaNome?: string;
@@ -49,6 +51,8 @@ export interface IrregularidadeFluxoItem {
   numOsExternoAtual?: number | null;
   ultimoErroIntegracao?: string;
   ultimoErroIntegracaoEm?: string;
+  erpCodigoPedido?: string;
+  erpUltimoErro?: string;
   marcacao?: {
     idVista: string;
     descricaoVista: string;
@@ -92,9 +96,20 @@ export type FiltroOrigemRegistro = 'SOS_WEB' | 'MOBILE';
 
 export interface ListarIrregularidadeFiltros {
   idVeiculo?: string;
+  /** Empresa de manutenção (obrigatório em Manutenção/Validação). */
+  idEmpresaManutencao?: string;
   origemRegistro?: FiltroOrigemRegistro;
-  /** Trecho numérico da O.S. para busca parcial no backend (ex.: `2026`). */
+  /** Trecho numérico da OS (numeroIrregularidade) para busca parcial. */
   ordemServico?: string;
+  /** Trecho da OS OMNI / pedido ERP (`erp_codigo_pedido`). */
+  erpCodigoPedido?: string;
+  /** Trecho da OS BRT (`num_os_externo_atual`). */
+  numOsExterno?: string;
+  /** Trecho do número da vistoria (`vistorias.numero_vistoria`). */
+  numeroVistoria?: string;
+  idArea?: string;
+  idComponente?: string;
+  idSintoma?: string;
   gravidade?: GravidadeCriticidade[];
   dataInicio?: string;
   dataFim?: string;
@@ -127,6 +142,8 @@ export interface IniciarManutencaoLotePayload {
 export interface RelatorioManutencaoResumoItem {
   id: string;
   ordemServico: number;
+  erpCodigoPedido?: string;
+  numOsExternoAtual?: number | null;
   irregularidade: string;
   observacao?: string;
   totalImagens: number;
@@ -157,6 +174,8 @@ export interface RelatorioManutencaoPreview {
 export interface RelatorioManutencaoExecucao extends RelatorioManutencaoPreview {
   totalEnviadas: number;
   emailEnviado: boolean;
+  impressaoEnviada?: boolean;
+  impressaoErro?: string;
   falhas?: EnvioManutencaoFalhaItem[];
 }
 

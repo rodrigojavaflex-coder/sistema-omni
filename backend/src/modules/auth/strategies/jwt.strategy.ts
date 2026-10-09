@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Request } from 'express';
 import { Repository } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { UsuarioEmpresaManutencao } from '../../usuarios/entities/usuario-empresa-manutencao.entity';
 
 function extractJwtFromQueryParam(req: Request): string | null {
   const raw = req.query?.access_token;
@@ -28,6 +29,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly configService: ConfigService,
     @InjectRepository(Usuario)
     private readonly userRepository: Repository<Usuario>,
+    @InjectRepository(UsuarioEmpresaManutencao)
+    private readonly usuarioEmpresaManutencaoRepository: Repository<UsuarioEmpresaManutencao>,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -42,11 +45,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload): Promise<Usuario> {
     const user = await this.userRepository.findOne({
       where: { id: payload.sub, ativo: true },
-      relations: ['perfis'],
+      relations: ['perfis', 'empresa'],
     });
 
     if (!user) {
       throw new UnauthorizedException('Token inválido');
+    }
+
+    const vinculos = await this.usuarioEmpresaManutencaoRepository.find({
+      where: { usuarioId: user.id },
+      relations: ['empresa'],
+      order: { criadoEm: 'ASC' },
+    });
+    user.empresasManutencao = vinculos
+      .filter((v) => v.empresa)
+      .map((v) => ({ id: v.empresa.id, descricao: v.empresa.descricao }));
+    user.idsEmpresasManutencao = user.empresasManutencao.map((e) => e.id);
+    if (!user.idEmpresa && user.idsEmpresasManutencao[0]) {
+      user.idEmpresa = user.idsEmpresasManutencao[0];
     }
 
     return user;

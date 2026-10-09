@@ -5,14 +5,58 @@
     <div class="filters-panel">
       <div class="filters-row">
         <h2 class="fluxo-titulo">{{ titulo }}</h2>
+        <select
+          class="form-select"
+          *ngIf="mostraFiltroEmpresa"
+          [(ngModel)]="filtroIdEmpresaManutencao"
+          (ngModelChange)="onComboFilterChange()"
+          aria-label="Empresa de manutenção"
+        >
+          <option *ngIf="modo === 'gestao-os'" value="">Empresa (todas)</option>
+          <option *ngIf="exigeFiltroEmpresa && !empresasFiltroOpcoes.length" value="" disabled>
+            Sem empresa vinculada
+          </option>
+          <option *ngFor="let empresa of empresasFiltroOpcoes" [value]="empresa.id">
+            {{ empresa.descricao }}
+          </option>
+        </select>
         <input
           type="text"
           inputmode="numeric"
           class="form-input filter-ordem-servico"
           [(ngModel)]="filtroOrdemServico"
           (ngModelChange)="onOrdemServicoFiltroChange()"
-          aria-label="OS (número)"
-          placeholder="Buscar OS (ex.: 2026)"
+          aria-label="OS (número da irregularidade)"
+          placeholder="OS"
+          autocomplete="off"
+        />
+        <input
+          type="text"
+          class="form-input filter-ordem-servico"
+          [(ngModel)]="filtroErpCodigoPedido"
+          (ngModelChange)="onErpCodigoPedidoFiltroChange()"
+          aria-label="OS OMNI (pedido ERP)"
+          placeholder="OS OMNI"
+          autocomplete="off"
+        />
+        <input
+          type="text"
+          inputmode="numeric"
+          class="form-input filter-ordem-servico"
+          [(ngModel)]="filtroNumOsExterno"
+          (ngModelChange)="onNumOsExternoFiltroChange()"
+          aria-label="OS BRT (número)"
+          placeholder="OS BRT"
+          autocomplete="off"
+        />
+        <input
+          type="text"
+          inputmode="numeric"
+          class="form-input filter-ordem-servico"
+          [(ngModel)]="filtroNumeroVistoria"
+          (ngModelChange)="onNumeroVistoriaFiltroChange()"
+          aria-label="Vistoria (número)"
+          placeholder="Vistoria"
           autocomplete="off"
         />
         <app-veiculo-autocomplete
@@ -20,6 +64,39 @@
           placeholder="Buscar veículo..."
           (veiculoSelected)="onVeiculoSelected($event)"
         ></app-veiculo-autocomplete>
+        <select
+          class="form-select filter-classificacao"
+          [(ngModel)]="filtroIdArea"
+          (ngModelChange)="onFiltroAreaChange()"
+          aria-label="Filtrar por área"
+        >
+          <option value="">Área (todas)</option>
+          <option *ngFor="let area of filtroAreas" [value]="area.id">
+            {{ area.nome }}
+          </option>
+        </select>
+        <select
+          class="form-select filter-classificacao"
+          [(ngModel)]="filtroIdComponente"
+          (ngModelChange)="onFiltroComponenteChange()"
+          aria-label="Filtrar por componente"
+        >
+          <option value="">Componente (todos)</option>
+          <option *ngFor="let comp of filtroComponentes" [value]="comp.id">
+            {{ comp.nome }}
+          </option>
+        </select>
+        <select
+          class="form-select filter-classificacao"
+          [(ngModel)]="filtroIdSintoma"
+          (ngModelChange)="onComboFilterChange()"
+          aria-label="Filtrar por sintoma"
+        >
+          <option value="">Sintoma (todos)</option>
+          <option *ngFor="let sint of filtroSintomas" [value]="sint.id">
+            {{ sint.descricao }}
+          </option>
+        </select>
         <select
           class="form-select"
           [(ngModel)]="filtroGravidade"
@@ -40,17 +117,16 @@
           <option value="SOS_WEB">Somente SOS</option>
           <option value="MOBILE">Somente mobile</option>
         </select>
-        <select
-          class="form-select"
-          *ngIf="modo === 'tratamento'"
-          [(ngModel)]="filtroStatus"
-          (ngModelChange)="onComboFilterChange()"
-        >
-          <option [ngValue]="''">Todos</option>
-          <option *ngFor="let status of statusOptions" [ngValue]="status">
-            {{ getStatusLabel(status) }}
-          </option>
-        </select>
+        <ng-container *ngIf="mostraFiltroStatus">
+          <app-multi-select
+            class="filter-status"
+            [options]="statusOptions"
+            [optionLabelFn]="labelStatusFiltro"
+            [(ngModel)]="filtroStatus"
+            (ngModelChange)="onComboFilterChange()"
+            placeholder="Status..."
+          ></app-multi-select>
+        </ng-container>
         <app-periodo-fluxo-filter
           class="filter-periodo filter-periodo--compact"
           [clearSeq]="filtroPeriodoClearSeq"
@@ -112,7 +188,7 @@
         <button
           class="btn btn-primary"
           *ngIf="modo === 'manutencao' && canManutencaoFinish"
-          [disabled]="!hasSelectedItems || manutencaoIntegracaoSelecionada"
+          [disabled]="!hasSelectedItems"
           (click)="openBulkActionModal('concluir')"
         >
           Concluir
@@ -150,6 +226,20 @@
           </svg>
           Reprovar
         </button>
+        <button
+          class="btn btn-secondary"
+          type="button"
+          *ngIf="canShowImprimir"
+          [disabled]="!hasSelectedItems || isPrintingRelatorio"
+          (click)="imprimirSelecionados()"
+        >
+          <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          {{ isPrintingRelatorio ? 'Gerando PDF…' : 'Imprimir' }}
+        </button>
         <span class="buttons-row-summary">
           {{ totalItems }} OS | {{ getSelectedIds().length }} OS selecionada(s)
         </span>
@@ -164,7 +254,7 @@
       class="irregularidade-list-header"
       *ngIf="!loading && !error"
       [class.irregularidade-list-header--tratamento]="modo === 'tratamento'"
-      [class.irregularidade-list-header--com-codigo]="modo === 'manutencao' || modo === 'validacao-final'"
+      [class.irregularidade-list-header--com-codigo]="modo === 'manutencao' || modo === 'validacao-final' || modo === 'gestao-os'"
     >
       <span class="col-select form-check">
         <input
@@ -176,7 +266,8 @@
         />
       </span>
       <span>Veículo</span>
-      <span *ngIf="modo === 'tratamento' || modo === 'manutencao' || modo === 'validacao-final'">OS</span>
+      <span>OS</span>
+      <span *ngIf="mostraColunaEmpresa">Empresa</span>
       <span>Irregularidade</span>
       <span>Gravidade</span>
       <span>Registrado</span>
@@ -207,7 +298,7 @@
         <div
           class="irregularidade-row-grid"
           [class.irregularidade-row-grid--tratamento]="modo === 'tratamento'"
-          [class.irregularidade-row-grid--com-codigo]="modo === 'manutencao' || modo === 'validacao-final'"
+          [class.irregularidade-row-grid--com-codigo]="modo === 'manutencao' || modo === 'validacao-final' || modo === 'gestao-os'"
         >
           <div class="col-select form-check">
             <input
@@ -232,7 +323,6 @@
           <div
             class="col-codigo"
             [class.col-codigo--sos]="isSosItem(item)"
-            *ngIf="modo === 'tratamento' || modo === 'manutencao' || modo === 'validacao-final'"
           >
             <span class="badge-sos" *ngIf="isSosItem(item)" title="Registro SOS (web)">
               <svg class="badge-sos-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -249,8 +339,17 @@
               <div class="os-vistoria" *ngIf="item.numeroVistoria != null">
                 Vistoria {{ item.numeroVistoria }}
               </div>
-              <div class="os-numero">{{ formatOrdemServico(item) }}</div>
+              <div class="os-numero">OS: {{ formatOrdemServico(item) }}</div>
+              <div class="os-externa" *ngIf="item.erpCodigoPedido">
+                OS OMNI: {{ item.erpCodigoPedido }}
+              </div>
+              <div class="os-externa" *ngIf="item.numOsExternoAtual">
+                OS BRT: {{ item.numOsExternoAtual }}
+              </div>
             </div>
+          </div>
+          <div class="col-empresa" *ngIf="mostraColunaEmpresa">
+            {{ item.empresaManutencaoDescricao || '-' }}
           </div>
           <div class="col-irregularidade">
             <span class="irregularidade-main-line">
@@ -258,13 +357,15 @@
             </span>
             <small
               class="integracao-erro"
+              *ngIf="item.erpUltimoErro && !item.erpCodigoPedido"
+            >
+              Falha envio OS OMNI: {{ item.erpUltimoErro }}
+            </small>
+            <small
+              class="integracao-erro"
               *ngIf="item.ultimoErroIntegracao && !item.numOsExternoAtual"
             >
               Falha envio OS: {{ item.ultimoErroIntegracao }}
-            </small>
-            <small class="integracao-os-externa" *ngIf="item.numOsExternoAtual && modo === 'manutencao'">
-              OS BRT: {{ item.numOsExternoAtual }}
-              <span *ngIf="item.osOrigAtual"> ({{ item.osOrigAtual }})</span>
             </small>
           </div>
           <div class="col-gravidade">
@@ -393,7 +494,15 @@
           <span class="detail-value" *ngIf="detalheItem.numeroVistoria != null">
             Vistoria {{ detalheItem.numeroVistoria }}
           </span>
-          <span class="detail-value">{{ formatOrdemServico(detalheItem) }}</span>
+          <span class="detail-value">OS: {{ formatOrdemServico(detalheItem) }}</span>
+        </div>
+        <div class="detail-item" *ngIf="detalheItem.erpCodigoPedido">
+          <span class="detail-label">OS OMNI</span>
+          <span class="detail-value">{{ detalheItem.erpCodigoPedido }}</span>
+        </div>
+        <div class="detail-item" *ngIf="detalheItem.numOsExternoAtual">
+          <span class="detail-label">OS BRT</span>
+          <span class="detail-value">{{ detalheItem.numOsExternoAtual }}</span>
         </div>
         <div class="detail-item">
           <span class="detail-label">Classificação</span>
@@ -506,7 +615,6 @@
         type="button"
         class="btn btn-primary"
         *ngIf="canConcluirNoDetalhe(itemDetalhe)"
-        [disabled]="itemManutencaoIntegracao(itemDetalhe)"
         (click)="acaoDoDetalhe(itemDetalhe, 'concluir')"
       >
         Concluir
@@ -649,12 +757,16 @@
           class="form-select"
           [(ngModel)]="modalIdEmpresaManutencao"
           (ngModelChange)="onEmpresaManutencaoChange()"
+          [disabled]="!empresasElegiveisEnvio.length"
         >
           <option value="">Selecione...</option>
-          <option *ngFor="let empresa of empresas" [value]="empresa.id">
+          <option *ngFor="let empresa of empresasElegiveisEnvio" [value]="empresa.id">
             {{ empresa.descricao }}
           </option>
         </select>
+        <small class="field-description" *ngIf="!empresasElegiveisEnvio.length">
+          Nenhuma empresa de manutenção disponível.
+        </small>
         <small class="field-description" *ngIf="manutencaoEtapa === 'gerando'">
           Gerando pré-visualização e padronizando anexos do relatório...
         </small>
@@ -922,6 +1034,18 @@
   cancelText="Cancelar"
   (confirmed)="onReclassRemocaoMarcacoesConfirmed()"
   (cancelled)="onReclassRemocaoMarcacoesCancelled()"
+></app-confirmation-modal>
+
+<app-confirmation-modal
+  [isVisible]="showEscopoEmpresaModal"
+  title="OS fora do escopo da empresa"
+  [message]="escopoEmpresaModalMessage"
+  [detailLines]="escopoEmpresaModalDetails"
+  [confirmText]="escopoEmpresaPodeContinuar ? 'Continuar só com elegíveis' : 'Entendi'"
+  [cancelText]="escopoEmpresaPodeContinuar ? 'Cancelar' : ''"
+  confirmButtonClass="btn-primary"
+  (confirmed)="onEscopoEmpresaModalConfirmed()"
+  (cancelled)="fecharEscopoEmpresaModal()"
 ></app-confirmation-modal>
 
 <div *ngIf="imagemAmpliadaSrc" class="modal-overlay" (click)="closeImagePreview()">

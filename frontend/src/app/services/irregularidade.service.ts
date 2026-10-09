@@ -35,8 +35,20 @@ export class IrregularidadeService {
     if (filtros?.ordemServico) {
       params = params.set('ordemServico', filtros.ordemServico);
     }
+    if (filtros?.erpCodigoPedido) {
+      params = params.set('erpCodigoPedido', filtros.erpCodigoPedido);
+    }
+    if (filtros?.numOsExterno) {
+      params = params.set('numOsExterno', filtros.numOsExterno);
+    }
+    if (filtros?.numeroVistoria) {
+      params = params.set('numeroVistoria', filtros.numeroVistoria);
+    }
     if (filtros?.idVeiculo) {
       params = params.set('idVeiculo', filtros.idVeiculo);
+    }
+    if (filtros?.idEmpresaManutencao) {
+      params = params.set('idEmpresaManutencao', filtros.idEmpresaManutencao);
     }
     if (filtros?.gravidade?.length) {
       params = params.set('gravidade', filtros.gravidade.join(','));
@@ -52,6 +64,15 @@ export class IrregularidadeService {
     }
     if (filtros?.origemRegistro) {
       params = params.set('origemRegistro', filtros.origemRegistro);
+    }
+    if (filtros?.idArea) {
+      params = params.set('idArea', filtros.idArea);
+    }
+    if (filtros?.idComponente) {
+      params = params.set('idComponente', filtros.idComponente);
+    }
+    if (filtros?.idSintoma) {
+      params = params.set('idSintoma', filtros.idSintoma);
     }
     if (filtros?.page != null) {
       params = params.set('page', String(filtros.page));
@@ -138,6 +159,14 @@ export class IrregularidadeService {
     return this.http.post(`${this.apiUrl}/lote/iniciar-manutencao/preview-pdf`, payload, {
       responseType: 'blob',
     });
+  }
+
+  gerarRelatorioPdfLote(idsIrregularidades: string[]): Observable<Blob> {
+    return this.http.post(
+      `${this.apiUrl}/lote/relatorio-pdf`,
+      { idsIrregularidades },
+      { responseType: 'blob' },
+    );
   }
 
   iniciarManutencaoLote(

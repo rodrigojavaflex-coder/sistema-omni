@@ -476,6 +476,18 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'irregularidades/gestao-os',
+    loadComponent: () =>
+      import('./components/irregularidade-fluxo-list/irregularidade-fluxo-list').then(
+        (m) => m.IrregularidadeFluxoListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permissions: [Permission.IRREGULARIDADE_GESTAO_OS_READ],
+      modo: 'gestao-os',
+    },
+  },
+  {
     path: 'perfil/new',
     component: PerfilFormComponent,
     canActivate: [authGuard, permissionGuard],

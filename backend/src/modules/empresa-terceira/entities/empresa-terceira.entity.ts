@@ -17,6 +17,34 @@ export class EmpresaTerceira extends BaseEntity {
   })
   ehEmpresaManutencao: boolean;
 
+  @ApiProperty({
+    description:
+      'Combustíveis atendidos (allowlist). Vazio = sem restrição. Se preenchido, só esses combustíveis podem ser enviados.',
+    type: [String],
+    required: false,
+  })
+  @Column({
+    name: 'combustiveis_atendidos',
+    type: 'jsonb',
+    nullable: false,
+    default: () => "'[]'",
+  })
+  combustiveisAtendidos: string[];
+
+  @ApiProperty({
+    description:
+      'IDs das áreas atendidas (allowlist). Vazio = sem restrição. Se preenchido, só essas áreas podem ser enviadas.',
+    type: [String],
+    required: false,
+  })
+  @Column({
+    name: 'ids_areas_atendidas',
+    type: 'jsonb',
+    nullable: false,
+    default: () => "'[]'",
+  })
+  idsAreasAtendidas: string[];
+
   @Column({ name: 'emails_relatorio', type: 'text', nullable: true })
   emailsRelatorio?: string;
 

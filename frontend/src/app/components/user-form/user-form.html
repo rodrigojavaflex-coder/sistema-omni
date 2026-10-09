@@ -62,13 +62,14 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Empresa (manutenção)</label>
-          <select formControlName="idEmpresa" class="form-select">
-            <option [ngValue]="null">Sem empresa</option>
-            <option *ngFor="let empresa of availableEmpresas" [ngValue]="empresa.id">
-              {{ empresa.descricao }}
-            </option>
-          </select>
+          <label class="form-label">Empresas de manutenção</label>
+          <app-multi-select
+            [options]="empresaManutencaoOptions"
+            [(ngModel)]="empresasManutencaoSelecionadas"
+            (selectionChange)="onEmpresasManutencaoSelectionChange($event)"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Selecione empresas de manutenção">
+          </app-multi-select>
         </div>
 
         <div class="form-group">

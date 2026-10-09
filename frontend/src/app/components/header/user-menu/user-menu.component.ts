@@ -67,11 +67,19 @@ export class UserMenuComponent implements OnInit {
   }
 
   formatEmpresa(user: Usuario): string {
+    const multi = (user.empresasManutencao ?? [])
+      .map((e) => e.descricao?.trim())
+      .filter((d): d is string => !!d);
+    if (multi.length) {
+      return multi.join(', ');
+    }
     const descricao = user.empresa?.descricao?.trim();
     if (descricao) {
       return descricao;
     }
-    return user.idEmpresa ? 'Empresa vinculada' : 'N/D';
+    return user.idEmpresa || user.idsEmpresasManutencao?.length
+      ? 'Empresa vinculada'
+      : 'N/D';
   }
 
   formatPerfis(perfis: { nomePerfil: string }[] | undefined): string {

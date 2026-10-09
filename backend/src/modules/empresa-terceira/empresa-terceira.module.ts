@@ -3,13 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { EmpresaTerceira } from './entities/empresa-terceira.entity';
+import { AreaVistoriada } from '../vistoria/entities/area-vistoriada.entity';
 import { EmpresaTerceiraService } from './empresa-terceira.service';
 import { EmpresaTerceiraController } from './empresa-terceira.controller';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([EmpresaTerceira]),
+    TypeOrmModule.forFeature([EmpresaTerceira, AreaVistoriada]),
     JwtModule,
     ConfigModule,
     forwardRef(() => AuditoriaModule),

@@ -26,6 +26,7 @@ export const HOME_SHORTCUT_IDS = [
   'tratamento',
   'manutencao',
   'validacao-final',
+  'gestao-os',
   'painel-metas',
   'painel-ocorrencias',
   'relatorios',

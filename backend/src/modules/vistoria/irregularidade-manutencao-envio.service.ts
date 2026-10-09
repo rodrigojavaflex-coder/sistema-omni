@@ -11,6 +11,8 @@ import { EmpresaTerceiraService } from '../empresa-terceira/empresa-terceira.ser
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 import { Configuracao } from '../configuracao/entities/configuracao.entity';
 import { BrtOsIntegrationService } from './brt-os-integration.service';
+import { ErpVistoriaIntegrationService } from './erp-vistoria-integration.service';
+import { ImpressaoRawService } from './impressao-raw.service';
 import { Irregularidade } from './entities/irregularidade.entity';
 import { IrregularidadeOsExterna } from './entities/irregularidade-os-externa.entity';
 import {
@@ -22,6 +24,7 @@ import {
 export const STATUS_ENVIO_MANUTENCAO: StatusIrregularidade[] = [
   StatusIrregularidade.REGISTRADA,
   StatusIrregularidade.RETRABALHO_GARANTIA,
+  StatusIrregularidade.NAO_PROCEDE,
 ];
 
 export interface ManutencaoEnvioContext {
@@ -58,6 +61,11 @@ export interface ManutencaoEnvioContext {
     irregularidades: Irregularidade[],
     configuracao: Configuracao | null,
   ) => Promise<{ enviado: boolean }>;
+  buildPdfRelatorio: (
+    resumo: RelatorioManutencaoResumoDto,
+    irregularidades: Irregularidade[],
+    configuracao: Configuracao | null,
+  ) => Promise<Buffer>;
 }
 
 @Injectable()
@@ -71,27 +79,44 @@ export class IrregularidadeManutencaoEnvioService {
     private readonly osExternaRepository: Repository<IrregularidadeOsExterna>,
     private readonly empresaTerceiraService: EmpresaTerceiraService,
     private readonly brtOsIntegrationService: BrtOsIntegrationService,
+    private readonly erpVistoriaIntegrationService: ErpVistoriaIntegrationService,
+    private readonly impressaoRawService: ImpressaoRawService,
   ) {}
 
   usesIntegracaoApi(empresa: EmpresaTerceira): boolean {
     return this.brtOsIntegrationService.usesBrtIntegration(empresa);
   }
 
+  assertEscopoEmpresa(
+    empresa: EmpresaTerceira,
+    irregularidades: Irregularidade[],
+  ): void {
+    this.empresaTerceiraService.assertEscopoAtendimento(
+      empresa,
+      irregularidades,
+    );
+  }
+
   /**
-   * Empresa BRT: a seleção deve incluir todas as elegíveis de cada vistoria tocada.
+   * Empresa BRT: a seleção deve incluir todas as elegíveis **no escopo da empresa**
+   * de cada vistoria tocada (OS fora do escopo ficam para outra empresa).
    */
   async assertSelecaoCompletaVistoriasBrt(
     selecionadas: Irregularidade[],
+    empresa: EmpresaTerceira,
   ): Promise<void> {
     const porVistoria = this.agruparPorVistoria(selecionadas);
     for (const [idVistoria, grupo] of porVistoria) {
-      const elegiveis = await this.irregularidadeRepository.find({
+      const candidatas = await this.irregularidadeRepository.find({
         where: {
           idVistoria,
           statusAtual: In(STATUS_ENVIO_MANUTENCAO),
         },
-        select: ['id', 'numeroIrregularidade'],
+        relations: ['area', 'vistoria', 'vistoria.veiculo'],
       });
+      const elegiveis = candidatas.filter((item) =>
+        this.empresaTerceiraService.irregularidadeNoEscopo(empresa, item),
+      );
       const selecionadosIds = new Set(grupo.map((item) => item.id));
       const faltantes = elegiveis.filter((item) => !selecionadosIds.has(item.id));
       if (faltantes.length > 0 || elegiveis.length !== grupo.length) {
@@ -99,7 +124,7 @@ export class IrregularidadeManutencaoEnvioService {
           grupo[0]?.vistoria?.numeroVistoria ??
           (await this.resolverNumeroVistoria(idVistoria));
         throw new BadRequestException(
-          `A vistoria ${numeroVistoria} tem ${elegiveis.length} irregularidade(s) elegível(is) para envio à BRT; ` +
+          `A vistoria ${numeroVistoria} tem ${elegiveis.length} irregularidade(s) elegível(is) no escopo de ${empresa.descricao} para envio à BRT; ` +
             `selecione todas (${grupo.length} selecionada(s), faltam ${faltantes.length || elegiveis.length - grupo.length}).`,
         );
       }
@@ -116,103 +141,134 @@ export class IrregularidadeManutencaoEnvioService {
     const falhas: EnvioManutencaoFalhaItemDto[] = [];
     let enviadasEntidades: Irregularidade[] = [];
 
-    if (this.usesIntegracaoApi(empresa)) {
-      await this.assertSelecaoCompletaVistoriasBrt(irregularidades);
-      const empresaComToken =
-        await this.empresaTerceiraService.findOneForIntegracao(empresa.id);
+    this.empresaTerceiraService.assertEscopoAtendimento(
+      empresa,
+      irregularidades,
+    );
 
-      const grupos = [...this.agruparPorVistoria(irregularidades).values()];
-      for (const grupo of grupos) {
-        const outcome = await this.tentarEnvioBrtGrupo(
-          empresaComToken,
-          grupo,
-          ctx,
-        );
-        if (outcome.ok) {
-          enviadasEntidades.push(...outcome.irregularidades);
-        } else {
-          falhas.push(...outcome.falhas);
-        }
-      }
-
-      let emailEnviado = false;
-      if (enviadasEntidades.length > 0 && empresa.enviarEmailRelatorio) {
-        ctx.assertEmailConfigIfNeeded(empresa, configuracao);
-        const mail = await ctx.sendRelatorioEmail(
-          empresa,
-          ctx.buildResumoRelatorio(
-            empresa,
-            enviadasEntidades,
-            emitidoEm,
-            ctx.actor?.nome,
-          ),
-          enviadasEntidades,
-          configuracao,
-        );
-        emailEnviado = mail.enviado;
-      }
-
-      const resumo = ctx.buildResumoRelatorio(
-        empresa,
-        enviadasEntidades.length > 0 ? enviadasEntidades : irregularidades,
-        emitidoEm,
-        ctx.actor?.nome,
-      );
-      const html = ctx.buildHtmlRelatorio(
-        resumo,
-        enviadasEntidades.length > 0 ? enviadasEntidades : irregularidades,
-      );
-
-      return {
-        resumo,
-        html,
-        totalEnviadas: enviadasEntidades.length,
-        emailEnviado,
-        falhas: falhas.length > 0 ? falhas : undefined,
-      };
+    const usaBrt = this.usesIntegracaoApi(empresa);
+    if (usaBrt) {
+      await this.assertSelecaoCompletaVistoriasBrt(irregularidades, empresa);
     }
 
-    if (empresa.enviarEmailRelatorio) {
-      ctx.assertEmailConfigIfNeeded(empresa, configuracao);
-      const resumoPre = ctx.buildResumoRelatorio(
-        empresa,
-        irregularidades,
-        emitidoEm,
-        ctx.actor?.nome,
+    const erpHabilitado =
+      await this.erpVistoriaIntegrationService.isEnvioHabilitado();
+    if (erpHabilitado) {
+      const erroConfig =
+        await this.erpVistoriaIntegrationService.obterErroConfigIncompleta();
+      if (erroConfig) {
+        throw new BadRequestException(erroConfig);
+      }
+    }
+
+    const empresaComToken = usaBrt
+      ? await this.empresaTerceiraService.findOneForIntegracao(empresa.id)
+      : empresa;
+
+    const porVeiculo = this.agruparPorVeiculo(irregularidades);
+    const prontosParaTransicao: Irregularidade[] = [];
+
+    for (const [, grupoVeiculo] of porVeiculo) {
+      const outcome = await this.prepararGrupoVeiculo(
+        empresaComToken,
+        grupoVeiculo,
+        erpHabilitado,
+        usaBrt,
+        ctx,
       );
+      if (outcome.ok) {
+        prontosParaTransicao.push(...outcome.irregularidades);
+      } else {
+        falhas.push(...outcome.falhas);
+      }
+    }
+
+    let emailEnviado = false;
+    if (prontosParaTransicao.length > 0 && empresa.enviarEmailRelatorio) {
+      ctx.assertEmailConfigIfNeeded(empresa, configuracao);
       const mail = await ctx.sendRelatorioEmail(
         empresa,
-        resumoPre,
-        irregularidades,
+        ctx.buildResumoRelatorio(
+          empresa,
+          prontosParaTransicao,
+          emitidoEm,
+          ctx.actor?.nome,
+        ),
+        prontosParaTransicao,
         configuracao,
       );
-      if (!mail.enviado && configuracao?.emailEnvioConfig?.ativo) {
+      emailEnviado = mail.enviado;
+      // Legado: e-mail obrigatório quando flag+SMTP — antes da transição.
+      if (
+        !usaBrt &&
+        !mail.enviado &&
+        configuracao?.emailEnvioConfig?.ativo
+      ) {
         throw new BadRequestException(
           'Não foi possível enviar o relatório por e-mail. Nenhuma irregularidade foi encaminhada.',
         );
       }
     }
 
-    enviadasEntidades = await this.transicionarLegado(
-      irregularidades,
-      empresa.id,
-      ctx,
-    );
+    if (prontosParaTransicao.length > 0) {
+      enviadasEntidades = await this.transicionarParaManutencao(
+        prontosParaTransicao,
+        empresa.id,
+        usaBrt,
+        ctx,
+      );
+    }
 
+    const itensRelatorio =
+      enviadasEntidades.length > 0 ? enviadasEntidades : irregularidades;
     const resumo = ctx.buildResumoRelatorio(
       empresa,
-      enviadasEntidades,
+      itensRelatorio,
       emitidoEm,
       ctx.actor?.nome,
     );
-    const html = ctx.buildHtmlRelatorio(resumo, enviadasEntidades);
+    const html = ctx.buildHtmlRelatorio(resumo, itensRelatorio);
+
+    let impressaoEnviada: boolean | undefined;
+    let impressaoErro: string | undefined;
+    if (
+      enviadasEntidades.length > 0 &&
+      configuracao?.impressaoManutencaoConfig?.ativo
+    ) {
+      try {
+        const pdf = await ctx.buildPdfRelatorio(
+          resumo,
+          enviadasEntidades,
+          configuracao,
+        );
+        const printResult = await this.impressaoRawService.enviarPdf(
+          pdf,
+          configuracao.impressaoManutencaoConfig,
+        );
+        impressaoEnviada = printResult.enviado;
+        if (!printResult.enviado) {
+          impressaoErro = printResult.erro;
+        }
+      } catch (error) {
+        impressaoEnviada = false;
+        impressaoErro =
+          error instanceof Error
+            ? error.message
+            : 'Falha ao gerar/enviar PDF para impressão';
+        this.logger.warn(
+          `Impressão pós-manutenção falhou (não bloqueia envio): ${impressaoErro}`,
+        );
+      }
+    }
 
     return {
       resumo,
       html,
       totalEnviadas: enviadasEntidades.length,
-      emailEnviado: empresa.enviarEmailRelatorio,
-      falhas: undefined,
+      emailEnviado,
+      impressaoEnviada,
+      impressaoErro,
+      falhas: falhas.length > 0 ? falhas : undefined,
     };
   }
 
@@ -230,60 +286,119 @@ export class IrregularidadeManutencaoEnvioService {
       );
     }
 
-    if (this.usesIntegracaoApi(empresa)) {
-      await this.assertSelecaoCompletaVistoriasBrt([irregularidade]);
-      const outcome = await this.tentarEnvioBrtGrupo(
-        empresa,
-        [irregularidade],
-        ctx,
-      );
-      if (!outcome.ok) {
-        throw new BadRequestException(outcome.falhas[0]?.mensagem ?? 'Falha na integração BRT');
-      }
-      return outcome.irregularidades[0];
-    }
-
-    if (empresa.enviarEmailRelatorio) {
-      ctx.assertEmailConfigIfNeeded(empresa, configuracao);
-      const emitidoEm = new Date();
-      const resumo = ctx.buildResumoRelatorio(
-        empresa,
-        [irregularidade],
-        emitidoEm,
-        ctx.actor?.nome,
-      );
-      await ctx.sendRelatorioEmail(
-        empresa,
-        resumo,
-        [irregularidade],
-        configuracao,
-      );
-    }
-
-    const [saved] = await this.transicionarLegado(
+    const resultado = await this.executarEnvioLote(
+      empresa,
       [irregularidade],
-      idEmpresaManutencao,
+      configuracao,
       ctx,
     );
-    return saved;
+    if (resultado.totalEnviadas === 0) {
+      const falha = resultado.falhas?.[0];
+      throw new BadRequestException(
+        falha?.mensagem ?? 'Falha ao enviar irregularidade para manutenção',
+      );
+    }
+    const atualizada = await this.irregularidadeRepository.findOne({
+      where: { id: irregularidade.id },
+      relations: [
+        'area',
+        'componente',
+        'sintoma',
+        'vista',
+        'vistoria',
+        'vistoria.veiculo',
+        'midias',
+      ],
+    });
+    if (!atualizada) {
+      throw new NotFoundException('Irregularidade não encontrada');
+    }
+    return atualizada;
   }
 
-  private async tentarEnvioBrtGrupo(
+  /**
+   * Pipeline por veículo: ERP (se ativo) → BRT por vistoria (se empresa API).
+   * Não transiciona status — o lote faz e-mail (legado) e depois a transição.
+   * Sucesso/falha atômicos por veículo.
+   */
+  private async prepararGrupoVeiculo(
+    empresa: EmpresaTerceira,
+    grupoVeiculo: Irregularidade[],
+    erpHabilitado: boolean,
+    usaBrt: boolean,
+    ctx: ManutencaoEnvioContext,
+  ): Promise<
+    | { ok: true; irregularidades: Irregularidade[] }
+    | { ok: false; falhas: EnvioManutencaoFalhaItemDto[] }
+  > {
+    if (erpHabilitado) {
+      const erp = await this.erpVistoriaIntegrationService.garantirEnvioGrupoVeiculo(
+        grupoVeiculo,
+      );
+      if (!erp.ok) {
+        return {
+          ok: false,
+          falhas: grupoVeiculo.map((item) => ({
+            id: item.id,
+            numeroIrregularidade: item.numeroIrregularidade,
+            codigoErro: 'erp_falha',
+            mensagem: erp.erro,
+          })),
+        };
+      }
+    }
+
+    if (usaBrt) {
+      const porVistoria = [...this.agruparPorVistoria(grupoVeiculo).values()];
+      for (const grupoVistoria of porVistoria) {
+        const brt = await this.garantirOsBrtGrupo(empresa, grupoVistoria, ctx);
+        if (!brt.ok) {
+          return { ok: false, falhas: brt.falhas };
+        }
+      }
+    }
+
+    return { ok: true, irregularidades: grupoVeiculo };
+  }
+
+  /**
+   * Cria OS BRT (ou reaproveita) sem alterar status — transição fica no pipeline.
+   */
+  private async garantirOsBrtGrupo(
     empresa: EmpresaTerceira,
     irregularidades: Irregularidade[],
     ctx: ManutencaoEnvioContext,
   ): Promise<
-    | { ok: true; irregularidades: Irregularidade[] }
+    | { ok: true }
     | { ok: false; falhas: EnvioManutencaoFalhaItemDto[] }
   > {
     const grupo = [...irregularidades].sort(
       (a, b) =>
         (a.numeroIrregularidade ?? 0) - (b.numeroIrregularidade ?? 0),
     );
-    const numeroVistoria = grupo[0]?.vistoria?.numeroVistoria;
-    const statusPorId = new Map(
-      grupo.map((item) => [item.id, item.statusAtual] as const),
+
+    const nums = new Set(
+      grupo
+        .map((item) => item.numOsExternoAtual)
+        .filter((item): item is number => item != null),
     );
+    const origs = new Set(
+      grupo
+        .map((item) => item.osOrigAtual?.trim())
+        .filter((item): item is string => !!item),
+    );
+    if (
+      nums.size === 1 &&
+      origs.size === 1 &&
+      grupo.every(
+        (item) =>
+          item.numOsExternoAtual != null && !!item.osOrigAtual?.trim(),
+      )
+    ) {
+      return { ok: true };
+    }
+
+    const numeroVistoria = grupo[0]?.vistoria?.numeroVistoria;
 
     let osOrig: string;
     let payload;
@@ -366,68 +481,105 @@ export class IrregularidadeManutencaoEnvioService {
       };
     }
 
-    const saved = await this.irregularidadeRepository.manager.transaction(
-      async (manager) => {
-        const repo = manager.getRepository(Irregularidade);
-        const osRepo = manager.getRepository(IrregularidadeOsExterna);
-        const persisted: Irregularidade[] = [];
-        const iniciadaEm = new Date();
+    await this.irregularidadeRepository.manager.transaction(async (manager) => {
+      const repo = manager.getRepository(Irregularidade);
+      const osRepo = manager.getRepository(IrregularidadeOsExterna);
 
-        for (const item of grupo) {
-          const entity = await repo.findOne({ where: { id: item.id } });
-          if (!entity) {
-            throw new NotFoundException('Irregularidade não encontrada');
-          }
-          const statusOrigem =
-            statusPorId.get(item.id) ?? entity.statusAtual;
-          entity.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
-          entity.idEmpresaManutencao = empresa.id;
-          entity.iniciadaManutencaoEm = iniciadaEm;
-          entity.resolvido = false;
-          entity.controleIntegracaoApi = true;
-          entity.osOrigAtual = osOrig;
-          entity.numOsExternoAtual = result.numOs;
-          entity.ultimoErroIntegracao = null;
-          entity.ultimoErroIntegracaoEm = null;
-          const savedItem = await repo.save(entity);
-          persisted.push(savedItem);
-
-          await osRepo.save(
-            osRepo.create({
-              idIrregularidade: savedItem.id,
-              osOrig,
-              numOsExterno: result.numOs,
-              integrador: 'BRT',
-              sucesso: true,
-              httpStatus: result.httpStatus,
-            }),
-          );
-
-          await ctx.registrarHistorico(manager, {
-            idIrregularidade: savedItem.id,
-            statusOrigem,
-            statusDestino: StatusIrregularidade.EM_MANUTENCAO,
-            acao: result.duplicada
-              ? 'enviar_api_os_duplicada'
-              : 'enviar_api_os',
-            idUsuario: ctx.actor?.id,
-            idEmpresaEvento: empresa.id,
-            observacao: `os_orig=${osOrig}; numOs=${result.numOs}; vistoria=${numeroVistoria}; grupo=${grupo.length}`,
-          });
-          await ctx.registrarHistorico(manager, {
-            idIrregularidade: savedItem.id,
-            statusOrigem: StatusIrregularidade.EM_MANUTENCAO,
-            statusDestino: StatusIrregularidade.EM_MANUTENCAO,
-            acao: 'iniciar_manutencao',
-            idUsuario: ctx.actor?.id,
-            idEmpresaEvento: empresa.id,
-          });
+      for (const item of grupo) {
+        const entity = await repo.findOne({ where: { id: item.id } });
+        if (!entity) {
+          throw new NotFoundException('Irregularidade não encontrada');
         }
-        return persisted;
-      },
-    );
+        entity.osOrigAtual = osOrig;
+        entity.numOsExternoAtual = result.numOs;
+        entity.ultimoErroIntegracao = null;
+        entity.ultimoErroIntegracaoEm = null;
+        const savedItem = await repo.save(entity);
+        item.osOrigAtual = savedItem.osOrigAtual;
+        item.numOsExternoAtual = savedItem.numOsExternoAtual;
+        item.ultimoErroIntegracao = null;
+        item.ultimoErroIntegracaoEm = null;
 
-    return { ok: true, irregularidades: saved };
+        await osRepo.save(
+          osRepo.create({
+            idIrregularidade: savedItem.id,
+            osOrig,
+            numOsExterno: result.numOs,
+            integrador: 'BRT',
+            sucesso: true,
+            httpStatus: result.httpStatus,
+          }),
+        );
+
+        await ctx.registrarHistorico(manager, {
+          idIrregularidade: savedItem.id,
+          statusOrigem: item.statusAtual,
+          statusDestino: item.statusAtual,
+          acao: result.duplicada
+            ? 'enviar_api_os_duplicada'
+            : 'enviar_api_os',
+          idUsuario: ctx.actor?.id,
+          idEmpresaEvento: empresa.id,
+          observacao: `os_orig=${osOrig}; numOs=${result.numOs}; vistoria=${numeroVistoria}; grupo=${grupo.length}; pendente_transicao=true`,
+        });
+      }
+    });
+
+    return { ok: true };
+  }
+
+  private async transicionarParaManutencao(
+    irregularidades: Irregularidade[],
+    idEmpresaManutencao: string,
+    controleIntegracaoApi: boolean,
+    ctx: ManutencaoEnvioContext,
+  ): Promise<Irregularidade[]> {
+    return this.irregularidadeRepository.manager.transaction(async (manager) => {
+      const saved: Irregularidade[] = [];
+      const iniciadaEm = new Date();
+      for (const irregularidade of irregularidades) {
+        const entity = await manager
+          .getRepository(Irregularidade)
+          .findOne({ where: { id: irregularidade.id } });
+        if (!entity) {
+          throw new NotFoundException('Irregularidade não encontrada');
+        }
+        const statusOrigem = entity.statusAtual;
+        entity.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
+        entity.idEmpresaManutencao = idEmpresaManutencao;
+        entity.iniciadaManutencaoEm = iniciadaEm;
+        entity.resolvido = false;
+        entity.controleIntegracaoApi = controleIntegracaoApi;
+        entity.ultimoErroIntegracao = null;
+        entity.ultimoErroIntegracaoEm = null;
+        const item = await manager.getRepository(Irregularidade).save(entity);
+        await ctx.registrarHistorico(manager, {
+          idIrregularidade: item.id,
+          statusOrigem,
+          statusDestino: StatusIrregularidade.EM_MANUTENCAO,
+          acao: 'iniciar_manutencao',
+          idUsuario: ctx.actor?.id,
+          idEmpresaEvento: idEmpresaManutencao,
+        });
+        // Mantém relações já hidratadas (vistoria/veículo, área, mídias etc.)
+        // para o PDF/HTML pós-envio; o save acima retorna entidade sem relations.
+        Object.assign(irregularidade, {
+          statusAtual: item.statusAtual,
+          idEmpresaManutencao: item.idEmpresaManutencao,
+          iniciadaManutencaoEm: item.iniciadaManutencaoEm,
+          resolvido: item.resolvido,
+          controleIntegracaoApi: item.controleIntegracaoApi,
+          ultimoErroIntegracao: item.ultimoErroIntegracao,
+          ultimoErroIntegracaoEm: item.ultimoErroIntegracaoEm,
+          erpCodigoPedido: item.erpCodigoPedido ?? irregularidade.erpCodigoPedido,
+          numOsExternoAtual:
+            item.numOsExternoAtual ?? irregularidade.numOsExternoAtual,
+          osOrigAtual: item.osOrigAtual ?? irregularidade.osOrigAtual,
+        });
+        saved.push(irregularidade);
+      }
+      return saved;
+    });
   }
 
   async executarCancelamentoOsBrt(
@@ -534,6 +686,7 @@ export class IrregularidadeManutencaoEnvioService {
         entity.numOsExternoAtual = null;
         entity.ultimoErroIntegracao = null;
         entity.ultimoErroIntegracaoEm = null;
+        this.erpVistoriaIntegrationService.limparVinculoErp(entity);
         entity.resolvido = false;
         const persisted = await repo.save(entity);
         if (persisted.id === irregularidade.id) {
@@ -556,6 +709,24 @@ export class IrregularidadeManutencaoEnvioService {
       }
       return representante;
     });
+  }
+
+  private agruparPorVeiculo(
+    irregularidades: Irregularidade[],
+  ): Map<string, Irregularidade[]> {
+    const map = new Map<string, Irregularidade[]>();
+    for (const item of irregularidades) {
+      const key = item.vistoria?.idVeiculo ?? item.vistoria?.veiculo?.id;
+      if (!key) {
+        throw new BadRequestException(
+          'Irregularidade sem veículo vinculado não pode ser enviada ao ERP/manutenção',
+        );
+      }
+      const lista = map.get(key) ?? [];
+      lista.push(item);
+      map.set(key, lista);
+    }
+    return map;
   }
 
   private agruparPorVistoria(
@@ -588,10 +759,6 @@ export class IrregularidadeManutencaoEnvioService {
     return row?.numero != null ? String(row.numero) : idVistoria.slice(0, 8);
   }
 
-  /**
-   * Quantidade de ciclos de OS com sucesso já registrados para a base numeroVistoria
-   * (inclui legado 1:1 quando os_orig coincidia com o número da vistoria).
-   */
   private async contarSucessosOsOrigVistoria(
     numeroVistoria: number,
   ): Promise<number> {
@@ -625,36 +792,5 @@ export class IrregularidadeManutencaoEnvioService {
     this.logger.warn(
       `Falha integração OS irregularidade=${irregularidade.id} numero=${irregularidade.numeroIrregularidade} os_orig=${osOrig} codigo=${codigoErro} http=${httpStatus ?? 'n/a'} mensagem=${mensagemLog}`,
     );
-  }
-
-  private async transicionarLegado(
-    irregularidades: Irregularidade[],
-    idEmpresaManutencao: string,
-    ctx: ManutencaoEnvioContext,
-  ): Promise<Irregularidade[]> {
-    return this.irregularidadeRepository.manager.transaction(async (manager) => {
-      const saved: Irregularidade[] = [];
-      for (const irregularidade of irregularidades) {
-        const statusOrigem = irregularidade.statusAtual;
-        irregularidade.statusAtual = StatusIrregularidade.EM_MANUTENCAO;
-        irregularidade.idEmpresaManutencao = idEmpresaManutencao;
-        irregularidade.iniciadaManutencaoEm = new Date();
-        irregularidade.resolvido = false;
-        irregularidade.controleIntegracaoApi = false;
-        irregularidade.ultimoErroIntegracao = null;
-        irregularidade.ultimoErroIntegracaoEm = null;
-        const item = await manager.getRepository(Irregularidade).save(irregularidade);
-        await ctx.registrarHistorico(manager, {
-          idIrregularidade: item.id,
-          statusOrigem,
-          statusDestino: StatusIrregularidade.EM_MANUTENCAO,
-          acao: 'iniciar_manutencao',
-          idUsuario: ctx.actor?.id,
-          idEmpresaEvento: idEmpresaManutencao,
-        });
-        saved.push(item);
-      }
-      return saved;
-    });
   }
 }

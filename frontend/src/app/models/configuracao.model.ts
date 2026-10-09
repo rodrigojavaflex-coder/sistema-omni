@@ -23,6 +23,13 @@ export interface ErpVistoriaConfig {
   timeoutMs?: number;
 }
 
+export interface ImpressaoManutencaoConfig {
+  ativo: boolean;
+  impressoraIp: string;
+  impressoraPorta: number;
+  timeoutMs?: number;
+}
+
 export interface Configuracao {
   id: string;
   nomeCliente?: string;
@@ -38,6 +45,7 @@ export interface Configuracao {
   tempoFluxoConfig?: TempoFluxoConfig;
   emailEnvioConfig?: EmailEnvioConfig;
   erpVistoriaConfig?: ErpVistoriaConfig;
+  impressaoManutencaoConfig?: ImpressaoManutencaoConfig;
   /** Null = usar padrão 500 km no backend */
   odometroDiffMaxKm?: number | null;
   /** Null/vazio = não bloqueia apps abaixo desta versão */
@@ -84,6 +92,7 @@ export interface CreateConfiguracaoDto {
   tempoFluxoConfig?: TempoFluxoConfig;
   emailEnvioConfig?: EmailEnvioConfig;
   erpVistoriaConfig?: ErpVistoriaConfig;
+  impressaoManutencaoConfig?: ImpressaoManutencaoConfig;
   odometroDiffMaxKm?: number | null;
   mobileVersaoMinima?: string | null;
 }

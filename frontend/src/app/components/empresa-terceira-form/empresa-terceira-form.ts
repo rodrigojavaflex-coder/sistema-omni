@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
-import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { BaseFormComponent } from '../base/base-form.component';
@@ -10,13 +10,16 @@ import {
   EmpresaTerceira,
 } from '../../models/empresa-terceira.model';
 import { EmpresaTerceiraService } from '../../services/empresa-terceira.service';
+import { AreaVistoriadaService } from '../../services/area-vistoriada.service';
 import { AuthService } from '../../services/auth.service';
 import { Permission } from '../../models/usuario.model';
+import { Combustivel } from '../../models/combustivel.enum';
+import { MultiSelectComponent } from '../shared/multi-select/multi-select.component';
 
 @Component({
   selector: 'app-empresa-terceira-form',
   standalone: true,
-  imports: [CommonModule, NgClass, ReactiveFormsModule],
+  imports: [CommonModule, NgClass, ReactiveFormsModule, FormsModule, MultiSelectComponent],
   templateUrl: './empresa-terceira-form.html',
   styleUrls: ['./empresa-terceira-form.css'],
 })
@@ -29,10 +32,19 @@ export class EmpresaTerceiraFormComponent
   brtTokenConfigured = false;
   showBrtToken = false;
   brtTokenLoading = false;
+  combustivelOptions = Object.values(Combustivel);
+  areaOptions: string[] = [];
+  private areaNomeById = new Map<string, string>();
+  combustiveisSelecionados: string[] = [];
+  areasSelecionadas: string[] = [];
+  activeTab: 'geral' | 'escopo' | 'integracao' = 'geral';
+  readonly labelAreaFiltro = (id: string): string =>
+    this.areaNomeById.get(id) || id;
 
   constructor(
     private fb: FormBuilder,
     private empresaService: EmpresaTerceiraService,
+    private areaService: AreaVistoriadaService,
     private authService: AuthService,
     private route: ActivatedRoute,
     router: Router,
@@ -46,13 +58,37 @@ export class EmpresaTerceiraFormComponent
     );
   }
 
+  setActiveTab(tab: 'geral' | 'escopo' | 'integracao'): void {
+    if (tab === 'integracao' && !this.podeConfigurarIntegracao) {
+      return;
+    }
+    this.activeTab = tab;
+  }
+
   override ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.editMode = true;
       this.entityId = id;
     }
+    void this.loadAreasOptions();
     super.ngOnInit();
+  }
+
+  private async loadAreasOptions(): Promise<void> {
+    try {
+      const areas = await firstValueFrom(this.areaService.getAll(undefined, true));
+      this.areaNomeById = new Map(
+        (areas ?? []).map((a) => [a.id, a.nome] as const),
+      );
+      this.areaOptions = (areas ?? [])
+        .slice()
+        .sort((a, b) => a.nome.localeCompare(b.nome))
+        .map((a) => a.id);
+    } catch {
+      this.areaOptions = [];
+      this.areaNomeById = new Map();
+    }
   }
 
   protected initializeForm(): void {
@@ -80,6 +116,12 @@ export class EmpresaTerceiraFormComponent
       emailsRelatorio: raw.emailsRelatorio || undefined,
       ehEmpresaManutencao: !!raw.ehEmpresaManutencao,
       enviarEmailRelatorio: !!raw.enviarEmailRelatorio,
+      combustiveisAtendidos: !!raw.ehEmpresaManutencao
+        ? [...this.combustiveisSelecionados]
+        : [],
+      idsAreasAtendidas: !!raw.ehEmpresaManutencao
+        ? [...this.areasSelecionadas]
+        : [],
     };
     if (this.podeConfigurarIntegracao) {
       payload.integracaoManutencao = raw.integracaoManutencao || 'NENHUMA';
@@ -113,6 +155,8 @@ export class EmpresaTerceiraFormComponent
       this.empresaService.getById(id),
     );
     this.brtTokenConfigured = !!item.brtTokenConfigured;
+    this.combustiveisSelecionados = [...(item.combustiveisAtendidos ?? [])];
+    this.areasSelecionadas = [...(item.idsAreasAtendidas ?? [])];
     this.form.patchValue({
       descricao: item.descricao,
       emailsRelatorio: item.emailsRelatorio ?? '',

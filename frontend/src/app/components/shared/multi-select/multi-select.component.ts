@@ -1,4 +1,12 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -20,9 +28,12 @@ import { ClickOutsideDirective } from '../../../directives/click-outside.directi
   ],
 })
 export class MultiSelectComponent implements ControlValueAccessor {
+  private readonly cdr = inject(ChangeDetectorRef);
+
   @Input() options: string[] = [];
   @Input() placeholder = 'Selecionar...';
   @Input() displayLabel = false;
+  @Input() optionLabelFn?: (value: string) => string;
   @Output() selectionChange = new EventEmitter<string[]>();
 
   selectedItems: string[] = [];
@@ -32,7 +43,8 @@ export class MultiSelectComponent implements ControlValueAccessor {
   private onTouched: () => void = () => {};
 
   writeValue(value: string[] | null): void {
-    this.selectedItems = value || [];
+    this.selectedItems = value ? [...value] : [];
+    this.cdr.markForCheck();
   }
 
   registerOnChange(fn: (value: string[]) => void): void {
@@ -66,12 +78,16 @@ export class MultiSelectComponent implements ControlValueAccessor {
     return this.selectedItems.includes(item);
   }
 
+  getOptionLabel(option: string): string {
+    return this.optionLabelFn ? this.optionLabelFn(option) : option;
+  }
+
   getDisplayValue(): string {
     if (this.selectedItems.length === 0) {
       return this.placeholder;
     }
     if (this.selectedItems.length === 1) {
-      return this.selectedItems[0];
+      return this.getOptionLabel(this.selectedItems[0]);
     }
     return `${this.selectedItems.length} selecionado(s)`;
   }

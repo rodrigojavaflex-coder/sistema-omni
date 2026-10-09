@@ -192,7 +192,7 @@ Copie o bloco abaixo para cada regra nova.
 - [x] RN-VIS-005 - Desistencia da vistoria mobile com exclusao em cascata
 - [x] RN-VIS-006 - Envio para manutencao com integracao OS externa (dual BRT)
 - [x] RN-VIS-007 - Relatorio PDF de pendencias do veiculo
-- [x] RN-VIS-008 - Integracao assincrona da capa da vistoria com ERP legado
+- [x] RN-VIS-008 - Integracao ERP no envio para manutencao (por veiculo / irregularidades)
 - [x] RN-VIS-009 - Mapa de avaria no modelo do veiculo (vistas + marcacao no sintoma)
 - [x] RN-VIS-010 - Corrigir motorista e odometro de vistoria finalizada (web)
 - [x] RN-VIS-011 - Listar vistorias finalizadas no app com impressao PDF
@@ -249,37 +249,50 @@ Copie o bloco abaixo para cada regra nova.
 
 ### RN-VIS-003 - Permissoes de acesso e acao por tela do fluxo de irregularidades
 - **Modulo:** Vistoria
-- **Fluxo:** Telas web Tratamento, Manutencao e Validacao (`/irregularidades/*`)
-- **Descricao:** Cada tela exige permissao `:read` propria para menu, rota e listagem API. Permissoes de acao (`:update`, `:start`, `:finish`, `:mark_not_proceeding`) controlam apenas botoes e endpoints de transicao; nao substituem o `:read` de acesso.
+- **Fluxo:** Telas web Tratamento, Manutencao, Validacao e Gestao OS (`/irregularidades/*`)
+- **Descricao:** Cada tela exige permissao `:read` propria para menu, rota e listagem API. Permissoes de acao (`:update`, `:start`, `:finish`, `:mark_not_proceeding`) controlam apenas botoes e endpoints de transicao; nao substituem o `:read` de acesso. Nas filas Manutencao e Validacao o escopo e por empresas de manutencao vinculadas ao usuario (N:N); o filtro de empresa e obrigatorio (uma empresa por vez). Tratamento nao exige empresa. Gestao OS consulta todos os status com filtros livres (empresa opcional) e nao executa transicoes.
 - **Condicoes de entrada:** Usuario autenticado com perfil contendo permissoes do fluxo
 - **Validacoes:**
   - Menu e rota de Tratamento exigem `irregularidade_tratamento:read`
   - Menu e rota de Manutencao exigem `irregularidade_manutencao:read`
   - Menu e rota de Validacao exigem `irregularidade_validacao_final:read`
-  - `GET /irregularidades` exige `:read` de cada etapa correspondente aos status consultados (REGISTRADA/RETRABALHO_GARANTIA/CANCELADA → tratamento; EM_MANUTENCAO → manutencao; CONCLUIDA/NAO_PROCEDE/VALIDADA → validacao final)
-  - Consulta com multiplos status exige todas as permissoes `:read` envolvidas
+  - Menu e rota de Gestao OS exigem `irregularidade_gestao_os:read`
+  - `GET /irregularidades` exige `:read` de cada etapa correspondente aos status consultados (REGISTRADA/RETRABALHO_GARANTIA/CANCELADA/NAO_PROCEDE → tratamento; EM_MANUTENCAO → manutencao; CONCLUIDA/VALIDADA → validacao final), **exceto** quando o usuario tem `irregularidade_gestao_os:read` (consulta todos os status)
+  - Consulta com multiplos status exige todas as permissoes `:read` envolvidas (salvo Gestao OS)
+  - Escopo empresa (Manutencao/Validacao): status `EM_MANUTENCAO`, `CONCLUIDA`, `VALIDADA` exigem usuario com ao menos uma empresa em `usuariosEmpresasManutencao` e query `idEmpresaManutencao` obrigatoria pertencente ao vinculo; sem vinculo → 403 / fila vazia na UI
+  - `NAO_PROCEDE` nao exige filtro de empresa (vinculo da OS e limpo na devolucao)
+  - Acoes de Manutencao/Validacao (concluir, nao procede, cancelar OS BRT, validar, reprovar) exigem que `idEmpresaManutencao` da irregularidade esteja no vinculo do usuario
+  - Cadastro de usuario: multi-select de empresas de manutencao; `idEmpresa` legado sincronizado com a 1ª vinculada
 - **Acoes do sistema:**
-  - Cadastro de perfis agrupa permissoes em «Irregularidades – Tratamento», «Irregularidades – Manutenção» e «Irregularidades – Validação»
+  - Cadastro de perfis agrupa permissoes em «Irregularidades – Tratamento», «Irregularidades – Manutenção», «Irregularidades – Validação» e «Irregularidades – Gestão OS»
   - `irregularidade_manutencao:start` aparece no grupo Tratamento (botao «Enviar para manutenção» nesta tela)
   - API retorna HTTP 403 quando falta `:read` da etapa consultada
-  - Filtro «Todos» na tela Tratamento (frontend) monta a lista de status conforme `:read` do usuario antes de chamar a API
-- **Mensagens ao usuario:** Guard/rota redireciona para home sem `:read`; API 403 com lista de permissoes faltantes
+  - Filtro «Todos» na tela Tratamento lista `REGISTRADA` + `NAO_PROCEDE`; Retrabalho/Cancelada permanecem no combo
+  - Fila Validacao lista `CONCLUIDA`
+  - Telas Manutencao/Validacao: filtro de empresa (uma por vez) + coluna Empresa no grid; Gestao OS: filtro de empresa opcional
+  - Tela Gestao OS (`/irregularidades/gestao-os`): todos os status, filtros de OS/veiculo/periodo/empresa/gravidade/origem; botao Imprimir com a mesma permissao `:read` da tela
+- **Mensagens ao usuario:** Guard/rota redireciona para home sem `:read`; API 403 com lista de permissoes faltantes; sem empresa vinculada informa que nao ha registros
 - **Permissoes envolvidas:**
   - Tratamento: `irregularidade_tratamento:read` (acesso), `irregularidade_tratamento:update` (reclassificar/cancelar), `irregularidade_manutencao:start` (enviar para manutencao; tambem autoriza `GET /empresas-terceiras` so para lookup do combo, sem liberar menu/rota de cadastro de empresas)
   - Manutencao: `irregularidade_manutencao:read` (acesso), `irregularidade_manutencao:finish`, `irregularidade_manutencao:mark_not_proceeding`
   - Validacao: `irregularidade_validacao_final:read` (acesso), `irregularidade_validacao_final:update` (validar/reprovar)
-- **Dados impactados:** Nenhum (sem alteracao de schema; keys de permissao mantidas)
+  - Gestao OS: `irregularidade_gestao_os:read` (acesso, consulta e impressao PDF)
+- **Dados impactados:** Tabela `usuariosEmpresasManutencao` (N:N); coluna legado `usuarios.idEmpresa` mantida sincronizada com a 1ª empresa
 - **Rastreabilidade:** Nao exige auditoria adicional
 - **Criterios de aceite:**
   - [ ] Usuario so com permissoes de acao (sem `:read`) nao ve menu nem rota da tela
   - [ ] Usuario com `:read` ve fila sem botoes de acao nao autorizados
   - [ ] Operador Tratamento com `manutencao:start` (sem `empresaterceira:read`) ve empresas no combo «Enviar para manutenção» e nao ve menu/rota de cadastro de empresas
   - [ ] Operador Tratamento precisa de `tratamento:read` + acoes desejadas (ex.: `update`, `manutencao:start`)
-  - [ ] `GET /irregularidades` retorna 403 ao consultar status de etapa sem `:read`
-  - [ ] Cadastro de perfil exibe 3 grupos com labels alinhados as telas
-  - [ ] Filtro «Todos» em Tratamento lista apenas status das etapas com `:read` do usuario
-- **Cenarios de excecao:** Perfis existentes com acao mas sem `:read` perdem acesso ate inclusao da permissao de leitura; filtro «Todos» em Tratamento envia ao backend apenas status permitidos pelas permissoes `:read` do usuario (tratamento → REGISTRADA/CANCELADA; manutencao → EM_MANUTENCAO; validacao → CONCLUIDA/NAO_PROCEDE/VALIDADA)
-- **Origem da regra:** Reorganizacao de permissoes do fluxo web, 2026-05-21
+  - [ ] `GET /irregularidades` retorna 403 ao consultar status de etapa sem `:read` (exceto Gestao OS)
+  - [ ] Cadastro de perfil exibe grupos alinhados as telas, incluindo Gestao OS
+  - [ ] Filtro «Todos» em Tratamento lista `REGISTRADA` + `NAO_PROCEDE`
+  - [ ] Usuario sem empresa de manutencao nao ve itens em Manutencao/Validacao
+  - [ ] Filtro de empresa obriga uma empresa por vez nas filas operacionais e so lista empresas vinculadas
+  - [ ] `CONCLUIDA`/`VALIDADA` respeitam o mesmo escopo de empresa
+  - [ ] Gestao OS lista todos os status sem exigir empresa; concessao manual da permissao
+- **Cenarios de excecao:** Perfis existentes com acao mas sem `:read` perdem acesso ate inclusao da permissao de leitura; empresa fora do vinculo → 403 nas filas operacionais
+- **Origem da regra:** Reorganizacao de permissoes do fluxo web, 2026-05-21; multi-empresa manutencao 2026-10-08; Gestao OS e NAO_PROCEDE no Tratamento 2026-10-09
 - **Status:** Implementada
 
 ### RN-VIS-004 - Registrar irregularidade SOS na web (Tratamento)
@@ -335,58 +348,88 @@ Copie o bloco abaixo para cada regra nova.
 ### RN-VIS-006 - Envio para manutencao com integracao OS externa (dual BRT)
 - **Modulo:** Vistoria
 - **Fluxo:** Tratamento (`/irregularidades/tratamento`) → Manutencao → Validacao final; registro mobile e SOS inalterados na origem
-- **Descricao:** Ao enviar irregularidade para manutencao, o operador seleciona empresa de manutencao (mesmo fluxo atual). Se a empresa estiver configurada para integracao de OS (API Consorcio BRT), o sistema cria uma OS externa **sincrona por vistoria** (**1 vistoria OMNI = 1 OS BRT**), agregando todas as irregularidades elegiveis daquela vistoria no mesmo `os_orig` / `numOs`, e so entao transiciona o **grupo** para `EM_MANUTENCAO`. O Tratamento continua item a item (reclassificar/cancelar); apenas o envio BRT exige selecao **completa** das elegiveis da vistoria (mobile e SOS usam a mesma estrutura de vistoria). Se a empresa **nao** usar API, mantem-se o fluxo legado (relatorio PDF/e-mail; subset permitido). Falha de integracao mantem **todo o grupo** da vistoria no status de origem no Tratamento, com detalhe do erro. Reprovacao na validacao final move para `RETRABALHO_GARANTIA` (tela Tratamento); reenvio do grupo usa `os_orig` com sufixo (`numeroVistoria-2`, `-3`, …). Irregularidades sob controle da API nao permitem conclusao manual — saida de `EM_MANUTENCAO` para `CONCLUIDA` por retorno integrado (v2). Rastreio operacional na UI prioriza o `numOs` BRT; `os_orig` fica para auditoria/idempotencia. Historico 1:1 legado (`os_orig` = `numeroIrregularidade`) convive sem migracao.
+- **Descricao:** Ao enviar irregularidade para manutencao, o operador seleciona empresa de manutencao. Pipeline por veiculo: (1) se «Habilitar envio ao ERP» estiver ativo na Configuracao do Sistema, envia pedido ERP (RN-VIS-008); (2) se a empresa tiver Integracao OS (BRT), cria OS BRT por vistoria; (3) so entao transiciona para `EM_MANUTENCAO`. Apos a transicao, se «Habilitar Impressão» estiver ativo na aba Impressão da Configuracao, o backend gera o PDF do relatorio (com `OS:` / `OS OMNI:` / `OS BRT:` quando existirem) e envia via TCP RAW/JetDirect ao IP/porta configurados; falha de impressao nao reverte a manutencao. Falha em qualquer passo aplicavel (ERP/BRT) mantem o grupo do veiculo no Tratamento; sucesso parcial entre veiculos e permitido. Reenvio e idempotente (nao reenvia ERP/BRT se o vinculo ja existir). Cancelamento OS BRT e reprovacao final limpam vinculos ERP (`erp_*`) para novo ciclo. Empresa sem BRT mantem fluxo legado (PDF/e-mail; subset permitido) apos o passo ERP quando aplicavel.
 - **Condicoes de entrada:**
   - Envio: status `REGISTRADA` ou `RETRABALHO_GARANTIA`; empresa com `ehEmpresaManutencao`; permissao `irregularidade_manutencao:start` (suficiente para listar empresas no combo via `GET /empresas-terceiras`; nao exige `empresaterceira:read`)
+  - Escopo da empresa (cadastro): `combustiveisAtendidos` e `idsAreasAtendidas` (allowlist). Lista **vazia** = sem restricao (compativel com empresas legadas). Lista **preenchida** = so pode receber irregularidades cujo combustivel do veiculo / area estejam na lista
   - Integracao BRT: empresa com tipo de integracao OS configurado e credenciais validas (`ten_emp`, `token`, URL). Certificado SSL: preferir CA no servidor; por empresa marcar `brt_allow_insecure_tls` no cadastro (exige `empresaterceira:integracao_config`); emergencia tambem via `BRT_OS_ALLOW_INSECURE_TLS=true` ou `BRT_OS_ALLOW_INSECURE_TLS_HOMOLOG=true` + empresa Homologacao
-  - Empresa BRT: a selecao deve incluir **todas** as irregularidades elegiveis (`REGISTRADA` / `RETRABALHO_GARANTIA`) de cada vistoria tocada; subset e rejeitado (UI + API)
+  - Empresa BRT: a selecao deve incluir **todas** as irregularidades elegiveis **no escopo da empresa** (`REGISTRADA` / `RETRABALHO_GARANTIA` / `NAO_PROCEDE` + combustivel/area) de cada vistoria tocada; OS fora do escopo podem permanecer no Tratamento para outra empresa; subset incompleto **dentro do escopo** e rejeitado (UI + API)
   - Empresa sem API: mesmas pre-condicoes do fluxo legado (RN-VIS-003 e backlog epico 2)
 - **Validacoes:**
-  - Lote BRT: agrupa por vistoria; **1 POST por vistoria**; sucesso/falha **atomicos por vistoria** (sucesso parcial entre vistorias distintas e permitido)
-  - Resposta BRT `201` ou `200` com `duplicada: true` conta como sucesso; persistir o mesmo `numOs` em todas as irreg do grupo
+  - Antes do pipeline ERP/BRT: validar escopo combustivel/area da empresa contra as irregularidades selecionadas; fora do escopo → `400` com mensagem por OS; no front, modal lista as OS bloqueadas e permite **Continuar só com elegíveis** (remove as fora do escopo e segue) ou Cancelar
+  - Ordem fixa no botao Enviar para manutencao: ERP (se flag ativa) → BRT (se empresa API) → e-mail (quando flag) → transicao `EM_MANUTENCAO`
+  - Lote: sucesso/falha **atomicos por veiculo** (A pode avancar e B permanecer no Tratamento)
+  - Lote BRT: dentro do veiculo, agrupa por vistoria; **1 POST por vistoria**; selecao completa obrigatoria **somente entre as elegiveis no escopo da empresa**
+  - Resposta BRT `201` ou `200` com `duplicada: true` conta como sucesso; persistir o mesmo `numOs` em todas as irreg do grupo **antes** da transicao
+  - Idempotencia: se o grupo ja tem `erp_codigo_pedido` / `num_os_externo_atual`, o reenvio nao chama de novo o lado ja resolvido
   - Erros BRT (`credenciais_invalidas`, `tenant_divergente`, `veiculo_nao_encontrado`, `validacao`, `os_nao_encontrada`, `os_em_execucao` no cancelamento) mapeados para mensagens funcionais sem expor token
   - `os_orig` enviado à API: `numeroVistoria` (ex.: `2026478`) no 1º envio do grupo; apos OS BRT criada com sucesso (incl. cancelada depois) ou com item em `RETRABALHO_GARANTIA`, `numeroVistoria-N` com N≥2 (contagem de `os_orig` distintos com sucesso no ambito da vistoria); historico em `irregularidades_os_externas` (uma linha por irregularidade do grupo)
-  - Cancelamento OS BRT (`tpo_reg: 7`) na tela Manutencao: permissao `irregularidade_manutencao:cancel_os_brt`; OS ativa no grupo; **uma** chamada BRT; sucesso → **todas** as irreg do mesmo `os_orig`/`numOs` ativos voltam a `REGISTRADA`; falha → permanecem `EM_MANUTENCAO`
-  - E-mail de relatorio PDF: somente se flag `enviar_email_relatorio` na empresa **e** SMTP global ativo; para trilha API, enviar apos OS criada com sucesso (itens/vistorias que falharam nao entram no anexo)
-  - Trilha API (`controle_integracao`): bloquear `concluir-manutencao` e `marcar-nao-procede` manuais ate retorno integrado (v2)
+  - Cancelamento OS BRT (`tpo_reg: 7`) na tela Manutencao: permissao `irregularidade_manutencao:cancel_os_brt`; OS ativa no grupo; **uma** chamada BRT; sucesso → **todas** as irreg do mesmo `os_orig`/`numOs` ativos voltam a `REGISTRADA` e **limpam** `erp_*`; falha → permanecem `EM_MANUTENCAO`
+  - E-mail de relatorio PDF: somente se flag `enviar_email_relatorio` na empresa **e** SMTP global ativo; apos ERP/BRT OK dos itens que vao transicionar (itens/veiculos que falharam nao entram no anexo); no legado, falha de e-mail bloqueia a transicao
+  - Impressao automatica: flag global `impressao_manutencao_config.ativo` + IP IPv4 + porta (padrao 9100); dispara so apos itens transicionados; PDF com rotulos `OS:` (numeroIrregularidade), `OS OMNI:` (`erp_codigo_pedido`) e `OS BRT:` (`num_os_externo_atual`) quando houver; falha de socket/timeout nao bloqueia `EM_MANUTENCAO` (retorno `impressaoEnviada` / `impressaoErro`)
+  - Botao **Imprimir** (PDF no navegador, sem RAW) nas telas Tratamento, Manutencao, Validacao e Gestao OS: Tratamento/Manutencao/Validacao exigem `:print` da tela; Gestao OS usa `irregularidade_gestao_os:read`; gera `POST /irregularidades/lote/relatorio-pdf` das selecionadas; agrupa por veiculo e **quebra pagina entre veiculos**; nao altera status nem dispara ERP/BRT
+  - Trilha API (`controle_integracao`): **concluir manutencao manual permitido** (`EM_MANUTENCAO` → `CONCLUIDA`); nao chama API BRT nem limpa vinculos (`numOs`/`os_orig`/`erp_*` permanecem para rastreio); `marcar-nao-procede` manual continua **bloqueado** ate retorno integrado (v2)
   - Trilha sem API: transicoes manuais de Manutencao inalteradas
-  - Reprovar validacao final: `CONCLUIDA` ou `NAO_PROCEDE` → `RETRABALHO_GARANTIA` (nao retornar direto a `EM_MANUTENCAO`)
+  - Marcar nao procede (trilha sem API): `EM_MANUTENCAO` → `NAO_PROCEDE`; **limpa** `idEmpresaManutencao`, vinculos BRT ativos e `erp_*`; historico registra a empresa que devolveu; item volta a fila Tratamento (sem exigir empresa); reenvio escolhe empresa novamente
+  - Reprovar validacao final: `CONCLUIDA` → `RETRABALHO_GARANTIA` (nao retornar direto a `EM_MANUTENCAO`); **limpa** vinculos BRT ativos e `erp_*` para forcar novo ciclo no reenvio
 - **Acoes do sistema:**
-  - Ramificar `iniciar-manutencao` / lote por configuracao da empresa selecionada
+  - Ramificar `iniciar-manutencao` / lote por configuracao da empresa selecionada e pela flag ERP global (RN-VIS-008)
   - Client HTTP backend para POST `https://www.api.brtgo.com.br/v1/os` (`tpo_reg: 1` criar; `tpo_reg: 7` cancelar quando aplicavel)
   - Mapear campos: `os_orig` (ver regra acima), `plc_vcl`, `tpo_srv` (`1` corretiva padrao; `2` preventiva; `3` SOS/socorro quando origem SOS e tipo nao for SINISTRO/PREVENTIVA; `4` quando capa `tipo = SINISTRO`; tipo na capa tem precedencia sobre SOS — um valor por vistoria), `nom_sol`, `tel_ctt`, `loc_atd` (cadastro da empresa BRT), `comenta` multilinha por irregularidade ordenada por NS (`area->componente->sintoma` + linha `Obs: …`, blocos separados por linha em branco), limite 4000 com truncate, `odo_vcl` opcional (odometro da vistoria)
-  - PDF de preview/e-mail: se a irregularidade tiver marcacao (`id_vista` + coordenadas), desenhar a vista do modelo com circulo azul no ponto
+  - PDF de preview/e-mail/impressao/botao Imprimir: labels `OS:` / `OS OMNI:` / `OS BRT:`; cada veiculo inicia em pagina nova; se a irregularidade tiver marcacao (`id_vista` + coordenadas), desenhar a vista do modelo com circulo azul no ponto
+  - Aba Configuracao «Impressão»: habilitar, IP, porta e timeout; persistencia em `configuracoes.impressao_manutencao_config` (somente RAW automatico pos-envio; botao Imprimir das filas nao usa essa flag)
   - Registrar historico: `enviar_api_os`, `falha_api_os`, `cancelar_api_os`, `iniciar_manutencao`, `reprovar_validacao_final`
   - Pendencias de veiculo (mobile): status `RETRABALHO_GARANTIA` continua pendente ate `VALIDADA` ou `CANCELADA` (mesma regra de exclusao de finais)
 - **Mensagens ao usuario:**
   - Selecao incompleta (BRT): informar numero da vistoria e quantidade elegivel vs selecionada
-  - Sucesso parcial de lote: resumo com quantidade enviada e lista de falhas por vistoria/item com codigo/mensagem BRT
+  - Sucesso parcial de lote: resumo com quantidade enviada e lista de falhas por veiculo/vistoria/item (ERP e/ou BRT)
   - `veiculo_nao_encontrado`: orientar regularizacao da placa no cadastro do consorcio
-  - Bloqueio de conclusao manual (trilha API): mensagem indicando aguardo de retorno da integracao
+  - Bloqueio de nao procede manual (trilha API): mensagem indicando aguardo de retorno da integracao
   - Cancelamento OS BRT: avisar que o grupo inteiro da vistoria retorna ao Tratamento
-- **Permissoes envolvidas:** RN-VIS-003; `RETRABALHO_GARANTIA` exige `irregularidade_tratamento:read`; acoes de reenvio exigem `irregularidade_manutencao:start`; cancelamento OS BRT exige `irregularidade_manutencao:cancel_os_brt`
-- **Dados impactados:** `empresasterceiras` (integracao, e-mail, credenciais BRT), `irregularidades` (status, flags de integracao, OS ativa), historico de OS externas, `irregularidade_historico`
-- **Rastreabilidade:** Historico de transicoes; log de integracao (request/response sanitizado); multiplos pares `os_orig`/`numOs` por irregularidade ao longo do tempo; rastreio operacional por `numOs` BRT
+- **Permissoes envolvidas:** RN-VIS-003; `RETRABALHO_GARANTIA` exige `irregularidade_tratamento:read`; acoes de reenvio exigem `irregularidade_manutencao:start`; cancelamento OS BRT exige `irregularidade_manutencao:cancel_os_brt`; botao Imprimir exige `:print` da tela correspondente (concessao manual em Perfis)
+- **Dados impactados:** `empresasterceiras` (integracao, e-mail, credenciais BRT), `irregularidades` (status, flags de integracao, OS ativa, `erp_codigo_pedido` / `erp_ultimo_erro`), historico de OS externas, `irregularidade_historico`
+- **Rastreabilidade:** Historico de transicoes; log de integracao (request/response sanitizado); multiplos pares `os_orig`/`numOs` por irregularidade ao longo do tempo; rastreio operacional por `numOs` BRT e pedido ERP na irreg
 - **Criterios de aceite:**
-  - [ ] Empresa sem API: comportamento equivalente ao fluxo pre-agrupamento; e-mail respeita flag da empresa
-  - [ ] Empresa BRT: selecao incompleta da vistoria bloqueada; selecao completa → 1 OS; todas as irreg do grupo em `EM_MANUTENCAO` com o mesmo `numOs`/`os_orig`
-  - [ ] Falha BRT: nenhuma irreg daquela vistoria avanca; erro visivel no Tratamento
-  - [ ] Lote com varias vistorias: N POSTs; sucesso parcial entre vistorias documentado na UI
-  - [ ] Reprovar final → `RETRABALHO_GARANTIA`; reenvio do grupo gera `numeroVistoria-N` e novo historico
-  - [ ] Trilha API: botoes de conclusao manual desabilitados/bloqueados no backend
-  - [ ] Cancelamento OS BRT: sucesso → grupo inteiro `REGISTRADA`; falha → permanece `EM_MANUTENCAO`
+  - [ ] Empresa sem API + ERP off: comportamento legado; e-mail respeita flag da empresa
+  - [ ] ERP on: erro ERP no veiculo B → B permanece no Tratamento; A pode avancar
+  - [ ] Empresa BRT: selecao incompleta **no escopo** bloqueada; OS fora do escopo podem ficar no Tratamento; selecao completa no escopo → 1 OS por vistoria; grupo so vai a `EM_MANUTENCAO` apos ERP (se ativo) + BRT OK
+  - [ ] Falha BRT apos ERP OK: permanece Tratamento; reenvio nao chama ERP de novo
+  - [ ] Lote com varios veiculos: sucesso parcial por veiculo documentado na UI
+  - [ ] Reprovar final → `RETRABALHO_GARANTIA` e limpa `erp_*`; reenvio BRT gera `numeroVistoria-N` e novo pedido ERP
+  - [ ] Trilha API: Concluir manual habilitado; Nao procede manual bloqueado no backend e na UI
+  - [ ] Cancelamento OS BRT: sucesso → grupo `REGISTRADA` + limpa `erp_*`; falha → permanece `EM_MANUTENCAO`
   - [ ] Aprovacao na validacao final → `VALIDADA` e pendencia do veiculo atualizada
+  - [ ] Impressao on + IP valido: apos envio OK, PDF com OS OMNI e tentativa RAW na porta configurada
+  - [ ] Falha de impressora nao impede `EM_MANUTENCAO`; resposta indica `impressaoErro`
+  - [ ] Impressao off: nenhum socket aberto
+  - [ ] Botao Imprimir nas 3 fases com `:print` da tela (Gestao OS com `:read`); PDF no browser; 2+ veiculos em paginas distintas
+  - [ ] Sem `:print`: botao oculto; API 403
+  - [ ] Nao procede volta ao Tratamento sem empresa; historico preserva a passagem
+  - [ ] Gestao OS lista todos os status com filtros; sem transicao de status
 - **Cenarios de excecao:**
   - Credenciais BRT invalidas: nenhum grupo do lote avanca na trilha API
   - Cancelamento de irregularidade sem OS criada: sem chamada BRT de cancelamento
   - Cancelamento OS BRT na Manutencao: somente com resposta OK da API; `409 os_em_execucao` e demais erros mantem o grupo em `EM_MANUTENCAO`
   - Homologacao OMNI sem ambiente BRT: parametros de teste na empresa quando disponiveis
+  - Impressora inacessivel / timeout: manutencao ja concluida; operador ve aviso no retorno
 - **Escopo de implementacao:**
-  - **v1:** envio BRT 1:1, historico OS, erros no Tratamento, status `RETRABALHO_GARANTIA`, bloqueio conclusao manual, cancelamento OS, parametros empresa
+  - **v1:** envio BRT 1:1, historico OS, erros no Tratamento, status `RETRABALHO_GARANTIA`, cancelamento OS, parametros empresa
+  - **v1.6:** conclusao manual permitida na trilha BRT; nao procede manual permanece bloqueado
+  - **v1.7:** escopo de atendimento por empresa (combustiveis e areas allowlist) no cadastro e no envio
   - **v1.1 (Entrega 1):** agrupamento por vistoria; `os_orig` = `numeroVistoria`; selecao all-or-nothing; `comenta` multilinha; cancelamento em grupo — ver `docs/PLANO_BRT_OS_AGRUPAMENTO_VISTORIA.md`
+  - **v1.2:** pipeline ERP no envio a manutencao (RN-VIS-008); idempotencia; limpeza `erp_*` no cancel/reprovar
+  - **v1.3:** impressao automatica RAW pos-manutencao (config + PDF com OS OMNI)
+  - **v1.4:** botao Imprimir PDF nas 3 fases (permissoes `:print`; quebra por veiculo)
+  - **v1.5:** NAO_PROCEDE no Tratamento (limpa empresa); tela Gestao OS
   - **v2:** retorno integrado BRT → `CONCLUIDA` (grupo); e-mail automatico para erros de placa
-- **Origem da regra:** Integracao Consorcio BRT e fluxo dual de manutencao, decisao de produto 2026-08-03; agrupamento por vistoria 2026-09-29
-- **Status:** Implementada (retorno automático BRT → `CONCLUIDA` previsto v2)
+- **Origem da regra:** Integracao Consorcio BRT e fluxo dual de manutencao, decisao de produto 2026-08-03; agrupamento por vistoria 2026-09-29; gatilho ERP no envio a manutencao 2026-10-08; impressao automatica 2026-10-08; botao Imprimir PDF por fase 2026-10-09; Gestao OS / NAO_PROCEDE no Tratamento 2026-10-09; conclusao manual na trilha BRT 2026-10-09; escopo combustivel/area por empresa 2026-10-09
+- **Status:** Implementada (retorno automático BRT → `CONCLUIDA` previsto v2; conclusao manual ja liberada)
+- **Criterios de aceite (escopo empresa):**
+  - [ ] Cadastro de empresa manutencao permite multi-select de combustiveis e areas
+  - [ ] Lista vazia nao restringe; lista preenchida bloqueia fora do escopo
+  - [ ] Modal de escopo: Continuar só com elegíveis remove OS fora do escopo e segue; Cancelar aborta
+  - [ ] BRT all-or-nothing considera só OS no escopo da empresa (split por empresa permitido)
+  - [ ] API rejeita envio com item fora do escopo (`400` com mensagem por OS)
 
 ### RN-VIS-007 - Relatorio PDF de pendencias do veiculo
 - **Modulo:** Vistoria
@@ -418,20 +461,24 @@ Copie o bloco abaixo para cada regra nova.
 - **Origem da regra:** Requisicao de produto — relatorio de pendencias no app, 2026-09-11; disponibilizacao web 2026-09-23; PDF da vistoria no app ao finalizar 2026-09-24; capa em cards alinhada ao overlay 2026-09-24
 - **Status:** Implementada
 
-### RN-VIS-008 - Integracao assincrona da capa da vistoria com ERP legado
+### RN-VIS-008 - Integracao ERP no envio para manutencao (por veiculo / irregularidades)
 - **Modulo:** Vistoria
-- **Fluxo:** Finalizar vistoria (mobile/SOS) → fila ERP; reenvio na tela Vistorias
-- **Descricao:** Com a integracao habilitada em Configuracao do Sistema, ao finalizar vistoria com pelo menos uma irregularidade o OMNI enfileira a capa e envia `POST /api/v1/vistorias/lote` de forma assincrona (o usuario nao espera). O legado devolve `pedido.codigo_pedido`, gravado em `vistorias.erp_numero_vistoria`. Vistorias sem esse numero podem ser (re)enviadas na tela Vistorias (unitario ou massa, um POST com array). Vistoria que ja possui numero ERP nao reenvia.
-- **Condicoes de entrada:** Enfileirar: `FINALIZADA`, ≥1 irregularidade, flag ativo, URL, tenant (`X-Tenant`) e API Key (`X-API-Key`). Reenviar: mesma elegibilidade, `erp_numero_vistoria` nulo, permissao de reenvio.
-- **Validacoes:** Integracao desabilitada nao enfileira e desabilita envio na tela; sem irregularidade = `NAO_APLICA`; com nr ERP = recusar reenvio; `EM_ANDAMENTO`/`CANCELADA` nao enviam. Campo `veiculo` do legado: 2 primeiros caracteres da descricao do veiculo (≥12 → prefixo `1:`; <12 → prefixo `5:`); descricao invalida → `FALHA`. `condicao`: mobile = `1`, SOS = `5`, SINISTRO (`vistorias.tipo = SINISTRO`) = `2` com precedencia sobre origem SOS; PREVENTIVA usa o mesmo codigo de CORRETIVA (`1`/`5`). Sintomas ERP: `AREA-COMPONENTE-SINTOMA - (observacao)` por irregularidade (observacao = descricao do problema, RN-VIS-002; se vazia, envia so `AREA-COMPONENTE-SINTOMA`). Local de abertura: `0` Oficina / `1` Portaria. Tipo de pedido: `0` Entrada / `1` Saida.
-- **Acoes do sistema:** `finalizar` persiste mesmo se o ERP falhar depois; worker grava nr ou erro na capa; lote admite sucesso parcial.
-- **Mensagens ao usuario:** Erro no card na ordem: texto da API, senao mensagem padrao da aba Configuracao, senao `Erro ao gravar Vistoria no OMNI` (sem vazar API Key). Resumo de lote; aviso se envio estiver desabilitado.
-- **Permissoes envolvidas:** `configuracao:access` (aba); `vistoria_web:read` (consulta); `vistoria_web:reprocessar_erp` (enviar/reenviar, grupo Vistoria Web). Concessao **manual** em Perfis, sem migration de perfil.
-- **Dados impactados:** `configuracoes.erp_vistoria_config`; `vistorias.erp_status`, `erp_numero_vistoria`, `erp_enviado_em`, `erp_ultimo_erro`
-- **Rastreabilidade:** Auditoria da config; log sanitizado do worker
-- **Criterios de aceite:** Detalhados em `docs/PLANO_INTEGRACAO_ERP_VISTORIA.md`
-- **Cenarios de excecao:** ERP fora; config incompleta; resposta sem nr; lote misto
-- **Origem da regra:** Decisao de produto — integracao capa ERP legado, 2026-09-15
+- **Fluxo:** Tratamento → Enviar para manutencao (apos flag ERP ativa); **nao** dispara no finalizar
+- **Descricao:** Com «Habilitar envio ao ERP» ativo em Configuracao do Sistema (URL, tenant, API Key), ao enviar irregularidades para manutencao o OMNI monta `POST /api/v1/vistorias/lote` com **1 item por veiculo**, `sintomas` apenas das irregularidades **selecionadas** (classificacao no momento do envio). Capa (motorista/odometro/data/condicao) usa a vistoria **mais recente** do grupo do veiculo. O legado devolve `pedido.codigo_pedido`, gravado em `irregularidades.erp_codigo_pedido` (mesmo codigo em todas as irreg do grupo). Sucesso/falha **por veiculo**. Reenvio na tela Vistorias **removido**; reprocesso ocorre pelo proprio Enviar para manutencao (idempotente). Campos `vistorias.erp_*` permanecem apenas como historico legado.
+- **Condicoes de entrada:** Clique em Enviar para manutencao; flag `erp_vistoria_config.ativo`; config completa; irregularidades em `REGISTRADA`/`RETRABALHO_GARANTIA`.
+- **Validacoes:** Flag off → nao chama ERP e segue BRT/legado (RN-VIS-006). Flag on com config incompleta → erro e nao avanca. Ja possui `erp_codigo_pedido` no grupo → nao POST de novo. Campo `veiculo` do legado: 2 primeiros caracteres da descricao (≥12 → prefixo `1:`; <12 → prefixo `5:`); invalido → falha do veiculo. `condicao`: mobile = `1`, SOS = `5`, SINISTRO = `2` (precedencia); PREVENTIVA = mesmo codigo de CORRETIVA. Sintomas: `AREA-COMPONENTE-SINTOMA - (observacao)` (RN-VIS-002). Local/tipo pedido: combos da aba Configuracao.
+- **Acoes do sistema:** Envio **sincrono** no pipeline de manutencao (antes do BRT); persiste codigo/erro na irregularidade; limpa `erp_*` no cancelamento OS BRT e na reprovacao → `RETRABALHO_GARANTIA`.
+- **Mensagens ao usuario:** Erro no Tratamento: texto da API, senao mensagem padrao da aba, senao `Erro ao gravar Vistoria no OMNI` (sem vazar API Key).
+- **Permissoes envolvidas:** `configuracao:access` (aba); envio embutido em `irregularidade_manutencao:start`. Permissao `vistoria_web:reprocessar_erp` permanece no catalogo (legado) sem acao de reenvio na UI.
+- **Dados impactados:** `configuracoes.erp_vistoria_config`; `irregularidades.erp_codigo_pedido`, `erp_enviado_em`, `erp_ultimo_erro`; `vistorias.erp_*` somente historico
+- **Rastreabilidade:** Log sanitizado do POST lote; historico de envio a manutencao
+- **Criterios de aceite:**
+  - [x] Finalizar vistoria nao chama ERP
+  - [x] Enviar para manutencao com ERP on → 1 pedido por veiculo; vinculo na irreg
+  - [x] Falha ERP → veiculo permanece no Tratamento; demais veiculos do lote podem avancar
+  - [x] Sem reenvio ERP na tela Vistorias
+- **Cenarios de excecao:** ERP fora; config incompleta; resposta sem nr; lote misto por veiculo
+- **Origem da regra:** Decisao de produto — integracao capa ERP legado, 2026-09-15; gatilho movido para envio a manutencao / vinculo por irreg, 2026-10-08
 - **Status:** Implementada
 
 ### RN-VIS-009 - Mapa de avaria no modelo do veiculo
@@ -658,6 +705,12 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-10-09: RN-VIS-006 — BRT all-or-nothing apenas no escopo da empresa; modal permite Continuar só com elegíveis (split por empresa); OS fora do escopo permanecem no Tratamento.
+- 2026-10-09: RN-VIS-003 / RN-VIS-006 — `NAO_PROCEDE` volta ao Tratamento sem vinculo de empresa (historico preserva a passagem); fila Tratamento padrao `REGISTRADA`+`NAO_PROCEDE`; Validacao so `CONCLUIDA`; tela Gestao OS (`irregularidade_gestao_os:read`) consulta todos os status.
+- 2026-10-09: RN-VIS-006 — botao Imprimir PDF nas 3 fases (permissoes `:print` por tela; `POST /irregularidades/lote/relatorio-pdf`; quebra de pagina por veiculo; distinto da impressao RAW automatica).
+- 2026-10-08: RN-VIS-006 — impressao automatica pos-manutencao (aba Configuracao Impressao; PDF com OS/OS OMNI/OS BRT; RAW JetDirect; falha nao bloqueia transicao).
+- 2026-10-08: RN-VIS-003 — multi-empresa de manutencao (N:N `usuariosEmpresasManutencao`); filtro obrigatorio uma empresa por vez em Manutencao/Validacao; escopo inclui CONCLUIDA/VALIDADA; sem vinculo → fila vazia; coluna Empresa no grid.
+- 2026-10-08: RN-VIS-008 / RN-VIS-006 — ERP dispara no Enviar para manutencao (nao no finalizar); 1 pedido por veiculo; vinculo `erp_codigo_pedido` na irreg; pipeline ERP→BRT→transicao; sucesso parcial por veiculo; limpa `erp_*` no cancel BRT e reprovar→RETRABALHO; remove reenvio na tela Vistorias.
 - 2026-10-07: Numeracao de vistoria — `numero_vistoria` passa a `ano + sequencial` sem teto de 999 (ex.: apos `2026999` segue `20261000`); coluna `bigint`; sem remediação das duplicatas `2027000`.
 - 2026-10-02: RN-VIS-001 — reclassificar nao reinicia Etapa atual; relogio so muda em transicao de status entre filas.
 - 2026-09-29: RN-VIS-006 — `comenta` BRT sem prefixo `[numeroIrregularidade]`; blocos separados por linha em branco.

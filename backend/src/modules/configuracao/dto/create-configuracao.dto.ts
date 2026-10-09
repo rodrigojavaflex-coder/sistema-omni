@@ -13,6 +13,7 @@ import { Type } from 'class-transformer';
 import {
   EmailEnvioConfig,
   ErpVistoriaConfig,
+  ImpressaoManutencaoConfig,
 } from '../entities/configuracao.entity';
 
 export class CreateConfiguracaoDto {
@@ -108,6 +109,14 @@ export class CreateConfiguracaoDto {
   @IsOptional()
   @IsObject()
   erpVistoriaConfig?: ErpVistoriaConfig;
+
+  @ApiPropertyOptional({
+    description:
+      'Configuração de impressão automática do PDF após envio à manutenção',
+  })
+  @IsOptional()
+  @IsObject()
+  impressaoManutencaoConfig?: ImpressaoManutencaoConfig;
 
   @ApiPropertyOptional({
     description:

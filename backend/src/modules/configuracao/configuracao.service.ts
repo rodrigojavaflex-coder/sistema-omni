@@ -17,6 +17,7 @@ import { AuditAction } from '../../common/enums/auditoria.enum';
 import {
   EmailEnvioConfig,
   ErpVistoriaConfig,
+  ImpressaoManutencaoConfig,
   TempoFaixaConfig,
   TempoFluxoConfig,
 } from './entities/configuracao.entity';
@@ -254,6 +255,47 @@ export class ConfiguracaoService {
     return texto;
   }
 
+  private normalizeImpressaoManutencaoConfig(
+    input: unknown,
+  ): ImpressaoManutencaoConfig | undefined {
+    if (!input) {
+      return undefined;
+    }
+    const source = input as Partial<ImpressaoManutencaoConfig>;
+    const ativo = !!source.ativo;
+    const impressoraIp = (source.impressoraIp ?? '').toString().trim();
+    const portaRaw = Number(source.impressoraPorta);
+    const impressoraPorta =
+      Number.isFinite(portaRaw) && portaRaw > 0 ? Math.trunc(portaRaw) : 9100;
+    const timeoutRaw = Number(source.timeoutMs);
+    const timeoutMs =
+      Number.isFinite(timeoutRaw) && timeoutRaw > 0
+        ? Math.trunc(timeoutRaw)
+        : 10000;
+    const ipv4 =
+      /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)$/;
+
+    if (ativo) {
+      if (!impressoraIp || !ipv4.test(impressoraIp)) {
+        throw new BadRequestException(
+          'IP da impressora (IPv4) é obrigatório quando a impressão está ativa.',
+        );
+      }
+      if (impressoraPorta < 1 || impressoraPorta > 65535) {
+        throw new BadRequestException(
+          'Porta da impressora deve estar entre 1 e 65535.',
+        );
+      }
+    }
+
+    return {
+      ativo,
+      impressoraIp,
+      impressoraPorta,
+      timeoutMs,
+    };
+  }
+
   private normalizeErpVistoriaConfig(
     input: unknown,
     anterior?: ErpVistoriaConfig,
@@ -377,6 +419,9 @@ export class ConfiguracaoService {
     if (dto.erpVistoriaConfig === undefined) {
       delete normalizedDto.erpVistoriaConfig;
     }
+    if (dto.impressaoManutencaoConfig === undefined) {
+      delete normalizedDto.impressaoManutencaoConfig;
+    }
 
     // Busca se já existe configuração (só pode haver uma)
     let config = await this.configuracaoRepository.findOne({ where: {} });
@@ -386,6 +431,10 @@ export class ConfiguracaoService {
           dto.erpVistoriaConfig,
           config.erpVistoriaConfig,
         );
+      }
+      if (dto.impressaoManutencaoConfig !== undefined) {
+        normalizedDto.impressaoManutencaoConfig =
+          this.normalizeImpressaoManutencaoConfig(dto.impressaoManutencaoConfig);
       }
       const dadosAnteriores = this.mascararConfig({ ...config });
       Object.assign(config, normalizedDto);
@@ -414,6 +463,10 @@ export class ConfiguracaoService {
         normalizedDto.erpVistoriaConfig = this.normalizeErpVistoriaConfig(
           dto.erpVistoriaConfig,
         );
+      }
+      if (dto.impressaoManutencaoConfig !== undefined) {
+        normalizedDto.impressaoManutencaoConfig =
+          this.normalizeImpressaoManutencaoConfig(dto.impressaoManutencaoConfig);
       }
       config = this.configuracaoRepository.create(normalizedDto);
       this.aplicarLogoArquivo(config, logoFile);
@@ -644,6 +697,12 @@ export class ConfiguracaoService {
           : this.normalizeErpVistoriaConfig(
               dto.erpVistoriaConfig,
               config.erpVistoriaConfig,
+            ),
+      impressaoManutencaoConfig:
+        dto.impressaoManutencaoConfig === undefined
+          ? undefined
+          : this.normalizeImpressaoManutencaoConfig(
+              dto.impressaoManutencaoConfig,
             ),
       ...(odometroDiffMaxKm !== undefined
         ? { odometroDiffMaxKm }

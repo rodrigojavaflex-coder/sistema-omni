@@ -196,6 +196,27 @@ export class Irregularidade extends BaseEntity {
   })
   ultimoErroIntegracaoEm?: Date | null;
 
+  @ApiProperty({
+    description: 'Código do pedido/OS no ERP legado (envio à manutenção)',
+    required: false,
+  })
+  @Column({ name: 'erp_codigo_pedido', type: 'varchar', length: 50, nullable: true })
+  erpCodigoPedido?: string | null;
+
+  @ApiProperty({
+    description: 'Data/hora do último envio bem-sucedido ao ERP',
+    required: false,
+  })
+  @Column({ name: 'erp_enviado_em', type: 'timestamp', nullable: true })
+  erpEnviadoEm?: Date | null;
+
+  @ApiProperty({
+    description: 'Último erro funcional do envio ao ERP',
+    required: false,
+  })
+  @Column({ name: 'erp_ultimo_erro', type: 'text', nullable: true })
+  erpUltimoErro?: string | null;
+
   @ManyToOne(() => ModeloVeiculoVista, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'id_vista' })
   vista?: ModeloVeiculoVista | null;

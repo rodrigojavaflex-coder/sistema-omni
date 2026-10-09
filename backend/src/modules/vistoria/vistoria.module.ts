@@ -42,6 +42,7 @@ import { ErpVistoriaIntegrationService } from './erp-vistoria-integration.servic
 import {
   IrregularidadeManutencaoEnvioService,
 } from './irregularidade-manutencao-envio.service';
+import { ImpressaoRawService } from './impressao-raw.service';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import {
     BrtOsIntegrationService,
     IrregularidadeManutencaoEnvioService,
     ErpVistoriaIntegrationService,
+    ImpressaoRawService,
   ],
 })
 export class VistoriaModule {}

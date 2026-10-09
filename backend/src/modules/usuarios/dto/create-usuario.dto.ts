@@ -85,7 +85,22 @@ export class CreateUsuarioDto {
   departamentoIds?: string[];
 
   @ApiProperty({
-    description: 'ID da empresa vinculada ao usuário (null para remover vínculo)',
+    description:
+      'IDs das empresas de manutenção vinculadas ao usuário (somente ehEmpresaManutencao)',
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray({ message: 'idsEmpresasManutencao deve ser uma lista de IDs' })
+  @IsUUID('4', {
+    each: true,
+    message: 'Cada id de empresa de manutenção deve ser um UUID válido',
+  })
+  idsEmpresasManutencao?: string[];
+
+  @ApiProperty({
+    description:
+      'Legado: ID único de empresa (convertido para idsEmpresasManutencao). Preferir idsEmpresasManutencao.',
     example: '550e8400-e29b-41d4-a716-446655440000',
     required: false,
     nullable: true,

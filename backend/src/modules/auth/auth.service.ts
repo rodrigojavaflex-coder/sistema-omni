@@ -19,6 +19,7 @@ import { AuditAction } from '../../common/enums/auditoria.enum';
 import { Configuracao } from '../configuracao/entities/configuracao.entity';
 import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
 import { Departamento } from '../departamento/entities/departamento.entity';
+import { UsuarioEmpresaManutencao } from '../usuarios/entities/usuario-empresa-manutencao.entity';
 
 @Injectable()
 export class AuthService {
@@ -35,6 +36,8 @@ export class AuthService {
     private readonly departamentoUsuarioRepository: Repository<DepartamentoUsuario>,
     @InjectRepository(Departamento)
     private readonly departamentoRepository: Repository<Departamento>,
+    @InjectRepository(UsuarioEmpresaManutencao)
+    private readonly usuarioEmpresaManutencaoRepository: Repository<UsuarioEmpresaManutencao>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly auditoriaService: AuditoriaService,
@@ -222,6 +225,9 @@ export class AuthService {
       where: { usuarioId: user.id },
       relations: ['departamento'],
     });
+    const empresasManutencao = await this.loadEmpresasManutencao(user.id);
+    const idEmpresa =
+      user.idEmpresa ?? empresasManutencao[0]?.id ?? null;
 
     const safeUser = {
       id: user.id,
@@ -234,10 +240,14 @@ export class AuthService {
       criadoEm: user.criadoEm,
       atualizadoEm: user.atualizadoEm,
       departamentos: departamentosUsuario.map((du) => du.departamento),
-      idEmpresa: user.idEmpresa ?? null,
-      empresa: user.empresa
-        ? { id: user.empresa.id, descricao: user.empresa.descricao }
-        : null,
+      idEmpresa,
+      empresa: empresasManutencao[0]
+        ? { id: empresasManutencao[0].id, descricao: empresasManutencao[0].descricao }
+        : user.empresa
+          ? { id: user.empresa.id, descricao: user.empresa.descricao }
+          : null,
+      empresasManutencao,
+      idsEmpresasManutencao: empresasManutencao.map((e) => e.id),
     } as unknown as Usuario;
 
     return {
@@ -247,6 +257,19 @@ export class AuthService {
       expires_in: 3600,
       user: safeUser,
     };
+  }
+
+  private async loadEmpresasManutencao(
+    userId: string,
+  ): Promise<{ id: string; descricao: string }[]> {
+    const vinculos = await this.usuarioEmpresaManutencaoRepository.find({
+      where: { usuarioId: userId },
+      relations: ['empresa'],
+      order: { criadoEm: 'ASC' },
+    });
+    return vinculos
+      .filter((v) => v.empresa)
+      .map((v) => ({ id: v.empresa.id, descricao: v.empresa.descricao }));
   }
 
   async validateUserById(userId: string): Promise<Usuario | null> {
@@ -292,13 +315,19 @@ export class AuthService {
       where: { usuarioId: userId },
       relations: ['departamento'],
     });
+    const empresasManutencao = await this.loadEmpresasManutencao(userId);
 
     return {
       ...user,
       departamentos: departamentosUsuario.map((du) => du.departamento),
-      empresa: user.empresa
-        ? { id: user.empresa.id, descricao: user.empresa.descricao }
-        : null,
+      empresasManutencao,
+      idsEmpresasManutencao: empresasManutencao.map((e) => e.id),
+      idEmpresa: user.idEmpresa ?? empresasManutencao[0]?.id ?? null,
+      empresa: empresasManutencao[0]
+        ? { id: empresasManutencao[0].id, descricao: empresasManutencao[0].descricao }
+        : user.empresa
+          ? { id: user.empresa.id, descricao: user.empresa.descricao }
+          : null,
     } as Usuario;
   }
 

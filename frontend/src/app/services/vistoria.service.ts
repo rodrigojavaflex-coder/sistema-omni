@@ -3,7 +3,6 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
-  EnviarErpVistoriaResposta,
   ErpVistoriaStatus,
   IrregularidadeAudioResumo,
   IrregularidadeHistoricoVeiculo,
@@ -152,12 +151,6 @@ export class VistoriaService {
 
   getErpStatus(): Observable<ErpVistoriaStatus> {
     return this.http.get<ErpVistoriaStatus>(`${this.apiUrl}/erp/status`);
-  }
-
-  enviarAoErp(ids: string[]): Observable<EnviarErpVistoriaResposta> {
-    return this.http.post<EnviarErpVistoriaResposta>(`${this.apiUrl}/erp/enviar`, {
-      ids,
-    });
   }
 
   criarIrregularidade(

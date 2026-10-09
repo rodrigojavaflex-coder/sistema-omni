@@ -42,6 +42,7 @@ export const PERMISSION_GROUP_ICON_KEYS: Record<string, string> = {
   'Irregularidades – Tratamento': 'tabler-replace',
   'Irregularidades – Manutenção': 'feather-bus-front',
   'Irregularidades – Validação': 'tabler-list-check',
+  'Irregularidades – Gestão OS': 'feather-search',
   'BI — Acesso': 'feather-pie-chart',
   Relatórios: 'feather-bar-chart-2',
 };

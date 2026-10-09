@@ -66,7 +66,12 @@ export class PerfilService {
   async findAll(): Promise<PerfilComEstatisticas[]> {
     const perfis = await this.perfilRepository.find({
       order: { nomePerfil: 'ASC' },
-      relations: { usuarios: { empresa: true } },
+      relations: {
+        usuarios: {
+          empresa: true,
+          empresasManutencaoVinculos: { empresa: true },
+        },
+      },
     });
 
     const allowedPermissionKeys = await this.resolveAllowedPermissionKeys();
@@ -89,11 +94,20 @@ export class PerfilService {
 
     return perfis.map(({ usuarios, ...perfil }) => {
       const usuariosVinculados = (usuarios ?? [])
-        .map((u) => ({
-          id: u.id,
-          nome: u.nome,
-          empresaLabel: u.empresa?.descricao ?? null,
-        }))
+        .map((u) => {
+          const descricoes = (u.empresasManutencaoVinculos ?? [])
+            .map((v) => v.empresa?.descricao?.trim())
+            .filter((d): d is string => !!d);
+          const empresaLabel =
+            descricoes.length > 0
+              ? descricoes.join(', ')
+              : u.empresa?.descricao ?? null;
+          return {
+            id: u.id,
+            nome: u.nome,
+            empresaLabel,
+          };
+        })
         .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
       return {
         ...perfil,

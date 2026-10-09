@@ -55,11 +55,17 @@ import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.e
 import { Configuracao } from '../configuracao/entities/configuracao.entity';
 import { Veiculo } from '../veiculo/entities/veiculo.entity';
 import { IniciarManutencaoLoteDto } from './dto/iniciar-manutencao-lote.dto';
+import { RelatorioIrregularidadesLoteDto } from './dto/relatorio-irregularidades-lote.dto';
 import {
   RelatorioManutencaoExecucaoDto,
   RelatorioManutencaoPreviewDto,
   RelatorioManutencaoResumoDto,
 } from './dto/relatorio-manutencao.dto';
+import {
+  assertUserHasAllPermissions,
+  collectUserPermissions,
+  getRequiredPrintPermissionsForStatuses,
+} from '../../common/utils/irregularidade-permissions.util';
 import { IrregularidadeManutencaoEnvioService,
   ManutencaoEnvioContext,
   STATUS_ENVIO_MANUTENCAO,
@@ -747,18 +753,32 @@ export class IrregularidadeService {
 
   async listByStatus(
     status: StatusIrregularidade[],
-    context: { idEmpresa?: string; scopeByEmpresa?: boolean },
+    context: {
+      idsEmpresasManutencao?: string[];
+      scopeByEmpresa?: boolean;
+    },
     filters?: {
       idVeiculo?: string;
+      /** Filtro obrigatório nas filas com escopo: uma empresa por vez. */
+      idEmpresaManutencao?: string;
       gravidade?: GravidadeCriticidade[];
       dataInicio?: string;
       dataFim?: string;
       /** Trecho numérico da O.S.: busca parcial (ILIKE) em `numeroIrregularidade` (apenas dígitos). */
       ordemServico?: string;
+      /** Trecho da OS OMNI / pedido ERP: busca parcial (ILIKE) em `erpCodigoPedido`. */
+      erpCodigoPedido?: string;
+      /** Trecho da OS BRT: busca parcial (ILIKE) em `numOsExternoAtual` (apenas dígitos). */
+      numOsExterno?: string;
+      /** Trecho do número da vistoria: busca parcial (ILIKE) em `v.numeroVistoria`. */
+      numeroVistoria?: string;
       /** Alinha o filtro de datas à coluna "Registrado" por etapa (front: getDataRegistradoFluxo). */
       referenciaPeriodo?: 'CRIADO_EM' | 'ENTRADA_STATUS';
       /** Filtra por origem do registro (`SOS_WEB` ou `MOBILE` para null). */
       origemRegistro?: 'SOS_WEB' | 'MOBILE';
+      idArea?: string;
+      idComponente?: string;
+      idSintoma?: string;
       page?: number;
       limit?: number;
     },
@@ -775,6 +795,7 @@ export class IrregularidadeService {
       .leftJoinAndSelect('i.sintoma', 'sintoma')
       .leftJoinAndSelect('i.vista', 'vista')
       .leftJoinAndSelect('i.vistoria', 'v')
+      .leftJoinAndSelect('v.veiculo', 'veiculo')
       .leftJoin(
         MatrizCriticidade,
         'matriz',
@@ -787,19 +808,38 @@ export class IrregularidadeService {
 
     const statusEmpresa = [
       StatusIrregularidade.EM_MANUTENCAO,
-      StatusIrregularidade.NAO_PROCEDE,
+      StatusIrregularidade.CONCLUIDA,
+      StatusIrregularidade.VALIDADA,
     ];
     if (
       context.scopeByEmpresa &&
       status.some((s) => statusEmpresa.includes(s))
     ) {
-      if (!context.idEmpresa) {
+      const idsPermitidos = (context.idsEmpresasManutencao ?? []).filter(
+        Boolean,
+      );
+      if (!idsPermitidos.length) {
         throw new ForbiddenException(
-          'Usuário sem empresa vinculada para acessar fila de manutenção',
+          'Usuário sem empresa de manutenção vinculada. Não há registros para exibir.',
         );
       }
-      qb = qb.andWhere('i.idEmpresaManutencao = :idEmpresa', {
-        idEmpresa: context.idEmpresa,
+      const idFiltro = filters?.idEmpresaManutencao?.trim();
+      if (!idFiltro) {
+        throw new BadRequestException(
+          'Informe a empresa de manutenção (idEmpresaManutencao) para filtrar a fila',
+        );
+      }
+      if (!idsPermitidos.includes(idFiltro)) {
+        throw new ForbiddenException(
+          'Empresa de manutenção fora do escopo do usuário',
+        );
+      }
+      qb = qb.andWhere('i.idEmpresaManutencao = :idEmpresaManutencao', {
+        idEmpresaManutencao: idFiltro,
+      });
+    } else if (filters?.idEmpresaManutencao?.trim()) {
+      qb = qb.andWhere('i.idEmpresaManutencao = :idEmpresaManutencao', {
+        idEmpresaManutencao: filters.idEmpresaManutencao.trim(),
       });
     }
 
@@ -816,12 +856,49 @@ export class IrregularidadeService {
         idVeiculo: filters.idVeiculo,
       });
     }
+    if (filters?.idArea) {
+      qb = qb.andWhere('i.idArea = :idArea', { idArea: filters.idArea });
+    }
+    if (filters?.idComponente) {
+      qb = qb.andWhere('i.idComponente = :idComponente', {
+        idComponente: filters.idComponente,
+      });
+    }
+    if (filters?.idSintoma) {
+      qb = qb.andWhere('i.idSintoma = :idSintoma', {
+        idSintoma: filters.idSintoma,
+      });
+    }
     if (filters?.ordemServico) {
       const pat = `%${filters.ordemServico}%`;
       qb = qb.andWhere(
         'CAST(i.numeroIrregularidade AS TEXT) ILIKE :ordemServicoPat',
         {
           ordemServicoPat: pat,
+        },
+      );
+    }
+    if (filters?.erpCodigoPedido) {
+      const pat = `%${filters.erpCodigoPedido}%`;
+      qb = qb.andWhere('i.erpCodigoPedido ILIKE :erpCodigoPedidoPat', {
+        erpCodigoPedidoPat: pat,
+      });
+    }
+    if (filters?.numOsExterno) {
+      const pat = `%${filters.numOsExterno}%`;
+      qb = qb.andWhere(
+        'CAST(i.numOsExternoAtual AS TEXT) ILIKE :numOsExternoPat',
+        {
+          numOsExternoPat: pat,
+        },
+      );
+    }
+    if (filters?.numeroVistoria) {
+      const pat = `%${filters.numeroVistoria}%`;
+      qb = qb.andWhere(
+        'CAST(v.numeroVistoria AS TEXT) ILIKE :numeroVistoriaPat',
+        {
+          numeroVistoriaPat: pat,
         },
       );
     }
@@ -1107,6 +1184,24 @@ export class IrregularidadeService {
       }
     }
 
+    const empresaIds = Array.from(
+      new Set(
+        entities
+          .map((e) => e.idEmpresaManutencao)
+          .filter((id): id is string => !!id),
+      ),
+    );
+    const empresaDescricaoById = new Map<string, string>();
+    if (empresaIds.length > 0) {
+      const empresas = await this.empresaTerceiraRepository.find({
+        where: { id: In(empresaIds) },
+        select: ['id', 'descricao'],
+      });
+      for (const emp of empresas) {
+        empresaDescricaoById.set(emp.id, emp.descricao);
+      }
+    }
+
     const data = entities.map((item) => {
       const counts = countsByIrregularidade.get(item.id);
       const midias = midiasByIrregularidade.get(item.id);
@@ -1129,6 +1224,11 @@ export class IrregularidadeService {
         undefined,
         entradaStatusEm,
       );
+      if (item.idEmpresaManutencao) {
+        resumo.idEmpresaManutencao = item.idEmpresaManutencao;
+        resumo.empresaManutencaoDescricao =
+          empresaDescricaoById.get(item.idEmpresaManutencao) ?? undefined;
+      }
       resumo.idvistoria = item.idVistoria;
       // Sobrescreve qualquer relação hidratada: fonte única = query de vistoria.
       if (vistoriaInfo?.numeroVistoria != null) {
@@ -1175,8 +1275,9 @@ export class IrregularidadeService {
       [
         StatusIrregularidade.REGISTRADA,
         StatusIrregularidade.RETRABALHO_GARANTIA,
+        StatusIrregularidade.NAO_PROCEDE,
       ],
-      'Somente irregularidades registradas ou em retrabalho/garantia podem ser reclassificadas',
+      'Somente irregularidades registradas, em retrabalho/garantia ou não procede podem ser reclassificadas',
     );
     await this.ensureArea(dto.idarea);
     await this.ensureComponente(dto.idcomponente);
@@ -1271,8 +1372,9 @@ export class IrregularidadeService {
       [
         StatusIrregularidade.REGISTRADA,
         StatusIrregularidade.RETRABALHO_GARANTIA,
+        StatusIrregularidade.NAO_PROCEDE,
       ],
-      'Somente irregularidades registradas ou em retrabalho/garantia podem ser canceladas',
+      'Somente irregularidades registradas, em retrabalho/garantia ou não procede podem ser canceladas',
     );
     const statusOrigem = irregularidade.statusAtual;
     return this.irregularidadeRepository.manager.transaction(
@@ -1303,7 +1405,11 @@ export class IrregularidadeService {
   async cancelarOsBrt(
     id: string,
     dto: CancelarIrregularidadeDto,
-    actor?: { id?: string; idEmpresa?: string },
+    actor?: {
+      id?: string;
+      idEmpresa?: string;
+      idsEmpresasManutencao?: string[];
+    },
   ): Promise<Irregularidade> {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     this.assertStatus(
@@ -1311,7 +1417,7 @@ export class IrregularidadeService {
       [StatusIrregularidade.EM_MANUTENCAO],
       'Somente irregularidades em manutenção podem ter a OS cancelada na integração BRT',
     );
-    this.assertEmpresaEscopo(irregularidade, actor?.idEmpresa);
+    this.assertEmpresaEscopo(irregularidade, actor?.idsEmpresasManutencao);
     return this.manutencaoEnvioService.executarCancelamentoOsBrt(
       irregularidade,
       dto.motivo,
@@ -1333,6 +1439,8 @@ export class IrregularidadeService {
         'vista',
         'vistoria',
         'vistoria.veiculo',
+        'vistoria.motorista',
+        'vistoria.usuario',
         'midias',
       ],
     });
@@ -1342,7 +1450,7 @@ export class IrregularidadeService {
     this.assertStatus(
       irregularidade,
       STATUS_ENVIO_MANUTENCAO,
-      'Somente irregularidades registradas ou em retrabalho/garantia podem ser enviadas para manutenção',
+      'Somente irregularidades registradas, em retrabalho/garantia ou não procede podem ser enviadas para manutenção',
     );
     const config = await this.configuracaoRepository.findOne({ where: {} });
     return this.manutencaoEnvioService.executarEnvioUnitario(
@@ -1387,6 +1495,69 @@ export class IrregularidadeService {
     return this.buildPdfRelatorioManutencao(resumo, irregularidades, config);
   }
 
+  /**
+   * PDF do relatório de serviço(s) para irregularidades selecionadas
+   * (Tratamento / Manutenção / Validação). Sem transição, ERP, BRT ou RAW.
+   */
+  async gerarRelatorioPdfLote(
+    dto: RelatorioIrregularidadesLoteDto,
+    actor?: {
+      nome?: string;
+      perfis?: Array<{ permissoes?: string[] }>;
+    },
+  ): Promise<Buffer> {
+    const idsUnicos = Array.from(new Set(dto.idsIrregularidades));
+    if (idsUnicos.length === 0) {
+      throw new BadRequestException('Selecione ao menos uma irregularidade.');
+    }
+
+    const irregularidades = await this.irregularidadeRepository.find({
+      where: idsUnicos.map((id) => ({ id })),
+      relations: [
+        'area',
+        'componente',
+        'sintoma',
+        'vista',
+        'marcacoes',
+        'vistoria',
+        'vistoria.veiculo',
+        'vistoria.motorista',
+        'vistoria.usuario',
+        'midias',
+      ],
+      order: {
+        criadoEm: 'ASC',
+      },
+    });
+
+    if (irregularidades.length !== idsUnicos.length) {
+      throw new NotFoundException(
+        'Uma ou mais irregularidades selecionadas não foram encontradas.',
+      );
+    }
+
+    const userPermissions = collectUserPermissions(actor?.perfis);
+    if (!userPermissions.has(Permission.IRREGULARIDADE_GESTAO_OS_READ.toLowerCase())) {
+      assertUserHasAllPermissions(
+        userPermissions,
+        getRequiredPrintPermissionsForStatuses(
+          irregularidades.map((item) => item.statusAtual),
+        ),
+      );
+    }
+
+    const empresa = await this.resolveEmpresaRelatorioLote(irregularidades);
+    const emitidoEm = new Date();
+    const resumo = this.buildResumoRelatorioManutencao(
+      empresa,
+      irregularidades,
+      emitidoEm,
+      actor?.nome,
+    );
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    return this.buildPdfRelatorioManutencao(resumo, irregularidades, config);
+  }
+
   async iniciarManutencaoLote(
     dto: IniciarManutencaoLoteDto,
     actor?: { id?: string; idEmpresa?: string; nome?: string },
@@ -1405,7 +1576,11 @@ export class IrregularidadeService {
   async concluirManutencao(
     id: string,
     dto: ValidacaoFinalIrregularidadeDto,
-    actor?: { id?: string; idEmpresa?: string },
+    actor?: {
+      id?: string;
+      idEmpresa?: string;
+      idsEmpresasManutencao?: string[];
+    },
   ): Promise<Irregularidade> {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     this.assertStatus(
@@ -1413,8 +1588,9 @@ export class IrregularidadeService {
       [StatusIrregularidade.EM_MANUTENCAO],
       'Somente irregularidades em manutenção podem ser concluídas',
     );
-    this.assertEmpresaEscopo(irregularidade, actor?.idEmpresa);
-    this.assertManutencaoManualPermitida(irregularidade);
+    this.assertEmpresaEscopo(irregularidade, actor?.idsEmpresasManutencao);
+    // Conclusão manual permitida também na trilha BRT (RN-VIS-006 opção A).
+    // Não procede permanece bloqueado via assertManutencaoManualPermitida.
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
         irregularidade.statusAtual = StatusIrregularidade.CONCLUIDA;
@@ -1444,7 +1620,11 @@ export class IrregularidadeService {
   async marcarNaoProcede(
     id: string,
     dto: NaoProcedeIrregularidadeDto,
-    actor?: { id?: string; idEmpresa?: string },
+    actor?: {
+      id?: string;
+      idEmpresa?: string;
+      idsEmpresasManutencao?: string[];
+    },
   ): Promise<Irregularidade> {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     this.assertStatus(
@@ -1452,14 +1632,25 @@ export class IrregularidadeService {
       [StatusIrregularidade.EM_MANUTENCAO],
       'Somente irregularidades em manutenção podem ser marcadas como não procede',
     );
-    this.assertEmpresaEscopo(irregularidade, actor?.idEmpresa);
+    this.assertEmpresaEscopo(irregularidade, actor?.idsEmpresasManutencao);
     this.assertManutencaoManualPermitida(irregularidade);
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
+        const empresaDevolvida = irregularidade.idEmpresaManutencao;
         irregularidade.statusAtual = StatusIrregularidade.NAO_PROCEDE;
         irregularidade.motivoNaoProcede = dto.motivoNaoProcede;
         irregularidade.observacao = dto.observacao ?? irregularidade.observacao;
         irregularidade.resolvido = false;
+        (irregularidade as { idEmpresaManutencao: string | null }).idEmpresaManutencao =
+          null;
+        irregularidade.controleIntegracaoApi = false;
+        irregularidade.osOrigAtual = null;
+        irregularidade.numOsExternoAtual = null;
+        irregularidade.ultimoErroIntegracao = null;
+        irregularidade.ultimoErroIntegracaoEm = null;
+        irregularidade.erpCodigoPedido = null;
+        irregularidade.erpEnviadoEm = null;
+        irregularidade.erpUltimoErro = null;
         const saved = await manager
           .getRepository(Irregularidade)
           .save(irregularidade);
@@ -1471,7 +1662,7 @@ export class IrregularidadeService {
             statusDestino: StatusIrregularidade.NAO_PROCEDE,
             acao: 'marcar_nao_procede',
             idUsuario: actor?.id,
-            idEmpresaEvento: actor?.idEmpresa,
+            idEmpresaEvento: empresaDevolvida ?? actor?.idEmpresa,
             observacao: dto.motivoNaoProcede,
           },
         );
@@ -1483,14 +1674,19 @@ export class IrregularidadeService {
   async validarFinal(
     id: string,
     dto: ValidacaoFinalIrregularidadeDto,
-    actor?: { id?: string; idEmpresa?: string },
+    actor?: {
+      id?: string;
+      idEmpresa?: string;
+      idsEmpresasManutencao?: string[];
+    },
   ): Promise<Irregularidade> {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     this.assertStatus(
       irregularidade,
-      [StatusIrregularidade.CONCLUIDA, StatusIrregularidade.NAO_PROCEDE],
-      'Somente irregularidades concluídas ou não procede podem ser validadas',
+      [StatusIrregularidade.CONCLUIDA],
+      'Somente irregularidades concluídas podem ser validadas',
     );
+    this.assertEmpresaEscopo(irregularidade, actor?.idsEmpresasManutencao);
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
         const origem = irregularidade.statusAtual;
@@ -1521,20 +1717,32 @@ export class IrregularidadeService {
   async reprovarValidacaoFinal(
     id: string,
     dto: ReprovarValidacaoFinalIrregularidadeDto,
-    actor?: { id?: string; idEmpresa?: string },
+    actor?: {
+      id?: string;
+      idEmpresa?: string;
+      idsEmpresasManutencao?: string[];
+    },
   ): Promise<Irregularidade> {
     const irregularidade = await this.getIrregularidadeOrFail(id);
     this.assertStatus(
       irregularidade,
-      [StatusIrregularidade.CONCLUIDA, StatusIrregularidade.NAO_PROCEDE],
-      'Somente irregularidades concluídas ou não procede podem ser reprovadas',
+      [StatusIrregularidade.CONCLUIDA],
+      'Somente irregularidades concluídas podem ser reprovadas',
     );
+    this.assertEmpresaEscopo(irregularidade, actor?.idsEmpresasManutencao);
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
         const origem = irregularidade.statusAtual;
         irregularidade.statusAtual = StatusIrregularidade.RETRABALHO_GARANTIA;
         irregularidade.resolvido = false;
         irregularidade.controleIntegracaoApi = false;
+        irregularidade.osOrigAtual = null;
+        irregularidade.numOsExternoAtual = null;
+        irregularidade.ultimoErroIntegracao = null;
+        irregularidade.ultimoErroIntegracaoEm = null;
+        irregularidade.erpCodigoPedido = null;
+        irregularidade.erpEnviadoEm = null;
+        irregularidade.erpUltimoErro = null;
         irregularidade.observacao = dto.observacao;
         const saved = await manager
           .getRepository(Irregularidade)
@@ -1789,6 +1997,23 @@ export class IrregularidadeService {
       .toLowerCase();
   }
 
+  private async resolveEmpresaRelatorioLote(
+    irregularidades: Irregularidade[],
+  ): Promise<EmpresaTerceira> {
+    const idEmpresa = irregularidades
+      .map((item) => item.idEmpresaManutencao)
+      .find((id): id is string => !!id?.trim());
+    if (idEmpresa) {
+      const empresa = await this.empresaTerceiraRepository.findOne({
+        where: { id: idEmpresa },
+      });
+      if (empresa) {
+        return empresa;
+      }
+    }
+    return { descricao: 'Não vinculada' } as EmpresaTerceira;
+  }
+
   private async loadIrregularidadesLoteParaManutencao(
     dto: IniciarManutencaoLoteDto,
   ): Promise<{
@@ -1817,6 +2042,8 @@ export class IrregularidadeService {
         'marcacoes',
         'vistoria',
         'vistoria.veiculo',
+        'vistoria.motorista',
+        'vistoria.usuario',
         'midias',
       ],
       order: {
@@ -1835,17 +2062,36 @@ export class IrregularidadeService {
     );
     if (invalidas.length > 0) {
       throw new BadRequestException(
-        'Somente irregularidades registradas ou em retrabalho/garantia podem ser enviadas para manutenção.',
+        'Somente irregularidades registradas, em retrabalho/garantia ou não procede podem ser enviadas para manutenção.',
       );
     }
+
+    this.manutencaoEnvioService.assertEscopoEmpresa(empresa, irregularidades);
 
     if (this.manutencaoEnvioService.usesIntegracaoApi(empresa)) {
       await this.manutencaoEnvioService.assertSelecaoCompletaVistoriasBrt(
         irregularidades,
+        empresa,
       );
     }
 
     return { empresa, irregularidades };
+  }
+
+  private formatOsColunasManutencao(item: {
+    ordemServico: number;
+    erpCodigoPedido?: string;
+    numOsExternoAtual?: number | null;
+  }): { label: string; value: string }[] {
+    const cols = [{ label: 'OS', value: String(item.ordemServico) }];
+    const erp = item.erpCodigoPedido?.trim();
+    if (erp) {
+      cols.push({ label: 'OS OMNI', value: erp });
+    }
+    if (item.numOsExternoAtual != null) {
+      cols.push({ label: 'OS BRT', value: String(item.numOsExternoAtual) });
+    }
+    return cols;
   }
 
   private buildResumoRelatorioManutencao(
@@ -1872,6 +2118,8 @@ export class IrregularidadeService {
       porVeiculoMap.get(chave)?.itens.push({
         id: item.id,
         ordemServico: item.numeroIrregularidade,
+        erpCodigoPedido: item.erpCodigoPedido?.trim() || undefined,
+        numOsExternoAtual: item.numOsExternoAtual ?? undefined,
         irregularidade: `${item.area?.nome ?? '-'} - ${item.componente?.nome ?? '-'} - ${
           item.sintoma?.descricao ?? '-'
         }`,
@@ -1915,6 +2163,10 @@ export class IrregularidadeService {
     const dataEmissao = this.formatDateTimeBr(resumo.emitidoEm);
     const itensHtml = resumo.porVeiculo
       .map((grupo) => {
+        const veiculoMeta = [grupo.placa ?? '', grupo.modelo ?? '']
+          .filter(Boolean)
+          .join(' ');
+        const veiculoTitulo = `Veículo: ${grupo.veiculo}${veiculoMeta ? ` ${veiculoMeta}` : ''}`;
         const cards = grupo.itens
           .map((itemResumo) => {
             const irregularidade = irregularidades.find(
@@ -1923,6 +2175,7 @@ export class IrregularidadeService {
             const imagens = (irregularidade?.midias ?? []).filter(
               (m) => m.tipo === 'imagem',
             );
+            const localDesc = irregularidade?.vista?.descricao?.trim();
             const imagensHtml =
               imagens.length === 0
                 ? '<p class="muted">Sem imagens anexadas.</p>'
@@ -1936,33 +2189,37 @@ export class IrregularidadeService {
             const obsHtml = itemResumo.observacao?.trim()
               ? itemResumo.observacao
               : '<span class="muted">Não informada.</span>';
+            const osColunas = this.formatOsColunasManutencao(itemResumo);
+            const osColspan = osColunas.length;
+            const osValHtml = osColunas
+              .map((col) => `<td class="os-valor">${col.label}: ${col.value}</td>`)
+              .join('');
+            const localRow = localDesc
+              ? `<tr><th>Local</th><td colspan="${Math.max(1, osColspan - 1)}">${localDesc}</td></tr>`
+              : '';
             return `
-              <div class="item-card">
-                <div class="item-head">
-                  <strong>Ordem de Serviço #${itemResumo.ordemServico}</strong>
-                </div>
-                <div class="relatorio-bloco-tab">
-                  <div class="item-field item-field-inline">
-                    <span class="item-label-inline">IRREGULARIDADE:</span>
-                    <span class="item-value-inline">${itemResumo.irregularidade}</span>
-                  </div>
-                  <div class="item-field item-field-inline">
-                    <span class="item-label-inline">DESCRIÇÃO DO PROBLEMA:</span>
-                    <span class="item-value-inline">${obsHtml}</span>
-                  </div>
-                </div>
-                <div class="imagens-wrap">${imagensHtml}</div>
-              </div>
+              <table class="item-table">
+                <tr>
+                  <th class="veiculo-titulo" colspan="${osColspan}">${veiculoTitulo}</th>
+                </tr>
+                <tr>${osValHtml}</tr>
+                <tr>
+                  <th>Irregularidade</th>
+                  <td colspan="${Math.max(1, osColspan - 1)}">${itemResumo.irregularidade}</td>
+                </tr>
+                <tr>
+                  <th>Descrição do problema</th>
+                  <td colspan="${Math.max(1, osColspan - 1)}">${obsHtml}</td>
+                </tr>
+                ${localRow}
+                ${imagensHtml ? `<tr><td class="imagens-cell" colspan="${osColspan}"><div class="imagens-wrap">${imagensHtml}</div></td></tr>` : ''}
+              </table>
             `;
           })
           .join('');
 
-        const veiculoMeta = [grupo.placa ?? '', grupo.modelo ?? '']
-          .filter(Boolean)
-          .join(' ');
         return `
           <section class="veiculo-section">
-            <h2 class="veiculo-titulo">Veículo: ${grupo.veiculo}${veiculoMeta ? ` ${veiculoMeta}` : ''}</h2>
             ${cards}
           </section>
         `;
@@ -1980,19 +2237,47 @@ export class IrregularidadeService {
           .topo { border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 18px; text-align: center; }
           .topo h1 { margin: 0; font-size: 22px; }
           .topo p { margin: 4px 0 0; color: #4b5563; }
-          .resumo { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
-          .veiculo-section { margin-bottom: 20px; }
-          .veiculo-titulo { margin: 0 0 10px; font-size: 17px; }
-          .item-card { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-          .item-head { margin-bottom: 10px; color: #1d4ed8; font-size: 15px; }
-          .relatorio-bloco-tab { padding-left: 20px; margin-bottom: 2px; }
-          .item-field { margin-bottom: 8px; }
-          .item-field-inline { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; }
-          .item-label-inline { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; }
-          .item-value-inline { font-size: 13px; color: #111827; line-height: 1.35; }
-          .item-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; margin-bottom: 2px; }
-          .item-value { display: block; font-size: 13px; color: #111827; line-height: 1.35; }
-          .imagens-wrap { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+          .resumo { border: 1px solid #94a3b8; padding: 12px; margin-bottom: 16px; }
+          .veiculo-section { margin-bottom: 20px; page-break-before: always; }
+          .veiculo-section:first-of-type { page-break-before: auto; }
+          @media print {
+            .topo { page-break-after: avoid; }
+          }
+          .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+          }
+          .item-table th, .item-table td {
+            border: 1px solid #94a3b8;
+            padding: 6px 8px;
+            background: transparent;
+            text-align: left;
+            vertical-align: middle;
+          }
+          .item-table th {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #475569;
+            width: 180px;
+          }
+          .item-table .veiculo-titulo {
+            font-size: 13px;
+            color: #0f172a;
+            text-transform: none;
+            letter-spacing: 0;
+            width: auto;
+          }
+          .item-table .os-valor {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+          }
+          .item-table td { font-size: 13px; color: #0f172a; }
+          .imagens-cell { padding: 8px; }
+          .imagens-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
           .imagem { max-width: 100%; width: 260px; height: auto; border: 1px solid #d1d5db; border-radius: 6px; }
           .muted { color: #6b7280; margin: 6px 0 0; }
         </style>
@@ -3307,7 +3592,6 @@ export class IrregularidadeService {
       await this.carregarMapasPdfManutencao(irregularidades);
 
     const marginX = 50;
-    const contentTopY = 100;
     /**
      * Margem inferior da página = faixa do rodapé desenhado depois. O motor de texto do PDFKit
      * usa page.maxY() = height - margins.bottom, alinhado ao nosso conteúdo manual.
@@ -3342,10 +3626,60 @@ export class IrregularidadeService {
       const IMG_GRID_CELL_H = 200;
       const IMG_GRID_COLS = 3;
 
+      const headerRowTop = 42;
+      const logoBoxW = 132;
+      const logoBoxH = 48;
+      let innerW = 0;
+      let veiculoAtualHeader = '';
+
+      const drawReportHeader = () => {
+        innerW = doc.page.width - marginX * 2;
+        if (logoBuffer) {
+          try {
+            doc.image(logoBuffer, marginX, headerRowTop, {
+              fit: [logoBoxW, logoBoxH],
+            });
+          } catch {
+            // Ignora falha de logo
+          }
+        }
+        const tituloY = headerRowTop + 10;
+        doc
+          .font('Helvetica')
+          .fontSize(17)
+          .fillColor('#0f172a')
+          .text('Relatório de Serviço(s)', marginX, tituloY, {
+            width: innerW,
+            align: 'center',
+          });
+        doc
+          .font('Helvetica')
+          .fontSize(11)
+          .fillColor('#475569')
+          .text(
+            `Empresa de manutenção: ${resumo.empresa}`,
+            marginX,
+            doc.y + 5,
+            { width: innerW, align: 'center' },
+          );
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .fillColor('#64748b')
+          .text(`Emissão: ${dataEmissao}`, marginX, doc.y + 4, {
+            width: innerW,
+            align: 'center',
+          });
+        const headerTextosFimY = doc.y;
+        const logoFimY = headerRowTop + logoBoxH;
+        doc.x = marginX;
+        doc.y = Math.max(headerTextosFimY + 12, logoFimY + 10);
+      };
+
       const breakPageBody = () => {
         doc.addPage();
         doc.x = marginX;
-        doc.y = contentTopY;
+        drawReportHeader();
       };
 
       /**
@@ -3376,63 +3710,6 @@ export class IrregularidadeService {
         return { rows, cellW, gridH };
       };
 
-      /** Página inicial + conteúdo */
-      doc.addPage();
-      const innerW = doc.page.width - marginX * 2;
-      const headerRowTop = 42;
-      const logoBoxW = 132;
-      const logoBoxH = 48;
-
-      if (logoBuffer) {
-        try {
-          doc.image(logoBuffer, marginX, headerRowTop, {
-            fit: [logoBoxW, logoBoxH],
-          });
-        } catch {
-          // Ignora falha de logo
-        }
-      }
-
-      /** Título e subtítulos centralizados na largura útil da página (não só à direita da logo). */
-      const tituloY = headerRowTop + 10;
-      doc
-        .font('Helvetica')
-        .fontSize(17)
-        .fillColor('#0f172a')
-        .text('Relatório de Serviço(s)', marginX, tituloY, {
-          width: innerW,
-          align: 'center',
-        });
-
-      const gapSubtitulo = 5;
-      doc
-        .font('Helvetica')
-        .fontSize(11)
-        .fillColor('#475569')
-        .text(
-          `Empresa de manutenção: ${resumo.empresa}`,
-          marginX,
-          doc.y + gapSubtitulo,
-          {
-            width: innerW,
-            align: 'center',
-          },
-        );
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor('#64748b')
-        .text(`Emissão: ${dataEmissao}`, marginX, doc.y + 4, {
-          width: innerW,
-          align: 'center',
-        });
-
-      const headerTextosFimY = doc.y;
-      const logoFimY = headerRowTop + logoBoxH;
-      /** Corpo abaixo do bloco de cabeçalho (título centralizado na página + logo à esquerda). */
-      doc.x = marginX;
-      doc.y = Math.max(headerTextosFimY + 16, logoFimY + 12);
-
       const buildVeiculoHeader = (
         grupo: RelatorioManutencaoResumoDto['porVeiculo'][number],
       ) => {
@@ -3456,9 +3733,62 @@ export class IrregularidadeService {
         return doc.heightOfString(text, { width });
       };
 
+      const drawTableCell = (
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        text: string,
+        opts: {
+          font?: string;
+          size?: number;
+          color?: string;
+          padX?: number;
+          padY?: number;
+          wrap?: boolean;
+          valign?: 'top' | 'center';
+        } = {},
+      ) => {
+        const padX = opts.padX ?? 6;
+        const padY = opts.padY ?? 4;
+        doc.save();
+        doc.lineWidth(0.6).strokeColor('#94a3b8').rect(x, y, w, h).stroke();
+        if (text) {
+          const font = opts.font ?? 'Helvetica';
+          const size = opts.size ?? 9;
+          const textW = Math.max(8, w - padX * 2);
+          doc.font(font).fontSize(size);
+          const textH = Math.min(
+            h - padY * 2,
+            doc.heightOfString(text, {
+              width: textW,
+              lineBreak: opts.wrap !== false,
+            }),
+          );
+          const textY =
+            opts.valign === 'center'
+              ? y + Math.max(padY, (h - textH) / 2)
+              : y + padY;
+          doc.fillColor(opts.color ?? '#0f172a').text(text, x + padX, textY, {
+            width: textW,
+            height: Math.max(8, h - (textY - y) - padY),
+            lineBreak: opts.wrap !== false,
+            ellipsis: true,
+          });
+        }
+        doc.restore();
+      };
+
+      doc.addPage();
+      drawReportHeader();
+
+      let primeiroVeiculo = true;
       for (const grupo of resumo.porVeiculo) {
-        const veiculoHeader = buildVeiculoHeader(grupo);
-        ensureTextBlock(56);
+        veiculoAtualHeader = buildVeiculoHeader(grupo);
+        if (!primeiroVeiculo) {
+          breakPageBody();
+        }
+        primeiroVeiculo = false;
 
         for (const itemResumo of grupo.itens) {
           const irregularidade = irregularidades.find(
@@ -3470,33 +3800,41 @@ export class IrregularidadeService {
           const mapaLocal = mapasPorItem.get(itemResumo.id);
           const obsTxt = itemResumo.observacao?.trim() || 'Não informada.';
 
-          const cardPadX = 12;
-          const cardPadY = 10;
+          const cardPadX = 0;
+          const cardPadY = 0;
+          const mediaPad = 8;
           const cardInnerW = innerW - cardPadX * 2;
+          const mediaW = cardInnerW - mediaPad * 2;
 
-          const hVeiculoCard = measureTextHeight(
-            veiculoHeader,
-            'Helvetica-Bold',
-            10,
-            cardInnerW,
+          const osColunas = this.formatOsColunasManutencao(itemResumo);
+          const osColW = cardInnerW / Math.max(1, osColunas.length);
+          const hOs = 24;
+          const hVeiculo = Math.max(
+            22,
+            measureTextHeight(
+              veiculoAtualHeader,
+              'Helvetica-Bold',
+              11,
+              cardInnerW - 12,
+            ) + 10,
           );
-          const hOs = measureTextHeight(
-            `Ordem de Serviço #${itemResumo.ordemServico}`,
-            'Helvetica-Bold',
-            11,
-            cardInnerW,
+          const labelColW = 132;
+          const valueColW = cardInnerW - labelColW;
+          const cellPad = 5;
+          const hIrreg = Math.max(
+            18,
+            measureTextHeight(
+              itemResumo.irregularidade,
+              'Helvetica',
+              9,
+              valueColW - cellPad * 2,
+            ) +
+              cellPad * 2,
           );
-          const hIrreg = measureTextHeight(
-            `IRREGULARIDADE: ${itemResumo.irregularidade}`,
-            'Helvetica-Bold',
-            9,
-            cardInnerW,
-          );
-          const hObsLine = measureTextHeight(
-            `DESCRIÇÃO DO PROBLEMA: ${obsTxt}`,
-            'Helvetica-Bold',
-            9,
-            cardInnerW,
+          const hObsLine = Math.max(
+            18,
+            measureTextHeight(obsTxt, 'Helvetica', 9, valueColW - cellPad * 2) +
+              cellPad * 2,
           );
           const jpegMapa = mapaLocal
             ? this.lerDimensoesJpeg(mapaLocal.buffer)
@@ -3519,7 +3857,7 @@ export class IrregularidadeService {
           let mapaBoxH = 0;
           if (mapaLocal) {
             if (mapaBaixa) {
-              mapaBoxW = cardInnerW;
+              mapaBoxW = mediaW;
               mapaBoxH = Math.min(
                 100,
                 Math.max(56, mapaBoxW * (mapaUtilH / mapaUtilW)),
@@ -3540,8 +3878,8 @@ export class IrregularidadeService {
           const imageLayout = getImageGridLayout(
             imagens.length,
             fotosAoLado
-              ? Math.max(120, cardInnerW - mapaBoxW - 12)
-              : cardInnerW,
+              ? Math.max(120, mediaW - mapaBoxW - 12)
+              : mediaW,
           );
           const imagemLinhaFallback = 'Sem imagens anexadas.';
           const hImgs =
@@ -3549,26 +3887,33 @@ export class IrregularidadeService {
               ? fotosAoLado
                 ? 0
                 : imageLayout.gridH
-              : measureTextHeight(
-                  imagemLinhaFallback,
+              : mapaLocal
+                ? 0
+                : measureTextHeight(
+                    imagemLinhaFallback,
+                    'Helvetica',
+                    9,
+                    mediaW,
+                  );
+          const hLocal = mapaLocal
+            ? Math.max(
+                18,
+                measureTextHeight(
+                  mapaLocal.descricao,
                   'Helvetica',
                   9,
-                  cardInnerW,
-                );
-          const hMapa = mapaLocal ? 14 + mapaBoxH + 8 : 0;
+                  valueColW - cellPad * 2,
+                ) +
+                  cellPad * 2,
+              )
+            : 0;
+          const hMapa = mapaLocal ? mapaBoxH : 0;
           const hMidia = fotosAoLado
-            ? Math.max(hMapa, mapaBoxH + 14)
-            : hMapa + hImgs;
+            ? Math.max(hMapa, mapaBoxH)
+            : hMapa + (mapaLocal && imagens.length ? 8 : 0) + hImgs;
+          const hMediaCell = hMidia + mediaPad * 2;
           const cardContentH =
-            hOs +
-            6 +
-            hVeiculoCard +
-            5 +
-            hIrreg +
-            5 +
-            hObsLine +
-            8 +
-            hMidia;
+            hVeiculo + hOs + hIrreg + hObsLine + hLocal + hMediaCell;
           const requiredCardH = cardPadY * 2 + cardContentH + 6;
 
           ensureTextBlock(requiredCardH + 8);
@@ -3576,53 +3921,126 @@ export class IrregularidadeService {
           // Bloco visual da irregularidade com todas as informações (veículo + dados + imagens).
           const cardX = marginX;
           const cardY = doc.y;
-          const cardW = innerW;
           const cardTextX = cardX + cardPadX;
           const cardTextY = cardY + cardPadY;
 
           doc.x = cardTextX;
           doc.y = cardTextY;
-          doc
-            .font('Helvetica-Bold')
-            .fontSize(11)
-            .fillColor('#1d4ed8')
-            .text(`Ordem de Serviço #${itemResumo.ordemServico}`, {
-              width: cardInnerW,
-            });
-          doc.moveDown(0.3);
-          doc
-            .font('Helvetica-Bold')
-            .fontSize(10)
-            .fillColor('#334155')
-            .text(veiculoHeader, { width: cardInnerW });
-          doc.moveDown(0.25);
-          doc
-            .font('Helvetica-Bold')
-            .fontSize(9)
-            .fillColor('#64748b')
-            .text(`IRREGULARIDADE: ${itemResumo.irregularidade}`, {
-              width: cardInnerW,
-            });
-          doc.moveDown(0.25);
-          const obsLine = `DESCRIÇÃO DO PROBLEMA: ${obsTxt}`;
-          doc
-            .font('Helvetica-Bold')
-            .fontSize(9)
-            .fillColor('#64748b')
-            .text(obsLine, { width: cardInnerW });
-          doc.moveDown(0.35);
+          let tableY = cardTextY;
+          drawTableCell(
+            cardTextX,
+            tableY,
+            cardInnerW,
+            hVeiculo,
+            veiculoAtualHeader,
+            {
+              font: 'Helvetica-Bold',
+              size: 11,
+              color: '#0f172a',
+              wrap: true,
+              valign: 'center',
+            },
+          );
+          tableY += hVeiculo;
+          osColunas.forEach((col, idx) => {
+            drawTableCell(
+              cardTextX + idx * osColW,
+              tableY,
+              osColW,
+              hOs,
+              `${col.label}: ${col.value}`,
+              {
+                font: 'Helvetica-Bold',
+                size: 11,
+                color: '#0f172a',
+                wrap: false,
+                valign: 'center',
+              },
+            );
+          });
+          tableY += hOs;
+          drawTableCell(
+            cardTextX,
+            tableY,
+            labelColW,
+            hIrreg,
+            'IRREGULARIDADE',
+            {
+              font: 'Helvetica-Bold',
+              size: 8,
+              color: '#475569',
+              wrap: false,
+            },
+          );
+          drawTableCell(
+            cardTextX + labelColW,
+            tableY,
+            valueColW,
+            hIrreg,
+            itemResumo.irregularidade,
+            { font: 'Helvetica', size: 9, color: '#0f172a', wrap: true },
+          );
+          tableY += hIrreg;
+          drawTableCell(
+            cardTextX,
+            tableY,
+            labelColW,
+            hObsLine,
+            'DESCRIÇÃO DO PROBLEMA',
+            {
+              font: 'Helvetica-Bold',
+              size: 8,
+              color: '#475569',
+              wrap: true,
+            },
+          );
+          drawTableCell(
+            cardTextX + labelColW,
+            tableY,
+            valueColW,
+            hObsLine,
+            obsTxt,
+            { font: 'Helvetica', size: 9, color: '#0f172a', wrap: true },
+          );
+          tableY += hObsLine;
+          if (mapaLocal) {
+            drawTableCell(
+              cardTextX,
+              tableY,
+              labelColW,
+              hLocal,
+              'LOCAL',
+              {
+                font: 'Helvetica-Bold',
+                size: 8,
+                color: '#475569',
+                wrap: false,
+              },
+            );
+            drawTableCell(
+              cardTextX + labelColW,
+              tableY,
+              valueColW,
+              hLocal,
+              mapaLocal.descricao,
+              { font: 'Helvetica', size: 9, color: '#0f172a', wrap: true },
+            );
+            tableY += hLocal;
+          }
+          drawTableCell(cardTextX, tableY, cardInnerW, hMediaCell, '', {
+            wrap: false,
+          });
+          const mediaX = cardTextX + mediaPad;
+          const mediaY = tableY + mediaPad;
+          doc.x = mediaX;
+          doc.y = mediaY;
 
           if (mapaLocal) {
-            doc
-              .font('Helvetica-Bold')
-              .fontSize(8)
-              .fillColor('#334155')
-              .text(`Local: ${mapaLocal.descricao}`, { width: cardInnerW });
-            const mapY = doc.y + 3;
+            const mapY = mediaY;
             this.desenharMapaVistaNoPdf(doc, {
               buffer: mapaLocal.buffer,
               recorte: mapaBaixa ? mapaLocal.recorte : undefined,
-              x: cardTextX,
+              x: mediaX,
               y: mapY,
               boxW: mapaBoxW,
               boxH: mapaBoxH,
@@ -3637,14 +4055,14 @@ export class IrregularidadeService {
             doc
               .lineWidth(0.6)
               .strokeColor('#e2e8f0')
-              .roundedRect(cardTextX, mapY, mapaBoxW, mapaBoxH, 4)
+              .roundedRect(mediaX, mapY, mapaBoxW, mapaBoxH, 4)
               .stroke();
             doc.restore();
 
             if (fotosAoLado) {
               const gapMapa = 12;
-              const fotoAreaX = cardTextX + mapaBoxW + gapMapa;
-              const fotoAreaW = Math.max(80, cardInnerW - mapaBoxW - gapMapa);
+              const fotoAreaX = mediaX + mapaBoxW + gapMapa;
+              const fotoAreaW = Math.max(80, mediaW - mapaBoxW - gapMapa);
               const cols = Math.min(2, imagens.length);
               const rows = Math.ceil(imagens.length / cols);
               const cellW = Math.floor((fotoAreaW - 8 * (cols - 1)) / cols);
@@ -3667,30 +4085,30 @@ export class IrregularidadeService {
                     .text('Falha na imagem.', x, y, { width: cellW });
                 }
               }
-              doc.x = cardTextX;
-              doc.y = mapY + mapaBoxH + 8;
+              doc.x = mediaX;
+              doc.y = mapY + mapaBoxH;
             } else {
-              doc.x = cardTextX;
-              doc.y = mapY + mapaBoxH + 8;
+              doc.x = mediaX;
+              doc.y = mapY + mapaBoxH;
             }
           }
 
           if (fotosAoLado) {
             // Fotos já desenhadas ao lado do mapa.
-          } else if (imagens.length === 0) {
+          } else if (imagens.length === 0 && !mapaLocal) {
             doc
               .font('Helvetica')
               .fontSize(9)
               .fillColor('#6b7280')
-              .text(imagemLinhaFallback, {
-                width: cardInnerW,
+              .text(imagemLinhaFallback, mediaX, mediaY, {
+                width: mediaW,
               });
-          } else {
-            const gridStartY = doc.y;
+          } else if (!fotosAoLado && imagens.length > 0) {
+            const gridStartY = mapaLocal ? doc.y + 8 : mediaY;
             for (let idx = 0; idx < imagens.length; idx += 1) {
               const row = Math.floor(idx / IMG_GRID_COLS);
               const col = idx % IMG_GRID_COLS;
-              const x = cardTextX + col * (imageLayout.cellW + IMG_GRID_GAP_X);
+              const x = mediaX + col * (imageLayout.cellW + IMG_GRID_GAP_X);
               const y = gridStartY + row * (IMG_GRID_CELL_H + IMG_GRID_GAP_Y);
               try {
                 doc.image(imagens[idx].dadosBytea, x, y, {
@@ -3704,26 +4122,17 @@ export class IrregularidadeService {
                   .fillColor('#b91c1c')
                   .text(
                     'Não foi possível renderizar uma das imagens anexadas.',
-                    cardTextX,
+                    mediaX,
                     y,
                     {
-                      width: cardInnerW,
+                      width: mediaW,
                     },
                   );
               }
             }
-            doc.y = gridStartY + imageLayout.gridH;
           }
 
-          const cardEndY = doc.y + cardPadY;
-          doc
-            .save()
-            .lineWidth(0.8)
-            .strokeColor('#cbd5e1')
-            .roundedRect(cardX, cardY, cardW, Math.max(42, cardEndY - cardY), 6)
-            .stroke()
-            .restore();
-
+          const cardEndY = tableY + hMediaCell + cardPadY;
           doc.x = marginX;
           doc.y = cardEndY + IMG_GAP_AFTER;
           normalizeCursorY();
@@ -3740,26 +4149,6 @@ export class IrregularidadeService {
         doc.switchToPage(i);
         const { width, height } = doc.page;
         const pageNum = i + 1;
-
-        if (i > 0) {
-          doc.save();
-          doc.fontSize(8).fillColor('#475569');
-          const headerMid = 'Relatório de Serviço(s)';
-          const colW = (width - marginX * 2) / 2;
-          doc.text(headerMid, marginX, 42, { width: colW, ellipsis: true });
-          doc.text(resumo.empresa, marginX + colW, 42, {
-            width: colW,
-            align: 'right',
-            ellipsis: true,
-          });
-          doc
-            .moveTo(marginX, 62)
-            .lineTo(width - marginX, 62)
-            .strokeColor('#e2e8f0')
-            .lineWidth(0.6)
-            .stroke();
-          doc.restore();
-        }
 
         doc.save();
         doc.font('Helvetica').fontSize(8).fillColor('#64748b');
@@ -3984,6 +4373,7 @@ export class IrregularidadeService {
       veiculoPlaca: veiculoPlacaRaw ?? item.vistoria?.veiculo?.placa,
       veiculoModelo:
         veiculoModeloRaw ?? item.vistoria?.veiculo?.modeloVeiculo?.nome,
+      veiculoCombustivel: item.vistoria?.veiculo?.combustivel ?? undefined,
       veiculoModeloId: item.vistoria?.veiculo?.idModelo ?? undefined,
       vistoriadorNome: vistoriadorNomeRaw ?? item.vistoria?.usuario?.nome,
       motoristaNome: motoristaNomeRaw ?? item.vistoria?.motorista?.nome,
@@ -4005,6 +4395,8 @@ export class IrregularidadeService {
           : item.ultimoErroIntegracaoEm
             ? item.ultimoErroIntegracaoEm.toISOString()
             : undefined,
+      erpCodigoPedido: item.erpCodigoPedido ?? undefined,
+      erpUltimoErro: item.erpUltimoErro ?? undefined,
       marcacao: this.mapMarcacao(item),
       marcacoes: this.mapMarcacoes(item),
       exigeMarcacaoMapa: item.sintoma?.exigeMarcacaoMapa ?? false,
@@ -4290,7 +4682,7 @@ export class IrregularidadeService {
   private assertManutencaoManualPermitida(irregularidade: Irregularidade): void {
     if (irregularidade.controleIntegracaoApi) {
       throw new BadRequestException(
-        'Esta irregularidade é controlada pela integração de OS. A conclusão será registrada automaticamente quando o retorno da API estiver disponível.',
+        'Esta irregularidade é controlada pela integração de OS. Não é permitido marcar como não procede manualmente até o retorno integrado da API.',
       );
     }
   }
@@ -4326,6 +4718,12 @@ export class IrregularidadeService {
           irregularidades,
           configuracao,
         ),
+      buildPdfRelatorio: (resumo, irregularidades, configuracao) =>
+        this.buildPdfRelatorioManutencao(
+          resumo,
+          irregularidades,
+          configuracao,
+        ),
     };
   }
 
@@ -4340,17 +4738,20 @@ export class IrregularidadeService {
 
   private assertEmpresaEscopo(
     irregularidade: Irregularidade,
-    idEmpresaUsuario?: string,
+    idsEmpresasUsuario?: string[],
   ): void {
-    if (!idEmpresaUsuario) {
-      throw new ForbiddenException('Usuário sem empresa vinculada');
+    const ids = (idsEmpresasUsuario ?? []).filter(Boolean);
+    if (!ids.length) {
+      throw new ForbiddenException(
+        'Usuário sem empresa de manutenção vinculada',
+      );
     }
     if (!irregularidade.idEmpresaManutencao) {
       throw new ForbiddenException(
         'Irregularidade sem empresa de manutenção vinculada',
       );
     }
-    if (irregularidade.idEmpresaManutencao !== idEmpresaUsuario) {
+    if (!ids.includes(irregularidade.idEmpresaManutencao)) {
       throw new ForbiddenException(
         'Sem acesso: irregularidade pertence a outra empresa de manutenção',
       );

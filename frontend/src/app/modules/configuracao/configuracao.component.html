@@ -28,6 +28,14 @@
     <button
       type="button"
       class="tab-btn"
+      [class.tab-btn--active]="activeTab === 'impressao'"
+      (click)="activeTab = 'impressao'"
+    >
+      Impressão
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
       [class.tab-btn--active]="activeTab === 'vistoria'"
       (click)="activeTab = 'vistoria'"
     >
@@ -274,6 +282,60 @@
             Usada se a API do ERP não devolver texto de erro. Sem preenchimento, vale
             “Erro ao gravar Vistoria no OMNI”.
           </small>
+        </div>
+      </div>
+    </div>
+
+    <div class="audit-section" *ngIf="activeTab === 'impressao'">
+      <h3 class="section-title">Impressão pós-manutenção</h3>
+      <p class="section-description">
+        Quando ativo, após o envio bem-sucedido para manutenção o OMNI gera o PDF
+        (com OS e OS OMNI) e envia à impressora via rede (RAW/JetDirect).
+      </p>
+
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="impressaoAtivo" class="checkbox-input" />
+          <span class="checkbox-text">Habilitar Impressão</span>
+        </label>
+      </div>
+
+      <div class="audit-grid">
+        <div class="form-group">
+          <label class="form-label" for="impressoraIp">IP da impressora</label>
+          <input
+            id="impressoraIp"
+            type="text"
+            class="form-input"
+            formControlName="impressoraIp"
+            placeholder="192.168.1.50"
+            autocomplete="off"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="impressoraPorta">Porta</label>
+          <input
+            id="impressoraPorta"
+            type="number"
+            class="form-input"
+            formControlName="impressoraPorta"
+            min="1"
+            max="65535"
+            placeholder="9100"
+          />
+          <small class="field-description field-description--flush">
+            Padrão JetDirect/RAW: 9100.
+          </small>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="impressaoTimeoutMs">Timeout (ms)</label>
+          <input
+            id="impressaoTimeoutMs"
+            type="number"
+            class="form-input"
+            formControlName="impressaoTimeoutMs"
+            min="1000"
+          />
         </div>
       </div>
     </div>

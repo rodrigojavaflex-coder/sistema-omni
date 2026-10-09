@@ -3,6 +3,7 @@ import {
   ConflictException,
   Logger,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
@@ -11,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { Departamento } from '../departamento/entities/departamento.entity';
 import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
 import { Usuario } from './entities/usuario.entity';
+import { UsuarioEmpresaManutencao } from './entities/usuario-empresa-manutencao.entity';
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
@@ -42,6 +44,8 @@ export class UsuariosService {
     private readonly departamentoUsuarioRepository: Repository<DepartamentoUsuario>,
     @InjectRepository(EmpresaTerceira)
     private readonly empresaTerceiraRepository: Repository<EmpresaTerceira>,
+    @InjectRepository(UsuarioEmpresaManutencao)
+    private readonly usuarioEmpresaManutencaoRepository: Repository<UsuarioEmpresaManutencao>,
     private readonly biAcessoService: BiAcessoService,
   ) {}
 
@@ -76,19 +80,10 @@ export class UsuariosService {
           'Um ou mais perfis informados não foram encontrados',
         );
       }
-      // Montar dados do usuário
-      let empresa: EmpresaTerceira | undefined;
-      if (createUsuarioDto.idEmpresa) {
-        empresa =
-          (await this.empresaTerceiraRepository.findOne({
-            where: { id: createUsuarioDto.idEmpresa },
-          })) ?? undefined;
-        if (!empresa) {
-          throw new NotFoundException(
-            `Empresa com ID ${createUsuarioDto.idEmpresa} não encontrada`,
-          );
-        }
-      }
+      const idsEmpresas = this.resolveIdsEmpresasManutencaoInput(
+        createUsuarioDto.idsEmpresasManutencao,
+        createUsuarioDto.idEmpresa,
+      );
 
       const userData = {
         nome: createUsuarioDto.nome,
@@ -97,7 +92,6 @@ export class UsuariosService {
         ativo: createUsuarioDto.ativo ?? true,
         tema: createUsuarioDto.tema || 'Claro',
         perfis,
-        empresa,
       };
 
       this.logger.debug('Processed user data:', {
@@ -119,13 +113,16 @@ export class UsuariosService {
           createUsuarioDto.departamentoIds,
         );
       }
+
+      await this.syncEmpresasManutencao(savedUser.id, idsEmpresas);
+
       this.logger.log('User saved successfully:', {
         id: savedUser.id,
         name: savedUser.nome,
         email: savedUser.email,
       });
 
-      return savedUser;
+      return this.findOne(savedUser.id);
     } catch (error) {
       this.logger.error('Error creating user:', error);
 
@@ -205,6 +202,7 @@ export class UsuariosService {
         );
       }
     });
+    await this.hydrateEmpresasManutencao(users);
 
     const meta = new PaginationMetaDto(page, limit, total);
     return new PaginatedResponseDto(users, meta);
@@ -214,7 +212,7 @@ export class UsuariosService {
     // Carregar usuário incluindo os perfis para disponibilizar permissões consolidadas
     const user = await this.usuarioRepository.findOne({
       where: { id },
-      relations: ['perfis'],
+      relations: ['perfis', 'empresa'],
     });
 
     if (!user) {
@@ -228,6 +226,7 @@ export class UsuariosService {
     (user as any).departamentos = departamentosUsuario.map(
       (du) => du.departamento,
     );
+    await this.hydrateEmpresasManutencao([user]);
 
     return user;
   }
@@ -280,30 +279,27 @@ export class UsuariosService {
       }
       user.perfis = perfis;
     }
-    if (updateUsuarioDto.idEmpresa !== undefined) {
-      if (!updateUsuarioDto.idEmpresa) {
-        user.empresa = null;
-        user.idEmpresa = null;
-      } else {
-        const empresa = await this.empresaTerceiraRepository.findOne({
-          where: { id: updateUsuarioDto.idEmpresa },
-        });
-        if (!empresa) {
-          throw new NotFoundException(
-            `Empresa com ID ${updateUsuarioDto.idEmpresa} não encontrada`,
-          );
-        }
-        user.empresa = empresa;
-      }
-    }
     if (updateUsuarioDto.tema !== undefined) user.tema = updateUsuarioDto.tema;
 
+    const shouldSyncEmpresas =
+      updateUsuarioDto.idsEmpresasManutencao !== undefined ||
+      updateUsuarioDto.idEmpresa !== undefined;
+    const idsEmpresasUpdate = shouldSyncEmpresas
+      ? this.resolveIdsEmpresasManutencaoInput(
+          updateUsuarioDto.idsEmpresasManutencao,
+          updateUsuarioDto.idEmpresa,
+        )
+      : null;
+
     try {
-      const saved = await this.usuarioRepository.save(user);
+      await this.usuarioRepository.save(user);
       if (updateUsuarioDto.departamentoIds) {
         await this.syncDepartamentos(id, updateUsuarioDto.departamentoIds);
       }
-      return saved;
+      if (idsEmpresasUpdate !== null) {
+        await this.syncEmpresasManutencao(id, idsEmpresasUpdate);
+      }
+      return this.findOne(id);
     } catch (error) {
       // Verificar se é um erro de violação de constraint de unicidade do banco
       if (
@@ -466,6 +462,97 @@ export class UsuariosService {
     );
     if (links.length) {
       await this.departamentoUsuarioRepository.save(links);
+    }
+  }
+
+  /**
+   * Preferir `idsEmpresasManutencao`; `idEmpresa` legado vira lista de 0/1 item.
+   */
+  private resolveIdsEmpresasManutencaoInput(
+    idsEmpresasManutencao?: string[],
+    idEmpresa?: string | null,
+  ): string[] {
+    if (idsEmpresasManutencao !== undefined) {
+      return Array.from(new Set(idsEmpresasManutencao)).filter(Boolean);
+    }
+    if (idEmpresa === null || idEmpresa === '') {
+      return [];
+    }
+    if (idEmpresa) {
+      return [idEmpresa];
+    }
+    return [];
+  }
+
+  private async syncEmpresasManutencao(
+    userId: string,
+    empresaIds: string[],
+  ): Promise<void> {
+    const uniqueIds = Array.from(new Set(empresaIds)).filter(Boolean);
+
+    if (!uniqueIds.length) {
+      await this.usuarioEmpresaManutencaoRepository.delete({ usuarioId: userId });
+      await this.usuarioRepository.update(userId, { idEmpresa: null });
+      return;
+    }
+
+    const empresas = await this.empresaTerceiraRepository.find({
+      where: { id: In(uniqueIds), ehEmpresaManutencao: true },
+      select: ['id'],
+    });
+    const validIds = empresas.map((e) => e.id);
+    if (validIds.length !== uniqueIds.length) {
+      throw new BadRequestException(
+        'Uma ou mais empresas não existem ou não são de manutenção (ehEmpresaManutencao)',
+      );
+    }
+
+    await this.usuarioEmpresaManutencaoRepository.delete({ usuarioId: userId });
+    const links = validIds.map((empresaId) =>
+      this.usuarioEmpresaManutencaoRepository.create({
+        usuarioId: userId,
+        empresaId,
+      }),
+    );
+    await this.usuarioEmpresaManutencaoRepository.save(links);
+
+    // Legado: idEmpresa = primeira vinculada (compatibilidade)
+    const primeira = validIds[0];
+    await this.usuarioRepository.update(userId, { idEmpresa: primeira });
+  }
+
+  async hydrateEmpresasManutencao(users: Usuario[]): Promise<void> {
+    if (!users.length) {
+      return;
+    }
+    const userIds = users.map((u) => u.id);
+    const vinculos = await this.usuarioEmpresaManutencaoRepository.find({
+      where: { usuarioId: In(userIds) },
+      relations: ['empresa'],
+      order: { criadoEm: 'ASC' },
+    });
+    const byUser = new Map<string, UsuarioEmpresaManutencao[]>();
+    for (const v of vinculos) {
+      const list = byUser.get(v.usuarioId) ?? [];
+      list.push(v);
+      byUser.set(v.usuarioId, list);
+    }
+    for (const user of users) {
+      const list = byUser.get(user.id) ?? [];
+      user.empresasManutencao = list
+        .filter((v) => v.empresa)
+        .map((v) => ({
+          id: v.empresa.id,
+          descricao: v.empresa.descricao,
+        }));
+      user.idsEmpresasManutencao = user.empresasManutencao.map((e) => e.id);
+      if (!user.empresa && user.empresasManutencao[0]) {
+        user.empresa = {
+          id: user.empresasManutencao[0].id,
+          descricao: user.empresasManutencao[0].descricao,
+        } as EmpresaTerceira;
+        user.idEmpresa = user.empresasManutencao[0].id;
+      }
     }
   }
 }

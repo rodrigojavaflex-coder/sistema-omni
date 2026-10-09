@@ -14,6 +14,7 @@ import { Repository } from 'typeorm';
 import { Permission } from '../enums/permission.enum';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { Usuario } from '../../modules/usuarios/entities/usuario.entity';
+import { UsuarioEmpresaManutencao } from '../../modules/usuarios/entities/usuario-empresa-manutencao.entity';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -25,6 +26,8 @@ export class PermissionsGuard implements CanActivate {
     private configService: ConfigService,
     @InjectRepository(Usuario)
     private userRepository: Repository<Usuario>,
+    @InjectRepository(UsuarioEmpresaManutencao)
+    private readonly usuarioEmpresaManutencaoRepository: Repository<UsuarioEmpresaManutencao>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -92,6 +95,8 @@ export class PermissionsGuard implements CanActivate {
         );
       }
 
+      await this.hydrateEmpresasManutencao(user);
+
       // Adicionar usuário ao request para uso posterior
       request.user = user;
       return true;
@@ -121,5 +126,21 @@ export class PermissionsGuard implements CanActivate {
 
   private normalizePermission(permission?: string): string {
     return (permission || '').trim().toLowerCase();
+  }
+
+  /** Mantém escopo N:N de empresas de manutenção no req.user (PermissionsGuard sobrescreve o JWT). */
+  private async hydrateEmpresasManutencao(user: Usuario): Promise<void> {
+    const vinculos = await this.usuarioEmpresaManutencaoRepository.find({
+      where: { usuarioId: user.id },
+      relations: ['empresa'],
+      order: { criadoEm: 'ASC' },
+    });
+    user.empresasManutencao = vinculos
+      .filter((v) => v.empresa)
+      .map((v) => ({ id: v.empresa.id, descricao: v.empresa.descricao }));
+    user.idsEmpresasManutencao = user.empresasManutencao.map((e) => e.id);
+    if (!user.idEmpresa && user.idsEmpresasManutencao[0]) {
+      user.idEmpresa = user.idsEmpresasManutencao[0];
+    }
   }
 }

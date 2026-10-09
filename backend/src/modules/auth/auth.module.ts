@@ -15,6 +15,7 @@ import { PasswordResetService } from './password-reset.service';
 import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { ConfiguracaoModule } from '../configuracao/configuracao.module';
 import { DepartamentoUsuario } from '../departamento/entities/departamento-usuario.entity';
+import { UsuarioEmpresaManutencao } from '../usuarios/entities/usuario-empresa-manutencao.entity';
 import { Departamento } from '../departamento/entities/departamento.entity';
 
 @Module({
@@ -25,6 +26,7 @@ import { Departamento } from '../departamento/entities/departamento.entity';
       Usuario,
       DepartamentoUsuario,
       Departamento,
+      UsuarioEmpresaManutencao,
       PasswordResetOtp,
       PasswordResetThrottle,
       Configuracao,

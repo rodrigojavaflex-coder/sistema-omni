@@ -107,6 +107,12 @@ export class IrregularidadeResumoDto {
   @ApiProperty({ description: 'Modelo do veículo', required: false })
   veiculoModelo?: string;
 
+  @ApiProperty({
+    description: 'Combustível do veículo',
+    required: false,
+  })
+  veiculoCombustivel?: string;
+
   @ApiProperty({ description: 'ID do modelo do veículo', required: false })
   veiculoModeloId?: string;
 
@@ -157,6 +163,31 @@ export class IrregularidadeResumoDto {
 
   @ApiProperty({ required: false })
   ultimoErroIntegracaoEm?: string;
+
+  @ApiProperty({
+    description: 'ID da empresa de manutenção vinculada',
+    format: 'uuid',
+    required: false,
+  })
+  idEmpresaManutencao?: string;
+
+  @ApiProperty({
+    description: 'Descrição da empresa de manutenção',
+    required: false,
+  })
+  empresaManutencaoDescricao?: string;
+
+  @ApiProperty({
+    description: 'Código do pedido ERP (envio à manutenção)',
+    required: false,
+  })
+  erpCodigoPedido?: string;
+
+  @ApiProperty({
+    description: 'Último erro do envio ao ERP',
+    required: false,
+  })
+  erpUltimoErro?: string;
 
   @ApiProperty({
     description: 'Marcação no mapa do modelo (primeiro ponto; legado)',

@@ -11,7 +11,9 @@
     "serve": "ionic serve --project=mobile",
     "serve:open": "ionic serve --project=mobile",
     "serve:no-open": "ionic serve --project=mobile --no-open",
-    "sync": "npx cap sync"
+    "sync": "npx cap sync",
+    "postinstall": "node scripts/fix-agp9-proguard.mjs",
+    "fix:agp9-proguard": "node scripts/fix-agp9-proguard.mjs"
   },
   "dependencies": {
     "@angular/common": "20.3.20",
