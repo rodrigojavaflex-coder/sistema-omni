@@ -110,6 +110,44 @@ export class EmpresaTerceira extends BaseEntity {
   @Column({ name: 'brt_loc_atd', type: 'varchar', length: 500, nullable: true })
   brtLocAtd?: string;
 
+  @ApiProperty({
+    description:
+      'Ativa busca periódica de status/histórico/insumos das OS na API BRT (retorno integrado)',
+    default: false,
+  })
+  @Column({
+    name: 'brt_busca_info_ativo',
+    type: 'boolean',
+    nullable: false,
+    default: false,
+  })
+  brtBuscaInfoAtivo: boolean;
+
+  @ApiProperty({
+    description:
+      'Intervalo em minutos entre buscas de informações da OS na BRT (quando ativo)',
+    required: false,
+    example: 10,
+  })
+  @Column({
+    name: 'brt_busca_info_intervalo_minutos',
+    type: 'integer',
+    nullable: true,
+    default: 10,
+  })
+  brtBuscaInfoIntervaloMinutos?: number | null;
+
+  @ApiProperty({
+    description: 'Data/hora do último poll de busca de informações BRT',
+    required: false,
+  })
+  @Column({
+    name: 'brt_busca_info_ultimo_poll_em',
+    type: 'timestamp',
+    nullable: true,
+  })
+  brtBuscaInfoUltimoPollEm?: Date | null;
+
   static get nomeAmigavel(): string {
     return 'Empresa Terceira';
   }

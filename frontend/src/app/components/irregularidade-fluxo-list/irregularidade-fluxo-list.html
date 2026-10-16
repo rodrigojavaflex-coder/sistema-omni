@@ -186,6 +186,17 @@
           Cancelar OS BRT
         </button>
         <button
+          class="btn btn-secondary"
+          type="button"
+          *ngIf="modo === 'manutencao' && canManutencaoFinish"
+          [disabled]="!manutencaoCancelOsBrtSelecionada || isBuscandoStatusBrt"
+          (click)="buscarStatusBrtSelecionadas()"
+          title="Consulta manual de status/insumos na BRT (teste)"
+        >
+          <span *ngIf="isBuscandoStatusBrt" class="spinner"></span>
+          {{ isBuscandoStatusBrt ? 'Buscando BRT…' : 'Buscar status BRT' }}
+        </button>
+        <button
           class="btn btn-primary"
           *ngIf="modo === 'manutencao' && canManutencaoFinish"
           [disabled]="!hasSelectedItems"
@@ -367,6 +378,19 @@
             >
               Falha envio OS: {{ item.ultimoErroIntegracao }}
             </small>
+            <small
+              class="integracao-erro"
+              *ngIf="item.ultimoErroIntegracao && item.numOsExternoAtual"
+            >
+              Consulta BRT: {{ item.ultimoErroIntegracao }}
+            </small>
+            <small
+              *ngIf="hasStatusBrtCard(item)"
+              [class.integracao-erro]="isStatusBrtAlertaCard(item)"
+              [class.integracao-os-externa]="!isStatusBrtAlertaCard(item)"
+            >
+              {{ formatStatusBrtLabel(item) }}
+            </small>
           </div>
           <div class="col-gravidade">
             <span [class]="getGravidadeClass(item.gravidade)">
@@ -504,6 +528,17 @@
           <span class="detail-label">OS BRT</span>
           <span class="detail-value">{{ detalheItem.numOsExternoAtual }}</span>
         </div>
+        <div class="detail-item" *ngIf="hasStatusBrtCard(detalheItem)">
+          <span class="detail-label">Situação BRT</span>
+          <span
+            class="detail-value"
+            [class.integracao-erro]="isStatusBrtAlertaCard(detalheItem)"
+          >{{ formatStatusBrtLabel(detalheItem) }}</span>
+        </div>
+        <div class="detail-item" *ngIf="detalheItem.ultimoErroIntegracao && detalheItem.numOsExternoAtual">
+          <span class="detail-label">Erro consulta BRT</span>
+          <span class="detail-value integracao-erro">{{ detalheItem.ultimoErroIntegracao }}</span>
+        </div>
         <div class="detail-item">
           <span class="detail-label">Classificação</span>
           <span class="detail-value">
@@ -553,6 +588,43 @@
           [destaqueId]="detalheItem.id"
           [marcaInicial]="marcaInicialDoItem(detalheItem)"
         ></app-mapa-avaria>
+      </div>
+
+      <div
+        class="insumos-brt-section"
+        *ngIf="modo === 'validacao-final' || detalheInsumosBrt.length || detalheInsumosLoading"
+      >
+        <span class="detail-label">Insumos BRT</span>
+        <div class="media-empty" *ngIf="detalheInsumosLoading">Carregando insumos…</div>
+        <div class="media-empty" *ngIf="!detalheInsumosLoading && detalheInsumosError">
+          {{ detalheInsumosError }}
+        </div>
+        <div
+          class="media-empty"
+          *ngIf="!detalheInsumosLoading && !detalheInsumosError && !detalheInsumosBrt.length"
+        >
+          Nenhum insumo sincronizado para esta OS BRT.
+        </div>
+        <div class="insumos-brt-table-wrap" *ngIf="!detalheInsumosLoading && detalheInsumosBrt.length">
+          <table class="insumos-brt-table">
+            <thead>
+              <tr>
+                <th>Insumo</th>
+                <th>Qtd.</th>
+                <th>Valor</th>
+                <th>Descrição</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let insumo of detalheInsumosBrt">
+                <td>{{ insumo.nomeInsumo }}</td>
+                <td>{{ formatInsumoNumero(insumo.quantidade) }}</td>
+                <td>{{ formatInsumoMoeda(insumo.valor) }}</td>
+                <td>{{ insumo.descricao || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="media-section">
@@ -667,29 +739,52 @@
         <div class="historico-empty" *ngIf="historicoEventos.length === 0">
           Nenhum evento de histórico encontrado.
         </div>
-        <div class="historico-item" *ngFor="let evento of historicoEventos">
+        <div
+          class="historico-item"
+          [class.historico-item--brt]="evento.origem === 'BRT'"
+          *ngFor="let evento of historicoEventos"
+        >
           <div class="historico-item-header">
             <div class="historico-status-title">
-              <span *ngIf="evento.statusOrigem" [class]="getStatusClass(evento.statusOrigem)">
-                {{ getStatusLabel(evento.statusOrigem) }}
-              </span>
-              <svg
-                *ngIf="evento.statusOrigem"
-                class="historico-arrow-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-              <span [class]="getStatusClass(evento.statusDestino)">
-                {{ getStatusLabel(evento.statusDestino) }}
-              </span>
+              <ng-container *ngIf="evento.origem === 'BRT'; else historicoOmniStatus">
+                <span class="status status-brt">BRT</span>
+                <svg
+                  class="historico-arrow-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+                <span class="status status-brt-situacao">{{ evento.statusBrt || '-' }}</span>
+              </ng-container>
+              <ng-template #historicoOmniStatus>
+                <span *ngIf="evento.statusOrigem" [class]="getStatusClass(evento.statusOrigem)">
+                  {{ getStatusLabel(evento.statusOrigem) }}
+                </span>
+                <svg
+                  *ngIf="evento.statusOrigem"
+                  class="historico-arrow-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+                <span *ngIf="evento.statusDestino" [class]="getStatusClass(evento.statusDestino)">
+                  {{ getStatusLabel(evento.statusDestino) }}
+                </span>
+              </ng-template>
             </div>
             <span>{{ evento.dataEvento | date: 'dd/MM/yyyy HH:mm' }}</span>
           </div>
@@ -699,8 +794,11 @@
           <div class="historico-item-row">
             <span>Usuário: {{ evento.usuarioNome || '-' }}</span>
           </div>
-          <div class="historico-item-row">
+          <div class="historico-item-row" *ngIf="evento.origem !== 'BRT'">
             <span>Tempo na etapa: {{ formatTempoEtapa(evento.tempoEtapaMs) }}</span>
+          </div>
+          <div class="historico-item-row" *ngIf="evento.origem === 'BRT' && evento.numOsExterno">
+            <span>OS BRT: {{ evento.numOsExterno }}</span>
           </div>
           <div class="historico-item-row" *ngIf="evento.observacao">
             <span class="historico-observacao">Observação:</span>

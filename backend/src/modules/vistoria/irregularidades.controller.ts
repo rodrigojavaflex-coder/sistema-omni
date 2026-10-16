@@ -60,6 +60,11 @@ import {
   userHasPermission,
 } from '../../common/utils/irregularidade-permissions.util';
 import { Usuario } from '../usuarios/entities/usuario.entity';
+import {
+  BrtBuscaStatusLoteResultado,
+  BrtInsumoDto,
+  BrtOsPollService,
+} from './brt-os-poll.service';
 
 @ApiTags('irregularidades')
 @ApiBearerAuth()
@@ -68,6 +73,7 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 export class IrregularidadesController {
   constructor(
     private readonly irregularidadeService: IrregularidadeService,
+    private readonly brtOsPollService: BrtOsPollService,
   ) {}
 
   @Get()
@@ -289,6 +295,31 @@ export class IrregularidadesController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<IrregularidadeHistoricoDto[]> {
     return this.irregularidadeService.listHistoricoByIrregularidade(id);
+  }
+
+  @Get(':id/insumos-brt')
+  @ApiOperation({
+    summary: 'Listar insumos sincronizados da OS BRT vinculada à irregularidade',
+  })
+  @Permissions(...IRREGULARIDADE_FLUXO_READ_PERMISSIONS)
+  listInsumosBrt(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<BrtInsumoDto[]> {
+    return this.brtOsPollService.listarInsumosPorIrregularidade(id);
+  }
+
+  @Post('lote/buscar-status-brt')
+  @ApiOperation({
+    summary:
+      'Disparo manual (teste): consulta status/insumos BRT das irregularidades selecionadas',
+  })
+  @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_FINISH)
+  buscarStatusBrtLote(
+    @Body() dto: RelatorioIrregularidadesLoteDto,
+  ): Promise<BrtBuscaStatusLoteResultado> {
+    return this.brtOsPollService.processarPorIrregularidadeIds(
+      dto.idsIrregularidades,
+    );
   }
 
   @Post('lote/relatorio-pdf')

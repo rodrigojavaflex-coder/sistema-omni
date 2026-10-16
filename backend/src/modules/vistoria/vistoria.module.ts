@@ -38,11 +38,14 @@ import { ModeloVeiculoVista } from '../veiculo/entities/modelo-veiculo-vista.ent
 import { IrregularidadeOsExterna } from './entities/irregularidade-os-externa.entity';
 import { IrregularidadeMarcacao } from './entities/irregularidade-marcacao.entity';
 import { BrtOsIntegrationService } from './brt-os-integration.service';
+import { BrtOsPollService } from './brt-os-poll.service';
 import { ErpVistoriaIntegrationService } from './erp-vistoria-integration.service';
 import {
   IrregularidadeManutencaoEnvioService,
 } from './irregularidade-manutencao-envio.service';
 import { ImpressaoRawService } from './impressao-raw.service';
+import { OsExternaStatusEvento } from './entities/os-externa-status-evento.entity';
+import { OsExternaInsumo } from './entities/os-externa-insumo.entity';
 
 @Module({
   imports: [
@@ -59,6 +62,8 @@ import { ImpressaoRawService } from './impressao-raw.service';
       IrregularidadeHistorico,
       IrregularidadeOsExterna,
       IrregularidadeMarcacao,
+      OsExternaStatusEvento,
+      OsExternaInsumo,
       ModeloVeiculo,
       ModeloVeiculoVista,
       VistaVeiculo,
@@ -89,6 +94,7 @@ import { ImpressaoRawService } from './impressao-raw.service';
     MatrizCriticidadeService,
     IrregularidadeService,
     BrtOsIntegrationService,
+    BrtOsPollService,
     IrregularidadeManutencaoEnvioService,
     ErpVistoriaIntegrationService,
     ImpressaoRawService,

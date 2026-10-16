@@ -32,6 +32,9 @@ export function toEmpresaTerceiraResponse(
       brtNomSol: _n,
       brtTelCtt: _tel,
       brtLocAtd: _loc,
+      brtBuscaInfoAtivo: _buscaAtivo,
+      brtBuscaInfoIntervaloMinutos: _buscaIntervalo,
+      brtBuscaInfoUltimoPollEm: _buscaUltimo,
       ...publicFields
     } = rest;
     // integracaoManutencao permanece público (NENHUMA|BRT_OS) para o combo de envio;

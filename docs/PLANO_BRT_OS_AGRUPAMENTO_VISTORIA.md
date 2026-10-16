@@ -161,7 +161,7 @@ Excluir: `CANCELADA`, `VALIDADA`, `EM_MANUTENCAO`, `CONCLUIDA`, `NAO_PROCEDE`.
 
 | Entrega | Conteúdo |
 |---------|----------|
-| **2** | Retorno BRT → grupo `EM_MANUTENCAO` → Validação (`CONCLUIDA`) |
+| **2** | Poll BRT (`GET /v1/os/registro`): timeline + insumos; `Disponivel` → grupo `CONCLUIDA` (Validação); `Cancelado` → grupo `REGISTRADA` (Tratamento + limpa vínculos); ver US4.5 / RN-VIS-006 |
 | **3** | Validação parcial; reprovadas → Manutenção; reintegração BRT TBD |
 
 ---

@@ -343,7 +343,7 @@
         </p>
 
         @if (corrigirLoading) {
-          <div class="loading">Verificando regras de odômetro...</div>
+          <div class="loading">Carregando odômetro anterior...</div>
         }
 
         @if (corrigirError) {
@@ -387,19 +387,19 @@
             class="form-control"
             [ngModel]="corrigirOdometroDisplay"
             (ngModelChange)="onCorrigirOdometroInput($event)"
-            [disabled]="corrigirLoading || !corrigirPodeEditarOdometro"
+            [disabled]="corrigirLoading"
             [attr.aria-invalid]="corrigirOdometroInvalido"
             autocomplete="off"
           />
-          @if (!corrigirLoading && !corrigirPodeEditarOdometro) {
-            <small class="field-hint">
-              Odômetro só pode ser alterado na última vistoria finalizada deste veículo.
-            </small>
-          }
-          @if (corrigirPodeEditarOdometro && corrigirOdometroAnterior !== null) {
+          @if (!corrigirLoading && corrigirOdometroAnterior !== null) {
             <small class="field-hint">
               Deve ser maior que {{ formatNumero(corrigirOdometroAnterior) }}
               e no máximo {{ odometroDiffMaxKm }} km acima (vistoria anterior).
+            </small>
+          }
+          @if (!corrigirLoading && corrigirOdometroAnterior === null) {
+            <small class="field-hint">
+              Não há vistoria finalizada anterior deste veículo; informe um odômetro válido.
             </small>
           }
           @if (corrigirOdometroInvalido) {

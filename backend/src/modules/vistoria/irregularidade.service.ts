@@ -51,6 +51,8 @@ import { Permission } from '../../common/enums/permission.enum';
 import { StatusIrregularidade } from '../../common/enums/status-irregularidade.enum';
 import { GravidadeCriticidade } from '../../common/enums/gravidade-criticidade.enum';
 import { IrregularidadeHistorico } from './entities/irregularidade-historico.entity';
+import { IrregularidadeOsExterna } from './entities/irregularidade-os-externa.entity';
+import { OsExternaStatusEvento } from './entities/os-externa-status-evento.entity';
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 import { Configuracao } from '../configuracao/entities/configuracao.entity';
 import { Veiculo } from '../veiculo/entities/veiculo.entity';
@@ -70,6 +72,7 @@ import { IrregularidadeManutencaoEnvioService,
   ManutencaoEnvioContext,
   STATUS_ENVIO_MANUTENCAO,
 } from './irregularidade-manutencao-envio.service';
+import { normalizarSituacaoBrt } from './brt-os-integration.service';
 import { ModeloVeiculoVistaService } from '../veiculo/modelo-veiculo-vista.service';
 import {
   IrregularidadeMarcacaoDto,
@@ -143,6 +146,10 @@ export class IrregularidadeService {
     private readonly veiculoRepository: Repository<Veiculo>,
     @InjectRepository(IrregularidadeHistorico)
     private readonly irregularidadeHistoricoRepository: Repository<IrregularidadeHistorico>,
+    @InjectRepository(IrregularidadeOsExterna)
+    private readonly irregularidadeOsExternaRepository: Repository<IrregularidadeOsExterna>,
+    @InjectRepository(OsExternaStatusEvento)
+    private readonly osExternaStatusEventoRepository: Repository<OsExternaStatusEvento>,
     @InjectRepository(IrregularidadeMarcacao)
     private readonly marcacaoRepository: Repository<IrregularidadeMarcacao>,
     private readonly manutencaoEnvioService: IrregularidadeManutencaoEnvioService,
@@ -361,31 +368,125 @@ export class IrregularidadeService {
   async listHistoricoByIrregularidade(
     irregularidadeId: string,
   ): Promise<IrregularidadeHistoricoDto[]> {
-    await this.getIrregularidadeOrFail(irregularidadeId);
+    const irregularidade = await this.getIrregularidadeOrFail(irregularidadeId);
     const historico = await this.irregularidadeHistoricoRepository.find({
       where: { idIrregularidade: irregularidadeId },
       relations: ['usuario'],
       order: { dataEvento: 'ASC' },
     });
 
-    const mapped = historico.map((item, index) => {
-      const proximo = historico[index + 1];
-      const inicio = item.dataEvento.getTime();
-      const fim = proximo ? proximo.dataEvento.getTime() : Date.now();
-      return {
-        id: item.id,
-        statusOrigem: item.statusOrigem,
-        statusDestino: item.statusDestino,
-        acao: item.acao,
-        dataEvento: item.dataEvento.toISOString(),
-        idUsuario: item.idUsuario,
-        usuarioNome: item.usuario?.nome,
-        observacao: item.observacao,
-        tempoEtapaMs: Math.max(0, fim - inicio),
-      };
+    const omniMapped: IrregularidadeHistoricoDto[] = historico.map(
+      (item, index) => {
+        const proximo = historico[index + 1];
+        const inicio = item.dataEvento.getTime();
+        const fim = proximo ? proximo.dataEvento.getTime() : Date.now();
+        return {
+          id: item.id,
+          origem: 'OMNI' as const,
+          statusOrigem: item.statusOrigem,
+          statusDestino: item.statusDestino,
+          acao: item.acao,
+          dataEvento: item.dataEvento.toISOString(),
+          idUsuario: item.idUsuario,
+          usuarioNome: item.usuario?.nome,
+          observacao: item.observacao,
+          tempoEtapaMs: Math.max(0, fim - inicio),
+        };
+      },
+    );
+
+    const brtMapped = await this.listHistoricoBrtConsolidado(irregularidade);
+    const consolidado = [...omniMapped, ...brtMapped].sort(
+      (a, b) =>
+        new Date(a.dataEvento).getTime() - new Date(b.dataEvento).getTime(),
+    );
+
+    return consolidado.reverse();
+  }
+
+  /**
+   * Timeline BRT da OS vinculada à irregularidade (ativa + histórico de envios).
+   * Não altera tempo de etapa OMNI.
+   */
+  private async listHistoricoBrtConsolidado(
+    irregularidade: Irregularidade,
+  ): Promise<IrregularidadeHistoricoDto[]> {
+    const numOsSet = new Set<number>();
+    const osOrigSet = new Set<string>();
+
+    if (irregularidade.numOsExternoAtual != null) {
+      numOsSet.add(Number(irregularidade.numOsExternoAtual));
+    }
+    if (irregularidade.osOrigAtual?.trim()) {
+      osOrigSet.add(irregularidade.osOrigAtual.trim());
+    }
+
+    const vinculos = await this.irregularidadeOsExternaRepository.find({
+      where: {
+        idIrregularidade: irregularidade.id,
+        integrador: 'BRT',
+        sucesso: true,
+      },
+    });
+    for (const vinculo of vinculos) {
+      if (vinculo.numOsExterno != null) {
+        numOsSet.add(Number(vinculo.numOsExterno));
+      }
+      if (vinculo.osOrig?.trim()) {
+        osOrigSet.add(vinculo.osOrig.trim());
+      }
+    }
+
+    if (numOsSet.size === 0 && osOrigSet.size === 0) {
+      return [];
+    }
+
+    const qb = this.osExternaStatusEventoRepository
+      .createQueryBuilder('e')
+      .where('e.integrador = :integrador', { integrador: 'BRT' });
+
+    if (numOsSet.size > 0 && osOrigSet.size > 0) {
+      qb.andWhere(
+        '(e.numOsExterno IN (:...numOs) OR e.osOrig IN (:...osOrig))',
+        {
+          numOs: [...numOsSet],
+          osOrig: [...osOrigSet],
+        },
+      );
+    } else if (numOsSet.size > 0) {
+      qb.andWhere('e.numOsExterno IN (:...numOs)', { numOs: [...numOsSet] });
+    } else {
+      qb.andWhere('e.osOrig IN (:...osOrig)', { osOrig: [...osOrigSet] });
+    }
+
+    const eventos = await qb.getMany();
+    eventos.sort((a, b) => {
+      const ta = (a.dataEventoBrt ?? a.recebidoEm).getTime();
+      const tb = (b.dataEventoBrt ?? b.recebidoEm).getTime();
+      return ta - tb;
     });
 
-    return mapped.reverse();
+    return eventos.map((evento) => {
+      const dataRef = evento.dataEventoBrt ?? evento.recebidoEm;
+      const partesObs: string[] = [];
+      if (evento.comentario?.trim()) {
+        partesObs.push(evento.comentario.trim());
+      }
+      partesObs.push(`numOs=${evento.numOsExterno}`);
+      if (evento.osOrig?.trim()) {
+        partesObs.push(`os_orig=${evento.osOrig.trim()}`);
+      }
+      return {
+        id: evento.id,
+        origem: 'BRT' as const,
+        statusBrt: evento.statusBrt,
+        acao: 'status_brt',
+        dataEvento: dataRef.toISOString(),
+        usuarioNome: 'Integração BRT',
+        observacao: partesObs.join('; '),
+        numOsExterno: evento.numOsExterno,
+      };
+    });
   }
 
   async listNaoResolvidasByVeiculo(
@@ -1257,6 +1358,8 @@ export class IrregularidadeService {
       }
       return resumo;
     });
+
+    await this.preencherStatusBrtComentarioFallback(data);
 
     return new PaginatedResponseDto(
       data,
@@ -4318,6 +4421,58 @@ export class IrregularidadeService {
     }
   }
 
+  /**
+   * Se o snapshot `statusBrtComentario` ainda estiver vazio (OS já Paralisada/Retido
+   * antes da coluna), preenche com o comentário mais recente da timeline BRT.
+   */
+  private async preencherStatusBrtComentarioFallback(
+    data: IrregularidadeResumoDto[],
+  ): Promise<void> {
+    const semMotivo = data.filter((item) => {
+      const n = normalizarSituacaoBrt(item.statusBrtAtual);
+      return (
+        item.numOsExternoAtual != null &&
+        !item.statusBrtComentario?.trim() &&
+        (n.startsWith('paralisad') || n.startsWith('retid'))
+      );
+    });
+    if (!semMotivo.length) {
+      return;
+    }
+    const numOsList = [
+      ...new Set(
+        semMotivo
+          .map((item) => item.numOsExternoAtual)
+          .filter((n): n is number => n != null),
+      ),
+    ];
+    const eventos = await this.osExternaStatusEventoRepository
+      .createQueryBuilder('e')
+      .where('e.integrador = :integrador', { integrador: 'BRT' })
+      .andWhere('e.numOsExterno IN (:...numOsList)', { numOsList })
+      .andWhere('e.comentario IS NOT NULL')
+      .andWhere("TRIM(e.comentario) <> ''")
+      .orderBy('e.dataEventoBrt', 'DESC', 'NULLS LAST')
+      .addOrderBy('e.recebidoEm', 'DESC')
+      .getMany();
+
+    const comentarioByKey = new Map<string, string>();
+    for (const evento of eventos) {
+      const key = `${evento.numOsExterno}|${normalizarSituacaoBrt(evento.statusBrt)}`;
+      if (!comentarioByKey.has(key) && evento.comentario?.trim()) {
+        comentarioByKey.set(key, evento.comentario.trim());
+      }
+    }
+
+    for (const item of semMotivo) {
+      const key = `${item.numOsExternoAtual}|${normalizarSituacaoBrt(item.statusBrtAtual)}`;
+      const comentario = comentarioByKey.get(key);
+      if (comentario) {
+        item.statusBrtComentario = comentario;
+      }
+    }
+  }
+
   private toResumo(
     item: Irregularidade,
     gravidade?: GravidadeCriticidade,
@@ -4385,16 +4540,15 @@ export class IrregularidadeService {
       controleIntegracaoApi: item.controleIntegracaoApi,
       osOrigAtual: item.osOrigAtual ?? undefined,
       numOsExternoAtual: item.numOsExternoAtual ?? undefined,
-      ultimoErroIntegracao:
-        item.numOsExternoAtual != null
-          ? undefined
-          : item.ultimoErroIntegracao ?? undefined,
-      ultimoErroIntegracaoEm:
-        item.numOsExternoAtual != null
-          ? undefined
-          : item.ultimoErroIntegracaoEm
-            ? item.ultimoErroIntegracaoEm.toISOString()
-            : undefined,
+      statusBrtAtual: item.statusBrtAtual ?? undefined,
+      statusBrtAtualizadoEm: item.statusBrtAtualizadoEm
+        ? item.statusBrtAtualizadoEm.toISOString()
+        : undefined,
+      statusBrtComentario: item.statusBrtComentario ?? undefined,
+      ultimoErroIntegracao: item.ultimoErroIntegracao ?? undefined,
+      ultimoErroIntegracaoEm: item.ultimoErroIntegracaoEm
+        ? item.ultimoErroIntegracaoEm.toISOString()
+        : undefined,
       erpCodigoPedido: item.erpCodigoPedido ?? undefined,
       erpUltimoErro: item.erpUltimoErro ?? undefined,
       marcacao: this.mapMarcacao(item),

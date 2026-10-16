@@ -19,6 +19,26 @@ import {
   ValidacaoFinalPayload,
 } from '../models/irregularidade-fluxo.model';
 
+export interface BrtInsumoItem {
+  id: string;
+  numOsExterno: number;
+  osOrig?: string | null;
+  nomeInsumo: string;
+  quantidade?: number | null;
+  valor?: number | null;
+  descricao?: string | null;
+  dataAlteracaoBrt?: string | null;
+  sincronizadoEm: string;
+}
+
+export interface BrtBuscaStatusLoteResultado {
+  consultadas: number;
+  concluidas: number;
+  canceladas: number;
+  falhas: Array<{ numOs: number; mensagem: string }>;
+  mensagem: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -144,6 +164,17 @@ export class IrregularidadeService {
 
   listarHistorico(id: string): Observable<IrregularidadeHistoricoItem[]> {
     return this.http.get<IrregularidadeHistoricoItem[]>(`${this.apiUrl}/${id}/historico`);
+  }
+
+  listarInsumosBrt(id: string): Observable<BrtInsumoItem[]> {
+    return this.http.get<BrtInsumoItem[]>(`${this.apiUrl}/${id}/insumos-brt`);
+  }
+
+  buscarStatusBrtLote(idsIrregularidades: string[]): Observable<BrtBuscaStatusLoteResultado> {
+    return this.http.post<BrtBuscaStatusLoteResultado>(
+      `${this.apiUrl}/lote/buscar-status-brt`,
+      { idsIrregularidades },
+    );
   }
 
   previewIniciarManutencaoLote(

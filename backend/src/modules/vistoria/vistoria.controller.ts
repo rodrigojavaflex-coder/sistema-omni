@@ -227,7 +227,7 @@ export class VistoriaController {
   @Permissions(Permission.VISTORIA_WEB_CORRIGIR)
   @ApiOperation({
     summary:
-      'Corrigir motorista e odômetro de vistoria finalizada (web). Odômetro só na última FINALIZADA do veículo.',
+      'Corrigir motorista e odômetro de vistoria finalizada (web). Odômetro validado contra a vistoria anterior.',
   })
   @ApiResponse({
     status: 200,
@@ -255,6 +255,28 @@ export class VistoriaController {
     @Query('ignorarVistoriaId') ignorarVistoriaId?: string,
   ): Promise<{ id: string; odometro: number; datavistoria: string } | null> {
     return this.vistoriaService.getUltimoOdometro(id, ignorarVistoriaId);
+  }
+
+  @Get('veiculo/:id/odometro-anterior')
+  @Permissions(
+    Permission.VISTORIA_READ,
+    Permission.VISTORIA_WEB_READ,
+    Permission.VISTORIA_WEB_CORRIGIR,
+  )
+  @ApiOperation({
+    summary:
+      'Buscar odômetro da vistoria FINALIZADA imediatamente anterior à referência',
+  })
+  @ApiResponse({ status: 200, description: 'Odômetro anterior encontrado' })
+  findOdometroAnterior(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Query('referenciaVistoriaId', new ParseUUIDPipe())
+    referenciaVistoriaId: string,
+  ): Promise<{ id: string; odometro: number; datavistoria: string } | null> {
+    return this.vistoriaService.getOdometroAnteriorPorReferencia(
+      id,
+      referenciaVistoriaId,
+    );
   }
 
   @Get('veiculo/:id/irregularidades-pendentes')

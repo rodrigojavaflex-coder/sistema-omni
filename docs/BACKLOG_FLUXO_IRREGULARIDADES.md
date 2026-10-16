@@ -38,9 +38,11 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 | `RETRABALHO_GARANTIA` | Reenviar para manutencao | `EM_MANUTENCAO` | Grupo completo da vistoria; `os_orig` = `numeroVistoria-N` (N≥2); empresa configurada | Erro API: grupo permanece `RETRABALHO_GARANTIA` / `REGISTRADA` |
 | `EM_MANUTENCAO` | Concluir manutencao (sem controle API) | `CONCLUIDA` | Evidencia minima quando obrigatoria | `422` pendencia |
 | `EM_MANUTENCAO` | Concluir manutencao (controle API) | `CONCLUIDA` | Conclusao manual permitida; nao chama BRT; vinculos OS/ERP permanecem para rastreio | `400` status/empresa |
+| `EM_MANUTENCAO` | Retorno BRT `Disponivel` (poll v2) | `CONCLUIDA` | OS ativa no grupo; match tolerante de `situacao`; 1× por ciclo | Idempotente se ja `CONCLUIDA` |
 | `EM_MANUTENCAO` | Marcar nao procede (sem controle API) | `NAO_PROCEDE` | Justificativa obrigatoria | `400` justificativa obrigatoria |
-| `EM_MANUTENCAO` | Marcar nao procede (controle API) | — | **Bloqueado** ate regra v2 | `400` bloqueio manual |
+| `EM_MANUTENCAO` | Marcar nao procede (controle API) | — | **Bloqueado** (retorno integrado nao mapeia nao procede) | `400` bloqueio manual |
 | `EM_MANUTENCAO` | Cancelar OS BRT (controle API) | `REGISTRADA` | POST cancelamento BRT OK; permissao `cancel_os_brt`; OS ativa; **grupo** da vistoria | Grupo permanece `EM_MANUTENCAO` + erro BRT |
+| `EM_MANUTENCAO` | Retorno BRT `Cancelado` (poll v2) | `REGISTRADA` | OS ativa no grupo; match tolerante; limpa vinculos BRT ativos + `erp_*` | Idempotente se ja no Tratamento |
 | `NAO_PROCEDE` | Reclassificar / cancelar / reenviar manutencao | `NAO_PROCEDE` / `CANCELADA` / `EM_MANUTENCAO` | Fila Tratamento; sem empresa vinculada | `400` motivo / empresa |
 | `CONCLUIDA` | Validar final | `VALIDADA` | Conferencia aprovada | `422` pendencia |
 | `CONCLUIDA` | Reprovar final | `RETRABALHO_GARANTIA` | Observacao obrigatoria | `400` observacao obrigatoria |
@@ -57,9 +59,9 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 | `CONCLUIDA` | Proibido | Permitido (reprovacao final) | Proibido | Proibido** | Proibido | Proibido | Permitido |
 | `VALIDADA` | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido | Proibido |
 
-\* `NAO_PROCEDE`: somente trilha **sem** controle API (ou retorno integrado v2). `CONCLUIDA`: permitido tambem por conclusao manual na trilha API.
+\* `NAO_PROCEDE`: somente trilha **sem** controle API. `CONCLUIDA`: permitido por conclusao manual **ou** retorno BRT `Disponivel` (poll v2).
 
-\*\*\* Permitido para trilha API via cancelamento OS BRT (`EM_MANUTENCAO` → `REGISTRADA`).
+\*\*\* Permitido para trilha API via cancelamento OS BRT (`tpo_reg: 7`) **ou** retorno BRT `Cancelado` (poll v2) (`EM_MANUTENCAO` → `REGISTRADA`).
 
 \*\* Transicao historica `CONCLUIDA` → `EM_MANUTENCAO` na reprovacao **substituida** por `CONCLUIDA` → `RETRABALHO_GARANTIA` (RN-VIS-006). Codigo legado deve ser alinhado na implementacao.
 
@@ -369,9 +371,61 @@ Pipeline: ERP (flag global) → BRT (empresa API) → transicao. Atomico **por v
 - `marcar-nao-procede` manual continua bloqueado ate retorno integrado (v2).
 
 ### US4.5 - Retorno integrado BRT (v2)
-- Transicao automatica para `CONCLUIDA` e fila de Validacao Final (quando houver retorno); conclusao manual ja disponivel como alternativa operacional.
+
+**Como** sistema (job periodico)  
+**Quero** consultar status/historico/insumos das OS BRT em aberto  
+**Para** atualizar a timeline da OS, gravar insumos e mover o grupo automaticamente para Validacao ou Tratamento
+
+**Contrato API BRT (guia tecnico rev. jul/2026)**
+- Consulta lote: `GET /v1/os/registro?start_date&end_date&page&per_page` (janela max. 31 dias).
+- Consulta unitaria: `GET /v1/os/registro/:numOs`.
+- Auth: mesmos headers `ten_emp` + `token` da criacao/cancelamento.
+- Cada item: `situacao`, `historico[]` (crescente), `insumo[]` (somente cresce); sem id de linha proprio.
+- `situacao` oficiais: `Aberto`, `Aceite`, `Execucao`, `Retido`, `Paralisada`, `Finalizada`, `Disponivel`, `Cancelado` — comparacao **tolerante** (case/grafia).
+
+**Gatilhos de transicao OMNI (grupo da vistoria = mesmo `os_orig`/`numOs` ativos)**
+
+| Situacao BRT | Status OMNI | Tela | Efeito colateral |
+| --- | --- | --- | --- |
+| Aberto, Aceite, Execucao, Retido, Paralisada, Finalizada | permanece `EM_MANUTENCAO` | Manutencao | So timeline + insumos |
+| **Disponivel** | `EM_MANUTENCAO` → `CONCLUIDA` | Validacao Final | Nao limpa `numOs`/`os_orig`/`erp_*` (rastreio); `acao: concluir_manutencao_integracao` |
+| **Cancelado** | `EM_MANUTENCAO` → `REGISTRADA` | Tratamento | Limpa vinculos BRT ativos + `erp_*` (igual cancel manual); `acao: cancelar_retorno_brt`; reenvio usa `os_orig` `-N` |
+
+**Persistencia**
+- Timeline BRT: tabela de eventos da OS externa (chave natural ≈ `num_os` + `situacao` + `data_criacao` do historico); nao misturar intermediarios em `irregularidade_historico`.
+- Insumos: tabela propria no nivel da OS (`num_os_externo` / `os_orig`); campos BRT `insumo`, `quantidade`, `valor`, `descricao`, `data_alteracao`.
+- Snapshot opcional na irreg/OS: `status_brt_atual`, `status_brt_atualizado_em`, `status_brt_comentario` (motivo/comentário do histórico BRT da situação atual).
+- `irregularidade_historico`: gravar **somente** quando o status OMNI muda (Disponivel / Cancelado).
+- **Leitura consolidada:** `GET /irregularidades/:id/historico` faz merge OMNI + timeline BRT (campo `origem`); tempo de etapa so nos eventos OMNI.
+- **UI Manutencao:** exibe ultimo `statusBrtAtual` no card; vermelho somente para `Paralisada`/`Retido` (`OS … na manutenção do BRT: {motivo}`) e erros (`ultimoErroIntegracao`); demais situacoes em estilo neutro (`Status BRT: {situacao}`).
+
+**Polling**
+- Configuracao por empresa (aba Integração): `brt_busca_info_ativo` + `brt_busca_info_intervalo_minutos` (1–1440; padrao 10) + `brt_busca_info_ultimo_poll_em`.
+- Job Nest (`BrtOsPollService`, tick 1 min): **so dispara** para empresas com busca **ativa** e intervalo vencido desde o ultimo poll; sem nenhuma empresa ativa → no-op.
+- Consulta unitaria `GET /v1/os/registro/:numOs` por OS candidata.
+- Candidatas: `EM_MANUTENCAO` + `controle_integracao_api` + `num_os_externo_atual` da empresa.
+- Agrupar 1 chamada por OS; idempotente (nao reaplicar transicao nem duplicar eventos/insumos).
+- Falha de API: nao muda status OMNI; log sanitizado; ainda assim atualiza `ultimo_poll_em`.
+
+**Criterios de aceite**
+- [ ] `Finalizada` sozinha **nao** move para Validacao.
+- [ ] Primeira deteccao de `Disponivel` (match tolerante) → grupo inteiro `CONCLUIDA`.
+- [ ] Primeira deteccao de `Cancelado` → grupo `REGISTRADA` + limpa vinculos ativos/ERP.
+- [ ] Status intermediarios so atualizam timeline/insumos.
+- [ ] Re-poll nao duplica transicao nem eventos/insumos.
+- [ ] Conclusao manual continua valida se o poll ainda nao capturou `Disponivel`.
+- [ ] `marcar-nao-procede` manual na trilha API permanece bloqueado.
+- [ ] Cadastro empresa: bloco Busca de informações (check + intervalo min); so entra no poll se ativo.
+
+**Fora de escopo (esta US)**
+- Webhook/callback BRT (API e 100% pull).
+- Nao procede automatico via BRT.
+- E-mail automatico para erros de placa (item separado do v2 original).
+
+**Referencia:** RN-VIS-006; guia `api-ordens-servico-brt-3`.
 
 ---
+
 
 ## Priorizacao sugerida
 

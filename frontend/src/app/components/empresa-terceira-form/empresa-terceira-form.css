@@ -81,3 +81,47 @@
   border-color: var(--border-color);
   color: var(--text-secondary);
 }
+
+.integracao-subblock {
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  background: var(--bg-secondary, #f8fafc);
+}
+
+.integracao-subblock h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--text-primary, #1e293b);
+}
+
+.form-group--intervalo .form-input {
+  max-width: 10rem;
+}
+
+.form-input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.form-error {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--danger, #dc2626);
+  font-size: 0.75rem;
+}
+
+:host-context(body.theme-dark) .integracao-subblock {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+:host-context(body.theme-dark) .integracao-subblock h4 {
+  color: var(--text-primary);
+}
+
+:host-context(body.theme-dark) .form-error {
+  color: var(--danger, #f87171);
+}

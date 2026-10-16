@@ -185,6 +185,32 @@ export class Irregularidade extends BaseEntity {
   @Column({ name: 'num_os_externo_atual', type: 'integer', nullable: true })
   numOsExternoAtual?: number | null;
 
+  @ApiProperty({
+    description: 'Última situação da OS na BRT (snapshot do poll)',
+    required: false,
+  })
+  @Column({ name: 'status_brt_atual', type: 'varchar', length: 80, nullable: true })
+  statusBrtAtual?: string | null;
+
+  @ApiProperty({
+    description: 'Quando o snapshot status_brt_atual foi atualizado',
+    required: false,
+  })
+  @Column({
+    name: 'status_brt_atualizado_em',
+    type: 'timestamp',
+    nullable: true,
+  })
+  statusBrtAtualizadoEm?: Date | null;
+
+  @ApiProperty({
+    description:
+      'Comentário/motivo do histórico BRT correspondente a status_brt_atual (ex.: paralisação)',
+    required: false,
+  })
+  @Column({ name: 'status_brt_comentario', type: 'text', nullable: true })
+  statusBrtComentario?: string | null;
+
   @ApiProperty({ description: 'Último erro de integração de OS', required: false })
   @Column({ name: 'ultimo_erro_integracao', type: 'text', nullable: true })
   ultimoErroIntegracao?: string | null;

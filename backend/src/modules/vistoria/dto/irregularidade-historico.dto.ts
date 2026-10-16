@@ -6,17 +6,31 @@ export class IrregularidadeHistoricoDto {
   id: string;
 
   @ApiProperty({
-    description: 'Status de origem',
+    description: 'Origem do evento no histórico consolidado',
+    enum: ['OMNI', 'BRT'],
+    default: 'OMNI',
+  })
+  origem: 'OMNI' | 'BRT';
+
+  @ApiProperty({
+    description: 'Status de origem (fluxo OMNI)',
     enum: StatusIrregularidade,
     required: false,
   })
   statusOrigem?: StatusIrregularidade;
 
   @ApiProperty({
-    description: 'Status de destino',
+    description: 'Status de destino (fluxo OMNI); ausente em eventos só BRT',
     enum: StatusIrregularidade,
+    required: false,
   })
-  statusDestino: StatusIrregularidade;
+  statusDestino?: StatusIrregularidade;
+
+  @ApiProperty({
+    description: 'Situação textual da OS na BRT (eventos origem=BRT)',
+    required: false,
+  })
+  statusBrt?: string;
 
   @ApiProperty({ description: 'Ação executada' })
   acao: string;
@@ -41,8 +55,14 @@ export class IrregularidadeHistoricoDto {
 
   @ApiProperty({
     description:
-      'Tempo em milissegundos que a irregularidade permaneceu nesta etapa',
+      'Tempo em milissegundos na etapa OMNI (somente eventos origem=OMNI)',
     required: false,
   })
   tempoEtapaMs?: number;
+
+  @ApiProperty({
+    description: 'numOs BRT associado (quando aplicável)',
+    required: false,
+  })
+  numOsExterno?: number;
 }

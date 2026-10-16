@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "1.6.24",
+  "version": "1.6.27",
   "scripts": {
     "ng": "ng",
     "prebuild": "node ./scripts/generate-version.mjs",

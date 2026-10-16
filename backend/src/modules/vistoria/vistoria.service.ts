@@ -335,22 +335,128 @@ export class VistoriaService {
     }
 
     const ultima = await query.getOne();
-    if (!ultima || ultima.odometro === null || ultima.odometro === undefined) {
+    return this.mapOdometroResumo(ultima);
+  }
+
+  /**
+   * Odômetro da vistoria FINALIZADA imediatamente anterior à referência
+   * (datavistoria estritamente menor), excluindo a própria quando informada.
+   */
+  async getOdometroAnterior(
+    idVeiculo: string,
+    datavistoriaReferencia: Date,
+    ignorarVistoriaId?: string,
+  ): Promise<{
+    id: string;
+    odometro: number;
+    datavistoria: string;
+  } | null> {
+    const query = this.vistoriaRepository
+      .createQueryBuilder('vistoria')
+      .where('vistoria.idVeiculo = :idVeiculo', { idVeiculo })
+      .andWhere('vistoria.status = :statusFinalizada', {
+        statusFinalizada: StatusVistoria.FINALIZADA,
+      })
+      .andWhere('vistoria.datavistoria < :datavistoriaReferencia', {
+        datavistoriaReferencia,
+      })
+      .orderBy('vistoria.datavistoria', 'DESC');
+
+    if (ignorarVistoriaId) {
+      query.andWhere('vistoria.id != :ignorarVistoriaId', {
+        ignorarVistoriaId,
+      });
+    }
+
+    const anterior = await query.getOne();
+    return this.mapOdometroResumo(anterior);
+  }
+
+  async getOdometroAnteriorPorReferencia(
+    idVeiculo: string,
+    referenciaVistoriaId: string,
+  ): Promise<{
+    id: string;
+    odometro: number;
+    datavistoria: string;
+  } | null> {
+    const referencia = await this.vistoriaRepository.findOne({
+      where: { id: referenciaVistoriaId },
+    });
+    if (!referencia) {
+      throw new NotFoundException('Vistoria de referência não encontrada');
+    }
+    if (referencia.idVeiculo !== idVeiculo) {
+      throw new BadRequestException(
+        'A vistoria de referência não pertence ao veículo informado.',
+      );
+    }
+    if (!referencia.datavistoria) {
+      return null;
+    }
+    return this.getOdometroAnterior(
+      idVeiculo,
+      referencia.datavistoria,
+      referenciaVistoriaId,
+    );
+  }
+
+  private mapOdometroResumo(
+    vistoria: Vistoria | null,
+  ): {
+    id: string;
+    odometro: number;
+    datavistoria: string;
+  } | null {
+    if (!vistoria || vistoria.odometro === null || vistoria.odometro === undefined) {
       return null;
     }
     return {
-      id: ultima.id,
-      odometro: Number(ultima.odometro),
-      datavistoria: ultima.datavistoria
-        ? ultima.datavistoria.toISOString()
+      id: vistoria.id,
+      odometro: Number(vistoria.odometro),
+      datavistoria: vistoria.datavistoria
+        ? vistoria.datavistoria.toISOString()
         : new Date().toISOString(),
     };
   }
 
+  private async validateOdometroContraAnterior(
+    vistoria: Vistoria,
+    odometro: number,
+  ): Promise<void> {
+    if (odometro <= 0) {
+      throw new BadRequestException('Informe um odômetro válido.');
+    }
+    if (odometro > 9999999) {
+      throw new BadRequestException('Odômetro não pode ser maior que 9.999.999.');
+    }
+
+    const anterior = await this.getOdometroAnterior(
+      vistoria.idVeiculo,
+      vistoria.datavistoria,
+      vistoria.id,
+    );
+    if (!anterior) {
+      return;
+    }
+    if (odometro <= anterior.odometro) {
+      throw new BadRequestException(
+        'Odômetro deve ser maior que o da vistoria anterior.',
+      );
+    }
+    const diffMax = await this.getOdometroDiffMaxKm();
+    const diff = odometro - anterior.odometro;
+    if (diff > diffMax) {
+      throw new BadRequestException(
+        `Odômetro não pode ser mais de ${diffMax} km acima do da vistoria anterior.`,
+      );
+    }
+  }
+
   /**
    * Corrige motorista e/ou odômetro de vistoria FINALIZADA (web).
-   * Odômetro só pode mudar na última FINALIZADA do veículo (datavistoria DESC)
-   * e deve ser estritamente maior que o da anterior (RN-VIS-004).
+   * Odômetro pode ser alterado em qualquer FINALIZADA; validação é contra a
+   * vistoria FINALIZADA imediatamente anterior (RN-VIS-010 / RN-VIS-004).
    */
   async corrigir(id: string, dto: CorrigirVistoriaDto): Promise<Vistoria> {
     const vistoria = await this.findOne(id);
@@ -375,17 +481,7 @@ export class VistoriaService {
     const odometroMudou = odometroNovo !== odometroAtual;
 
     if (odometroMudou) {
-      const ultima = await this.getUltimoOdometro(vistoria.idVeiculo);
-      if (!ultima || ultima.id !== vistoria.id) {
-        throw new BadRequestException(
-          'Somente a última vistoria finalizada do veículo permite alteração do odômetro.',
-        );
-      }
-      await this.validateOdometroVeiculo(
-        vistoria.idVeiculo,
-        odometroNovo,
-        vistoria.id,
-      );
+      await this.validateOdometroContraAnterior(vistoria, odometroNovo);
     }
 
     const updated = this.vistoriaRepository.merge(vistoria, {

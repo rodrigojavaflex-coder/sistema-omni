@@ -1,6 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
-import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  Validators,
+  ReactiveFormsModule,
+  FormsModule,
+  AbstractControl,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { BaseFormComponent } from '../base/base-form.component';
@@ -106,11 +112,61 @@ export class EmpresaTerceiraFormComponent
       brtNomSol: ['', [Validators.maxLength(200)]],
       brtTelCtt: ['', [Validators.maxLength(40)]],
       brtLocAtd: ['', [Validators.maxLength(500)]],
+      brtBuscaInfoAtivo: [false],
+      brtBuscaInfoIntervaloMinutos: [
+        10,
+        [Validators.min(1), Validators.max(1440)],
+      ],
     });
+    this.form
+      .get('brtBuscaInfoAtivo')
+      ?.valueChanges.subscribe((ativo: boolean) => {
+        this.syncBuscaInfoIntervaloValidators(!!ativo);
+      });
+    this.form
+      .get('integracaoManutencao')
+      ?.valueChanges.subscribe((tipo: string) => {
+        if (tipo !== 'BRT_OS') {
+          this.form.patchValue(
+            { brtBuscaInfoAtivo: false },
+            { emitEvent: true },
+          );
+        }
+      });
+    this.syncBuscaInfoIntervaloValidators(false);
+  }
+
+  private syncBuscaInfoIntervaloValidators(ativo: boolean): void {
+    const ctrl = this.form.get('brtBuscaInfoIntervaloMinutos');
+    if (!ctrl) {
+      return;
+    }
+    if (ativo) {
+      ctrl.enable({ emitEvent: false });
+      ctrl.setValidators([
+        Validators.required,
+        Validators.min(1),
+        Validators.max(1440),
+      ]);
+    } else {
+      ctrl.setValidators([Validators.min(1), Validators.max(1440)]);
+      ctrl.disable({ emitEvent: false });
+    }
+    ctrl.updateValueAndValidity({ emitEvent: false });
+  }
+
+  get buscaInfoIntervaloInvalido(): boolean {
+    const ctrl = this.form.get('brtBuscaInfoIntervaloMinutos');
+    return !!this.form.value.brtBuscaInfoAtivo && !!ctrl && ctrl.invalid;
+  }
+
+  /** Exposto para template: control do intervalo. */
+  get buscaInfoIntervaloControl(): AbstractControl | null {
+    return this.form.get('brtBuscaInfoIntervaloMinutos');
   }
 
   protected buildFormData(): CreateEmpresaTerceiraDto | UpdateEmpresaTerceiraDto {
-    const raw = this.form.value;
+    const raw = this.form.getRawValue();
     const payload: CreateEmpresaTerceiraDto = {
       descricao: raw.descricao,
       emailsRelatorio: raw.emailsRelatorio || undefined,
@@ -132,6 +188,12 @@ export class EmpresaTerceiraFormComponent
       payload.brtNomSol = raw.brtNomSol?.trim() || undefined;
       payload.brtTelCtt = raw.brtTelCtt?.trim() || undefined;
       payload.brtLocAtd = raw.brtLocAtd?.trim() || undefined;
+      payload.brtBuscaInfoAtivo =
+        raw.integracaoManutencao === 'BRT_OS' && !!raw.brtBuscaInfoAtivo;
+      const intervalo = Number(raw.brtBuscaInfoIntervaloMinutos);
+      payload.brtBuscaInfoIntervaloMinutos = Number.isFinite(intervalo)
+        ? Math.trunc(intervalo)
+        : 10;
       if (raw.brtToken?.trim()) {
         payload.brtToken = raw.brtToken.trim();
       }
@@ -174,7 +236,13 @@ export class EmpresaTerceiraFormComponent
         brtNomSol: item.brtNomSol ?? '',
         brtTelCtt: item.brtTelCtt ?? '',
         brtLocAtd: item.brtLocAtd ?? '',
+        brtBuscaInfoAtivo: !!item.brtBuscaInfoAtivo,
+        brtBuscaInfoIntervaloMinutos:
+          item.brtBuscaInfoIntervaloMinutos != null
+            ? Number(item.brtBuscaInfoIntervaloMinutos)
+            : 10,
       });
+      this.syncBuscaInfoIntervaloValidators(!!item.brtBuscaInfoAtivo);
       this.showBrtToken = false;
     }
   }

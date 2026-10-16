@@ -82,6 +82,20 @@ export class VistoriaService {
     );
   }
 
+  getOdometroAnterior(
+    idVeiculo: string,
+    referenciaVistoriaId: string,
+  ): Observable<{ id: string; odometro: number; datavistoria: string } | null> {
+    const params = new HttpParams().set(
+      'referenciaVistoriaId',
+      referenciaVistoriaId,
+    );
+    return this.http.get<{ id: string; odometro: number; datavistoria: string } | null>(
+      `${this.apiUrl}/veiculo/${idVeiculo}/odometro-anterior`,
+      { params },
+    );
+  }
+
   getParametros(): Observable<{ odometroDiffMaxKm: number }> {
     return this.http.get<{ odometroDiffMaxKm: number }>(
       `${this.apiUrl}/parametros`,

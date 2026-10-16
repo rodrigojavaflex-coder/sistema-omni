@@ -49,6 +49,10 @@ export interface IrregularidadeFluxoItem {
   controleIntegracaoApi?: boolean;
   osOrigAtual?: string;
   numOsExternoAtual?: number | null;
+  statusBrtAtual?: string | null;
+  statusBrtAtualizadoEm?: string | null;
+  /** Comentário/motivo do histórico BRT da situação atual (ex.: paralisação). */
+  statusBrtComentario?: string | null;
   ultimoErroIntegracao?: string;
   ultimoErroIntegracaoEm?: string;
   erpCodigoPedido?: string;
@@ -79,14 +83,19 @@ export interface IrregularidadeMidiaFluxoItem {
 
 export interface IrregularidadeHistoricoItem {
   id: string;
+  /** OMNI = fluxo interno; BRT = timeline da OS externa. */
+  origem?: 'OMNI' | 'BRT';
   statusOrigem?: StatusIrregularidade;
-  statusDestino: StatusIrregularidade;
+  statusDestino?: StatusIrregularidade;
+  /** Situação textual BRT (Aceite, Execução, …). */
+  statusBrt?: string;
   acao: string;
   dataEvento: string;
   idUsuario?: string;
   usuarioNome?: string;
   observacao?: string;
   tempoEtapaMs?: number;
+  numOsExterno?: number;
 }
 
 /** Campo temporal usado com dataInicio/dataFim na listagem por status (espelha a coluna "Registrado"). */

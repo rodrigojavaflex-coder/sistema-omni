@@ -16,6 +16,10 @@ export interface EmpresaTerceira {
   brtNomSol?: string;
   brtTelCtt?: string;
   brtLocAtd?: string;
+  /** Busca periódica de status/insumos na BRT. */
+  brtBuscaInfoAtivo?: boolean;
+  /** Intervalo em minutos da busca (1–1440). */
+  brtBuscaInfoIntervaloMinutos?: number | null;
   brtToken?: string;
   brtTokenConfigured?: boolean;
   criadoEm: string;
@@ -38,6 +42,8 @@ export interface CreateEmpresaTerceiraDto {
   brtNomSol?: string;
   brtTelCtt?: string;
   brtLocAtd?: string;
+  brtBuscaInfoAtivo?: boolean;
+  brtBuscaInfoIntervaloMinutos?: number;
 }
 
 export interface UpdateEmpresaTerceiraDto

@@ -1,13 +1,17 @@
+import { Type } from 'class-transformer';
 import {
   ArrayUnique,
   IsArray,
   IsBoolean,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
 } from 'class-validator';
 import { Combustivel } from '../../../common/enums/combustivel.enum';
 import { IntegracaoManutencaoEmpresa } from '../../../common/enums/integracao-manutencao-empresa.enum';
@@ -92,4 +96,17 @@ export class CreateEmpresaTerceiraDto {
   @IsString()
   @MaxLength(500)
   brtLocAtd?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  brtBuscaInfoAtivo?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Intervalo da busca deve ser um número inteiro em minutos' })
+  @Min(1, { message: 'Intervalo da busca deve ser no mínimo 1 minuto' })
+  @Max(1440, {
+    message: 'Intervalo da busca deve ser no máximo 1440 minutos (24h)',
+  })
+  brtBuscaInfoIntervaloMinutos?: number;
 }

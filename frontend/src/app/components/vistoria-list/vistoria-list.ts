@@ -333,7 +333,7 @@ export class VistoriaListComponent implements OnInit {
       vistoria.tipo === 'SINISTRO' || vistoria.tipo === 'PREVENTIVA'
         ? vistoria.tipo
         : 'CORRETIVA';
-    this.corrigirPodeEditarOdometro = false;
+    this.corrigirPodeEditarOdometro = true;
     this.corrigirOdometroAnterior = null;
     this.corrigirError = '';
     this.corrigirSaving = false;
@@ -351,30 +351,20 @@ export class VistoriaListComponent implements OnInit {
       },
     });
 
-    this.vistoriaService.getUltimoOdometro(vistoria.idVeiculo).subscribe({
-      next: (ultima) => {
-        this.corrigirPodeEditarOdometro = !!ultima && ultima.id === vistoria.id;
-        this.corrigirLoading = false;
-        if (this.corrigirPodeEditarOdometro) {
-          this.vistoriaService
-            .getUltimoOdometro(vistoria.idVeiculo, vistoria.id)
-            .subscribe({
-              next: (anterior) => {
-                this.corrigirOdometroAnterior = anterior?.odometro ?? null;
-              },
-              error: () => {
-                this.corrigirOdometroAnterior = null;
-              },
-            });
-        }
-      },
-      error: () => {
-        this.corrigirPodeEditarOdometro = false;
-        this.corrigirLoading = false;
-        this.corrigirError =
-          'Não foi possível verificar se esta é a última vistoria do veículo.';
-      },
-    });
+    this.vistoriaService
+      .getOdometroAnterior(vistoria.idVeiculo, vistoria.id)
+      .subscribe({
+        next: (anterior) => {
+          this.corrigirOdometroAnterior = anterior?.odometro ?? null;
+          this.corrigirLoading = false;
+        },
+        error: () => {
+          this.corrigirOdometroAnterior = null;
+          this.corrigirLoading = false;
+          this.corrigirError =
+            'Não foi possível carregar o odômetro da vistoria anterior.';
+        },
+      });
   }
 
   closeCorrigirModal(): void {

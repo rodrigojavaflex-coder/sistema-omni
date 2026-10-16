@@ -158,7 +158,30 @@ export class IrregularidadeResumoDto {
   @ApiProperty({ required: false })
   numOsExternoAtual?: number | null;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({
+    description: 'Última situação da OS na BRT (snapshot do poll)',
+    required: false,
+  })
+  statusBrtAtual?: string | null;
+
+  @ApiProperty({
+    description: 'Quando statusBrtAtual foi atualizado',
+    required: false,
+  })
+  statusBrtAtualizadoEm?: string | null;
+
+  @ApiProperty({
+    description:
+      'Comentário/motivo do histórico BRT da situação atual (ex.: motivo da paralisação)',
+    required: false,
+  })
+  statusBrtComentario?: string | null;
+
+  @ApiProperty({
+    description:
+      'Último erro de integração/consulta BRT (envio ou poll; ex.: os_nao_encontrada)',
+    required: false,
+  })
   ultimoErroIntegracao?: string;
 
   @ApiProperty({ required: false })

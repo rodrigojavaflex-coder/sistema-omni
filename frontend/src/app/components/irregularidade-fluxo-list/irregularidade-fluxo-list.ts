@@ -15,7 +15,10 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Observable, forkJoin } from 'rxjs';
 import { finalize } from 'rxjs/operators';
-import { IrregularidadeService } from '../../services/irregularidade.service';
+import {
+  BrtInsumoItem,
+  IrregularidadeService,
+} from '../../services/irregularidade.service';
 import { EmpresaTerceiraService } from '../../services/empresa-terceira.service';
 import {
   IniciarManutencaoLotePayload,
@@ -159,6 +162,10 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   showActionModal = false;
   showDetalheModal = false;
   detalheItem: IrregularidadeFluxoItem | null = null;
+  detalheInsumosBrt: BrtInsumoItem[] = [];
+  detalheInsumosLoading = false;
+  detalheInsumosError = '';
+  isBuscandoStatusBrt = false;
   modalAcao: ModalAcao | null = null;
   selectedItemForAction: IrregularidadeFluxoItem | null = null;
   actionTargetIds: string[] = [];
@@ -2187,11 +2194,84 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   openDetalheModal(item: IrregularidadeFluxoItem): void {
     this.detalheItem = item;
     this.showDetalheModal = true;
+    this.carregarInsumosDetalhe(item);
   }
 
   closeDetalheModal(): void {
     this.showDetalheModal = false;
     this.detalheItem = null;
+    this.detalheInsumosBrt = [];
+    this.detalheInsumosLoading = false;
+    this.detalheInsumosError = '';
+  }
+
+  private carregarInsumosDetalhe(item: IrregularidadeFluxoItem): void {
+    this.detalheInsumosBrt = [];
+    this.detalheInsumosError = '';
+    // Validação: sempre tenta carregar; demais modos só se houver OS BRT.
+    if (this.modo !== 'validacao-final' && item.numOsExternoAtual == null) {
+      return;
+    }
+    this.detalheInsumosLoading = true;
+    this.irregularidadeService
+      .listarInsumosBrt(item.id)
+      .pipe(finalize(() => (this.detalheInsumosLoading = false)))
+      .subscribe({
+        next: (insumos) => {
+          this.detalheInsumosBrt = insumos ?? [];
+        },
+        error: (err) => {
+          this.detalheInsumosError =
+            err?.error?.message || 'Erro ao carregar insumos BRT.';
+        },
+      });
+  }
+
+  formatInsumoNumero(valor?: number | null): string {
+    if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
+      return '-';
+    }
+    return String(valor);
+  }
+
+  formatInsumoMoeda(valor?: number | null): string {
+    if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
+      return '-';
+    }
+    return Number(valor).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+  }
+
+  buscarStatusBrtSelecionadas(): void {
+    if (!this.manutencaoCancelOsBrtSelecionada || this.isBuscandoStatusBrt) {
+      return;
+    }
+    const ids = this.getSelectedIds();
+    this.isBuscandoStatusBrt = true;
+    this.error = '';
+    this.info = '';
+    this.irregularidadeService
+      .buscarStatusBrtLote(ids)
+      .pipe(finalize(() => (this.isBuscandoStatusBrt = false)))
+      .subscribe({
+        next: (res) => {
+          this.selectedIds.clear();
+          const detalhesFalha =
+            res.falhas?.length > 0
+              ? res.falhas
+                  .map((f) => `OS ${f.numOs}: ${f.mensagem}`)
+                  .join(' | ')
+              : '';
+          const aviso = [res.mensagem, detalhesFalha].filter(Boolean).join(' — ');
+          this.loadItems(aviso || 'Busca BRT concluída.');
+        },
+        error: (err) => {
+          this.error =
+            err?.error?.message || 'Erro ao buscar status das OS na BRT.';
+        },
+      });
   }
 
   getImageSrc(item: IrregularidadeMidiaFluxoItem): string {
@@ -2347,7 +2427,54 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Alerta (vermelho): só Paralisada / Retido.
+   */
+  isStatusBrtAlertaCard(item: IrregularidadeFluxoItem): boolean {
+    const n = this.normalizarSituacaoBrt(item.statusBrtAtual);
+    return n.startsWith('paralisad') || n.startsWith('retid');
+  }
+
+  /** Há snapshot de situação BRT para exibir no card. */
+  hasStatusBrtCard(item: IrregularidadeFluxoItem): boolean {
+    return !!item.statusBrtAtual?.trim();
+  }
+
+  /**
+   * Último status BRT no card.
+   * Paralisada/Retido: "OS … na manutenção do BRT: {motivo}".
+   * Demais: "Status BRT: {situacao}".
+   */
+  formatStatusBrtLabel(item: IrregularidadeFluxoItem): string | null {
+    const raw = item.statusBrtAtual?.trim();
+    if (!raw) {
+      return null;
+    }
+    const n = this.normalizarSituacaoBrt(raw);
+    if (n.startsWith('paralisad') || n.startsWith('retid')) {
+      const situacao = n.startsWith('paralisad') ? 'Paralisada' : 'Retido';
+      const base = `OS ${situacao} na manutenção do BRT`;
+      const motivo = item.statusBrtComentario?.trim();
+      return motivo ? `${base}: ${motivo}` : base;
+    }
+    return `Status BRT: ${raw}`;
+  }
+
+  private normalizarSituacaoBrt(situacao?: string | null): string {
+    if (!situacao?.trim()) {
+      return '';
+    }
+    return situacao
+      .normalize('NFD')
+      .replace(/\p{M}/gu, '')
+      .toLowerCase()
+      .trim();
+  }
+
   getTransicaoHistorico(evento: IrregularidadeHistoricoItem): string {
+    if (evento.origem === 'BRT') {
+      return `BRT → ${evento.statusBrt || '-'}`;
+    }
     const destino = this.getStatusLabel(evento.statusDestino);
     if (!evento.statusOrigem) {
       return destino;
@@ -2463,6 +2590,12 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         return 'Iniciar manutenção';
       case 'concluir_manutencao':
         return 'Concluir manutenção';
+      case 'concluir_manutencao_integracao':
+        return 'Concluir manutenção (retorno BRT)';
+      case 'cancelar_retorno_brt':
+        return 'Cancelamento retornado pela BRT';
+      case 'status_brt':
+        return 'Atualização de status na BRT';
       case 'marcar_nao_procede':
         return 'Marcar como não procede';
       case 'validar_final':

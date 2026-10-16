@@ -71,6 +71,79 @@ export type BrtCancelarOsResult =
       raw: BrtOsErrorBody;
     };
 
+export interface BrtOsRegistroHistoricoItem {
+  num_os?: number;
+  comentario?: string | null;
+  data_criacao?: string | null;
+  situacao?: string | null;
+}
+
+export interface BrtOsRegistroInsumoItem {
+  num_os?: number;
+  insumo?: string | null;
+  quantidade?: number | null;
+  valor?: number | null;
+  descricao?: string | null;
+  data_alteracao?: string | null;
+}
+
+export interface BrtOsRegistroItem {
+  num_os?: number;
+  os_orig?: string | null;
+  situacao?: string | null;
+  data_criacao?: string | null;
+  data_alteracao?: string | null;
+  data_fechamento?: string | null;
+  historico?: BrtOsRegistroHistoricoItem[];
+  insumo?: BrtOsRegistroInsumoItem[];
+}
+
+export type BrtConsultarRegistroResult =
+  | {
+      ok: true;
+      httpStatus: number;
+      data: BrtOsRegistroItem;
+    }
+  | {
+      ok: false;
+      httpStatus: number;
+      codigoErro: string;
+      mensagem: string;
+      raw: BrtOsErrorBody;
+    };
+
+/** Normaliza situacao BRT para comparação tolerante (case/acento/grafia). */
+export function normalizarSituacaoBrt(situacao: string | null | undefined): string {
+  if (!situacao?.trim()) {
+    return '';
+  }
+  return situacao
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .trim();
+}
+
+export type GatilhoSituacaoBrt = 'disponivel' | 'cancelado' | null;
+
+export function resolverGatilhoSituacaoBrt(
+  situacao: string | null | undefined,
+): GatilhoSituacaoBrt {
+  const n = normalizarSituacaoBrt(situacao);
+  if (!n) {
+    return null;
+  }
+  // Ex.: Disponível / Disponivel / disponivel
+  if (n.startsWith('disponivel')) {
+    return 'disponivel';
+  }
+  // Ex.: Cancelado / Cancelada
+  if (n.startsWith('cancelad')) {
+    return 'cancelado';
+  }
+  return null;
+}
+
 @Injectable()
 export class BrtOsIntegrationService {
   private readonly logger = new Logger(BrtOsIntegrationService.name);
@@ -344,6 +417,112 @@ export class BrtOsIntegrationService {
     const mensagem = this.formatarMensagemErro(body, response.status);
     this.logger.warn(
       `BRT OS resposta erro http=${response.status} codigo=${codigoErro} ${contextoLog} body=${this.resumirCorpoLog(body)}`,
+    );
+    return {
+      ok: false,
+      httpStatus: response.status,
+      codigoErro,
+      mensagem,
+      raw: body,
+    };
+  }
+
+  resolveRegistroEndpoint(empresa: EmpresaTerceira, numOs: number): string {
+    return `${this.resolveEndpoint(empresa)}/registro/${numOs}`;
+  }
+
+  /**
+   * Consulta uma OS: GET /v1/os/registro/:numOs
+   */
+  async consultarRegistro(
+    empresa: EmpresaTerceira,
+    numOs: number,
+  ): Promise<BrtConsultarRegistroResult> {
+    const token = empresa.brtToken?.trim();
+    const tenEmp = empresa.brtTenEmp?.trim();
+    if (!token || !tenEmp) {
+      return {
+        ok: false,
+        httpStatus: 0,
+        codigoErro: 'configuracao_incompleta',
+        mensagem: 'Credenciais BRT incompletas para consulta de OS',
+        raw: { erro: 'configuracao_incompleta' },
+      };
+    }
+    if (!Number.isFinite(numOs) || numOs <= 0) {
+      return {
+        ok: false,
+        httpStatus: 0,
+        codigoErro: 'validacao',
+        mensagem: 'numOs inválido para consulta BRT',
+        raw: { erro: 'validacao' },
+      };
+    }
+
+    const url = this.resolveRegistroEndpoint(empresa, numOs);
+    const contextoLog = `url=${url} numOs=${numOs} ten_emp=${tenEmp}`;
+    this.logger.debug(`BRT OS consulta iniciando ${contextoLog}`);
+
+    const usarTlsInseguro = this.deveIgnorarTls(empresa);
+    const fetchOptions = {
+      method: 'GET' as const,
+      headers: {
+        ten_emp: tenEmp,
+        token,
+      },
+      signal: AbortSignal.timeout(60_000),
+      ...(usarTlsInseguro ? { dispatcher: this.insecureTlsAgent } : {}),
+    };
+
+    let response: Response;
+    try {
+      response = (await undiciFetch(url, fetchOptions)) as unknown as Response;
+    } catch (err) {
+      const { mensagemUsuario, detalheTecnico } =
+        this.descreverErroComunicacao(err);
+      const mensagemExibida =
+        this.mensagemComunicacaoParaUsuario(detalheTecnico, mensagemUsuario);
+      this.logger.warn(
+        `BRT OS consulta falha de comunicação ${contextoLog} | ${detalheTecnico}`,
+      );
+      return {
+        ok: false,
+        httpStatus: 0,
+        codigoErro: 'falha_comunicacao',
+        mensagem: `Não foi possível consultar a OS na API BRT: ${mensagemExibida}`,
+        raw: {
+          erro: 'falha_comunicacao',
+          mensagem: mensagemExibida,
+        },
+      };
+    }
+
+    let body: {
+      success?: boolean;
+      data?: BrtOsRegistroItem;
+    } & BrtOsErrorBody = {};
+    try {
+      body = (await response.json()) as typeof body;
+    } catch {
+      body = {};
+    }
+
+    if (response.status === 200 && body.data) {
+      return {
+        ok: true,
+        httpStatus: response.status,
+        data: body.data,
+      };
+    }
+
+    const codigoErro = body.erro ?? `http_${response.status}`;
+    const mensagem =
+      body.mensagem?.trim() ||
+      (codigoErro === 'os_nao_encontrada'
+        ? 'OS não encontrada na BRT'
+        : `Erro ao consultar OS na API BRT (HTTP ${response.status})`);
+    this.logger.warn(
+      `BRT OS consulta erro http=${response.status} codigo=${codigoErro} ${contextoLog} body=${this.resumirCorpoLog(body)}`,
     );
     return {
       ok: false,

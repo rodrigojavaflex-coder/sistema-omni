@@ -167,6 +167,8 @@ export class EmpresaTerceiraService {
     brtTenEmp?: string;
     brtToken?: string;
     brtNomSol?: string;
+    brtBuscaInfoAtivo?: boolean;
+    brtBuscaInfoIntervaloMinutos?: number | null;
   }): void {
     if (dto.integracaoManutencao !== IntegracaoManutencaoEmpresa.BRT_OS) {
       return;
@@ -186,6 +188,54 @@ export class EmpresaTerceiraService {
         'Informe o solicitante para integração de OS',
       );
     }
+    if (dto.brtBuscaInfoAtivo) {
+      const intervalo = dto.brtBuscaInfoIntervaloMinutos;
+      if (
+        intervalo === undefined ||
+        intervalo === null ||
+        !Number.isInteger(Number(intervalo)) ||
+        Number(intervalo) < 1 ||
+        Number(intervalo) > 1440
+      ) {
+        throw new BadRequestException(
+          'Com a busca de informações ativa, informe o intervalo em minutos (1 a 1440)',
+        );
+      }
+    }
+  }
+
+  private resolveBuscaInfoConfig(dto: {
+    integracaoManutencao?: IntegracaoManutencaoEmpresa;
+    brtBuscaInfoAtivo?: boolean;
+    brtBuscaInfoIntervaloMinutos?: number | null;
+  }): {
+    brtBuscaInfoAtivo: boolean;
+    brtBuscaInfoIntervaloMinutos: number | null;
+  } {
+    const isBrt =
+      dto.integracaoManutencao === IntegracaoManutencaoEmpresa.BRT_OS;
+    if (!isBrt) {
+      return {
+        brtBuscaInfoAtivo: false,
+        brtBuscaInfoIntervaloMinutos:
+          dto.brtBuscaInfoIntervaloMinutos !== undefined &&
+          dto.brtBuscaInfoIntervaloMinutos !== null
+            ? Math.trunc(Number(dto.brtBuscaInfoIntervaloMinutos))
+            : 10,
+      };
+    }
+    const ativo = !!dto.brtBuscaInfoAtivo;
+    const intervaloRaw = dto.brtBuscaInfoIntervaloMinutos;
+    const intervalo =
+      intervaloRaw === undefined || intervaloRaw === null
+        ? 10
+        : Math.trunc(Number(intervaloRaw));
+    return {
+      brtBuscaInfoAtivo: ativo,
+      brtBuscaInfoIntervaloMinutos: Number.isFinite(intervalo)
+        ? intervalo
+        : 10,
+    };
   }
 
   async create(
@@ -205,12 +255,19 @@ export class EmpresaTerceiraService {
         `Já existe uma empresa terceira com a descrição "${descricaoNorm}"`,
       );
     }
+    const buscaInfo = this.resolveBuscaInfoConfig({
+      integracaoManutencao: effectiveDto.integracaoManutencao,
+      brtBuscaInfoAtivo: effectiveDto.brtBuscaInfoAtivo,
+      brtBuscaInfoIntervaloMinutos: effectiveDto.brtBuscaInfoIntervaloMinutos,
+    });
     this.assertIntegracaoBrt({
       integracaoManutencao: effectiveDto.integracaoManutencao,
       ehEmpresaManutencao: effectiveDto.ehEmpresaManutencao,
       brtTenEmp: effectiveDto.brtTenEmp,
       brtToken: effectiveDto.brtToken,
       brtNomSol: effectiveDto.brtNomSol,
+      brtBuscaInfoAtivo: buscaInfo.brtBuscaInfoAtivo,
+      brtBuscaInfoIntervaloMinutos: buscaInfo.brtBuscaInfoIntervaloMinutos,
     });
     if (
       effectiveDto.integracaoManutencao === IntegracaoManutencaoEmpresa.BRT_OS &&
@@ -247,6 +304,8 @@ export class EmpresaTerceiraService {
       brtNomSol: effectiveDto.brtNomSol?.trim() || undefined,
       brtTelCtt: effectiveDto.brtTelCtt?.trim() || undefined,
       brtLocAtd: effectiveDto.brtLocAtd?.trim() || undefined,
+      brtBuscaInfoAtivo: buscaInfo.brtBuscaInfoAtivo,
+      brtBuscaInfoIntervaloMinutos: buscaInfo.brtBuscaInfoIntervaloMinutos,
     });
     const saved = await this.repository.save(entidade);
     return toEmpresaTerceiraResponse(saved, {
@@ -303,6 +362,33 @@ export class EmpresaTerceiraService {
       throw new NotFoundException('Empresa terceira não encontrada');
     }
     return entidade;
+  }
+
+  /**
+   * Empresas elegíveis ao poll BRT: manutenção + integração BRT + busca ativa.
+   * Inclui token para autenticação da consulta.
+   */
+  async findEmpresasBrtBuscaAtiva(): Promise<EmpresaTerceira[]> {
+    return this.repository
+      .createQueryBuilder('e')
+      .addSelect('e.brtToken')
+      .where('e.ehEmpresaManutencao = true')
+      .andWhere('e.integracaoManutencao = :integracao', {
+        integracao: IntegracaoManutencaoEmpresa.BRT_OS,
+      })
+      .andWhere('e.brtBuscaInfoAtivo = true')
+      .orderBy('e.descricao', 'ASC')
+      .getMany();
+  }
+
+  async marcarUltimoPollBuscaInfo(
+    id: string,
+    quando: Date,
+  ): Promise<void> {
+    await this.repository.update(
+      { id },
+      { brtBuscaInfoUltimoPollEm: quando },
+    );
   }
 
   async update(
@@ -384,12 +470,34 @@ export class EmpresaTerceiraService {
     if (effectiveDto.brtToken !== undefined && effectiveDto.brtToken.trim()) {
       entidade.brtToken = effectiveDto.brtToken.trim();
     }
+    if (
+      effectiveDto.brtBuscaInfoAtivo !== undefined ||
+      effectiveDto.brtBuscaInfoIntervaloMinutos !== undefined ||
+      effectiveDto.integracaoManutencao !== undefined
+    ) {
+      const buscaInfo = this.resolveBuscaInfoConfig({
+        integracaoManutencao: entidade.integracaoManutencao,
+        brtBuscaInfoAtivo:
+          effectiveDto.brtBuscaInfoAtivo !== undefined
+            ? effectiveDto.brtBuscaInfoAtivo
+            : entidade.brtBuscaInfoAtivo,
+        brtBuscaInfoIntervaloMinutos:
+          effectiveDto.brtBuscaInfoIntervaloMinutos !== undefined
+            ? effectiveDto.brtBuscaInfoIntervaloMinutos
+            : entidade.brtBuscaInfoIntervaloMinutos,
+      });
+      entidade.brtBuscaInfoAtivo = buscaInfo.brtBuscaInfoAtivo;
+      entidade.brtBuscaInfoIntervaloMinutos =
+        buscaInfo.brtBuscaInfoIntervaloMinutos;
+    }
     this.assertIntegracaoBrt({
       integracaoManutencao: entidade.integracaoManutencao,
       ehEmpresaManutencao: entidade.ehEmpresaManutencao,
       brtTenEmp: entidade.brtTenEmp,
       brtToken: entidade.brtToken,
       brtNomSol: entidade.brtNomSol,
+      brtBuscaInfoAtivo: entidade.brtBuscaInfoAtivo,
+      brtBuscaInfoIntervaloMinutos: entidade.brtBuscaInfoIntervaloMinutos,
     });
     if (
       entidade.integracaoManutencao === IntegracaoManutencaoEmpresa.BRT_OS &&

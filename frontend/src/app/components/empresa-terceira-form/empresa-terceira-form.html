@@ -224,6 +224,44 @@
               Use só se a API BRT tiver certificado inválido/autoassinado. Preferível instalar a CA no servidor.
             </small>
           </div>
+
+          <div class="integracao-subblock" aria-labelledby="brt-busca-info-title">
+            <h4 id="brt-busca-info-title">Busca de informações</h4>
+            <p class="section-description">
+              Consulta periódica de status, histórico e insumos das OS na API BRT
+              (retorno integrado). Só empresas com busca ativa entram no job.
+            </p>
+            <div class="form-group">
+              <label class="form-label checkbox-inline">
+                <input type="checkbox" formControlName="brtBuscaInfoAtivo" />
+                Ativar busca de informações
+              </label>
+            </div>
+            <div class="form-group form-group--intervalo">
+              <label class="form-label" for="brtBuscaInfoIntervaloMinutos">
+                Intervalo da busca (minutos) *
+              </label>
+              <input
+                id="brtBuscaInfoIntervaloMinutos"
+                type="number"
+                formControlName="brtBuscaInfoIntervaloMinutos"
+                class="form-input"
+                min="1"
+                max="1440"
+                step="1"
+                [attr.aria-invalid]="buscaInfoIntervaloInvalido"
+              />
+              <small class="form-hint">
+                De 1 a 1440 minutos (24h). Sugestão: 10 minutos.
+              </small>
+              <small
+                class="form-error"
+                *ngIf="buscaInfoIntervaloInvalido && buscaInfoIntervaloControl?.touched"
+              >
+                Informe um intervalo válido entre 1 e 1440 minutos.
+              </small>
+            </div>
+          </div>
         </ng-container>
       </ng-container>
     </div>

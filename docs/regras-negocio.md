@@ -368,17 +368,23 @@ Copie o bloco abaixo para cada regra nova.
   - E-mail de relatorio PDF: somente se flag `enviar_email_relatorio` na empresa **e** SMTP global ativo; apos ERP/BRT OK dos itens que vao transicionar (itens/veiculos que falharam nao entram no anexo); no legado, falha de e-mail bloqueia a transicao
   - Impressao automatica: flag global `impressao_manutencao_config.ativo` + IP IPv4 + porta (padrao 9100); dispara so apos itens transicionados; PDF com rotulos `OS:` (numeroIrregularidade), `OS OMNI:` (`erp_codigo_pedido`) e `OS BRT:` (`num_os_externo_atual`) quando houver; falha de socket/timeout nao bloqueia `EM_MANUTENCAO` (retorno `impressaoEnviada` / `impressaoErro`)
   - Botao **Imprimir** (PDF no navegador, sem RAW) nas telas Tratamento, Manutencao, Validacao e Gestao OS: Tratamento/Manutencao/Validacao exigem `:print` da tela; Gestao OS usa `irregularidade_gestao_os:read`; gera `POST /irregularidades/lote/relatorio-pdf` das selecionadas; agrupa por veiculo e **quebra pagina entre veiculos**; nao altera status nem dispara ERP/BRT
-  - Trilha API (`controle_integracao`): **concluir manutencao manual permitido** (`EM_MANUTENCAO` → `CONCLUIDA`); nao chama API BRT nem limpa vinculos (`numOs`/`os_orig`/`erp_*` permanecem para rastreio); `marcar-nao-procede` manual continua **bloqueado** ate retorno integrado (v2)
+  - Trilha API (`controle_integracao`): **concluir manutencao manual permitido** (`EM_MANUTENCAO` → `CONCLUIDA`); nao chama API BRT nem limpa vinculos (`numOs`/`os_orig`/`erp_*` permanecem para rastreio); `marcar-nao-procede` manual continua **bloqueado**
+  - **Retorno integrado BRT (v2 / poll):** no cadastro da empresa (Integração OS), flags `brt_busca_info_ativo` e `brt_busca_info_intervalo_minutos` (1–1440, padrao 10). Job periodico so considera empresas BRT com busca ativa; intervalo = valor da empresa. Consulta `GET /v1/os/registro` (lote, janela ≤ 31 dias) e/ou `GET /v1/os/registro/:numOs`; auth `ten_emp`+`token`. Persistencia: timeline de `historico[]` e base de `insumo[]` no nivel da OS (nao misturar status intermediarios em `irregularidade_historico`). Comparacao de `situacao` **tolerante** (case/grafia). Gatilhos no **grupo** (`mesmo os_orig`/`numOs` ativos, ainda `EM_MANUTENCAO`):
+    - `Disponivel` → `CONCLUIDA` (Validacao Final); nao limpa vinculos BRT/`erp_*`; `acao: concluir_manutencao_integracao`; `Finalizada` **nao** dispara transicao
+    - `Cancelado` → `REGISTRADA` (Tratamento); limpa vinculos BRT ativos + `erp_*` (igual cancelamento manual); `acao: cancelar_retorno_brt`; reenvio usa `os_orig` `-N`
+    - Demais (`Aberto`, `Aceite`, `Execucao`, `Retido`, `Paralisada`, `Finalizada`): so atualizam timeline/insumos/`status_brt_atual`/`status_brt_comentario` (comentario do historico BRT da situacao atual; UI Manutencao exibe o ultimo status; vermelho so em Paralisada/Retido/erro)
+  - Poll idempotente: nao reaplicar transicao nem duplicar eventos/insumos; falha de consulta nao altera status OMNI; busca inativa na empresa → nenhuma consulta
   - Trilha sem API: transicoes manuais de Manutencao inalteradas
   - Marcar nao procede (trilha sem API): `EM_MANUTENCAO` → `NAO_PROCEDE`; **limpa** `idEmpresaManutencao`, vinculos BRT ativos e `erp_*`; historico registra a empresa que devolveu; item volta a fila Tratamento (sem exigir empresa); reenvio escolhe empresa novamente
   - Reprovar validacao final: `CONCLUIDA` → `RETRABALHO_GARANTIA` (nao retornar direto a `EM_MANUTENCAO`); **limpa** vinculos BRT ativos e `erp_*` para forcar novo ciclo no reenvio
 - **Acoes do sistema:**
   - Ramificar `iniciar-manutencao` / lote por configuracao da empresa selecionada e pela flag ERP global (RN-VIS-008)
   - Client HTTP backend para POST `https://www.api.brtgo.com.br/v1/os` (`tpo_reg: 1` criar; `tpo_reg: 7` cancelar quando aplicavel)
+  - Client HTTP de consulta: `GET /v1/os/registro` (lote) e `GET /v1/os/registro/:numOs` (unitaria); sync de `historico` e `insumo`; job de poll por empresa BRT
   - Mapear campos: `os_orig` (ver regra acima), `plc_vcl`, `tpo_srv` (`1` corretiva padrao; `2` preventiva; `3` SOS/socorro quando origem SOS e tipo nao for SINISTRO/PREVENTIVA; `4` quando capa `tipo = SINISTRO`; tipo na capa tem precedencia sobre SOS — um valor por vistoria), `nom_sol`, `tel_ctt`, `loc_atd` (cadastro da empresa BRT), `comenta` multilinha por irregularidade ordenada por NS (`area->componente->sintoma` + linha `Obs: …`, blocos separados por linha em branco), limite 4000 com truncate, `odo_vcl` opcional (odometro da vistoria)
   - PDF de preview/e-mail/impressao/botao Imprimir: labels `OS:` / `OS OMNI:` / `OS BRT:`; cada veiculo inicia em pagina nova; se a irregularidade tiver marcacao (`id_vista` + coordenadas), desenhar a vista do modelo com circulo azul no ponto
   - Aba Configuracao «Impressão»: habilitar, IP, porta e timeout; persistencia em `configuracoes.impressao_manutencao_config` (somente RAW automatico pos-envio; botao Imprimir das filas nao usa essa flag)
-  - Registrar historico: `enviar_api_os`, `falha_api_os`, `cancelar_api_os`, `iniciar_manutencao`, `reprovar_validacao_final`
+  - Registrar historico: `enviar_api_os`, `falha_api_os`, `cancelar_api_os`, `iniciar_manutencao`, `reprovar_validacao_final`, `concluir_manutencao_integracao`, `cancelar_retorno_brt`
   - Pendencias de veiculo (mobile): status `RETRABALHO_GARANTIA` continua pendente ate `VALIDADA` ou `CANCELADA` (mesma regra de exclusao de finais)
 - **Mensagens ao usuario:**
   - Selecao incompleta (BRT): informar numero da vistoria e quantidade elegivel vs selecionada
@@ -387,8 +393,8 @@ Copie o bloco abaixo para cada regra nova.
   - Bloqueio de nao procede manual (trilha API): mensagem indicando aguardo de retorno da integracao
   - Cancelamento OS BRT: avisar que o grupo inteiro da vistoria retorna ao Tratamento
 - **Permissoes envolvidas:** RN-VIS-003; `RETRABALHO_GARANTIA` exige `irregularidade_tratamento:read`; acoes de reenvio exigem `irregularidade_manutencao:start`; cancelamento OS BRT exige `irregularidade_manutencao:cancel_os_brt`; botao Imprimir exige `:print` da tela correspondente (concessao manual em Perfis)
-- **Dados impactados:** `empresasterceiras` (integracao, e-mail, credenciais BRT), `irregularidades` (status, flags de integracao, OS ativa, `erp_codigo_pedido` / `erp_ultimo_erro`), historico de OS externas, `irregularidade_historico`
-- **Rastreabilidade:** Historico de transicoes; log de integracao (request/response sanitizado); multiplos pares `os_orig`/`numOs` por irregularidade ao longo do tempo; rastreio operacional por `numOs` BRT e pedido ERP na irreg
+- **Dados impactados:** `empresasterceiras` (integracao, e-mail, credenciais BRT), `irregularidades` (status, flags de integracao, OS ativa, `erp_codigo_pedido` / `erp_ultimo_erro`, snapshot `status_brt_*` quando aplicavel), historico de OS externas, timeline de status BRT, insumos da OS BRT, `irregularidade_historico`
+- **Rastreabilidade:** Historico de transicoes; log de integracao (request/response sanitizado); multiplos pares `os_orig`/`numOs` por irregularidade ao longo do tempo; rastreio operacional por `numOs` BRT e pedido ERP na irreg; timeline e insumos sincronizados do poll
 - **Criterios de aceite:**
   - [ ] Empresa sem API + ERP off: comportamento legado; e-mail respeita flag da empresa
   - [ ] ERP on: erro ERP no veiculo B → B permanece no Tratamento; A pode avancar
@@ -406,12 +412,17 @@ Copie o bloco abaixo para cada regra nova.
   - [ ] Sem `:print`: botao oculto; API 403
   - [ ] Nao procede volta ao Tratamento sem empresa; historico preserva a passagem
   - [ ] Gestao OS lista todos os status com filtros; sem transicao de status
+  - [ ] Poll: `Finalizada` nao move status OMNI; `Disponivel` → grupo `CONCLUIDA`; `Cancelado` → grupo `REGISTRADA` + limpa vinculos/ERP
+  - [ ] Poll grava timeline e insumos; re-poll idempotente; falha de consulta nao altera status
+  - [ ] Empresa: check «Ativar busca» + intervalo em minutos; busca inativa nao entra no job
 - **Cenarios de excecao:**
   - Credenciais BRT invalidas: nenhum grupo do lote avanca na trilha API
   - Cancelamento de irregularidade sem OS criada: sem chamada BRT de cancelamento
   - Cancelamento OS BRT na Manutencao: somente com resposta OK da API; `409 os_em_execucao` e demais erros mantem o grupo em `EM_MANUTENCAO`
   - Homologacao OMNI sem ambiente BRT: parametros de teste na empresa quando disponiveis
   - Impressora inacessivel / timeout: manutencao ja concluida; operador ve aviso no retorno
+  - Poll com falha de comunicacao / `os_nao_encontrada`: mantem `EM_MANUTENCAO`; log sanitizado
+  - Variacao de grafia em `situacao` (ex.: `Finalizado` vs `Finalizada`): match tolerante; so `Disponivel`/`Cancelado` disparam transicao
 - **Escopo de implementacao:**
   - **v1:** envio BRT 1:1, historico OS, erros no Tratamento, status `RETRABALHO_GARANTIA`, cancelamento OS, parametros empresa
   - **v1.6:** conclusao manual permitida na trilha BRT; nao procede manual permanece bloqueado
@@ -421,9 +432,9 @@ Copie o bloco abaixo para cada regra nova.
   - **v1.3:** impressao automatica RAW pos-manutencao (config + PDF com OS OMNI)
   - **v1.4:** botao Imprimir PDF nas 3 fases (permissoes `:print`; quebra por veiculo)
   - **v1.5:** NAO_PROCEDE no Tratamento (limpa empresa); tela Gestao OS
-  - **v2:** retorno integrado BRT → `CONCLUIDA` (grupo); e-mail automatico para erros de placa
-- **Origem da regra:** Integracao Consorcio BRT e fluxo dual de manutencao, decisao de produto 2026-08-03; agrupamento por vistoria 2026-09-29; gatilho ERP no envio a manutencao 2026-10-08; impressao automatica 2026-10-08; botao Imprimir PDF por fase 2026-10-09; Gestao OS / NAO_PROCEDE no Tratamento 2026-10-09; conclusao manual na trilha BRT 2026-10-09; escopo combustivel/area por empresa 2026-10-09
-- **Status:** Implementada (retorno automático BRT → `CONCLUIDA` previsto v2; conclusao manual ja liberada)
+  - **v2:** poll de status/historico/insumos BRT; `Disponivel` → `CONCLUIDA` (grupo); `Cancelado` → `REGISTRADA` (grupo + limpa vinculos); timeline e base de insumos; e-mail automatico para erros de placa (item separado)
+- **Origem da regra:** Integracao Consorcio BRT e fluxo dual de manutencao, decisao de produto 2026-08-03; agrupamento por vistoria 2026-09-29; gatilho ERP no envio a manutencao 2026-10-08; impressao automatica 2026-10-08; botao Imprimir PDF por fase 2026-10-09; Gestao OS / NAO_PROCEDE no Tratamento 2026-10-09; conclusao manual na trilha BRT 2026-10-09; escopo combustivel/area por empresa 2026-10-09; retorno poll `Disponivel`/`Cancelado` 2026-10-14
+- **Status:** Implementada (v1–v1.7); retorno automatico BRT (v2) **especificado** — implementacao pendente; conclusao manual ja liberada
 - **Criterios de aceite (escopo empresa):**
   - [ ] Cadastro de empresa manutencao permite multi-select de combustiveis e areas
   - [ ] Lista vazia nao restringe; lista preenchida bloqueia fora do escopo
@@ -518,26 +529,25 @@ Copie o bloco abaixo para cada regra nova.
 ### RN-VIS-010 - Corrigir motorista e odometro de vistoria finalizada (web)
 - **Modulo:** Vistoria
 - **Fluxo:** Tela web Vistorias (`/vistorias`) → botão Corrigir Vistoria → modal
-- **Descricao:** Operador com permissao dedicada corrige motorista, odometro e/ou tipo de uma vistoria `FINALIZADA`. A correcao e apenas no OMNI (nao reenvia ao ERP nem a BRT). O odometro so pode ser alterado na ultima vistoria `FINALIZADA` do veiculo (ordenacao por `datavistoria` DESC). Motorista e tipo podem ser alterados em qualquer vistoria finalizada. Validacao de odometro segue RN-VIS-004: deve ser estritamente maior que o da vistoria anterior (`FINALIZADA`, excluindo a propria). Tipo segue RN-VIS-012.
+- **Descricao:** Operador com permissao dedicada corrige motorista, odometro e/ou tipo de uma vistoria `FINALIZADA`. A correcao e apenas no OMNI (nao reenvia ao ERP nem a BRT). Motorista, tipo e odometro podem ser alterados em qualquer vistoria finalizada. Validacao de odometro e relativa a vistoria `FINALIZADA` imediatamente anterior (mesma logica de RN-VIS-004: `datavistoria` estritamente menor que a corrigida; nao ha teto pela vistoria seguinte — o gestor pode corrigir a sequencia em cadeia). Tipo segue RN-VIS-012.
 - **Condicoes de entrada:** Usuario com `vistoria_web:corrigir`; vistoria com `status = FINALIZADA`.
 - **Validacoes:**
   - Status diferente de `FINALIZADA` → bloquear
   - Motorista deve existir e estar ativo
   - Tipo deve ser `CORRETIVA`, `PREVENTIVA` ou `SINISTRO`
-  - Se o odometro informado for diferente do atual: a vistoria deve ser a ultima `FINALIZADA` do veiculo; caso contrario, bloquear alteracao do odometro
-  - Odometro novo deve ser `> 0`, `<= 9.999.999`, `>` odometro da vistoria anterior (quando existir) e diferenca em relacao ao anterior `<=` parametro `odometro_diff_max_km` (padrao 500 km)
-- **Acoes do sistema:** `PATCH /vistoria/:id/corrigir` com body `{ idmotorista, odometro, tipo }`; atualiza apenas esses campos; nao reenvia ERP/BRT
-- **Mensagens ao usuario:** Erros funcionais claros (status, ultima vistoria, odometro menor/igual ao anterior, motorista inativo)
+  - Odometro novo deve ser `> 0`, `<= 9.999.999`, `>` odometro da vistoria anterior relativa (quando existir) e diferenca em relacao ao anterior `<=` parametro `odometro_diff_max_km` (padrao 500 km). Nao valida contra a vistoria posterior.
+- **Acoes do sistema:** `PATCH /vistoria/:id/corrigir` com body `{ idmotorista, odometro, tipo }`; atualiza apenas esses campos; nao reenvia ERP/BRT. Consulta auxiliar `GET /vistoria/veiculo/:id/odometro-anterior?referenciaVistoriaId=` para hint/validacao no modal.
+- **Mensagens ao usuario:** Erros funcionais claros (status, odometro menor/igual ao anterior, diferenca acima do maximo, motorista inativo)
 - **Permissoes envolvidas:** `vistoria_web:corrigir` (grupo Vistoria Web; concessao manual em Perfis). A tela continua exigindo `vistoria_web:read` para listar
 - **Dados impactados:** `vistorias.idmotorista`, `vistorias.odometro`, `vistorias.tipo`
 - **Rastreabilidade:** Atualizacao via API autenticada (auditoria padrao se ativa para PATCH)
 - **Criterios de aceite:**
   - [x] Botao Corrigir Vistoria so aparece com a permissao e status Finalizada
   - [x] Modal com motorista (autocomplete ativos), odometro e tipo
-  - [x] Odometro editavel somente na ultima FINALIZADA do veiculo; nas demais, campo somente leitura
-  - [x] Validacao `>` anterior no frontend e backend
+  - [x] Odometro editavel em qualquer FINALIZADA do veiculo
+  - [x] Validacao `>` anterior relativa (e Δ ≤ max km) no frontend e backend; sem trava pela vistoria seguinte
   - [x] Sem reenvio automatico ao ERP/BRT ao corrigir tipo
-- **Origem da regra:** Requisicao de produto — correcao operacional de vistoria finalizada, 2026-09-24; tipo 2026-09-25
+- **Origem da regra:** Requisicao de produto — correcao operacional de vistoria finalizada, 2026-09-24; tipo 2026-09-25; liberacao de odometro em qualquer FINALIZADA (validacao so vs anterior), 2026-10-13
 - **Status:** Implementada
 
 ### RN-VIS-011 - Listar vistorias finalizadas no app com impressao PDF
@@ -705,6 +715,10 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-10-15: RN-VIS-006 / US4.5 — UI Manutencao: exibe ultimo status BRT no card; vermelho so Paralisada/Retido/erro; demais situacoes neutras; snapshot `status_brt_comentario` na irreg.
+- 2026-10-14: RN-VIS-006 / US4.5 — job `BrtOsPollService` (tick 1 min) so processa empresa com `brt_busca_info_ativo`; respeita intervalo e `ultimo_poll_em`; consulta `GET /registro/:numOs`; sync timeline/insumos; `Disponivel`→`CONCLUIDA`, `Cancelado`→`REGISTRADA`.
+- 2026-10-14: RN-VIS-006 / US4.5 — cadastro empresa: `brt_busca_info_ativo` + `brt_busca_info_intervalo_minutos` (1–1440, padrao 10) na aba Integração; poll so roda para empresas com busca ativa.
+- 2026-10-14: RN-VIS-006 / US4.5 — retorno integrado BRT (v2): poll `GET /v1/os/registro`; gatilho `Disponivel` → `CONCLUIDA` (Validacao); `Cancelado` → `REGISTRADA` (Tratamento + limpa vinculos/ERP); `Finalizada` nao move; timeline de historico BRT e base de insumos no nivel da OS; match tolerante de `situacao`.
 - 2026-10-09: RN-VIS-006 — BRT all-or-nothing apenas no escopo da empresa; modal permite Continuar só com elegíveis (split por empresa); OS fora do escopo permanecem no Tratamento.
 - 2026-10-09: RN-VIS-003 / RN-VIS-006 — `NAO_PROCEDE` volta ao Tratamento sem vinculo de empresa (historico preserva a passagem); fila Tratamento padrao `REGISTRADA`+`NAO_PROCEDE`; Validacao so `CONCLUIDA`; tela Gestao OS (`irregularidade_gestao_os:read`) consulta todos os status.
 - 2026-10-09: RN-VIS-006 — botao Imprimir PDF nas 3 fases (permissoes `:print` por tela; `POST /irregularidades/lote/relatorio-pdf`; quebra de pagina por veiculo; distinto da impressao RAW automatica).
@@ -713,6 +727,7 @@ Copie o bloco abaixo para cada regra nova.
 - 2026-10-08: RN-VIS-008 / RN-VIS-006 — ERP dispara no Enviar para manutencao (nao no finalizar); 1 pedido por veiculo; vinculo `erp_codigo_pedido` na irreg; pipeline ERP→BRT→transicao; sucesso parcial por veiculo; limpa `erp_*` no cancel BRT e reprovar→RETRABALHO; remove reenvio na tela Vistorias.
 - 2026-10-07: Numeracao de vistoria — `numero_vistoria` passa a `ano + sequencial` sem teto de 999 (ex.: apos `2026999` segue `20261000`); coluna `bigint`; sem remediação das duplicatas `2027000`.
 - 2026-10-02: RN-VIS-001 — reclassificar nao reinicia Etapa atual; relogio so muda em transicao de status entre filas.
+- 2026-10-13: RN-VIS-010 — odômetro editável em qualquer vistoria FINALIZADA; validação só vs anterior relativa (`GET .../odometro-anterior`); sem teto pela vistoria seguinte.
 - 2026-09-29: RN-VIS-006 — `comenta` BRT sem prefixo `[numeroIrregularidade]`; blocos separados por linha em branco.
 - 2026-09-29: RN-VIS-006 — Entrega 1: OS BRT agrupada por vistoria (`os_orig` = `numeroVistoria`, selecao completa obrigatoria, `comenta` multilinha, cancelamento em grupo); plano em `docs/PLANO_BRT_OS_AGRUPAMENTO_VISTORIA.md`.
 - 2026-09-25: App irregularidade — botão Adicionar foto oferece Câmera ou Galeria; mesma compressão (`quality 60`, máx. 1024px) nos dois caminhos.
