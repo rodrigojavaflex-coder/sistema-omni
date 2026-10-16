@@ -15,6 +15,30 @@ export const ERP_VISTORIA_MENSAGEM_FALLBACK =
   'Erro ao gravar Vistoria no OMNI';
 export const ERP_VISTORIA_API_KEY_MASK = '********';
 const ERP_VISTORIA_LOTE_PATH = '/api/v1/vistorias/lote';
+const ERP_VISTORIA_RESULTADO_PATH = '/api/v1/vistorias';
+
+export type ErpResultadoServico = {
+  descricao?: string;
+  sistema?: string;
+  codigo_sistema?: number;
+  funcionario?: string;
+};
+
+export type ErpResultadoConsulta = {
+  codigo_pedido: number | string;
+  concluida: boolean;
+  data_conclusao: string | null;
+  servicos_executados: ErpResultadoServico[];
+};
+
+export type ErpConsultarResultadoResultado =
+  | { ok: true; data: ErpResultadoConsulta }
+  | {
+      ok: false;
+      codigoErro: 'NAO_ENCONTRADO' | 'ERRO_API' | 'CONFIG' | 'REDE';
+      mensagem: string;
+      httpStatus?: number;
+    };
 
 interface ErpLoteItemPayload {
   veiculo: string;
@@ -72,6 +96,143 @@ export class ErpVistoriaIntegrationService {
   async isIntegracaoAtiva(): Promise<boolean> {
     const config = await this.carregarConfig();
     return this.configPronta(config);
+  }
+
+  /** Config ERP completa (credenciais), independente da flag de envio. */
+  async carregarConfigPublica(): Promise<ErpVistoriaConfig | null> {
+    return this.carregarConfig();
+  }
+
+  async marcarUltimoPollBuscaInfo(quando: Date): Promise<void> {
+    const row = await this.configuracaoRepository.findOne({ where: {} });
+    if (!row?.erpVistoriaConfig) {
+      return;
+    }
+    row.erpVistoriaConfig = {
+      ...row.erpVistoriaConfig,
+      buscaInfoUltimoPollEm: quando.toISOString(),
+    };
+    await this.configuracaoRepository.save(row);
+  }
+
+  /**
+   * Consulta conclusão: GET /api/v1/vistorias/{codigo_pedido}/resultado
+   */
+  async consultarResultado(
+    codigoPedido: string,
+  ): Promise<ErpConsultarResultadoResultado> {
+    const config = await this.carregarConfig();
+    if (!this.configCredenciaisProntas(config)) {
+      return {
+        ok: false,
+        codigoErro: 'CONFIG',
+        mensagem: 'Configure URL, tenant e API Key da integração ERP.',
+      };
+    }
+    const codigo = codigoPedido.trim();
+    if (!codigo) {
+      return {
+        ok: false,
+        codigoErro: 'CONFIG',
+        mensagem: 'Código do pedido ERP inválido',
+      };
+    }
+    const url = `${config.url.replace(/\/+$/, '')}${ERP_VISTORIA_RESULTADO_PATH}/${encodeURIComponent(codigo)}/resultado`;
+    const timeoutMs =
+      config.timeoutMs && config.timeoutMs > 0 ? config.timeoutMs : 30_000;
+
+    let response: { status: number; json: () => Promise<unknown> };
+    try {
+      response = (await undiciFetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'X-Tenant': config.tenant,
+          'X-API-Key': config.apiKey ?? '',
+        },
+        signal: AbortSignal.timeout(timeoutMs),
+      })) as unknown as { status: number; json: () => Promise<unknown> };
+    } catch (err) {
+      const detalhe = err instanceof Error ? err.message : String(err);
+      this.logger.warn(
+        `ERP resultado falha de comunicação codigo=${codigo} | ${detalhe}`,
+      );
+      return {
+        ok: false,
+        codigoErro: 'REDE',
+        mensagem: 'Falha de comunicação ao consultar resultado no ERP',
+      };
+    }
+
+    let body: Record<string, unknown> = {};
+    try {
+      body = (await response.json()) as Record<string, unknown>;
+    } catch {
+      body = {};
+    }
+
+    if (response.status === 404) {
+      const detail =
+        typeof body.detail === 'string' ? body.detail.trim() : '';
+      return {
+        ok: false,
+        codigoErro: 'NAO_ENCONTRADO',
+        mensagem: detail || `Vistoria não encontrada no ERP (${codigo})`,
+        httpStatus: 404,
+      };
+    }
+
+    if (response.status < 200 || response.status >= 300) {
+      const detail =
+        typeof body.detail === 'string'
+          ? body.detail.trim()
+          : typeof (body.detail as { mensagem?: string } | undefined)
+                ?.mensagem === 'string'
+            ? (body.detail as { mensagem: string }).mensagem.trim()
+            : '';
+      return {
+        ok: false,
+        codigoErro: 'ERRO_API',
+        mensagem:
+          detail || `Erro ao consultar resultado no ERP (HTTP ${response.status})`,
+        httpStatus: response.status,
+      };
+    }
+
+    const concluida = body.concluida === true;
+    const dataConclusao =
+      typeof body.data_conclusao === 'string' && body.data_conclusao.trim()
+        ? body.data_conclusao.trim()
+        : null;
+    const servicosRaw = Array.isArray(body.servicos_executados)
+      ? body.servicos_executados
+      : [];
+    const servicos_executados: ErpResultadoServico[] = servicosRaw.map(
+      (item) => {
+        const row = (item ?? {}) as Record<string, unknown>;
+        return {
+          descricao:
+            typeof row.descricao === 'string' ? row.descricao : undefined,
+          sistema: typeof row.sistema === 'string' ? row.sistema : undefined,
+          codigo_sistema:
+            typeof row.codigo_sistema === 'number'
+              ? row.codigo_sistema
+              : undefined,
+          funcionario:
+            typeof row.funcionario === 'string' ? row.funcionario : undefined,
+        };
+      },
+    );
+
+    return {
+      ok: true,
+      data: {
+        codigo_pedido: (body.codigo_pedido as number | string) ?? codigo,
+        concluida,
+        data_conclusao: concluida ? dataConclusao : null,
+        servicos_executados: concluida ? servicos_executados : [],
+      },
+    };
   }
 
   /**
@@ -392,17 +553,18 @@ export class ErpVistoriaIntegrationService {
   private configPronta(
     config: ErpVistoriaConfig | null,
   ): config is ErpVistoriaConfig {
+    return !!config?.ativo && this.configCredenciaisProntas(config);
+  }
+
+  private configCredenciaisProntas(
+    config: ErpVistoriaConfig | null,
+  ): config is ErpVistoriaConfig {
     if (!config) {
       return false;
     }
     const apiKey = (config.apiKey ?? '').trim();
     const apiKeyValida = !!apiKey && !/^\*+$/.test(apiKey);
-    return !!(
-      config.ativo &&
-      config.url?.trim() &&
-      config.tenant?.trim() &&
-      apiKeyValida
-    );
+    return !!(config.url?.trim() && config.tenant?.trim() && apiKeyValida);
   }
 
   private async carregarConfig(): Promise<ErpVistoriaConfig | null> {

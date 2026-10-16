@@ -29,6 +29,11 @@ export interface EmailEnvioConfig {
   assuntoPadrao?: string;
 }
 
+/** Modo ao detectar conclusão ERP (`concluida: true` no GET resultado). */
+export type ErpBuscaInfoModoConclusao =
+  | 'SOMENTE_CONCLUIR'
+  | 'CONCLUIR_E_VALIDAR';
+
 export interface ErpVistoriaConfig {
   ativo: boolean;
   url: string;
@@ -39,6 +44,22 @@ export interface ErpVistoriaConfig {
   tipoPedido: number;
   mensagemErroPadrao?: string;
   timeoutMs?: number;
+  /** Consulta periódica GET /vistorias/{codigo}/resultado (retorno integrado). */
+  buscaInfoAtivo?: boolean;
+  /** Intervalo em minutos (1–1440). Padrão 10. */
+  buscaInfoIntervaloMinutos?: number;
+  /**
+   * Empresas de manutenção elegíveis à busca.
+   * Só devem ser `integracaoManutencao = NENHUMA` (evita conflito com poll BRT).
+   */
+  buscaInfoEmpresaIds?: string[];
+  /**
+   * SOMENTE_CONCLUIR: EM_MANUTENCAO → CONCLUIDA
+   * CONCLUIR_E_VALIDAR: EM_MANUTENCAO → CONCLUIDA → VALIDADA
+   */
+  buscaInfoModoConclusao?: ErpBuscaInfoModoConclusao;
+  /** Último tick do job de busca (ISO). */
+  buscaInfoUltimoPollEm?: string | null;
 }
 
 /** Impressão automática do PDF após envio à manutenção (RAW/JetDirect). */

@@ -3,17 +3,24 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ConfiguracaoService } from '../../services/configuracao.service';
-import { Configuracao, MobileAppVersionCatalogItem } from '../../models/configuracao.model';
+import {
+  Configuracao,
+  ErpBuscaInfoModoConclusao,
+  MobileAppVersionCatalogItem,
+} from '../../models/configuracao.model';
+import { EmpresaTerceiraService } from '../../services/empresa-terceira.service';
+import { MultiSelectComponent } from '../../components/shared/multi-select/multi-select.component';
 
 @Component({
   selector: 'app-configuracao',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MultiSelectComponent],
   templateUrl: './configuracao.component.html',
   styleUrls: ['./configuracao.component.css']
 })
 export class ConfiguracaoComponent implements OnInit {
   private configuracaoService = inject(ConfiguracaoService);
+  private empresaTerceiraService = inject(EmpresaTerceiraService);
   private fb = inject(FormBuilder);
 
   configuracao: Configuracao | null = null;
@@ -30,6 +37,9 @@ export class ConfiguracaoComponent implements OnInit {
   removingMobileVersion: string | null = null;
   readonly odometroDiffMaxKmPadrao = 500;
   mobileVersoesCatalogo: MobileAppVersionCatalogItem[] = [];
+  /** Empresas manutenção com integração NENHUMA (elegíveis à busca ERP). */
+  erpBuscaEmpresaOptions: string[] = [];
+  private erpBuscaEmpresaLabelById = new Map<string, string>();
   private readonly semverPattern = /^\d+\.\d+\.\d+$/;
 
   constructor() {
@@ -60,6 +70,12 @@ export class ConfiguracaoComponent implements OnInit {
       erpTipoPedido: [0],
       erpMensagemErroPadrao: [''],
       erpTimeoutMs: [30000],
+      erpBuscaInfoAtivo: [false],
+      erpBuscaInfoIntervaloMinutos: [10, [Validators.min(1), Validators.max(1440)]],
+      erpBuscaInfoEmpresaIds: [[] as string[]],
+      erpBuscaInfoModoConclusao: [
+        'SOMENTE_CONCLUIR' as ErpBuscaInfoModoConclusao,
+      ],
       impressaoAtivo: [false],
       impressoraIp: [''],
       impressoraPorta: [9100],
@@ -67,6 +83,18 @@ export class ConfiguracaoComponent implements OnInit {
       odometroDiffMaxKm: [500],
       mobileVersaoMinima: [''],
     });
+  }
+
+  readonly labelEmpresaBuscaErp = (id: string): string =>
+    this.erpBuscaEmpresaLabelById.get(id) ?? id;
+
+  get erpBuscaInfoIntervaloInvalido(): boolean {
+    const ctrl = this.form.get('erpBuscaInfoIntervaloMinutos');
+    return (
+      !!this.form.value.erpBuscaInfoAtivo &&
+      !!ctrl &&
+      (ctrl.invalid || ctrl.value == null || ctrl.value === '')
+    );
   }
 
   /** Opções do combo: catálogo + valor salvo se ainda não estiver na lista. */
@@ -126,6 +154,7 @@ export class ConfiguracaoComponent implements OnInit {
 
   ngOnInit() {
     this.loading = true;
+    this.carregarEmpresasBuscaErp();
     this.configuracaoService.getConfiguracao().subscribe({
       next: (config) => {
         this.configuracao = config;
@@ -157,6 +186,17 @@ export class ConfiguracaoComponent implements OnInit {
           erpTipoPedido: config.erpVistoriaConfig?.tipoPedido ?? 0,
           erpMensagemErroPadrao: config.erpVistoriaConfig?.mensagemErroPadrao ?? '',
           erpTimeoutMs: config.erpVistoriaConfig?.timeoutMs ?? 30000,
+          erpBuscaInfoAtivo: config.erpVistoriaConfig?.buscaInfoAtivo ?? false,
+          erpBuscaInfoIntervaloMinutos:
+            config.erpVistoriaConfig?.buscaInfoIntervaloMinutos ?? 10,
+          erpBuscaInfoEmpresaIds: [
+            ...(config.erpVistoriaConfig?.buscaInfoEmpresaIds ?? []),
+          ],
+          erpBuscaInfoModoConclusao:
+            config.erpVistoriaConfig?.buscaInfoModoConclusao ===
+            'CONCLUIR_E_VALIDAR'
+              ? 'CONCLUIR_E_VALIDAR'
+              : 'SOMENTE_CONCLUIR',
           impressaoAtivo: config.impressaoManutencaoConfig?.ativo ?? false,
           impressoraIp: config.impressaoManutencaoConfig?.impressoraIp ?? '',
           impressoraPorta: config.impressaoManutencaoConfig?.impressoraPorta ?? 9100,
@@ -173,6 +213,32 @@ export class ConfiguracaoComponent implements OnInit {
       error: () => {
         this.loading = false;
       }
+    });
+  }
+
+  private carregarEmpresasBuscaErp(): void {
+    this.empresaTerceiraService.getAll({ somenteManutencao: true }).subscribe({
+      next: (empresas) => {
+        const elegiveis = empresas.filter(
+          (e) => (e.integracaoManutencao ?? 'NENHUMA') === 'NENHUMA',
+        );
+        this.erpBuscaEmpresaLabelById = new Map(
+          elegiveis.map((e) => [e.id, e.descricao || e.id]),
+        );
+        this.erpBuscaEmpresaOptions = elegiveis.map((e) => e.id);
+        const selecionadas: string[] =
+          this.form.get('erpBuscaInfoEmpresaIds')?.value ?? [];
+        if (selecionadas.length) {
+          const validas = selecionadas.filter((id) =>
+            this.erpBuscaEmpresaLabelById.has(id),
+          );
+          this.form.patchValue({ erpBuscaInfoEmpresaIds: validas });
+        }
+      },
+      error: () => {
+        this.erpBuscaEmpresaOptions = [];
+        this.erpBuscaEmpresaLabelById = new Map();
+      },
     });
   }
 
@@ -195,14 +261,30 @@ export class ConfiguracaoComponent implements OnInit {
       return;
     }
     const erpAtivo = !!this.form.value.erpAtivo;
+    const erpBuscaInfoAtivo = !!this.form.value.erpBuscaInfoAtivo;
     const erpUrl = (this.form.value.erpUrl ?? '').trim();
     const erpTenant = (this.form.value.erpTenant ?? '').trim();
     const erpApiKey = this.chaveErpInformada(this.form.value.erpApiKey);
-    if (erpAtivo && (!erpUrl || !erpTenant || (!erpApiKey && !this.erpApiKeyConfigured))) {
+    if (
+      (erpAtivo || erpBuscaInfoAtivo) &&
+      (!erpUrl || !erpTenant || (!erpApiKey && !this.erpApiKeyConfigured))
+    ) {
       this.error =
-        'Com o envio ao ERP ativo, preencha URL, tenant e API Key.';
+        'Com envio ou busca ERP ativos, preencha URL, tenant e API Key.';
       return;
     }
+    if (erpBuscaInfoAtivo && this.erpBuscaInfoIntervaloInvalido) {
+      this.error =
+        'Informe um intervalo da busca ERP válido entre 1 e 1440 minutos.';
+      return;
+    }
+    const erpBuscaEmpresaIds = (
+      (this.form.value.erpBuscaInfoEmpresaIds as string[] | null) ?? []
+    ).filter((id) => this.erpBuscaEmpresaLabelById.has(id));
+    const erpBuscaModo: ErpBuscaInfoModoConclusao =
+      this.form.value.erpBuscaInfoModoConclusao === 'CONCLUIR_E_VALIDAR'
+        ? 'CONCLUIR_E_VALIDAR'
+        : 'SOMENTE_CONCLUIR';
     const impressaoAtivo = !!this.form.value.impressaoAtivo;
     const impressoraIp = (this.form.value.impressoraIp ?? '').trim();
     const impressoraPorta = Number(this.form.value.impressoraPorta ?? 9100);
@@ -262,6 +344,12 @@ export class ConfiguracaoComponent implements OnInit {
         mensagemErroPadrao:
           (this.form.value.erpMensagemErroPadrao ?? '').trim() || undefined,
         timeoutMs: Number(this.form.value.erpTimeoutMs ?? 30000),
+        buscaInfoAtivo: erpBuscaInfoAtivo,
+        buscaInfoIntervaloMinutos: Number(
+          this.form.value.erpBuscaInfoIntervaloMinutos ?? 10,
+        ),
+        buscaInfoEmpresaIds: erpBuscaEmpresaIds,
+        buscaInfoModoConclusao: erpBuscaModo,
       }),
     );
     formData.append(

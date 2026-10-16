@@ -179,8 +179,8 @@
     <div class="audit-section" *ngIf="activeTab === 'erp'">
       <h3 class="section-title">Integração ERP de vistoria</h3>
       <p class="section-description">
-        Ao finalizar uma vistoria com irregularidade, o OMNI envia a capa ao ERP de forma assíncrona.
-        Desative para não enfileirar nem permitir reenvio na tela Vistorias.
+        No envio para manutenção, o OMNI grava o pedido no ERP (quando o envio está ativo).
+        A busca de informações consulta a conclusão do pedido e atualiza a fila de Manutenção.
       </p>
 
       <div class="form-group checkbox-group">
@@ -282,6 +282,86 @@
             Usada se a API do ERP não devolver texto de erro. Sem preenchimento, vale
             “Erro ao gravar Vistoria no OMNI”.
           </small>
+        </div>
+      </div>
+
+      <div class="integracao-subblock" aria-labelledby="erp-busca-info-title">
+        <h4 id="erp-busca-info-title" class="subsection-title">Busca de informações</h4>
+        <p class="section-description">
+          Consulta periódica de conclusão do pedido no ERP
+          (<code>GET /api/v1/vistorias/&#123;codigo_pedido&#125;/resultado</code>.
+          Com a busca desativada, o job e o botão da Manutenção não disparam.
+          Só empresas com tipo de integração <strong>Nenhuma</strong> entram na busca
+          (evita conflito com o poll BRT).
+        </p>
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              formControlName="erpBuscaInfoAtivo"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">Ativar busca de informações</span>
+          </label>
+        </div>
+        <div class="audit-grid">
+          <div class="form-group">
+            <label class="form-label" for="erpBuscaInfoIntervaloMinutos">
+              Intervalo da busca (minutos) *
+            </label>
+            <input
+              id="erpBuscaInfoIntervaloMinutos"
+              type="number"
+              class="form-input"
+              formControlName="erpBuscaInfoIntervaloMinutos"
+              min="1"
+              max="1440"
+              step="1"
+              [attr.aria-invalid]="erpBuscaInfoIntervaloInvalido"
+            />
+            <small class="field-description field-description--flush">
+              De 1 a 1440 minutos (24h). Sugestão: 10 minutos.
+            </small>
+            <small
+              class="field-error"
+              *ngIf="erpBuscaInfoIntervaloInvalido && form.get('erpBuscaInfoIntervaloMinutos')?.touched"
+            >
+              Informe um intervalo válido entre 1 e 1440 minutos.
+            </small>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="erpBuscaInfoModoConclusao">
+              Ao concluir no ERP
+            </label>
+            <select
+              id="erpBuscaInfoModoConclusao"
+              class="form-input"
+              formControlName="erpBuscaInfoModoConclusao"
+            >
+              <option value="SOMENTE_CONCLUIR">
+                Somente concluir (Manutenção → Validação)
+              </option>
+              <option value="CONCLUIR_E_VALIDAR">
+                Concluir e validar (Manutenção → Validação → Validada)
+              </option>
+            </select>
+            <small class="field-description field-description--flush">
+              Dispara quando a API retornar <code>concluida: true</code> com data de conclusão.
+            </small>
+          </div>
+          <div class="form-group erp-mensagem-group">
+            <label class="form-label">Empresas na busca</label>
+            <app-multi-select
+              formControlName="erpBuscaInfoEmpresaIds"
+              [options]="erpBuscaEmpresaOptions"
+              [optionLabelFn]="labelEmpresaBuscaErp"
+              placeholder="Selecione empresas (integração Nenhuma)"
+            ></app-multi-select>
+            <small class="field-description field-description--flush">
+              Lista apenas empresas de manutenção com tipo de integração Nenhuma.
+              Sem empresas marcadas, a busca não processa pedidos.
+            </small>
+          </div>
         </div>
       </div>
     </div>

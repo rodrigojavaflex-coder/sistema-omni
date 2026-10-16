@@ -39,6 +39,7 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 | `EM_MANUTENCAO` | Concluir manutencao (sem controle API) | `CONCLUIDA` | Evidencia minima quando obrigatoria | `422` pendencia |
 | `EM_MANUTENCAO` | Concluir manutencao (controle API) | `CONCLUIDA` | Conclusao manual permitida; nao chama BRT; vinculos OS/ERP permanecem para rastreio | `400` status/empresa |
 | `EM_MANUTENCAO` | Retorno BRT `Disponivel` (poll v2) | `CONCLUIDA` | OS ativa no grupo; match tolerante de `situacao`; 1× por ciclo | Idempotente se ja `CONCLUIDA` |
+| `EM_MANUTENCAO` | Retorno ERP `concluida: true` (busca) | `CONCLUIDA` (+ `VALIDADA` se modo) | Empresa `NENHUMA` na allowlist; busca ativa; `erp_codigo_pedido` | Idempotente; off = zero GET |
 | `EM_MANUTENCAO` | Marcar nao procede (sem controle API) | `NAO_PROCEDE` | Justificativa obrigatoria | `400` justificativa obrigatoria |
 | `EM_MANUTENCAO` | Marcar nao procede (controle API) | — | **Bloqueado** (retorno integrado nao mapeia nao procede) | `400` bloqueio manual |
 | `EM_MANUTENCAO` | Cancelar OS BRT (controle API) | `REGISTRADA` | POST cancelamento BRT OK; permissao `cancel_os_brt`; OS ativa; **grupo** da vistoria | Grupo permanece `EM_MANUTENCAO` + erro BRT |
@@ -423,6 +424,40 @@ Pipeline: ERP (flag global) → BRT (empresa API) → transicao. Atomico **por v
 - E-mail automatico para erros de placa (item separado do v2 original).
 
 **Referencia:** RN-VIS-006; guia `api-ordens-servico-brt-3`.
+
+---
+
+### US4.6 - Retorno integrado ERP (busca de informacoes)
+
+**Como** sistema (job) e operador (Manutencao)  
+**Quero** consultar conclusao do pedido ERP e atualizar o status da irregularidade  
+**Para** fechar o ciclo de manutencao em empresas sem API BRT (`integracaoManutencao = NENHUMA`)
+
+**Contrato API ERP** (`documentacao_api_vistoria_consulta_resultado_atualizada.pdf` v2.0)
+- `GET /api/v1/vistorias/{codigo_pedido}/resultado`
+- Auth: `X-Tenant` + `X-API-Key` (mesma config de envio)
+- Gatilho: `concluida: true` (`FLAG_FICHA_CONCLUIDA_PED = 1`) + `data_conclusao`
+- Pendente: `concluida: false`; inexistente: HTTP 404
+
+**Configuracao (aba Integração ERP)**
+- `buscaInfoAtivo`, `buscaInfoIntervaloMinutos` (1–1440), `buscaInfoEmpresaIds` (so `NENHUMA`), `buscaInfoModoConclusao` (`SOMENTE_CONCLUIR` | `CONCLUIR_E_VALIDAR`)
+- Busca **off** → job e botao **nao disparam**
+
+**Gatilhos OMNI (grupo = mesmo `erp_codigo_pedido`)**
+
+| Resultado ERP | Modo | Status OMNI |
+| --- | --- | --- |
+| `concluida: true` | SOMENTE_CONCLUIR | `EM_MANUTENCAO` → `CONCLUIDA` |
+| `concluida: true` | CONCLUIR_E_VALIDAR | `EM_MANUTENCAO` → `CONCLUIDA` → `VALIDADA` |
+| `concluida: false` / 404 / 500 | — | permanece `EM_MANUTENCAO` |
+
+**Criterios de aceite**
+- [x] Busca off → zero GET
+- [x] Multi-select so lista empresas `NENHUMA`
+- [x] Job + botao «Buscar status ERP» na Manutencao
+- [x] Modos A/B configuraveis; idempotencia no re-poll
+
+**Referencia:** RN-VIS-008
 
 ---
 

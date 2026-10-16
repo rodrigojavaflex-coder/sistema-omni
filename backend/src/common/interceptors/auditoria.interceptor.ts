@@ -692,7 +692,11 @@ export class AuditoriaInterceptor implements NestInterceptor {
       const currentData = await repository.findOne({
         where: { id: entityId }
       });
-      this.logger.debug(`currentData obtido: ${JSON.stringify(currentData)}`);
+      if (currentData) {
+        this.logger.debug(
+          `currentData obtido: entity=${entityType} id=${entityId}`,
+        );
+      }
 
       if (!currentData) {
         this.logger.warn(`Entidade ${entityType} com ID ${entityId} não encontrada para capturar dados anteriores`);
@@ -743,7 +747,11 @@ export class AuditoriaInterceptor implements NestInterceptor {
 
       // 3) Buscar registro ANTES da operação
       const before = await repository.findOne({ where: { id: entityId } });
-      this.logger.debug(`currentData obtido: ${JSON.stringify(before)}`);
+      if (before) {
+        this.logger.debug(
+          `currentData obtido: entity=${entityType} id=${entityId} keys=${Object.keys(before).length}`,
+        );
+      }
 
       if (!before) {
         this.logger.warn(
@@ -771,20 +779,71 @@ export class AuditoriaInterceptor implements NestInterceptor {
   }
 
   /**
-   * Remove dados sensíveis
+   * Remove dados sensíveis e binários (ex.: logoRelatorioBytes) de forma recursiva.
+   * Evita dump de Buffer/PNG e vazamento de senha/API Key em auditoria e logs.
    */
-  private sanitizeData(data: any): any {
-    if (!data) return data;
+  private sanitizeData(data: unknown): unknown {
+    if (data == null) {
+      return data;
+    }
 
-    const sanitized = { ...data };
+    if (Buffer.isBuffer(data)) {
+      return `[BINARY:${data.length}b]`;
+    }
 
-    // Remover campos sensíveis
-    const sensitiveFields = ['password', 'senha', 'token', 'secret'];
-    sensitiveFields.forEach((field) => {
-      if (sanitized[field]) {
-        sanitized[field] = '[REDACTED]';
+    if (Array.isArray(data)) {
+      return data.map((item) => this.sanitizeData(item));
+    }
+
+    if (typeof data !== 'object') {
+      return data;
+    }
+
+    // TypeORM/JSON às vezes serializa Buffer como { type: 'Buffer', data: number[] }
+    const record = data as Record<string, unknown>;
+    if (
+      record.type === 'Buffer' &&
+      Array.isArray(record.data) &&
+      record.data.every((n) => typeof n === 'number')
+    ) {
+      return `[BINARY:${record.data.length}b]`;
+    }
+
+    const sensitiveKeys = new Set([
+      'password',
+      'senha',
+      'token',
+      'secret',
+      'apikey',
+      'api_key',
+    ]);
+    const binaryKeys = new Set([
+      'logorelatoriobytes',
+      'logo_relatorio_bytes',
+      'buffer',
+      'file',
+      'arquivo',
+    ]);
+
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(record)) {
+      const keyLower = key.toLowerCase();
+      if (binaryKeys.has(keyLower) || keyLower.endsWith('bytes')) {
+        if (Buffer.isBuffer(value)) {
+          sanitized[key] = `[BINARY:${value.length}b]`;
+        } else if (value != null) {
+          sanitized[key] = '[BINARY]';
+        } else {
+          sanitized[key] = value;
+        }
+        continue;
       }
-    });
+      if (sensitiveKeys.has(keyLower)) {
+        sanitized[key] = value ? '[REDACTED]' : value;
+        continue;
+      }
+      sanitized[key] = this.sanitizeData(value);
+    }
 
     return sanitized;
   }

@@ -39,6 +39,7 @@ import { IrregularidadeOsExterna } from './entities/irregularidade-os-externa.en
 import { IrregularidadeMarcacao } from './entities/irregularidade-marcacao.entity';
 import { BrtOsIntegrationService } from './brt-os-integration.service';
 import { BrtOsPollService } from './brt-os-poll.service';
+import { ErpOsPollService } from './erp-os-poll.service';
 import { ErpVistoriaIntegrationService } from './erp-vistoria-integration.service';
 import {
   IrregularidadeManutencaoEnvioService,
@@ -95,6 +96,7 @@ import { OsExternaInsumo } from './entities/os-externa-insumo.entity';
     IrregularidadeService,
     BrtOsIntegrationService,
     BrtOsPollService,
+    ErpOsPollService,
     IrregularidadeManutencaoEnvioService,
     ErpVistoriaIntegrationService,
     ImpressaoRawService,

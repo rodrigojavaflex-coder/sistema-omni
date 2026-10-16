@@ -11,6 +11,11 @@ export interface EmailEnvioConfig {
   assuntoPadrao?: string;
 }
 
+/** Modo ao detectar conclusão ERP (`concluida: true`). */
+export type ErpBuscaInfoModoConclusao =
+  | 'SOMENTE_CONCLUIR'
+  | 'CONCLUIR_E_VALIDAR';
+
 export interface ErpVistoriaConfig {
   ativo: boolean;
   url: string;
@@ -21,6 +26,18 @@ export interface ErpVistoriaConfig {
   tipoPedido: number;
   mensagemErroPadrao?: string;
   timeoutMs?: number;
+  /** Consulta periódica GET /vistorias/{codigo}/resultado. */
+  buscaInfoAtivo?: boolean;
+  /** Intervalo em minutos (1–1440). Padrão 10. */
+  buscaInfoIntervaloMinutos?: number;
+  /** Empresas NENHUMA elegíveis à busca. */
+  buscaInfoEmpresaIds?: string[];
+  /**
+   * SOMENTE_CONCLUIR: Manutenção → Validação
+   * CONCLUIR_E_VALIDAR: Manutenção → Validação → Validada
+   */
+  buscaInfoModoConclusao?: ErpBuscaInfoModoConclusao;
+  buscaInfoUltimoPollEm?: string | null;
 }
 
 export interface ImpressaoManutencaoConfig {

@@ -31,11 +31,11 @@ export interface BrtInsumoItem {
   sincronizadoEm: string;
 }
 
-export interface BrtBuscaStatusLoteResultado {
+export interface ErpBuscaStatusLoteResultado {
   consultadas: number;
   concluidas: number;
-  canceladas: number;
-  falhas: Array<{ numOs: number; mensagem: string }>;
+  validadas: number;
+  falhas: Array<{ codigoPedido: string; mensagem: string }>;
   mensagem: string;
 }
 
@@ -170,9 +170,11 @@ export class IrregularidadeService {
     return this.http.get<BrtInsumoItem[]>(`${this.apiUrl}/${id}/insumos-brt`);
   }
 
-  buscarStatusBrtLote(idsIrregularidades: string[]): Observable<BrtBuscaStatusLoteResultado> {
-    return this.http.post<BrtBuscaStatusLoteResultado>(
-      `${this.apiUrl}/lote/buscar-status-brt`,
+  buscarStatusErpLote(
+    idsIrregularidades: string[],
+  ): Observable<ErpBuscaStatusLoteResultado> {
+    return this.http.post<ErpBuscaStatusLoteResultado>(
+      `${this.apiUrl}/lote/buscar-status-erp`,
       { idsIrregularidades },
     );
   }

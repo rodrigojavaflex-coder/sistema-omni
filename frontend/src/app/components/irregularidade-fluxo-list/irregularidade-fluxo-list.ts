@@ -165,7 +165,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   detalheInsumosBrt: BrtInsumoItem[] = [];
   detalheInsumosLoading = false;
   detalheInsumosError = '';
-  isBuscandoStatusBrt = false;
+  isBuscandoStatusErp = false;
   modalAcao: ModalAcao | null = null;
   selectedItemForAction: IrregularidadeFluxoItem | null = null;
   actionTargetIds: string[] = [];
@@ -1938,6 +1938,17 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     );
   }
 
+  /** Seleção válida para busca ERP: todas com pedido ERP (trilha sem BRT). */
+  get manutencaoBuscaErpSelecionada(): boolean {
+    const selected = this.items.filter((item) => this.selectedIds.has(item.id));
+    if (!selected.length) {
+      return false;
+    }
+    return selected.every(
+      (item) => !!item.erpCodigoPedido?.trim() && !item.controleIntegracaoApi,
+    );
+  }
+
   formatOrdemServico(item: IrregularidadeFluxoItem): string {
     return item.numeroIrregularidade != null
       ? String(item.numeroIrregularidade)
@@ -2244,32 +2255,33 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     });
   }
 
-  buscarStatusBrtSelecionadas(): void {
-    if (!this.manutencaoCancelOsBrtSelecionada || this.isBuscandoStatusBrt) {
+  buscarStatusErpSelecionadas(): void {
+    if (!this.manutencaoBuscaErpSelecionada || this.isBuscandoStatusErp) {
       return;
     }
     const ids = this.getSelectedIds();
-    this.isBuscandoStatusBrt = true;
+    this.isBuscandoStatusErp = true;
     this.error = '';
     this.info = '';
     this.irregularidadeService
-      .buscarStatusBrtLote(ids)
-      .pipe(finalize(() => (this.isBuscandoStatusBrt = false)))
+      .buscarStatusErpLote(ids)
+      .pipe(finalize(() => (this.isBuscandoStatusErp = false)))
       .subscribe({
         next: (res) => {
           this.selectedIds.clear();
           const detalhesFalha =
             res.falhas?.length > 0
               ? res.falhas
-                  .map((f) => `OS ${f.numOs}: ${f.mensagem}`)
+                  .map((f) => `Pedido ${f.codigoPedido}: ${f.mensagem}`)
                   .join(' | ')
               : '';
           const aviso = [res.mensagem, detalhesFalha].filter(Boolean).join(' — ');
-          this.loadItems(aviso || 'Busca BRT concluída.');
+          this.loadItems(aviso || 'Busca ERP concluída.');
         },
         error: (err) => {
           this.error =
-            err?.error?.message || 'Erro ao buscar status das OS na BRT.';
+            err?.error?.message ||
+            'Erro ao buscar status de conclusão no ERP.';
         },
       });
   }
@@ -2592,6 +2604,10 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         return 'Concluir manutenção';
       case 'concluir_manutencao_integracao':
         return 'Concluir manutenção (retorno BRT)';
+      case 'concluir_manutencao_integracao_erp':
+        return 'Concluir manutenção (retorno ERP)';
+      case 'validar_final_integracao_erp':
+        return 'Validar final (retorno ERP)';
       case 'cancelar_retorno_brt':
         return 'Cancelamento retornado pela BRT';
       case 'status_brt':

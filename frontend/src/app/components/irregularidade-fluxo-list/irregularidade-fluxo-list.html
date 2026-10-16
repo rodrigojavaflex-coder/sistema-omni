@@ -189,12 +189,12 @@
           class="btn btn-secondary"
           type="button"
           *ngIf="modo === 'manutencao' && canManutencaoFinish"
-          [disabled]="!manutencaoCancelOsBrtSelecionada || isBuscandoStatusBrt"
-          (click)="buscarStatusBrtSelecionadas()"
-          title="Consulta manual de status/insumos na BRT (teste)"
+          [disabled]="!manutencaoBuscaErpSelecionada || isBuscandoStatusErp"
+          (click)="buscarStatusErpSelecionadas()"
+          title="Consulta manual de conclusão no ERP (exige busca ativa na Configuração)"
         >
-          <span *ngIf="isBuscandoStatusBrt" class="spinner"></span>
-          {{ isBuscandoStatusBrt ? 'Buscando BRT…' : 'Buscar status BRT' }}
+          <span *ngIf="isBuscandoStatusErp" class="spinner"></span>
+          {{ isBuscandoStatusErp ? 'Buscando ERP…' : 'Buscar status ERP' }}
         </button>
         <button
           class="btn btn-primary"

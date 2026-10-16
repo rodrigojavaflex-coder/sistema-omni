@@ -474,22 +474,25 @@ Copie o bloco abaixo para cada regra nova.
 
 ### RN-VIS-008 - Integracao ERP no envio para manutencao (por veiculo / irregularidades)
 - **Modulo:** Vistoria
-- **Fluxo:** Tratamento → Enviar para manutencao (apos flag ERP ativa); **nao** dispara no finalizar
+- **Fluxo:** Tratamento → Enviar para manutencao (apos flag ERP ativa); **nao** dispara no finalizar; retorno de conclusao via busca (job + Manutencao)
 - **Descricao:** Com «Habilitar envio ao ERP» ativo em Configuracao do Sistema (URL, tenant, API Key), ao enviar irregularidades para manutencao o OMNI monta `POST /api/v1/vistorias/lote` com **1 item por veiculo**, `sintomas` apenas das irregularidades **selecionadas** (classificacao no momento do envio). Capa (motorista/odometro/data/condicao) usa a vistoria **mais recente** do grupo do veiculo. O legado devolve `pedido.codigo_pedido`, gravado em `irregularidades.erp_codigo_pedido` (mesmo codigo em todas as irreg do grupo). Sucesso/falha **por veiculo**. Reenvio na tela Vistorias **removido**; reprocesso ocorre pelo proprio Enviar para manutencao (idempotente). Campos `vistorias.erp_*` permanecem apenas como historico legado.
-- **Condicoes de entrada:** Clique em Enviar para manutencao; flag `erp_vistoria_config.ativo`; config completa; irregularidades em `REGISTRADA`/`RETRABALHO_GARANTIA`.
-- **Validacoes:** Flag off → nao chama ERP e segue BRT/legado (RN-VIS-006). Flag on com config incompleta → erro e nao avanca. Ja possui `erp_codigo_pedido` no grupo → nao POST de novo. Campo `veiculo` do legado: 2 primeiros caracteres da descricao (≥12 → prefixo `1:`; <12 → prefixo `5:`); invalido → falha do veiculo. `condicao`: mobile = `1`, SOS = `5`, SINISTRO = `2` (precedencia); PREVENTIVA = mesmo codigo de CORRETIVA. Sintomas: `AREA-COMPONENTE-SINTOMA - (observacao)` (RN-VIS-002). Local/tipo pedido: combos da aba Configuracao.
-- **Acoes do sistema:** Envio **sincrono** no pipeline de manutencao (antes do BRT); persiste codigo/erro na irregularidade; limpa `erp_*` no cancelamento OS BRT e na reprovacao → `RETRABALHO_GARANTIA`.
+- **Busca de informacoes (retorno integrado):** na mesma aba, bloco espelhando BRT: `buscaInfoAtivo`, `buscaInfoIntervaloMinutos` (1–1440, padrao 10), `buscaInfoEmpresaIds` (somente empresas com `integracaoManutencao = NENHUMA`), `buscaInfoModoConclusao` (`SOMENTE_CONCLUIR` | `CONCLUIR_E_VALIDAR`). Job `ErpOsPollService` (tick 1 min) e botao «Buscar status ERP» na Manutencao: **com busca off nao disparam** (zero GET). Consulta `GET /api/v1/vistorias/{codigo_pedido}/resultado` (headers `X-Tenant` + `X-API-Key`). Gatilho: `concluida === true` (+ `data_conclusao`). Modo `SOMENTE_CONCLUIR` → `EM_MANUTENCAO` → `CONCLUIDA` (`acao: concluir_manutencao_integracao_erp`); modo `CONCLUIR_E_VALIDAR` → tambem `CONCLUIDA` → `VALIDADA` (`acao: validar_final_integracao_erp`) na mesma transacao. Candidatas: `EM_MANUTENCAO` + `erp_codigo_pedido` + empresa na allowlist e ainda `NENHUMA`. `concluida: false` / 404 / 500 / rede → nao muda status OMNI. Idempotente. Resumo de `servicos_executados` no historico.
+- **Condicoes de entrada:** Clique em Enviar para manutencao; flag `erp_vistoria_config.ativo`; config completa; irregularidades em `REGISTRADA`/`RETRABALHO_GARANTIA`. Busca: flag `buscaInfoAtivo` + credenciais + empresas NENHUMA.
+- **Validacoes:** Flag off → nao chama ERP e segue BRT/legado (RN-VIS-006). Flag on com config incompleta → erro e nao avanca. Ja possui `erp_codigo_pedido` no grupo → nao POST de novo. Campo `veiculo` do legado: 2 primeiros caracteres da descricao (≥12 → prefixo `1:`; <12 → prefixo `5:`); invalido → falha do veiculo. `condicao`: mobile = `1`, SOS = `5`, SINISTRO = `2` (precedencia); PREVENTIVA = mesmo codigo de CORRETIVA. Sintomas: `AREA-COMPONENTE-SINTOMA - (observacao)` (RN-VIS-002). Local/tipo pedido: combos da aba Configuracao. Busca ativa exige URL/tenant/API Key; empresas BRT_OS nao entram na allowlist.
+- **Acoes do sistema:** Envio **sincrono** no pipeline de manutencao (antes do BRT); persiste codigo/erro na irregularidade; limpa `erp_*` no cancelamento OS BRT e na reprovacao → `RETRABALHO_GARANTIA`. Poll/manual de resultado conforme modo de conclusao.
 - **Mensagens ao usuario:** Erro no Tratamento: texto da API, senao mensagem padrao da aba, senao `Erro ao gravar Vistoria no OMNI` (sem vazar API Key).
-- **Permissoes envolvidas:** `configuracao:access` (aba); envio embutido em `irregularidade_manutencao:start`. Permissao `vistoria_web:reprocessar_erp` permanece no catalogo (legado) sem acao de reenvio na UI.
-- **Dados impactados:** `configuracoes.erp_vistoria_config`; `irregularidades.erp_codigo_pedido`, `erp_enviado_em`, `erp_ultimo_erro`; `vistorias.erp_*` somente historico
-- **Rastreabilidade:** Log sanitizado do POST lote; historico de envio a manutencao
+- **Permissoes envolvidas:** `configuracao:access` (aba); envio embutido em `irregularidade_manutencao:start`; busca manual em `irregularidade_manutencao:finish`. Permissao `vistoria_web:reprocessar_erp` permanece no catalogo (legado) sem acao de reenvio na UI.
+- **Dados impactados:** `configuracoes.erp_vistoria_config` (incl. busca); `irregularidades.erp_codigo_pedido`, `erp_enviado_em`, `erp_ultimo_erro`; `irregularidade_historico`; `vistorias.erp_*` somente historico
+- **Rastreabilidade:** Log sanitizado do POST lote e GET resultado; historico de envio a manutencao e transicoes de retorno ERP
 - **Criterios de aceite:**
   - [x] Finalizar vistoria nao chama ERP
   - [x] Enviar para manutencao com ERP on → 1 pedido por veiculo; vinculo na irreg
   - [x] Falha ERP → veiculo permanece no Tratamento; demais veiculos do lote podem avancar
   - [x] Sem reenvio ERP na tela Vistorias
-- **Cenarios de excecao:** ERP fora; config incompleta; resposta sem nr; lote misto por veiculo
-- **Origem da regra:** Decisao de produto — integracao capa ERP legado, 2026-09-15; gatilho movido para envio a manutencao / vinculo por irreg, 2026-10-08
+  - [x] Busca off → zero GET (job e botao Manutencao)
+  - [x] Allowlist so empresas `NENHUMA`; `concluida: true` aplica modo configurado; re-poll idempotente
+- **Cenarios de excecao:** ERP fora; config incompleta; resposta sem nr; lote misto por veiculo; 404/500 na consulta de resultado
+- **Origem da regra:** Decisao de produto — integracao capa ERP legado, 2026-09-15; gatilho movido para envio a manutencao / vinculo por irreg, 2026-10-08; busca de conclusao ERP, 2026-10-16
 - **Status:** Implementada
 
 ### RN-VIS-009 - Mapa de avaria no modelo do veiculo
@@ -715,6 +718,7 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-10-16: RN-VIS-008 / US4.6 — busca de conclusao ERP: config (ativo, intervalo, empresas NENHUMA, modo SOMENTE_CONCLUIR|CONCLUIR_E_VALIDAR); job `ErpOsPollService` + botao Manutencao; `GET .../resultado`; off = zero GET.
 - 2026-10-15: RN-VIS-006 / US4.5 — UI Manutencao: exibe ultimo status BRT no card; vermelho so Paralisada/Retido/erro; demais situacoes neutras; snapshot `status_brt_comentario` na irreg.
 - 2026-10-14: RN-VIS-006 / US4.5 — job `BrtOsPollService` (tick 1 min) so processa empresa com `brt_busca_info_ativo`; respeita intervalo e `ultimo_poll_em`; consulta `GET /registro/:numOs`; sync timeline/insumos; `Disponivel`→`CONCLUIDA`, `Cancelado`→`REGISTRADA`.
 - 2026-10-14: RN-VIS-006 / US4.5 — cadastro empresa: `brt_busca_info_ativo` + `brt_busca_info_intervalo_minutos` (1–1440, padrao 10) na aba Integração; poll so roda para empresas com busca ativa.

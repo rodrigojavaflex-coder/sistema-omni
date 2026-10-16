@@ -65,6 +65,10 @@ import {
   BrtInsumoDto,
   BrtOsPollService,
 } from './brt-os-poll.service';
+import {
+  ErpBuscaStatusLoteResultado,
+  ErpOsPollService,
+} from './erp-os-poll.service';
 
 @ApiTags('irregularidades')
 @ApiBearerAuth()
@@ -74,6 +78,7 @@ export class IrregularidadesController {
   constructor(
     private readonly irregularidadeService: IrregularidadeService,
     private readonly brtOsPollService: BrtOsPollService,
+    private readonly erpOsPollService: ErpOsPollService,
   ) {}
 
   @Get()
@@ -318,6 +323,20 @@ export class IrregularidadesController {
     @Body() dto: RelatorioIrregularidadesLoteDto,
   ): Promise<BrtBuscaStatusLoteResultado> {
     return this.brtOsPollService.processarPorIrregularidadeIds(
+      dto.idsIrregularidades,
+    );
+  }
+
+  @Post('lote/buscar-status-erp')
+  @ApiOperation({
+    summary:
+      'Disparo manual (Manutenção): consulta conclusão ERP das irregularidades selecionadas',
+  })
+  @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_FINISH)
+  buscarStatusErpLote(
+    @Body() dto: RelatorioIrregularidadesLoteDto,
+  ): Promise<ErpBuscaStatusLoteResultado> {
+    return this.erpOsPollService.processarPorIrregularidadeIds(
       dto.idsIrregularidades,
     );
   }

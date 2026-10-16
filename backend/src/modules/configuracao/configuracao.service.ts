@@ -305,6 +305,7 @@ export class ConfiguracaoService {
     }
     const source = input as Partial<ErpVistoriaConfig>;
     const ativo = !!source.ativo;
+    const buscaInfoAtivo = !!source.buscaInfoAtivo;
     const url = (source.url ?? '').toString().trim();
     const tenant =
       (source.tenant ?? '').toString().trim() || 'SISTEMA_VISTORIA';
@@ -319,23 +320,58 @@ export class ConfiguracaoService {
     const mensagemErroPadrao = (source.mensagemErroPadrao ?? '')
       .toString()
       .trim();
+    const intervaloRaw = Number(source.buscaInfoIntervaloMinutos);
+    const buscaInfoIntervaloMinutos =
+      Number.isFinite(intervaloRaw) && intervaloRaw >= 1 && intervaloRaw <= 1440
+        ? Math.trunc(intervaloRaw)
+        : 10;
+    const buscaInfoEmpresaIds = [
+      ...new Set(
+        (Array.isArray(source.buscaInfoEmpresaIds)
+          ? source.buscaInfoEmpresaIds
+          : []
+        )
+          .map((id) => String(id ?? '').trim())
+          .filter((id) =>
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+              id,
+            ),
+          ),
+      ),
+    ];
+    const modoRaw = (source.buscaInfoModoConclusao ?? '').toString().trim();
+    const buscaInfoModoConclusao =
+      modoRaw === 'CONCLUIR_E_VALIDAR'
+        ? 'CONCLUIR_E_VALIDAR'
+        : 'SOMENTE_CONCLUIR';
+    const buscaInfoUltimoPollEm =
+      source.buscaInfoUltimoPollEm !== undefined
+        ? source.buscaInfoUltimoPollEm
+        : (anterior?.buscaInfoUltimoPollEm ?? null);
 
-    if (ativo) {
+    const exigeCredenciais = ativo || buscaInfoAtivo;
+    if (exigeCredenciais) {
+      const contexto = ativo
+        ? 'quando o envio está ativo'
+        : 'quando a busca de informações está ativa';
       if (!url) {
-        throw new BadRequestException(
-          'URL do ERP é obrigatória quando o envio está ativo.',
-        );
+        throw new BadRequestException(`URL do ERP é obrigatória ${contexto}.`);
       }
       if (!tenant) {
         throw new BadRequestException(
-          'Tenant do ERP é obrigatório quando o envio está ativo.',
+          `Tenant do ERP é obrigatório ${contexto}.`,
         );
       }
       if (!apiKey) {
         throw new BadRequestException(
-          'API Key do ERP é obrigatória quando o envio está ativo.',
+          `API Key do ERP é obrigatória ${contexto}.`,
         );
       }
+    }
+    if (buscaInfoAtivo && (intervaloRaw < 1 || intervaloRaw > 1440)) {
+      throw new BadRequestException(
+        'Intervalo da busca ERP deve estar entre 1 e 1440 minutos.',
+      );
     }
 
     return {
@@ -348,6 +384,11 @@ export class ConfiguracaoService {
       mensagemErroPadrao: mensagemErroPadrao || undefined,
       timeoutMs:
         Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 30000,
+      buscaInfoAtivo,
+      buscaInfoIntervaloMinutos,
+      buscaInfoEmpresaIds,
+      buscaInfoModoConclusao,
+      buscaInfoUltimoPollEm: buscaInfoUltimoPollEm ?? null,
     };
   }
 
