@@ -24,6 +24,7 @@ import {
   clipboardOutline,
   cloudDownloadOutline,
   documentTextOutline,
+  homeOutline,
   informationCircleOutline,
   keyOutline,
   logOutOutline,
@@ -93,6 +94,12 @@ export class AppComponent {
     return this.authService.hasPermission('vistoria_mobile:create');
   }
 
+  get canStartValidacao(): boolean {
+    return this.authService.hasPermission(
+      'irregularidade_validacao_final_mobile:read',
+    );
+  }
+
   get hasVistoriaEmAndamento(): boolean {
     return Boolean(this.flowService.getVistoriaId());
   }
@@ -121,6 +128,7 @@ export class AppComponent {
       settingsOutline,
       clipboardOutline,
       documentTextOutline,
+      homeOutline,
       informationCircleOutline,
       playCircleOutline,
       keyOutline,
@@ -154,6 +162,7 @@ export class AppComponent {
       this.hasVistoriaEmAndamento &&
       (route === '/vistoria/pendencias-veiculo' ||
         route === '/vistoria/lista' ||
+        route === '/validacao/inicio' ||
         route === '/configuracoes' ||
         route === '/alterar-senha' ||
         route === '/sobre')

@@ -1,0 +1,61 @@
+<div class="tempo-etapa-fluxo-host">
+  <div class="tempo-etapa-fluxo-root">
+    <button
+      type="button"
+      class="tempo-etapa-trigger"
+      [class.tempo-etapa-trigger--ativo]="temFiltroAtivo"
+      (click)="alternarMenu($event)"
+      [attr.aria-expanded]="menuAberto"
+      aria-haspopup="menu"
+      aria-label="Filtrar por tempo na etapa"
+      title="Tempo na etapa (entrada no status atual)"
+    >
+      <svg class="tempo-etapa-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <span class="tempo-etapa-label">{{ labelCentral }}</span>
+      <svg class="tempo-etapa-chevron" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </button>
+
+    <div class="tempo-etapa-dropdown" *ngIf="menuAberto" role="menu">
+      <button
+        type="button"
+        class="tempo-etapa-dropdown-item"
+        *ngFor="let op of opcoesMenu"
+        [class.tempo-etapa-dropdown-item--active]="preset === op.key"
+        (click)="selecionarPreset(op.key, $event)"
+        role="menuitem"
+      >
+        {{ op.label }}
+      </button>
+
+      <div class="tempo-etapa-personalizar" *ngIf="preset === 'personalizar'" (click)="$event.stopPropagation()">
+        <label class="tempo-etapa-field">
+          <span>Maior que (dias)</span>
+          <input
+            type="number"
+            class="form-input tempo-etapa-input"
+            [(ngModel)]="personalizarDiasMaiorQue"
+            [ngModelOptions]="{ standalone: true }"
+            min="1"
+            step="1"
+            inputmode="numeric"
+            aria-label="Maior que quantos dias na etapa"
+          />
+        </label>
+        <p class="tempo-etapa-erro" *ngIf="personalizarErro">{{ personalizarErro }}</p>
+        <div class="tempo-etapa-personalizar-actions">
+          <button type="button" class="btn btn-secondary tempo-etapa-btn" (click)="limparPersonalizar($event)">
+            Limpar
+          </button>
+          <button type="button" class="btn btn-primary tempo-etapa-btn" (click)="aplicarPersonalizar($event)">
+            Aplicar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

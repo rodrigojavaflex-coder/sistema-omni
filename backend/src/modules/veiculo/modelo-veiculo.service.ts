@@ -15,6 +15,7 @@ export class ModeloVeiculoService {
   async create(dto: CreateModeloVeiculoDto): Promise<ModeloVeiculo> {
     const modelo = this.modeloRepository.create({
       nome: dto.nome,
+      descricaoDetalhada: this.normalizeDescricaoDetalhada(dto.descricaoDetalhada),
       ativo: dto.ativo ?? true,
     });
     return this.modeloRepository.save(modelo);
@@ -58,11 +59,26 @@ export class ModeloVeiculoService {
       nome: dto.nome ?? modelo.nome,
       ativo: dto.ativo ?? modelo.ativo,
     });
+    if (dto.descricaoDetalhada !== undefined) {
+      updated.descricaoDetalhada = this.normalizeDescricaoDetalhada(
+        dto.descricaoDetalhada,
+      );
+    }
     return this.modeloRepository.save(updated);
   }
 
   async remove(id: string): Promise<void> {
     const modelo = await this.findOne(id);
     await this.modeloRepository.remove(modelo);
+  }
+
+  private normalizeDescricaoDetalhada(
+    value?: string | null,
+  ): string | null {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
   }
 }

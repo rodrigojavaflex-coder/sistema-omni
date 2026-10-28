@@ -83,9 +83,24 @@
 
 .home-actions {
   margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.home-actions-proto {
-  margin-top: 12px;
+.home-action-btn {
+  --border-radius: 12px;
+  font-weight: 600;
+  min-height: 48px;
+
+  ion-icon {
+    font-size: 22px;
+    margin-inline-end: 6px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary, #1d4ed8);
+    outline-offset: 2px;
+  }
 }
 

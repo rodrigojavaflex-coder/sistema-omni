@@ -241,13 +241,22 @@ export class PerfilFormComponent implements OnInit {
     return mod.groups.flatMap((g) => g.permissions.map((p) => p.key));
   }
 
+  /** Módulo completo do catálogo (sem filtros de busca/seleção). */
+  private fullModule(mod: PermissionCatalogModule): PermissionCatalogModule {
+    return (
+      this.permissionCatalog?.modules.find((m) => m.key === mod.key) ?? mod
+    );
+  }
+
   countSelectedInModule(mod: PermissionCatalogModule): number {
     const selected = new Set(this.selectedPermissions);
-    return this.modulePermissionKeys(mod).filter((k) => selected.has(k)).length;
+    return this.modulePermissionKeys(this.fullModule(mod)).filter((k) =>
+      selected.has(k),
+    ).length;
   }
 
   countTotalInModule(mod: PermissionCatalogModule): number {
-    return this.modulePermissionKeys(mod).length;
+    return this.modulePermissionKeys(this.fullModule(mod)).length;
   }
 
   countUnselectedInModule(mod: PermissionCatalogModule): number {
@@ -255,11 +264,11 @@ export class PerfilFormComponent implements OnInit {
   }
 
   selectModuleAll(mod: PermissionCatalogModule): void {
-    this.toggleSelectModule(mod, true);
+    this.toggleSelectModule(this.fullModule(mod), true);
   }
 
   deselectModuleAll(mod: PermissionCatalogModule): void {
-    this.toggleSelectModule(mod, false);
+    this.toggleSelectModule(this.fullModule(mod), false);
   }
 
   isPermissionChecked(permission: string): boolean {

@@ -131,16 +131,22 @@ export enum Permission {
   IRREGULARIDADE_TRATAMENTO_UPDATE = 'irregularidade_tratamento:update',
   IRREGULARIDADE_TRATAMENTO_CREATE_SOS = 'irregularidade_tratamento:create_sos',
   IRREGULARIDADE_TRATAMENTO_PRINT = 'irregularidade_tratamento:print',
+  IRREGULARIDADE_TRATAMENTO_PRINT_RESUMO = 'irregularidade_tratamento:print_resumo',
   IRREGULARIDADE_MANUTENCAO_READ = 'irregularidade_manutencao:read',
   IRREGULARIDADE_MANUTENCAO_START = 'irregularidade_manutencao:start',
   IRREGULARIDADE_MANUTENCAO_FINISH = 'irregularidade_manutencao:finish',
   IRREGULARIDADE_MANUTENCAO_MARK_NOT_PROCEEDING = 'irregularidade_manutencao:mark_not_proceeding',
   IRREGULARIDADE_MANUTENCAO_CANCEL_OS_BRT = 'irregularidade_manutencao:cancel_os_brt',
   IRREGULARIDADE_MANUTENCAO_PRINT = 'irregularidade_manutencao:print',
+  IRREGULARIDADE_MANUTENCAO_PRINT_RESUMO = 'irregularidade_manutencao:print_resumo',
   IRREGULARIDADE_VALIDACAO_FINAL_READ = 'irregularidade_validacao_final:read',
   IRREGULARIDADE_VALIDACAO_FINAL_UPDATE = 'irregularidade_validacao_final:update',
   IRREGULARIDADE_VALIDACAO_FINAL_PRINT = 'irregularidade_validacao_final:print',
+  IRREGULARIDADE_VALIDACAO_FINAL_PRINT_RESUMO = 'irregularidade_validacao_final:print_resumo',
+  IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_READ = 'irregularidade_validacao_final_mobile:read',
+  IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_UPDATE = 'irregularidade_validacao_final_mobile:update',
   IRREGULARIDADE_GESTAO_OS_READ = 'irregularidade_gestao_os:read',
+  IRREGULARIDADE_GESTAO_OS_PRINT_RESUMO = 'irregularidade_gestao_os:print_resumo',
 
   // Áreas Vistoriadas (catálogo)
   AREAVISTORIADA_CREATE = 'areavistoriada:create',
@@ -389,6 +395,16 @@ export const PERMISSION_GROUPS = {
       key: Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ,
       label: 'Pendências do Veículo (mobile)',
     },
+    {
+      key: Permission.IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_READ,
+      label:
+        'Validação de OS (mobile): acessar tela (home/menu e listagem por veículo)',
+    },
+    {
+      key: Permission.IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_UPDATE,
+      label:
+        'Validação de OS (mobile): aprovar (validar final) ou reprovar e devolver para retrabalho/garantia',
+    },
   ],
   'Vistoria Web': [
     { key: Permission.VISTORIA_WEB_READ, label: 'Visualizar vistorias (web)' },
@@ -423,6 +439,11 @@ export const PERMISSION_GROUPS = {
       key: Permission.IRREGULARIDADE_TRATAMENTO_PRINT,
       label: 'Tratamento: imprimir relatório das selecionadas',
     },
+    {
+      key: Permission.IRREGULARIDADE_TRATAMENTO_PRINT_RESUMO,
+      label:
+        'Tratamento: Resumo por Veículo/Empresa (Analítico/Sintético do filtro)',
+    },
   ],
   'Irregularidades – Manutenção': [
     {
@@ -445,6 +466,11 @@ export const PERMISSION_GROUPS = {
       key: Permission.IRREGULARIDADE_MANUTENCAO_PRINT,
       label: 'Manutenção: imprimir relatório das selecionadas',
     },
+    {
+      key: Permission.IRREGULARIDADE_MANUTENCAO_PRINT_RESUMO,
+      label:
+        'Manutenção: Resumo por Veículo/Empresa (Analítico/Sintético do filtro)',
+    },
   ],
   'Irregularidades – Validação': [
     {
@@ -459,12 +485,22 @@ export const PERMISSION_GROUPS = {
       key: Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT,
       label: 'Validação: imprimir relatório das selecionadas',
     },
+    {
+      key: Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT_RESUMO,
+      label:
+        'Validação: Resumo por Veículo/Empresa (Analítico/Sintético do filtro)',
+    },
   ],
   'Irregularidades – Gestão OS': [
     {
       key: Permission.IRREGULARIDADE_GESTAO_OS_READ,
       label:
-        'Acessar tela Gestão OS (consultar todas as irregularidades e imprimir)',
+        'Acessar tela Gestão OS (consultar todas as irregularidades e imprimir selecionadas)',
+    },
+    {
+      key: Permission.IRREGULARIDADE_GESTAO_OS_PRINT_RESUMO,
+      label:
+        'Gestão OS: Resumo por Veículo/Empresa (Analítico/Sintético do filtro)',
     },
   ],
   'Áreas Vistoriadas': [

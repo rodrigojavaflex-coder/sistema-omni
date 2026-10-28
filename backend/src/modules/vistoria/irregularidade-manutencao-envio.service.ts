@@ -402,6 +402,7 @@ export class IrregularidadeManutencaoEnvioService {
 
     let osOrig: string;
     let payload;
+    let regPai: number | undefined;
     try {
       if (numeroVistoria === undefined || numeroVistoria === null) {
         throw new Error('Número da vistoria não informado para os_orig');
@@ -417,10 +418,21 @@ export class IrregularidadeManutencaoEnvioService {
         sucessosAnteriores,
         forcarSufixo,
       );
+      // Retrabalho/garantia: vincula a nova OS BRT à OS do grupo que gerou o ciclo (reg_pai).
+      // Opção A: resolve pelo último numOs com sucesso em irregularidades_os_externas.
+      if (forcarSufixo) {
+        regPai = await this.resolverNumOsPaiBrt(grupo);
+        if (regPai == null) {
+          throw new Error(
+            'Não foi possível determinar a OS BRT pai (reg_pai) para o reenvio de retrabalho/garantia',
+          );
+        }
+      }
       payload = this.brtOsIntegrationService.buildPayloadGrupo(
         empresa,
         grupo,
         osOrig,
+        regPai,
       );
     } catch (err) {
       const mensagem = err instanceof Error ? err.message : String(err);
@@ -520,7 +532,9 @@ export class IrregularidadeManutencaoEnvioService {
             : 'enviar_api_os',
           idUsuario: ctx.actor?.id,
           idEmpresaEvento: empresa.id,
-          observacao: `os_orig=${osOrig}; numOs=${result.numOs}; vistoria=${numeroVistoria}; grupo=${grupo.length}; pendente_transicao=true`,
+          observacao: `os_orig=${osOrig}; numOs=${result.numOs}${
+            regPai != null ? `; reg_pai=${regPai}` : ''
+          }; vistoria=${numeroVistoria}; grupo=${grupo.length}; pendente_transicao=true`,
         });
       }
     });
@@ -686,6 +700,9 @@ export class IrregularidadeManutencaoEnvioService {
         entity.numOsExternoAtual = null;
         entity.ultimoErroIntegracao = null;
         entity.ultimoErroIntegracaoEm = null;
+        entity.statusBrtAtual = null;
+        entity.statusBrtAtualizadoEm = null;
+        entity.statusBrtComentario = null;
         this.erpVistoriaIntegrationService.limparVinculoErp(entity);
         entity.resolvido = false;
         const persisted = await repo.save(entity);
@@ -775,6 +792,35 @@ export class IrregularidadeManutencaoEnvioService {
       })
       .getRawOne<{ cnt?: string }>();
     return Number(raw?.cnt ?? 0);
+  }
+
+  /**
+   * Opção A: numOs BRT pai para `reg_pai` no reenvio de retrabalho.
+   * Usa o último vínculo BRT com sucesso das irregularidades do grupo
+   * (mesmo numOs do grupo original, inclusive em reprovação parcial).
+   */
+  private async resolverNumOsPaiBrt(
+    grupo: Irregularidade[],
+  ): Promise<number | undefined> {
+    const ids = grupo.map((item) => item.id).filter(Boolean);
+    if (!ids.length) {
+      return undefined;
+    }
+    const row = await this.osExternaRepository
+      .createQueryBuilder('e')
+      .select('e.numOsExterno', 'numOsExterno')
+      .where('e.idIrregularidade IN (:...ids)', { ids })
+      .andWhere('e.sucesso = true')
+      .andWhere('e.numOsExterno IS NOT NULL')
+      .andWhere('e.integrador = :integrador', { integrador: 'BRT' })
+      .orderBy('e.criadoEm', 'DESC')
+      .limit(1)
+      .getRawOne<{ numOsExterno?: number | string }>();
+    if (row?.numOsExterno == null) {
+      return undefined;
+    }
+    const numOs = Number(row.numOsExterno);
+    return Number.isNaN(numOs) ? undefined : numOs;
   }
 
   private async registrarFalhaIntegracao(

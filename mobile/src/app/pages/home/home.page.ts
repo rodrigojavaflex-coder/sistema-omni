@@ -12,6 +12,7 @@ import {
   IonMenuButton,
   IonButtons,
   IonButton,
+  IonIcon,
   Platform,
 } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
@@ -31,7 +32,8 @@ import { Perfil, Usuario } from '../../models/usuario.model';
     IonToolbar,
     IonMenuButton,
     IonButtons,
-    IonButton
+    IonButton,
+    IonIcon,
   ]
 })
 export class HomePage implements OnInit, OnDestroy {
@@ -96,6 +98,12 @@ export class HomePage implements OnInit, OnDestroy {
 
   get canStartVistoria(): boolean {
     return this.authService.hasPermission('vistoria_mobile:create');
+  }
+
+  get canStartValidacao(): boolean {
+    return this.authService.hasPermission(
+      'irregularidade_validacao_final_mobile:read',
+    );
   }
 
   get profileDisplayName(): string {

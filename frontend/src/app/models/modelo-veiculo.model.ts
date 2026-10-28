@@ -1,6 +1,7 @@
 export interface ModeloVeiculo {
   id: string;
   nome: string;
+  descricaoDetalhada?: string | null;
   ativo: boolean;
   vistas?: ModeloVeiculoVista[];
   criadoEm?: string;
@@ -21,6 +22,7 @@ export interface ModeloVeiculoVista {
 
 export interface CreateModeloVeiculoDto {
   nome: string;
+  descricaoDetalhada?: string | null;
   ativo?: boolean;
 }
 

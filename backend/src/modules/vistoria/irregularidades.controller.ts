@@ -40,6 +40,7 @@ import { CancelarIrregularidadeDto } from './dto/cancelar-irregularidade.dto';
 import { IniciarManutencaoIrregularidadeDto } from './dto/iniciar-manutencao-irregularidade.dto';
 import { IniciarManutencaoLoteDto } from './dto/iniciar-manutencao-lote.dto';
 import { RelatorioIrregularidadesLoteDto } from './dto/relatorio-irregularidades-lote.dto';
+import { RelatorioResumoGestaoOsDto } from './dto/relatorio-resumo-gestao-os.dto';
 import { NaoProcedeIrregularidadeDto } from './dto/nao-procede-irregularidade.dto';
 import { ValidacaoFinalIrregularidadeDto } from './dto/validacao-final-irregularidade.dto';
 import { ReprovarValidacaoFinalIrregularidadeDto } from './dto/reprovar-validacao-final-irregularidade.dto';
@@ -52,10 +53,13 @@ import {
 } from './dto/relatorio-manutencao.dto';
 import {
   assertUserHasAllPermissions,
+  assertUserHasReadAccessForStatuses,
   collectUserPermissions,
-  getRequiredReadPermissionsForStatuses,
+  getPrintResumoPermissionForOrigemTela,
   IRREGULARIDADE_FLUXO_PRINT_PERMISSIONS,
+  IRREGULARIDADE_FLUXO_PRINT_RESUMO_PERMISSIONS,
   IRREGULARIDADE_FLUXO_READ_PERMISSIONS,
+  isOnlyValidacaoFinalEmpresaScope,
   STATUS_ESCOPO_EMPRESA,
   userHasPermission,
 } from '../../common/utils/irregularidade-permissions.util';
@@ -157,6 +161,8 @@ export class IrregularidadesController {
     @Query('dataInicio') dataInicio?: string,
     @Query('dataFim') dataFim?: string,
     @Query('referenciaPeriodo') referenciaPeriodo?: string,
+    @Query('tempoEtapaHorasMin') tempoEtapaHorasMin?: string,
+    @Query('tempoEtapaHorasMax') tempoEtapaHorasMax?: string,
     @Query('ordemServico') ordemServico?: string,
     @Query('erpCodigoPedido') erpCodigoPedido?: string,
     @Query('numOsExterno') numOsExterno?: string,
@@ -188,8 +194,7 @@ export class IrregularidadesController {
       Permission.IRREGULARIDADE_GESTAO_OS_READ,
     );
     if (!isGestaoOs) {
-      const requiredReads = getRequiredReadPermissionsForStatuses(statuses);
-      assertUserHasAllPermissions(userPermissions, requiredReads);
+      assertUserHasReadAccessForStatuses(userPermissions, statuses);
     }
     const gravidades = (gravidade ?? '')
       .split(',')
@@ -223,13 +228,18 @@ export class IrregularidadesController {
           ? [req.user.idEmpresa]
           : [];
 
+    const idEmpresaFiltro = idEmpresaManutencao?.trim() || undefined;
+    const idVeiculoFiltro = idVeiculo?.trim() || undefined;
+
     const filtrosLista = {
-      idVeiculo,
-      idEmpresaManutencao: idEmpresaManutencao?.trim() || undefined,
+      idVeiculo: idVeiculoFiltro,
+      idEmpresaManutencao: idEmpresaFiltro,
       gravidade: gravidades,
       dataInicio,
       dataFim,
       referenciaPeriodo: refPeriodo,
+      tempoEtapaHorasMin: this.parseHorasQuery(tempoEtapaHorasMin),
+      tempoEtapaHorasMax: this.parseHorasQuery(tempoEtapaHorasMax),
       ordemServico: ordemServicoDigits,
       erpCodigoPedido: erpCodigoPedidoFiltro,
       numOsExterno: numOsExternoDigits,
@@ -252,11 +262,23 @@ export class IrregularidadesController {
     const requiresScope =
       !isGestaoOs &&
       statusesConsulta.some((s) => STATUS_ESCOPO_EMPRESA.includes(s));
+    const hasMobileValidacaoRead = userHasPermission(
+      userPermissions,
+      Permission.IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_READ,
+    );
+    const scopeByEmpresaViaVeiculo =
+      requiresScope &&
+      hasMobileValidacaoRead &&
+      Boolean(idVeiculoFiltro) &&
+      !idEmpresaFiltro &&
+      isOnlyValidacaoFinalEmpresaScope(statusesConsulta);
+
     return this.irregularidadeService.listByStatus(
       statusesConsulta,
       {
         idsEmpresasManutencao: idsEmpresas,
         scopeByEmpresa: requiresScope,
+        scopeByEmpresaViaVeiculo,
       },
       filtrosLista,
     );
@@ -290,6 +312,18 @@ export class IrregularidadesController {
     }
     const texto = String(raw).trim();
     return texto.length > 0 ? texto : undefined;
+  }
+
+  /** Horas não negativas para filtro de tempo na etapa. */
+  private parseHorasQuery(raw?: string): number | undefined {
+    if (raw === undefined || raw === null || String(raw).trim() === '') {
+      return undefined;
+    }
+    const n = Number(String(raw).trim());
+    if (!Number.isFinite(n) || n < 0) {
+      return undefined;
+    }
+    return Math.floor(n);
   }
 
   @Get(':id/historico')
@@ -362,6 +396,60 @@ export class IrregularidadesController {
     return new StreamableFile(pdf, {
       type: 'application/pdf',
       disposition: 'inline; filename="relatorio-servicos.pdf"',
+    });
+  }
+
+  @Post('gestao-os/relatorio-resumo-pdf')
+  @ApiOperation({
+    summary:
+      'Resumo por Veículo/Empresa (Analítico/Sintético) do filtro — Tratamento, Manutenção, Validação ou Gestão OS',
+  })
+  @ApiResponse({ status: 200, description: 'Arquivo PDF' })
+  @ApiResponse({
+    status: 400,
+    description: 'Filtro vazio ou acima do limite de registros',
+  })
+  @ApiResponse({ status: 403, description: 'Sem permissão :print_resumo da tela' })
+  @Permissions(...IRREGULARIDADE_FLUXO_PRINT_RESUMO_PERMISSIONS)
+  async gerarRelatorioResumoGestaoOs(
+    @Body() dto: RelatorioResumoGestaoOsDto,
+    @Req()
+    req: Request & {
+      user?: Usuario & {
+        nome?: string;
+        perfis?: Array<{ permissoes?: string[] }>;
+      };
+    },
+  ): Promise<StreamableFile> {
+    const origemTela = dto.origemTela ?? 'gestao-os';
+    const userPermissions = collectUserPermissions(req.user?.perfis);
+    assertUserHasAllPermissions(userPermissions, [
+      getPrintResumoPermissionForOrigemTela(origemTela),
+    ]);
+
+    const ordemServicoDigits = this.parseOrdemServicoQuery(dto.ordemServico);
+    const erpCodigoPedidoFiltro = this.parseTextoParcialQuery(
+      dto.erpCodigoPedido,
+    );
+    const numOsExternoDigits = this.parseOrdemServicoQuery(dto.numOsExterno);
+    const numeroVistoriaDigits = this.parseOrdemServicoQuery(
+      dto.numeroVistoria,
+    );
+
+    const pdf = await this.irregularidadeService.gerarRelatorioResumoGestaoOsPdf(
+      {
+        ...dto,
+        origemTela,
+        ordemServico: ordemServicoDigits,
+        erpCodigoPedido: erpCodigoPedidoFiltro,
+        numOsExterno: numOsExternoDigits,
+        numeroVistoria: numeroVistoriaDigits,
+      },
+      req.user,
+    );
+    return new StreamableFile(pdf, {
+      type: 'application/pdf',
+      disposition: 'inline; filename="relatorio-resumo-veiculo-empresa.pdf"',
     });
   }
 
@@ -518,13 +606,20 @@ export class IrregularidadesController {
   @Post(':id/validar-final')
   @ApiOperation({ summary: 'Validar final irregularidade' })
   @ApiResponse({ status: 200, type: Irregularidade })
-  @Permissions(Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE)
+  @Permissions(
+    Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
+    Permission.IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_UPDATE,
+  )
   validarFinal(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ValidacaoFinalIrregularidadeDto,
-    @Req() req: Request & { user?: { id?: string; idEmpresa?: string } },
+    @Req() req: Request & { user?: Usuario },
   ): Promise<Irregularidade> {
-    return this.irregularidadeService.validarFinal(id, dto, req.user);
+    return this.irregularidadeService.validarFinal(
+      id,
+      dto,
+      mapFluxoActor(req.user),
+    );
   }
 
   @Post(':id/reprovar-final')
@@ -532,13 +627,20 @@ export class IrregularidadesController {
     summary: 'Reprovar validação final e retornar para manutenção',
   })
   @ApiResponse({ status: 200, type: Irregularidade })
-  @Permissions(Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE)
+  @Permissions(
+    Permission.IRREGULARIDADE_VALIDACAO_FINAL_UPDATE,
+    Permission.IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_UPDATE,
+  )
   reprovarFinal(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ReprovarValidacaoFinalIrregularidadeDto,
-    @Req() req: Request & { user?: { id?: string; idEmpresa?: string } },
+    @Req() req: Request & { user?: Usuario },
   ): Promise<Irregularidade> {
-    return this.irregularidadeService.reprovarValidacaoFinal(id, dto, req.user);
+    return this.irregularidadeService.reprovarValidacaoFinal(
+      id,
+      dto,
+      mapFluxoActor(req.user),
+    );
   }
 
   @Post(':id/imagens')

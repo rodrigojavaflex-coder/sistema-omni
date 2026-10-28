@@ -126,15 +126,25 @@ export class ModeloVeiculoListComponent extends BaseListComponent<ModeloVeiculo>
 
   protected getExportDataExcel(items: ModeloVeiculo[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Nome', 'Vistas', 'Status'],
-      data: items.map((item) => [item.nome, this.vistasLabel(item), this.getStatusLabel(item)]),
+      headers: ['Nome', 'Descrição detalhada', 'Vistas', 'Status'],
+      data: items.map((item) => [
+        item.nome,
+        item.descricaoDetalhada || '',
+        this.vistasLabel(item),
+        this.getStatusLabel(item),
+      ]),
     };
   }
 
   protected getExportDataPDF(items: ModeloVeiculo[]): { headers: string[]; data: any[][] } {
     return {
-      headers: ['Nome', 'Vistas', 'Status'],
-      data: items.map((item) => [item.nome, this.vistasLabel(item), this.getStatusLabel(item)]),
+      headers: ['Nome', 'Descrição detalhada', 'Vistas', 'Status'],
+      data: items.map((item) => [
+        item.nome,
+        item.descricaoDetalhada || '',
+        this.vistasLabel(item),
+        this.getStatusLabel(item),
+      ]),
     };
   }
 
@@ -151,7 +161,10 @@ export class ModeloVeiculoListComponent extends BaseListComponent<ModeloVeiculo>
     const status = this.filterAtivo;
 
     return items.filter((item) => {
-      const matchesNome = !term || item.nome.toLowerCase().includes(term);
+      const matchesNome =
+        !term ||
+        item.nome.toLowerCase().includes(term) ||
+        (item.descricaoDetalhada ?? '').toLowerCase().includes(term);
       const matchesStatus =
         !status || (status === 'true' ? item.ativo : !item.ativo);
       return matchesNome && matchesStatus;

@@ -88,18 +88,24 @@ export class ModeloVeiculoFormComponent
   protected initializeForm(): void {
     this.form = this.fb.group({
       nome: ['', [Validators.required, Validators.maxLength(80)]],
+      descricaoDetalhada: ['', [Validators.maxLength(4000)]],
       ativo: [true],
     });
     if (!this.canEditModelo) {
       this.form.get('nome')?.disable();
+      this.form.get('descricaoDetalhada')?.disable();
       this.form.get('ativo')?.disable();
     }
   }
 
   protected buildFormData(): CreateModeloVeiculoDto | UpdateModeloVeiculoDto {
-    const formValue = this.form.value;
+    const formValue = this.form.getRawValue();
+    const descricao = typeof formValue.descricaoDetalhada === 'string'
+      ? formValue.descricaoDetalhada.trim()
+      : '';
     return {
       nome: formValue.nome,
+      descricaoDetalhada: descricao.length > 0 ? descricao : null,
       ativo: formValue.ativo,
     };
   }
@@ -123,6 +129,7 @@ export class ModeloVeiculoFormComponent
     const modelo: ModeloVeiculo = await firstValueFrom(this.modeloService.getById(id));
     this.form.patchValue({
       nome: modelo.nome,
+      descricaoDetalhada: modelo.descricaoDetalhada ?? '',
       ativo: modelo.ativo,
     });
     await this.carregarCatalogo();

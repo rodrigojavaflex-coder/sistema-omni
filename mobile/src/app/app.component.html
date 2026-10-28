@@ -37,6 +37,16 @@
 
       <ion-list class="menu-list">
         <ion-item
+          lines="none"
+          button
+          detail="true"
+          class="menu-item"
+          (click)="goTo('/home')"
+        >
+          <ion-icon name="home-outline" slot="start" class="menu-item-icon"></ion-icon>
+          <ion-label class="menu-item-label">Home</ion-label>
+        </ion-item>
+        <ion-item
           *ngIf="canStartVistoria && !hasVistoriaEmAndamento"
           lines="none"
           button
@@ -44,7 +54,11 @@
           class="menu-item"
           (click)="goTo('/vistoria/inicio')"
         >
-          <ion-icon name="play-circle-outline" slot="start" class="menu-item-icon"></ion-icon>
+          <ion-icon
+            src="icons/feather-check-square.svg"
+            slot="start"
+            class="menu-item-icon"
+          ></ion-icon>
           <ion-label class="menu-item-label">Iniciar vistoria</ion-label>
         </ion-item>
         <ion-item
@@ -55,8 +69,28 @@
           class="menu-item"
           (click)="goTo('/vistoria/areas')"
         >
-          <ion-icon name="play-circle-outline" slot="start" class="menu-item-icon"></ion-icon>
+          <ion-icon
+            src="icons/feather-check-square.svg"
+            slot="start"
+            class="menu-item-icon"
+          ></ion-icon>
           <ion-label class="menu-item-label">Continuar vistoria</ion-label>
+        </ion-item>
+        <ion-item
+          *ngIf="canStartValidacao"
+          lines="none"
+          button
+          detail="true"
+          class="menu-item"
+          [class.menu-item-disabled]="hasVistoriaEmAndamento"
+          (click)="goTo('/validacao/inicio')"
+        >
+          <ion-icon
+            src="icons/tabler-list-check.svg"
+            slot="start"
+            class="menu-item-icon"
+          ></ion-icon>
+          <ion-label class="menu-item-label">Iniciar validação</ion-label>
         </ion-item>
         <ion-item
           *ngIf="canViewHistoricoVeiculo"

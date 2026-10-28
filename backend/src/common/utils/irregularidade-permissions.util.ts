@@ -7,7 +7,14 @@ export const IRREGULARIDADE_FLUXO_READ_PERMISSIONS: Permission[] = [
   Permission.IRREGULARIDADE_TRATAMENTO_READ,
   Permission.IRREGULARIDADE_MANUTENCAO_READ,
   Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
+  Permission.IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_READ,
   Permission.IRREGULARIDADE_GESTAO_OS_READ,
+];
+
+/** Status da etapa Validação Final (web ou mobile). */
+export const STATUS_VALIDACAO_FINAL: StatusIrregularidade[] = [
+  StatusIrregularidade.CONCLUIDA,
+  StatusIrregularidade.VALIDADA,
 ];
 
 /** Permissões :print do relatório PDF por tela do fluxo. */
@@ -17,6 +24,37 @@ export const IRREGULARIDADE_FLUXO_PRINT_PERMISSIONS: Permission[] = [
   Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT,
   Permission.IRREGULARIDADE_GESTAO_OS_READ,
 ];
+
+/** Permissões do Resumo por Veículo/Empresa (Analítico/Sintético) por tela. */
+export const IRREGULARIDADE_FLUXO_PRINT_RESUMO_PERMISSIONS: Permission[] = [
+  Permission.IRREGULARIDADE_TRATAMENTO_PRINT_RESUMO,
+  Permission.IRREGULARIDADE_MANUTENCAO_PRINT_RESUMO,
+  Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT_RESUMO,
+  Permission.IRREGULARIDADE_GESTAO_OS_PRINT_RESUMO,
+];
+
+export type OrigemTelaRelatorioResumo =
+  | 'tratamento'
+  | 'manutencao'
+  | 'validacao-final'
+  | 'gestao-os';
+
+export function getPrintResumoPermissionForOrigemTela(
+  origemTela: OrigemTelaRelatorioResumo,
+): Permission {
+  switch (origemTela) {
+    case 'tratamento':
+      return Permission.IRREGULARIDADE_TRATAMENTO_PRINT_RESUMO;
+    case 'manutencao':
+      return Permission.IRREGULARIDADE_MANUTENCAO_PRINT_RESUMO;
+    case 'validacao-final':
+      return Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT_RESUMO;
+    case 'gestao-os':
+      return Permission.IRREGULARIDADE_GESTAO_OS_PRINT_RESUMO;
+    default:
+      return Permission.IRREGULARIDADE_GESTAO_OS_PRINT_RESUMO;
+  }
+}
 
 /** Status cuja listagem operacional exige filtro de empresa (exceto Gestão OS). */
 export const STATUS_ESCOPO_EMPRESA: StatusIrregularidade[] = [
@@ -114,4 +152,49 @@ export function assertUserHasAllPermissions(
   throw new ForbiddenException(
     `Acesso negado. Permissões necessárias: ${missing.join(', ')}`,
   );
+}
+
+/**
+ * Exige :read da etapa consultada. Para Validação Final, aceita a chave web
+ * ou a chave mobile (`irregularidade_validacao_final_mobile:read`).
+ */
+export function assertUserHasReadAccessForStatuses(
+  userPermissions: Set<string>,
+  statuses: StatusIrregularidade[],
+): void {
+  const required = getRequiredReadPermissionsForStatuses(statuses);
+  const missing = required.filter((permission) => {
+    if (userHasPermission(userPermissions, permission)) {
+      return false;
+    }
+    if (
+      permission === Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ &&
+      userHasPermission(
+        userPermissions,
+        Permission.IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_READ,
+      )
+    ) {
+      return false;
+    }
+    return true;
+  });
+  if (missing.length === 0) {
+    return;
+  }
+  throw new ForbiddenException(
+    `Acesso negado. Permissões necessárias: ${missing.join(', ')}`,
+  );
+}
+
+/** True quando todos os status com escopo empresa são só da etapa Validação. */
+export function isOnlyValidacaoFinalEmpresaScope(
+  statuses: StatusIrregularidade[],
+): boolean {
+  const comEscopo = statuses.filter((status) =>
+    STATUS_ESCOPO_EMPRESA.includes(status),
+  );
+  if (comEscopo.length === 0) {
+    return false;
+  }
+  return comEscopo.every((status) => STATUS_VALIDACAO_FINAL.includes(status));
 }

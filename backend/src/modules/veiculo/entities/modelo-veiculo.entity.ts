@@ -15,6 +15,14 @@ export class ModeloVeiculo extends BaseEntity {
   @Column({ name: 'nome', length: 80, unique: true })
   nome: string;
 
+  @ApiProperty({
+    description: 'Descrição detalhada do modelo',
+    required: false,
+    nullable: true,
+  })
+  @Column({ name: 'descricao_detalhada', type: 'text', nullable: true })
+  descricaoDetalhada?: string | null;
+
   @ApiProperty({ description: 'Modelo ativo', default: true })
   @Column({ name: 'ativo', type: 'boolean', default: true })
   ativo: boolean;

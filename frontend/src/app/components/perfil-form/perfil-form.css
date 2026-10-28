@@ -428,6 +428,24 @@
   padding: 1.5rem;
 }
 
+.filter-hint {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: var(--text-secondary, #475569);
+  background: var(--surface-muted, #f1f5f9);
+  border: 1px solid var(--border-color, #e2e8f0);
+}
+
+:host-context(body.tema-escuro) .filter-hint,
+:host-context(.tema-escuro) .filter-hint {
+  color: var(--text-secondary, #cbd5e1);
+  background: var(--surface-muted, #1e293b);
+  border-color: var(--border-color, #334155);
+}
+
 @media (max-width: 1200px) {
   .perm-toolbar-main {
     grid-template-columns: repeat(2, minmax(160px, 1fr));

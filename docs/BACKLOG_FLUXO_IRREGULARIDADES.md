@@ -35,7 +35,7 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 | `REGISTRADA` | Enviar para manutencao (com API) | `EM_MANUTENCAO` | Escopo combustivel/area OK; selecao completa da vistoria **no escopo da empresa** (OS fora do escopo podem ficar no Tratamento); ERP (se ativo) OK por veiculo; POST OS BRT OK ou duplicada (1 vistoria = 1 OS) | `400` fora do escopo; grupo permanece `REGISTRADA` + erro ERP/BRT; reenvio idempotente |
 | `RETRABALHO_GARANTIA` | Corrigir classificacao | `RETRABALHO_GARANTIA` | Destino valido e autorizado | `422` destino invalido |
 | `RETRABALHO_GARANTIA` | Cancelar irregularidade | `CANCELADA` | Motivo obrigatorio | `400` motivo obrigatorio |
-| `RETRABALHO_GARANTIA` | Reenviar para manutencao | `EM_MANUTENCAO` | Grupo completo da vistoria; `os_orig` = `numeroVistoria-N` (N≥2); empresa configurada | Erro API: grupo permanece `RETRABALHO_GARANTIA` / `REGISTRADA` |
+| `RETRABALHO_GARANTIA` | Reenviar para manutencao | `EM_MANUTENCAO` | Grupo completo da vistoria; `os_orig` = `numeroVistoria-N` (N≥2); empresa BRT: `reg_pai` = `numOs` do grupo original; empresa configurada | Erro API: grupo permanece `RETRABALHO_GARANTIA` / `REGISTRADA` |
 | `EM_MANUTENCAO` | Concluir manutencao (sem controle API) | `CONCLUIDA` | Evidencia minima quando obrigatoria | `422` pendencia |
 | `EM_MANUTENCAO` | Concluir manutencao (controle API) | `CONCLUIDA` | Conclusao manual permitida; nao chama BRT; vinculos OS/ERP permanecem para rastreio | `400` status/empresa |
 | `EM_MANUTENCAO` | Retorno BRT `Disponivel` (poll v2) | `CONCLUIDA` | OS ativa no grupo; match tolerante de `situacao`; 1× por ciclo | Idempotente se ja `CONCLUIDA` |

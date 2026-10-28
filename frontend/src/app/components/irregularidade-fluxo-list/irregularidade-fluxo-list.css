@@ -34,12 +34,13 @@
 .fluxo-sticky-top {
   position: relative;
   top: auto;
-  z-index: 5;
+  z-index: 20;
   flex: 0 0 auto;
   background: var(--bg-secondary, #f8f9fa);
   padding-bottom: 0.5rem;
   margin-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color, #e2e8f0);
+  overflow: visible;
 }
 
 .fluxo-sticky-top .filters-panel,
@@ -79,6 +80,9 @@
   border-radius: 8px;
   background: var(--bg-primary, #fff);
   border: 1px solid var(--border-color, #e2e8f0);
+  overflow: visible;
+  position: relative;
+  z-index: 25;
 }
 
 .actions-panel {
@@ -92,10 +96,14 @@
 
 .filters-row {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0.45rem;
   align-items: center;
   margin-bottom: 0;
+  overflow: visible;
+  position: relative;
+  z-index: 30;
+  width: 100%;
 }
 
 .filters-row .form-input,
@@ -103,6 +111,7 @@
   font-size: 0.82rem;
   padding: 0.38rem 0.5rem;
   min-height: 2.15rem;
+  flex: 0 1 auto;
 }
 
 .filters-row .form-select {
@@ -113,14 +122,39 @@
 
 .filters-row .filter-status {
   flex: 0 1 11.5rem;
-  min-width: 9.5rem;
+  min-width: 10rem;
   max-width: 14rem;
+  position: relative;
+  z-index: 40;
+  overflow: visible;
+}
+
+.filters-row .filter-status ::ng-deep .multi-select-container {
+  width: 100%;
+  overflow: visible;
 }
 
 .filters-row .filter-status ::ng-deep .multi-select-button {
   min-height: 2.15rem;
   padding: 0.38rem 0.5rem;
   font-size: 0.82rem;
+}
+
+/**
+ * Status fica no fim da barra: abre o painel para a esquerda (right: 0)
+ * e em 1 coluna — evita corte na borda da viewport e overlap no período.
+ */
+.filters-row .filter-status ::ng-deep .multi-select-dropdown {
+  left: auto;
+  right: 0;
+  min-width: 15rem;
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 2rem));
+  z-index: 50;
+}
+
+.filters-row .filter-status ::ng-deep .dropdown-options {
+  grid-template-columns: 1fr;
 }
 
 .filters-row .btn-secondary {
@@ -131,7 +165,13 @@
 }
 
 .filter-periodo {
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.filter-tempo-etapa {
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .buttons-row {
@@ -171,9 +211,31 @@
   max-width: 13rem;
 }
 
+/* Quebra já é o padrão (.filters-row { flex-wrap: wrap }); media só reforça densidades. */
 @media (max-width: 1100px) {
-  .filters-row {
-    flex-wrap: wrap;
+  .filters-row .form-select {
+    max-width: none;
+    flex: 1 1 8.5rem;
+  }
+
+  .filters-row .filter-status {
+    flex: 1 1 11rem;
+    max-width: none;
+  }
+
+  .filter-veiculo {
+    flex: 1 1 12rem;
+    max-width: none;
+  }
+
+  .filter-ordem-servico {
+    flex: 1 1 8rem;
+    max-width: none;
+  }
+
+  .filters-row .filter-classificacao {
+    flex: 1 1 10rem;
+    max-width: none;
   }
 }
 
@@ -877,6 +939,66 @@
 
 .modal-container-sm {
   max-width: 520px;
+}
+
+.tipo-resumo-hint {
+  margin: 0 0 0.85rem;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.tipo-resumo-opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.tipo-resumo-opcao {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  background: var(--bg-primary, #fff);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.tipo-resumo-opcao:hover,
+.tipo-resumo-opcao:focus-within {
+  border-color: var(--primary-color, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.tipo-resumo-opcao--ativa {
+  border-color: var(--primary-color, #2563eb);
+  background: var(--bg-secondary, #f8fafc);
+}
+
+.tipo-resumo-opcao input[type='radio'] {
+  margin-top: 0.2rem;
+  accent-color: var(--primary-color, #2563eb);
+  flex-shrink: 0;
+}
+
+.tipo-resumo-opcao-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.tipo-resumo-opcao-texto strong {
+  color: var(--text-primary, #0f172a);
+  font-size: 0.92rem;
+}
+
+.tipo-resumo-opcao-texto small {
+  color: var(--text-secondary, #64748b);
+  font-size: 0.8rem;
+  line-height: 1.35;
 }
 
 .modal-container-md {

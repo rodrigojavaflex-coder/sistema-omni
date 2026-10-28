@@ -63,6 +63,13 @@ export class IrregularidadeResumoDto {
   @ApiProperty({ description: 'Observação', required: false })
   observacao?: string;
 
+  @ApiProperty({
+    description:
+      'Texto da conclusão da manutenção (última observação do histórico concluir_manutencao*)',
+    required: false,
+  })
+  observacaoConclusao?: string;
+
   @ApiProperty({ description: 'Irregularidade resolvida' })
   resolvido: boolean;
 

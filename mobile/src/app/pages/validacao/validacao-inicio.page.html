@@ -1,0 +1,198 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start" *ngIf="isNative">
+      <ion-menu-button menu="main-menu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Validação de OS</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        fill="clear"
+        [disabled]="!selectedVeiculo || loadingLista || loteLoading"
+        (click)="carregarPendentes()"
+        aria-label="Atualizar lista"
+      >
+        <ion-icon src="icons/tabler-list-check.svg"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="content" [class.content--com-footer]="canUpdate && itens.length > 0">
+    <ion-item class="veiculo-search">
+      <ion-label position="stacked">Selecionar veículo</ion-label>
+      <ion-input
+        [value]="veiculoSearch"
+        placeholder="Digite placa ou descrição"
+        type="text"
+        enterkeyhint="search"
+        autocomplete="off"
+        [clearInput]="true"
+        (ionInput)="onBuscarVeiculos($event)"
+        (ionClear)="limparVeiculoSelecionado()"
+      ></ion-input>
+    </ion-item>
+
+    <div class="search-loading" *ngIf="loadingVeiculos">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Buscando veículos...</span>
+    </div>
+
+    <ion-card *ngIf="veiculos.length > 0" class="search-results">
+      <ion-card-content>
+        <ion-item
+          *ngFor="let veiculo of veiculos"
+          lines="none"
+          button
+          detail="true"
+          (click)="selecionarVeiculo(veiculo)"
+        >
+          <ion-label>
+            <strong>{{ veiculo.descricao }}</strong>
+            <p>{{ veiculo.placa }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="selectedVeiculo" class="veiculo-card">
+      <ion-card-content>
+        <p class="veiculo-destaque">
+          <strong>{{ selectedVeiculo.descricao }}</strong>
+        </p>
+        <p *ngIf="selectedVeiculo.placa">Placa: {{ selectedVeiculo.placa }}</p>
+        <p *ngIf="!loadingLista">
+          Pendentes para validação: <strong>{{ itens.length }}</strong>
+        </p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-text color="danger" *ngIf="errorMessage">
+      <p class="error-message">{{ errorMessage }}</p>
+    </ion-text>
+
+    <div class="lista-loading" *ngIf="loadingLista">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Carregando OS...</span>
+    </div>
+
+    <div class="empty-hint" *ngIf="!selectedVeiculo && !loadingLista">
+      <p>Selecione um veículo para carregar as OS aguardando validação.</p>
+    </div>
+
+    <div
+      class="empty-hint"
+      *ngIf="selectedVeiculo && !loadingLista && itens.length === 0 && !errorMessage"
+    >
+      <p>Nenhuma OS concluída aguardando validação para este veículo.</p>
+    </div>
+
+    <div class="cards-container" *ngIf="!loadingLista && itens.length > 0">
+      <ion-card *ngFor="let item of itens" class="os-card">
+        <ion-card-content>
+          <div class="os-card-header" *ngIf="canUpdate">
+            <ion-checkbox
+              [checked]="isSelected(item.id)"
+              (ionChange)="onCheckboxChange(item.id, $event)"
+              [attr.aria-label]="'Selecionar ' + rotuloOs(item)"
+            ></ion-checkbox>
+            <h2>{{ rotuloOs(item) }}</h2>
+          </div>
+          <h2 *ngIf="!canUpdate">{{ rotuloOs(item) }}</h2>
+
+          <p>
+            <strong>{{ item.nomeArea || 'Área' }}</strong>
+            · {{ item.nomeComponente || 'Componente' }}
+          </p>
+          <p>{{ item.descricaoSintoma || '—' }}</p>
+          <p *ngIf="item.empresaManutencaoDescricao" class="meta">
+            Empresa: {{ item.empresaManutencaoDescricao }}
+          </p>
+          <p class="meta">
+            <strong>Descrição do problema:</strong>
+            {{ item.observacao || '—' }}
+          </p>
+          <p *ngIf="item.gravidade" class="meta">Gravidade: {{ item.gravidade }}</p>
+
+          <div class="conclusao-box">
+            <p class="conclusao-label"><strong>Conclusão da OS</strong></p>
+            <p class="conclusao-texto">{{ textoConclusao(item) }}</p>
+          </div>
+
+          <div class="detail-actions">
+            <ion-button
+              size="small"
+              fill="outline"
+              (click)="toggleMidias(item)"
+            >
+              {{ isMidiaExpanded(item.id) ? 'Ocultar mídias' : 'Ver mídias' }}
+              ({{ quantidadeFotos(item) }}/{{ quantidadeAudios(item) }})
+            </ion-button>
+          </div>
+
+          <div class="midias-section" *ngIf="isMidiaExpanded(item.id)">
+            <p><strong>Imagens</strong> ({{ quantidadeFotos(item) }})</p>
+            <div class="imagem-grid" *ngIf="getImagens(item).length > 0; else semImagensTpl">
+              <img
+                *ngFor="let midia of getImagens(item)"
+                [src]="midia.src"
+                [alt]="midia.nomeArquivo"
+                (click)="abrirImagem(midia)"
+              />
+            </div>
+            <ng-template #semImagensTpl>
+              <p class="sem-midia">Sem imagens</p>
+            </ng-template>
+
+            <p><strong>Áudios</strong> ({{ quantidadeAudios(item) }})</p>
+            <div class="audio-list" *ngIf="getAudios(item).length > 0; else semAudiosTpl">
+              <div *ngFor="let midia of getAudios(item)" class="audio-item">
+                <p class="audio-name">{{ midia.nomeArquivo }}</p>
+                <audio [src]="midia.src" controls preload="none"></audio>
+              </div>
+            </div>
+            <ng-template #semAudiosTpl>
+              <p class="sem-midia">Sem áudios</p>
+            </ng-template>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <div
+    class="imagem-overlay"
+    *ngIf="imagemSelecionada"
+    (click)="fecharImagem()"
+    role="button"
+    tabindex="0"
+    aria-label="Fechar imagem"
+  >
+    <img [src]="imagemSelecionada.src" [alt]="imagemSelecionada.nomeArquivo" />
+  </div>
+</ion-content>
+
+<ion-footer *ngIf="canUpdate && itens.length > 0" class="lote-footer">
+  <ion-toolbar>
+    <div class="lote-actions">
+      <ion-button
+        expand="block"
+        color="success"
+        [disabled]="selectedCount === 0 || loteLoading"
+        (click)="confirmarValidarLote()"
+      >
+        <ion-spinner *ngIf="loteLoading" name="crescent" slot="start"></ion-spinner>
+        Validar{{ selectedCount ? ' (' + selectedCount + ')' : '' }}
+      </ion-button>
+      <ion-button
+        expand="block"
+        fill="outline"
+        color="danger"
+        [disabled]="selectedCount === 0 || loteLoading"
+        (click)="confirmarReprovarLote()"
+      >
+        Reprovar{{ selectedCount ? ' (' + selectedCount + ')' : '' }}
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

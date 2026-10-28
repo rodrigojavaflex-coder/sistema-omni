@@ -132,6 +132,11 @@
           [clearSeq]="filtroPeriodoClearSeq"
           (periodoAplicado)="onPeriodoAplicado($event)"
         ></app-periodo-fluxo-filter>
+        <app-tempo-etapa-fluxo-filter
+          class="filter-tempo-etapa"
+          [clearSeq]="filtroTempoEtapaClearSeq"
+          (tempoAplicado)="onTempoEtapaAplicado($event)"
+        ></app-tempo-etapa-fluxo-filter>
         <button class="btn btn-secondary" (click)="clearFilters()">Limpar</button>
       </div>
     </div>
@@ -250,6 +255,23 @@
             <rect x="6" y="14" width="12" height="8"></rect>
           </svg>
           {{ isPrintingRelatorio ? 'Gerando PDF…' : 'Imprimir' }}
+        </button>
+        <button
+          class="btn btn-secondary"
+          type="button"
+          *ngIf="canShowRelatorioResumoFiltro"
+          [disabled]="totalItems <= 0 || isPrintingRelatorioResumo || loading"
+          (click)="openTipoResumoModal()"
+          title="Gera PDF resumido de todas as OS do filtro (Analítico ou Sintético)"
+        >
+          <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          {{ isPrintingRelatorioResumo ? 'Gerando resumo…' : 'Resumo por Veículo/Empresa' }}
         </button>
         <span class="buttons-row-summary">
           {{ totalItems }} OS | {{ getSelectedIds().length }} OS selecionada(s)
@@ -1119,6 +1141,57 @@
         [disabled]="!canSubmitActionModal()"
       >
         {{ getModalPrimaryButtonLabel() }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showTipoResumoModal" class="modal-overlay" (click)="closeTipoResumoModal()">
+  <div class="modal-container modal-container-sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="tipo-resumo-titulo">
+    <div class="modal-header">
+      <h3 id="tipo-resumo-titulo">Resumo por Veículo/Empresa</h3>
+      <button type="button" class="btn-close" (click)="closeTipoResumoModal()" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="tipo-resumo-hint">Escolha o tipo de impressão do relatório do filtro atual ({{ totalItems }} OS).</p>
+      <div class="tipo-resumo-opcoes" role="radiogroup" aria-label="Tipo de impressão">
+        <label class="tipo-resumo-opcao" [class.tipo-resumo-opcao--ativa]="tipoResumoSelecionado === 'ANALITICA'">
+          <input
+            type="radio"
+            name="tipoResumo"
+            value="ANALITICA"
+            [(ngModel)]="tipoResumoSelecionado"
+          />
+          <span class="tipo-resumo-opcao-texto">
+            <strong>Analítica</strong>
+            <small>Detalhe por veículo + tabela resumo</small>
+          </span>
+        </label>
+        <label class="tipo-resumo-opcao" [class.tipo-resumo-opcao--ativa]="tipoResumoSelecionado === 'SINTETICA'">
+          <input
+            type="radio"
+            name="tipoResumo"
+            value="SINTETICA"
+            [(ngModel)]="tipoResumoSelecionado"
+          />
+          <span class="tipo-resumo-opcao-texto">
+            <strong>Sintética</strong>
+            <small>Somente a tabela resumo (empresa × status)</small>
+          </span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeTipoResumoModal()" [disabled]="isPrintingRelatorioResumo">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="confirmarImpressaoResumo()"
+        [disabled]="isPrintingRelatorioResumo"
+      >
+        {{ isPrintingRelatorioResumo ? 'Gerando…' : 'Gerar PDF' }}
       </button>
     </div>
   </div>

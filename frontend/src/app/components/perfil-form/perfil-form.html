@@ -277,6 +277,16 @@
 
                 @if (isModuleExpanded(mod.key)) {
                   <div class="module-body">
+                    @if (
+                      selectionFilter !== 'all' &&
+                      countTotalInModule(mod) > modulePermissionKeys(mod).length
+                    ) {
+                      <p class="filter-hint">
+                        Exibindo {{ modulePermissionKeys(mod).length }} de
+                        {{ countTotalInModule(mod) }} permissões deste módulo.
+                        Use «Exibir → Todas» para ver as demais (incluindo Validação de OS).
+                      </p>
+                    }
                     @for (group of mod.groups; track group.key) {
                       <div class="permission-group">
                         <div class="permission-group-header">

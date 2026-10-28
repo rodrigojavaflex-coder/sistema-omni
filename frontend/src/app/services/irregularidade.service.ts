@@ -82,6 +82,12 @@ export class IrregularidadeService {
     if (filtros?.referenciaPeriodo) {
       params = params.set('referenciaPeriodo', filtros.referenciaPeriodo);
     }
+    if (filtros?.tempoEtapaHorasMin != null) {
+      params = params.set('tempoEtapaHorasMin', String(filtros.tempoEtapaHorasMin));
+    }
+    if (filtros?.tempoEtapaHorasMax != null) {
+      params = params.set('tempoEtapaHorasMax', String(filtros.tempoEtapaHorasMax));
+    }
     if (filtros?.origemRegistro) {
       params = params.set('origemRegistro', filtros.origemRegistro);
     }
@@ -198,6 +204,44 @@ export class IrregularidadeService {
     return this.http.post(
       `${this.apiUrl}/lote/relatorio-pdf`,
       { idsIrregularidades },
+      { responseType: 'blob' },
+    );
+  }
+
+  /**
+   * Gestão OS: PDF resumido com todas as OS do filtro (sem seleção/paginação).
+   * ANALITICA = detalhe por veículo + tabela; SINTETICA = só a tabela resumo.
+   */
+  gerarRelatorioResumoGestaoOs(
+    payload: ListarIrregularidadeFiltros & {
+      status?: StatusIrregularidade[];
+      tipoImpressao?: 'ANALITICA' | 'SINTETICA';
+      origemTela?: 'tratamento' | 'manutencao' | 'validacao-final' | 'gestao-os';
+    },
+  ): Observable<Blob> {
+    return this.http.post(
+      `${this.apiUrl}/gestao-os/relatorio-resumo-pdf`,
+      {
+        tipoImpressao: payload.tipoImpressao ?? 'ANALITICA',
+        origemTela: payload.origemTela ?? 'gestao-os',
+        status: payload.status,
+        idVeiculo: payload.idVeiculo,
+        idEmpresaManutencao: payload.idEmpresaManutencao,
+        gravidade: payload.gravidade,
+        dataInicio: payload.dataInicio,
+        dataFim: payload.dataFim,
+        referenciaPeriodo: payload.referenciaPeriodo,
+        tempoEtapaHorasMin: payload.tempoEtapaHorasMin,
+        tempoEtapaHorasMax: payload.tempoEtapaHorasMax,
+        ordemServico: payload.ordemServico,
+        erpCodigoPedido: payload.erpCodigoPedido,
+        numOsExterno: payload.numOsExterno,
+        numeroVistoria: payload.numeroVistoria,
+        origemRegistro: payload.origemRegistro,
+        idArea: payload.idArea,
+        idComponente: payload.idComponente,
+        idSintoma: payload.idSintoma,
+      },
       { responseType: 'blob' },
     );
   }

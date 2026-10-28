@@ -32,15 +32,32 @@
       </div>
     </div>
 
-    <div class="home-actions" *ngIf="canStartVistoria">
-      <ion-button expand="block" routerLink="/vistoria/inicio">
+    <div class="home-actions" *ngIf="canStartVistoria || canStartValidacao">
+      <ion-button
+        *ngIf="canStartVistoria"
+        expand="block"
+        routerLink="/vistoria/inicio"
+        class="home-action-btn"
+      >
+        <ion-icon
+          slot="start"
+          src="icons/feather-check-square.svg"
+          aria-hidden="true"
+        ></ion-icon>
         Iniciar Vistoria
       </ion-button>
-    </div>
-
-    <div class="home-actions home-actions-proto">
-      <ion-button expand="block" fill="outline" routerLink="/prototipo/veiculo-3d">
-        Protótipo 3D do veículo
+      <ion-button
+        *ngIf="canStartValidacao"
+        expand="block"
+        routerLink="/validacao/inicio"
+        class="home-action-btn"
+      >
+        <ion-icon
+          slot="start"
+          src="icons/tabler-list-check.svg"
+          aria-hidden="true"
+        ></ion-icon>
+        Iniciar Validação
       </ion-button>
     </div>
 

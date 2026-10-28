@@ -26,6 +26,8 @@ export interface IrregularidadeFluxoItem {
   nomeComponente?: string;
   descricaoSintoma?: string;
   observacao?: string;
+  /** Texto da conclusão da manutenção (histórico concluir_manutencao*). */
+  observacaoConclusao?: string;
   statusAtual: StatusIrregularidade;
   idEmpresaManutencao?: string;
   empresaManutencaoDescricao?: string;
@@ -123,6 +125,10 @@ export interface ListarIrregularidadeFiltros {
   dataInicio?: string;
   dataFim?: string;
   referenciaPeriodo?: ReferenciaPeriodoIrregularidade;
+  /** Tempo mínimo na etapa atual (horas, ENTRADA_STATUS). */
+  tempoEtapaHorasMin?: number;
+  /** Tempo máximo na etapa atual (horas, ENTRADA_STATUS). */
+  tempoEtapaHorasMax?: number;
   page?: number;
   limit?: number;
 }

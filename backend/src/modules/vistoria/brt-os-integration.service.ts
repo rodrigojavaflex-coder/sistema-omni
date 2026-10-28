@@ -20,6 +20,11 @@ export interface BrtCriarOsPayload {
   tel_ctt?: string;
   comenta?: string;
   loc_atd?: string;
+  /**
+   * numOs de uma OS BRT já existente (pai), para vincular esta nova OS como filha.
+   * Usado no reenvio após retrabalho/garantia (Opção A: histórico irregularidades_os_externas).
+   */
+  reg_pai?: number;
 }
 
 export interface BrtCancelarOsPayload {
@@ -249,6 +254,7 @@ export class BrtOsIntegrationService {
     empresa: EmpresaTerceira,
     irregularidades: Irregularidade[],
     osOrig: string,
+    regPai?: number,
   ): BrtCriarOsPayload {
     if (!irregularidades.length) {
       throw new Error('Grupo de irregularidades vazio para OS BRT');
@@ -289,6 +295,9 @@ export class BrtOsIntegrationService {
     }
     if (odom !== null && odom !== undefined && !Number.isNaN(Number(odom))) {
       payload.odo_vcl = Math.trunc(Number(odom));
+    }
+    if (regPai != null && !Number.isNaN(Number(regPai))) {
+      payload.reg_pai = Math.trunc(Number(regPai));
     }
     return payload;
   }
@@ -332,7 +341,9 @@ export class BrtOsIntegrationService {
     }
 
     const url = this.resolveEndpoint(empresa);
-    const contextoLog = `url=${url} os_orig=${payload.os_orig} plc_vcl=${payload.plc_vcl} ten_emp=${payload.ten_emp}`;
+    const regPaiLog =
+      payload.reg_pai != null ? ` reg_pai=${payload.reg_pai}` : '';
+    const contextoLog = `url=${url} os_orig=${payload.os_orig}${regPaiLog} plc_vcl=${payload.plc_vcl} ten_emp=${payload.ten_emp}`;
     this.logger.debug(`BRT OS POST iniciando ${contextoLog}`);
 
     const usarTlsInseguro = this.deveIgnorarTls(empresa);

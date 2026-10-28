@@ -39,6 +39,10 @@ import { AuthService } from '../../services/auth.service';
 import { Permission } from '../../models/usuario.model';
 import { VeiculoAutocompleteComponent } from '../shared/veiculo-autocomplete/veiculo-autocomplete.component';
 import { PeriodoFluxoFilterComponent, PeriodoIntervaloPayload } from '../periodo-fluxo-filter/periodo-fluxo-filter.component';
+import {
+  TempoEtapaFluxoFilterComponent,
+  TempoEtapaFiltroPayload,
+} from '../tempo-etapa-fluxo-filter/tempo-etapa-fluxo-filter.component';
 import { MapaAvariaComponent } from '../mapa-avaria/mapa-avaria';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
 import { MultiSelectComponent } from '../shared/multi-select/multi-select.component';
@@ -73,6 +77,7 @@ type ModalAcao =
     FormsModule,
     VeiculoAutocompleteComponent,
     PeriodoFluxoFilterComponent,
+    TempoEtapaFluxoFilterComponent,
     MapaAvariaComponent,
     ConfirmationModalComponent,
     MultiSelectComponent,
@@ -142,6 +147,10 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   filtroVeiculoDescricao = '';
   filtroDataInicio = '';
   filtroDataFim = '';
+  /** Tempo na etapa (ENTRADA_STATUS) — null = sem filtro. */
+  filtroTempoEtapaHorasMin: number | null = null;
+  filtroTempoEtapaHorasMax: number | null = null;
+  filtroTempoEtapaClearSeq = 0;
   filtroGravidade = '';
   filtroOrigemRegistro: '' | FiltroOrigemRegistro = '';
   filtroIdArea = '';
@@ -275,7 +284,22 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   canGestaoOsRead = this.authService.hasPermission(
     Permission.IRREGULARIDADE_GESTAO_OS_READ,
   );
+  canPrintResumoTratamento = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_TRATAMENTO_PRINT_RESUMO,
+  );
+  canPrintResumoManutencao = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_MANUTENCAO_PRINT_RESUMO,
+  );
+  canPrintResumoValidacao = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT_RESUMO,
+  );
+  canPrintResumoGestaoOs = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_GESTAO_OS_PRINT_RESUMO,
+  );
   isPrintingRelatorio = false;
+  isPrintingRelatorioResumo = false;
+  showTipoResumoModal = false;
+  tipoResumoSelecionado: 'ANALITICA' | 'SINTETICA' = 'ANALITICA';
   readonly OrigemRegistroIrregularidade = OrigemRegistroIrregularidade;
 
   ngOnInit(): void {
@@ -499,6 +523,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         dataInicio: this.filtroDataInicio || undefined,
         dataFim: this.filtroDataFim || undefined,
         referenciaPeriodo: this.referenciaPeriodoParaListagem(),
+        tempoEtapaHorasMin: this.filtroTempoEtapaHorasMin ?? undefined,
+        tempoEtapaHorasMax: this.filtroTempoEtapaHorasMax ?? undefined,
         origemRegistro: this.filtroOrigemRegistro || undefined,
         page: this.currentPage,
         limit: this.pageSize,
@@ -592,6 +618,18 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.resetPageAndLoad();
   }
 
+  onTempoEtapaAplicado(filtro: TempoEtapaFiltroPayload): void {
+    this.filtroTempoEtapaHorasMin =
+      filtro.horasMin === undefined || filtro.horasMin === null
+        ? null
+        : filtro.horasMin;
+    this.filtroTempoEtapaHorasMax =
+      filtro.horasMax === undefined || filtro.horasMax === null
+        ? null
+        : filtro.horasMax;
+    this.resetPageAndLoad();
+  }
+
   /** Debounce para não disparar listagem a cada dígito no filtro de O.S. */
   onOrdemServicoFiltroChange(): void {
     if (this.ordemServicoFiltroDebounce) {
@@ -672,6 +710,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.filtroNumOsExterno = '';
     this.filtroNumeroVistoria = '';
     this.filtroPeriodoClearSeq += 1;
+    this.filtroTempoEtapaClearSeq += 1;
+    this.filtroTempoEtapaHorasMin = null;
+    this.filtroTempoEtapaHorasMax = null;
     this.filtroGravidade = '';
     this.filtroOrigemRegistro = '';
     this.filtroIdArea = '';
@@ -1858,6 +1899,164 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return false;
   }
 
+  get canShowRelatorioResumoFiltro(): boolean {
+    if (this.modo === 'tratamento') {
+      return this.canPrintResumoTratamento;
+    }
+    if (this.modo === 'manutencao') {
+      return this.canPrintResumoManutencao;
+    }
+    if (this.modo === 'validacao-final') {
+      return this.canPrintResumoValidacao;
+    }
+    if (this.modo === 'gestao-os') {
+      return this.canPrintResumoGestaoOs;
+    }
+    return false;
+  }
+
+  private origemTelaRelatorioResumo():
+    | 'tratamento'
+    | 'manutencao'
+    | 'validacao-final'
+    | 'gestao-os'
+    | null {
+    if (this.modo === 'tratamento') {
+      return 'tratamento';
+    }
+    if (this.modo === 'manutencao') {
+      return 'manutencao';
+    }
+    if (this.modo === 'validacao-final') {
+      return 'validacao-final';
+    }
+    if (this.modo === 'gestao-os') {
+      return 'gestao-os';
+    }
+    return null;
+  }
+
+  openTipoResumoModal(): void {
+    if (
+      !this.canShowRelatorioResumoFiltro ||
+      this.isPrintingRelatorioResumo ||
+      this.totalItems <= 0 ||
+      !this.origemTelaRelatorioResumo()
+    ) {
+      return;
+    }
+    this.tipoResumoSelecionado = 'ANALITICA';
+    this.showTipoResumoModal = true;
+  }
+
+  closeTipoResumoModal(): void {
+    if (this.isPrintingRelatorioResumo) {
+      return;
+    }
+    this.showTipoResumoModal = false;
+  }
+
+  confirmarImpressaoResumo(): void {
+    if (!this.showTipoResumoModal || this.isPrintingRelatorioResumo) {
+      return;
+    }
+    this.showTipoResumoModal = false;
+    this.imprimirRelatorioResumoFiltro(this.tipoResumoSelecionado);
+  }
+
+  /**
+   * Gestão OS: PDF resumido de todas as OS do filtro atual (não usa seleção/paginação).
+   */
+  imprimirRelatorioResumoFiltro(
+    tipoImpressao: 'ANALITICA' | 'SINTETICA' = 'ANALITICA',
+  ): void {
+    const origemTela = this.origemTelaRelatorioResumo();
+    if (
+      !origemTela ||
+      !this.canShowRelatorioResumoFiltro ||
+      this.isPrintingRelatorioResumo ||
+      this.totalItems <= 0
+    ) {
+      return;
+    }
+    this.isPrintingRelatorioResumo = true;
+    this.error = '';
+    this.irregularidadeService
+      .gerarRelatorioResumoGestaoOs({
+        tipoImpressao,
+        origemTela,
+        status: this.resolveStatusFiltro(),
+        ordemServico: this.ordemServicoParaApi(),
+        erpCodigoPedido: this.erpCodigoPedidoParaApi(),
+        numOsExterno: this.numOsExternoParaApi(),
+        numeroVistoria: this.numeroVistoriaParaApi(),
+        idVeiculo: this.filtroVeiculoId || undefined,
+        idEmpresaManutencao: this.mostraFiltroEmpresa
+          ? this.filtroIdEmpresaManutencao || undefined
+          : undefined,
+        idArea: this.filtroIdArea || undefined,
+        idComponente: this.filtroIdComponente || undefined,
+        idSintoma: this.filtroIdSintoma || undefined,
+        gravidade: this.filtroGravidade
+          ? [this.filtroGravidade as GravidadeCriticidade]
+          : undefined,
+        dataInicio: this.filtroDataInicio || undefined,
+        dataFim: this.filtroDataFim || undefined,
+        referenciaPeriodo: this.referenciaPeriodoParaListagem(),
+        tempoEtapaHorasMin: this.filtroTempoEtapaHorasMin ?? undefined,
+        tempoEtapaHorasMax: this.filtroTempoEtapaHorasMax ?? undefined,
+        origemRegistro: this.filtroOrigemRegistro || undefined,
+      })
+      .subscribe({
+        next: async (blob) => {
+          this.isPrintingRelatorioResumo = false;
+          if (!blob?.size) {
+            this.error = 'O servidor retornou um PDF vazio.';
+            return;
+          }
+          const head = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+          const isPdf =
+            head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46;
+          if (!isPdf) {
+            try {
+              const text = await blob.text();
+              const parsed = JSON.parse(text) as { message?: string };
+              this.error = parsed?.message ?? 'Resposta inválida ao gerar o PDF.';
+            } catch {
+              this.error =
+                'Não foi possível abrir o PDF (arquivo corrompido ou formato inválido).';
+            }
+            return;
+          }
+          const pdfBlob =
+            blob.type === 'application/pdf'
+              ? blob
+              : new Blob([blob], { type: 'application/pdf' });
+          const url = URL.createObjectURL(pdfBlob);
+          window.open(url, '_blank', 'noopener,noreferrer');
+          setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        },
+        error: (err) => {
+          this.isPrintingRelatorioResumo = false;
+          const body = err?.error;
+          if (body instanceof Blob) {
+            void body.text().then((text) => {
+              try {
+                const parsed = JSON.parse(text) as { message?: string };
+                this.error =
+                  parsed?.message ?? 'Erro ao gerar o relatório resumido em PDF.';
+              } catch {
+                this.error = text || 'Erro ao gerar o relatório resumido em PDF.';
+              }
+            });
+            return;
+          }
+          this.error =
+            err?.error?.message || 'Erro ao gerar o relatório resumido em PDF.';
+        },
+      });
+  }
+
   imprimirSelecionados(): void {
     const ids = this.getSelectedIds();
     if (!ids.length || this.isPrintingRelatorio || !this.canShowImprimir) {
@@ -2410,7 +2609,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       case StatusIrregularidade.REGISTRADA:
         return 'Registrada';
       case StatusIrregularidade.RETRABALHO_GARANTIA:
-        return 'Retrabalho / Garantia';
+        return 'Retrabalho';
       case StatusIrregularidade.CANCELADA:
         return 'Cancelada';
       case StatusIrregularidade.EM_MANUTENCAO:
@@ -2447,9 +2646,15 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return n.startsWith('paralisad') || n.startsWith('retid');
   }
 
-  /** Há snapshot de situação BRT para exibir no card. */
+  /**
+   * Há snapshot de situação BRT para exibir no card.
+   * Só com OS BRT ativa: em Retrabalho (sem numOs) o status da OS anterior
+   * (ex.: Disponível na Validação) não deve aparecer até o próximo envio.
+   */
   hasStatusBrtCard(item: IrregularidadeFluxoItem): boolean {
-    return !!item.statusBrtAtual?.trim();
+    return (
+      item.numOsExternoAtual != null && !!item.statusBrtAtual?.trim()
+    );
   }
 
   /**
@@ -2458,6 +2663,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
    * Demais: "Status BRT: {situacao}".
    */
   formatStatusBrtLabel(item: IrregularidadeFluxoItem): string | null {
+    if (!this.hasStatusBrtCard(item)) {
+      return null;
+    }
     const raw = item.statusBrtAtual?.trim();
     if (!raw) {
       return null;
@@ -2761,10 +2969,14 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   }
 
   private statusPadraoTratamento(): StatusIrregularidade[] {
-    return [StatusIrregularidade.REGISTRADA, StatusIrregularidade.NAO_PROCEDE];
+    return [
+      StatusIrregularidade.REGISTRADA,
+      StatusIrregularidade.NAO_PROCEDE,
+      StatusIrregularidade.RETRABALHO_GARANTIA,
+    ];
   }
 
-  /** Combo do Tratamento: padrão operacional + retrabalho/cancelada (não no «Todos»). */
+  /** Combo do Tratamento: padrão operacional + cancelada (não no padrão). */
   private buildTratamentoStatusOptions(): StatusIrregularidade[] {
     return [
       StatusIrregularidade.REGISTRADA,

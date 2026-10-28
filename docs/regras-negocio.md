@@ -249,34 +249,41 @@ Copie o bloco abaixo para cada regra nova.
 
 ### RN-VIS-003 - Permissoes de acesso e acao por tela do fluxo de irregularidades
 - **Modulo:** Vistoria
-- **Fluxo:** Telas web Tratamento, Manutencao, Validacao e Gestao OS (`/irregularidades/*`)
-- **Descricao:** Cada tela exige permissao `:read` propria para menu, rota e listagem API. Permissoes de acao (`:update`, `:start`, `:finish`, `:mark_not_proceeding`) controlam apenas botoes e endpoints de transicao; nao substituem o `:read` de acesso. Nas filas Manutencao e Validacao o escopo e por empresas de manutencao vinculadas ao usuario (N:N); o filtro de empresa e obrigatorio (uma empresa por vez). Tratamento nao exige empresa. Gestao OS consulta todos os status com filtros livres (empresa opcional) e nao executa transicoes.
+- **Fluxo:** Telas web Tratamento, Manutencao, Validacao e Gestao OS (`/irregularidades/*`); Validacao Mobile (`/validacao/inicio`)
+- **Descricao:** Cada tela exige permissao `:read` propria para menu, rota e listagem API. Permissoes de acao (`:update`, `:start`, `:finish`, `:mark_not_proceeding`) controlam apenas botoes e endpoints de transicao; nao substituem o `:read` de acesso. Nas filas Manutencao e Validacao o escopo e por empresas de manutencao vinculadas ao usuario (N:N); o filtro de empresa e obrigatorio (uma empresa por vez) **na web**. No **mobile**, a Validacao usa gate por veiculo (`idVeiculo` obrigatorio) e aplica o escopo pela uniao das empresas do usuario, sem exigir `idEmpresaManutencao` na query. Tratamento nao exige empresa. Gestao OS consulta todos os status com filtros livres (empresa opcional) e nao executa transicoes. Permissoes web e mobile de Validacao sao independentes.
 - **Condicoes de entrada:** Usuario autenticado com perfil contendo permissoes do fluxo
 - **Validacoes:**
   - Menu e rota de Tratamento exigem `irregularidade_tratamento:read`
   - Menu e rota de Manutencao exigem `irregularidade_manutencao:read`
-  - Menu e rota de Validacao exigem `irregularidade_validacao_final:read`
+  - Menu e rota de Validacao (web) exigem `irregularidade_validacao_final:read`
+  - Menu, home e rota de Validacao (mobile) exigem `irregularidade_validacao_final_mobile:read`
   - Menu e rota de Gestao OS exigem `irregularidade_gestao_os:read`
-  - `GET /irregularidades` exige `:read` de cada etapa correspondente aos status consultados (REGISTRADA/RETRABALHO_GARANTIA/CANCELADA/NAO_PROCEDE → tratamento; EM_MANUTENCAO → manutencao; CONCLUIDA/VALIDADA → validacao final), **exceto** quando o usuario tem `irregularidade_gestao_os:read` (consulta todos os status)
-  - Consulta com multiplos status exige todas as permissoes `:read` envolvidas (salvo Gestao OS)
-  - Escopo empresa (Manutencao/Validacao): status `EM_MANUTENCAO`, `CONCLUIDA`, `VALIDADA` exigem usuario com ao menos uma empresa em `usuariosEmpresasManutencao` e query `idEmpresaManutencao` obrigatoria pertencente ao vinculo; sem vinculo → 403 / fila vazia na UI
+  - `GET /irregularidades` exige `:read` de cada etapa correspondente aos status consultados (REGISTRADA/RETRABALHO_GARANTIA/CANCELADA/NAO_PROCEDE → tratamento; EM_MANUTENCAO → manutencao; CONCLUIDA/VALIDADA → validacao final web **ou** `irregularidade_validacao_final_mobile:read`), **exceto** quando o usuario tem `irregularidade_gestao_os:read` (consulta todos os status)
+  - Consulta com multiplos status exige todas as permissoes `:read` envolvidas (salvo Gestao OS; Validacao aceita web ou mobile)
+  - Escopo empresa (Manutencao/Validacao web): status `EM_MANUTENCAO`, `CONCLUIDA`, `VALIDADA` exigem usuario com ao menos uma empresa em `usuariosEmpresasManutencao` e query `idEmpresaManutencao` obrigatoria pertencente ao vinculo; sem vinculo → 403 / fila vazia na UI
+  - Escopo Validacao mobile (Opcao A): com `irregularidade_validacao_final_mobile:read`, status so de Validacao (`CONCLUIDA`/`VALIDADA`), `idVeiculo` informado e **sem** `idEmpresaManutencao` → lista no escopo `idEmpresaManutencao IN` empresas do usuario; sem veiculo a UI nao chama a API
   - `NAO_PROCEDE` nao exige filtro de empresa (vinculo da OS e limpo na devolucao)
   - Acoes de Manutencao/Validacao (concluir, nao procede, cancelar OS BRT, validar, reprovar) exigem que `idEmpresaManutencao` da irregularidade esteja no vinculo do usuario
   - Cadastro de usuario: multi-select de empresas de manutencao; `idEmpresa` legado sincronizado com a 1ª vinculada
 - **Acoes do sistema:**
-  - Cadastro de perfis agrupa permissoes em «Irregularidades – Tratamento», «Irregularidades – Manutenção», «Irregularidades – Validação» e «Irregularidades – Gestão OS»
+  - Cadastro de perfis agrupa permissoes em «Irregularidades – Tratamento», «Irregularidades – Manutenção», «Irregularidades – Validação» e «Irregularidades – Gestão OS»; as chaves mobile de Validacao ficam no grupo «Vistoria Mobile»
   - `irregularidade_manutencao:start` aparece no grupo Tratamento (botao «Enviar para manutenção» nesta tela)
   - API retorna HTTP 403 quando falta `:read` da etapa consultada
-  - Filtro «Todos» na tela Tratamento lista `REGISTRADA` + `NAO_PROCEDE`; Retrabalho/Cancelada permanecem no combo
-  - Fila Validacao lista `CONCLUIDA`
-  - Telas Manutencao/Validacao: filtro de empresa (uma por vez) + coluna Empresa no grid; Gestao OS: filtro de empresa opcional
-  - Tela Gestao OS (`/irregularidades/gestao-os`): todos os status, filtros de OS/veiculo/periodo/empresa/gravidade/origem; botao Imprimir com a mesma permissao `:read` da tela
+  - Filtro padrão na tela Tratamento lista `REGISTRADA` + `NAO_PROCEDE` + `RETRABALHO_GARANTIA`; Cancelada permanece no combo (fora do padrão)
+  - Fila Validacao (web e mobile) lista `CONCLUIDA`
+  - Telas Manutencao/Validacao web: filtro de empresa (uma por vez) + coluna Empresa no grid; Gestao OS: filtro de empresa opcional
+  - App mobile: botao «Iniciar Validação» no home/menu com a mesma permissao `:read` mobile; validar/reprovar usam `irregularidade_validacao_final_mobile:update` (mesmas regras RN-VIS-006)
+  - Tela Gestao OS (`/irregularidades/gestao-os`): todos os status, filtros de OS/veiculo/periodo/empresa/gravidade/origem/tempo na etapa; botao Imprimir (selecionadas) com `:read`; botao **Resumo por Veículo/Empresa** com `irregularidade_gestao_os:print_resumo`
+  - Nas 4 telas do fluxo: filtro **Tempo na etapa** (presets `> 8/24/48/72 h` + personalizar **maior que N dias**, convertido para horas na API); sempre calcula por `ENTRADA_STATUS` (ultima transicao real para o status atual, fallback `criadoEm`); aplica na listagem e no Resumo PDF
+  - Telas Tratamento, Manutenção e Validação: botao **Resumo por Veículo/Empresa** com `irregularidade_tratamento:print_resumo` / `irregularidade_manutencao:print_resumo` / `irregularidade_validacao_final:print_resumo`
 - **Mensagens ao usuario:** Guard/rota redireciona para home sem `:read`; API 403 com lista de permissoes faltantes; sem empresa vinculada informa que nao ha registros
 - **Permissoes envolvidas:**
   - Tratamento: `irregularidade_tratamento:read` (acesso), `irregularidade_tratamento:update` (reclassificar/cancelar), `irregularidade_manutencao:start` (enviar para manutencao; tambem autoriza `GET /empresas-terceiras` so para lookup do combo, sem liberar menu/rota de cadastro de empresas)
   - Manutencao: `irregularidade_manutencao:read` (acesso), `irregularidade_manutencao:finish`, `irregularidade_manutencao:mark_not_proceeding`
-  - Validacao: `irregularidade_validacao_final:read` (acesso), `irregularidade_validacao_final:update` (validar/reprovar)
-  - Gestao OS: `irregularidade_gestao_os:read` (acesso, consulta e impressao PDF)
+  - Validacao web: `irregularidade_validacao_final:read` (acesso), `irregularidade_validacao_final:update` (validar/reprovar)
+  - Validacao mobile: `irregularidade_validacao_final_mobile:read` (acesso), `irregularidade_validacao_final_mobile:update` (validar/reprovar)
+  - Gestao OS: `irregularidade_gestao_os:read` (acesso, consulta e impressao PDF das selecionadas); `irregularidade_gestao_os:print_resumo` (Resumo por Veículo/Empresa)
+  - Resumo por Veículo/Empresa: `irregularidade_tratamento:print_resumo`, `irregularidade_manutencao:print_resumo`, `irregularidade_validacao_final:print_resumo`, `irregularidade_gestao_os:print_resumo` (concessao manual em Perfis; nao via migration)
 - **Dados impactados:** Tabela `usuariosEmpresasManutencao` (N:N); coluna legado `usuarios.idEmpresa` mantida sincronizada com a 1ª empresa
 - **Rastreabilidade:** Nao exige auditoria adicional
 - **Criterios de aceite:**
@@ -285,14 +292,17 @@ Copie o bloco abaixo para cada regra nova.
   - [ ] Operador Tratamento com `manutencao:start` (sem `empresaterceira:read`) ve empresas no combo «Enviar para manutenção» e nao ve menu/rota de cadastro de empresas
   - [ ] Operador Tratamento precisa de `tratamento:read` + acoes desejadas (ex.: `update`, `manutencao:start`)
   - [ ] `GET /irregularidades` retorna 403 ao consultar status de etapa sem `:read` (exceto Gestao OS)
-  - [ ] Cadastro de perfil exibe grupos alinhados as telas, incluindo Gestao OS
-  - [ ] Filtro «Todos» em Tratamento lista `REGISTRADA` + `NAO_PROCEDE`
+  - [ ] Cadastro de perfil exibe grupos alinhados as telas, incluindo Gestao OS; Validacao Mobile aparece em «Vistoria Mobile»
+  - [ ] Filtro padrão em Tratamento lista `REGISTRADA` + `NAO_PROCEDE` + `RETRABALHO_GARANTIA`
   - [ ] Usuario sem empresa de manutencao nao ve itens em Manutencao/Validacao
-  - [ ] Filtro de empresa obriga uma empresa por vez nas filas operacionais e so lista empresas vinculadas
+  - [ ] Filtro de empresa obriga uma empresa por vez nas filas operacionais web e so lista empresas vinculadas
   - [ ] `CONCLUIDA`/`VALIDADA` respeitam o mesmo escopo de empresa
   - [ ] Gestao OS lista todos os status sem exigir empresa; concessao manual da permissao
-- **Cenarios de excecao:** Perfis existentes com acao mas sem `:read` perdem acesso ate inclusao da permissao de leitura; empresa fora do vinculo → 403 nas filas operacionais
-- **Origem da regra:** Reorganizacao de permissoes do fluxo web, 2026-05-21; multi-empresa manutencao 2026-10-08; Gestao OS e NAO_PROCEDE no Tratamento 2026-10-09
+  - [ ] Mobile: sem veiculo selecionado nao lista OS; com `:read` mobile + veiculo lista so `CONCLUIDA` do veiculo no escopo das empresas do usuario
+  - [ ] Mobile: permissao web sozinha nao libera home/menu/rota de Validacao no app
+  - [ ] `POST .../validar-final` e `.../reprovar-final` aceitam `:update` web ou mobile
+- **Cenarios de excecao:** Perfis existentes com acao mas sem `:read` perdem acesso ate inclusao da permissao de leitura; empresa fora do vinculo → 403 nas filas operacionais; concessao das chaves mobile e manual (nao via migration)
+- **Origem da regra:** Reorganizacao de permissoes do fluxo web, 2026-05-21; multi-empresa manutencao 2026-10-08; Gestao OS e NAO_PROCEDE no Tratamento 2026-10-09; Validacao Mobile (gate por veiculo) 2026-10-19
 - **Status:** Implementada
 
 ### RN-VIS-004 - Registrar irregularidade SOS na web (Tratamento)
@@ -364,10 +374,12 @@ Copie o bloco abaixo para cada regra nova.
   - Idempotencia: se o grupo ja tem `erp_codigo_pedido` / `num_os_externo_atual`, o reenvio nao chama de novo o lado ja resolvido
   - Erros BRT (`credenciais_invalidas`, `tenant_divergente`, `veiculo_nao_encontrado`, `validacao`, `os_nao_encontrada`, `os_em_execucao` no cancelamento) mapeados para mensagens funcionais sem expor token
   - `os_orig` enviado à API: `numeroVistoria` (ex.: `2026478`) no 1º envio do grupo; apos OS BRT criada com sucesso (incl. cancelada depois) ou com item em `RETRABALHO_GARANTIA`, `numeroVistoria-N` com N≥2 (contagem de `os_orig` distintos com sucesso no ambito da vistoria); historico em `irregularidades_os_externas` (uma linha por irregularidade do grupo)
+  - `reg_pai` (API BRT, opcional): **nao enviar** no 1º ciclo; no reenvio de itens em `RETRABALHO_GARANTIA`, enviar o `numOs` BRT da OS do **grupo original** que gerou o retrabalho (mesmo numero do grupo, inclusive se so parte do grupo foi reprovada). Resolucao (Opcao A): ultimo `num_os_externo` com sucesso em `irregularidades_os_externas` das irregularidades do grupo; se nao houver → erro funcional e grupo permanece no Tratamento
   - Cancelamento OS BRT (`tpo_reg: 7`) na tela Manutencao: permissao `irregularidade_manutencao:cancel_os_brt`; OS ativa no grupo; **uma** chamada BRT; sucesso → **todas** as irreg do mesmo `os_orig`/`numOs` ativos voltam a `REGISTRADA` e **limpam** `erp_*`; falha → permanecem `EM_MANUTENCAO`
   - E-mail de relatorio PDF: somente se flag `enviar_email_relatorio` na empresa **e** SMTP global ativo; apos ERP/BRT OK dos itens que vao transicionar (itens/veiculos que falharam nao entram no anexo); no legado, falha de e-mail bloqueia a transicao
   - Impressao automatica: flag global `impressao_manutencao_config.ativo` + IP IPv4 + porta (padrao 9100); dispara so apos itens transicionados; PDF com rotulos `OS:` (numeroIrregularidade), `OS OMNI:` (`erp_codigo_pedido`) e `OS BRT:` (`num_os_externo_atual`) quando houver; falha de socket/timeout nao bloqueia `EM_MANUTENCAO` (retorno `impressaoEnviada` / `impressaoErro`)
   - Botao **Imprimir** (PDF no navegador, sem RAW) nas telas Tratamento, Manutencao, Validacao e Gestao OS: Tratamento/Manutencao/Validacao exigem `:print` da tela; Gestao OS usa `irregularidade_gestao_os:read`; gera `POST /irregularidades/lote/relatorio-pdf` das selecionadas; agrupa por veiculo e **quebra pagina entre veiculos**; nao altera status nem dispara ERP/BRT
+  - Botao **Resumo por Veículo/Empresa** nas telas Tratamento, Manutenção, Validação e Gestão OS: exige `:print_resumo` da tela; modal escolhe **Analítica** ou **Sintética**; `POST /irregularidades/gestao-os/relatorio-resumo-pdf` com `origemTela`, `tipoImpressao` e os **mesmos filtros** da listagem (nao usa selecao nem paginacao); PDF **retrato**; Analítica = detalhe por veiculo + tabela; Sintética = só tabela; Manutenção/Validação exigem empresa no filtro; limite de 3000 OS
   - Trilha API (`controle_integracao`): **concluir manutencao manual permitido** (`EM_MANUTENCAO` → `CONCLUIDA`); nao chama API BRT nem limpa vinculos (`numOs`/`os_orig`/`erp_*` permanecem para rastreio); `marcar-nao-procede` manual continua **bloqueado**
   - **Retorno integrado BRT (v2 / poll):** no cadastro da empresa (Integração OS), flags `brt_busca_info_ativo` e `brt_busca_info_intervalo_minutos` (1–1440, padrao 10). Job periodico so considera empresas BRT com busca ativa; intervalo = valor da empresa. Consulta `GET /v1/os/registro` (lote, janela ≤ 31 dias) e/ou `GET /v1/os/registro/:numOs`; auth `ten_emp`+`token`. Persistencia: timeline de `historico[]` e base de `insumo[]` no nivel da OS (nao misturar status intermediarios em `irregularidade_historico`). Comparacao de `situacao` **tolerante** (case/grafia). Gatilhos no **grupo** (`mesmo os_orig`/`numOs` ativos, ainda `EM_MANUTENCAO`):
     - `Disponivel` → `CONCLUIDA` (Validacao Final); nao limpa vinculos BRT/`erp_*`; `acao: concluir_manutencao_integracao`; `Finalizada` **nao** dispara transicao
@@ -376,12 +388,12 @@ Copie o bloco abaixo para cada regra nova.
   - Poll idempotente: nao reaplicar transicao nem duplicar eventos/insumos; falha de consulta nao altera status OMNI; busca inativa na empresa → nenhuma consulta
   - Trilha sem API: transicoes manuais de Manutencao inalteradas
   - Marcar nao procede (trilha sem API): `EM_MANUTENCAO` → `NAO_PROCEDE`; **limpa** `idEmpresaManutencao`, vinculos BRT ativos e `erp_*`; historico registra a empresa que devolveu; item volta a fila Tratamento (sem exigir empresa); reenvio escolhe empresa novamente
-  - Reprovar validacao final: `CONCLUIDA` → `RETRABALHO_GARANTIA` (nao retornar direto a `EM_MANUTENCAO`); **limpa** vinculos BRT ativos e `erp_*` para forcar novo ciclo no reenvio
+  - Reprovar validacao final: `CONCLUIDA` → `RETRABALHO_GARANTIA` (nao retornar direto a `EM_MANUTENCAO`); **limpa** `idEmpresaManutencao`, vinculos BRT ativos, snapshot `status_brt_*` e `erp_*` para forcar novo ciclo no reenvio (empresa fica no historico do evento); item volta ao Tratamento sem exigir empresa; UI nao exibe Status BRT sem `num_os_externo_atual` (evita «Disponivel» residual no Tratamento)
 - **Acoes do sistema:**
   - Ramificar `iniciar-manutencao` / lote por configuracao da empresa selecionada e pela flag ERP global (RN-VIS-008)
   - Client HTTP backend para POST `https://www.api.brtgo.com.br/v1/os` (`tpo_reg: 1` criar; `tpo_reg: 7` cancelar quando aplicavel)
   - Client HTTP de consulta: `GET /v1/os/registro` (lote) e `GET /v1/os/registro/:numOs` (unitaria); sync de `historico` e `insumo`; job de poll por empresa BRT
-  - Mapear campos: `os_orig` (ver regra acima), `plc_vcl`, `tpo_srv` (`1` corretiva padrao; `2` preventiva; `3` SOS/socorro quando origem SOS e tipo nao for SINISTRO/PREVENTIVA; `4` quando capa `tipo = SINISTRO`; tipo na capa tem precedencia sobre SOS — um valor por vistoria), `nom_sol`, `tel_ctt`, `loc_atd` (cadastro da empresa BRT), `comenta` multilinha por irregularidade ordenada por NS (`area->componente->sintoma` + linha `Obs: …`, blocos separados por linha em branco), limite 4000 com truncate, `odo_vcl` opcional (odometro da vistoria)
+  - Mapear campos: `os_orig` (ver regra acima), `reg_pai` (reenvio retrabalho; ver regra acima), `plc_vcl`, `tpo_srv` (`1` corretiva padrao; `2` preventiva; `3` SOS/socorro quando origem SOS e tipo nao for SINISTRO/PREVENTIVA; `4` quando capa `tipo = SINISTRO`; tipo na capa tem precedencia sobre SOS — um valor por vistoria), `nom_sol`, `tel_ctt`, `loc_atd` (cadastro da empresa BRT), `comenta` multilinha por irregularidade ordenada por NS (`area->componente->sintoma` + linha `Obs: …`, blocos separados por linha em branco), limite 4000 com truncate, `odo_vcl` opcional (odometro da vistoria)
   - PDF de preview/e-mail/impressao/botao Imprimir: labels `OS:` / `OS OMNI:` / `OS BRT:`; cada veiculo inicia em pagina nova; se a irregularidade tiver marcacao (`id_vista` + coordenadas), desenhar a vista do modelo com circulo azul no ponto
   - Aba Configuracao «Impressão»: habilitar, IP, porta e timeout; persistencia em `configuracoes.impressao_manutencao_config` (somente RAW automatico pos-envio; botao Imprimir das filas nao usa essa flag)
   - Registrar historico: `enviar_api_os`, `falha_api_os`, `cancelar_api_os`, `iniciar_manutencao`, `reprovar_validacao_final`, `concluir_manutencao_integracao`, `cancelar_retorno_brt`
@@ -401,7 +413,7 @@ Copie o bloco abaixo para cada regra nova.
   - [ ] Empresa BRT: selecao incompleta **no escopo** bloqueada; OS fora do escopo podem ficar no Tratamento; selecao completa no escopo → 1 OS por vistoria; grupo so vai a `EM_MANUTENCAO` apos ERP (se ativo) + BRT OK
   - [ ] Falha BRT apos ERP OK: permanece Tratamento; reenvio nao chama ERP de novo
   - [ ] Lote com varios veiculos: sucesso parcial por veiculo documentado na UI
-  - [ ] Reprovar final → `RETRABALHO_GARANTIA` e limpa `erp_*`; reenvio BRT gera `numeroVistoria-N` e novo pedido ERP
+  - [ ] Reprovar final → `RETRABALHO_GARANTIA`, limpa `idEmpresaManutencao` + `erp_*` + vinculos BRT; reenvio BRT gera `numeroVistoria-N`, envia `reg_pai` = `numOs` do grupo original e novo pedido ERP
   - [ ] Trilha API: Concluir manual habilitado; Nao procede manual bloqueado no backend e na UI
   - [ ] Cancelamento OS BRT: sucesso → grupo `REGISTRADA` + limpa `erp_*`; falha → permanece `EM_MANUTENCAO`
   - [ ] Aprovacao na validacao final → `VALIDADA` e pendencia do veiculo atualizada
@@ -409,7 +421,9 @@ Copie o bloco abaixo para cada regra nova.
   - [ ] Falha de impressora nao impede `EM_MANUTENCAO`; resposta indica `impressaoErro`
   - [ ] Impressao off: nenhum socket aberto
   - [ ] Botao Imprimir nas 3 fases com `:print` da tela (Gestao OS com `:read`); PDF no browser; 2+ veiculos em paginas distintas
-  - [ ] Sem `:print`: botao oculto; API 403
+  - [ ] Tratamento/Manutenção/Validação/Gestão OS: Resumo por Veículo/Empresa — modal Analítica/Sintética; PDF do filtro; Manutenção/Validação com empresa; limite 3000
+  - [ ] Filtro Tempo na etapa (presets + personalizar) nas 4 telas; `ENTRADA_STATUS`; listagem e PDF respeitam o filtro
+  - [ ] Sem `:print` / `:print_resumo`: botao oculto; API 403
   - [ ] Nao procede volta ao Tratamento sem empresa; historico preserva a passagem
   - [ ] Gestao OS lista todos os status com filtros; sem transicao de status
   - [ ] Poll: `Finalizada` nao move status OMNI; `Disponivel` → grupo `CONCLUIDA`; `Cancelado` → grupo `REGISTRADA` + limpa vinculos/ERP
@@ -513,7 +527,7 @@ Copie o bloco abaixo para cada regra nova.
 - **Acoes do sistema:** Persistir vistas no modelo; persistir pontos em `irregularidades_marcacoes` (1º ponto espelhado nas colunas legado); overlay em tela, no PDF de pendencias (RN-VIS-007), no PDF de manutencao (RN-VIS-006) e na impressao da vistoria na web; filtrar operacional por `resolvido = false`
 - **Mensagens ao usuario:** Sem marcacao quando obrigatoria: "Marque o local da irregularidade no desenho do veiculo."; modelo sem vistas: "Este modelo não tem desenho cadastrado. Cadastre ao menos uma vista no modelo do veiculo para sintomas que exigem localizacao."; troca de imagem: aviso de desalinhamento percentual; exclusao com uso: orientar inativar
 - **Permissoes envolvidas:** `vista_veiculo:*` (CRUD do catálogo, concessao manual em Perfis); `modelo_veiculo:vistas` (adicionar JPEG no modelo); `modelo_veiculo:vistas_imagem` (trocar imagem); `modelo_veiculo:vistas_inativar` (inativar/ativar vista); `modelo_veiculo:vistas_excluir` (excluir vista); `modelo_veiculo:*` (cadastro do modelo); `sintoma:update` (flag); leitura de vistas na vistoria com `vistoria_mobile:read` / `vistoria_web:read` / `irregularidade_tratamento:read` / `irregularidade_tratamento:create_sos`
-- **Dados impactados:** `vistas_veiculo`; `modelo_veiculo_vistas`; `sintomas.exige_marcacao_mapa`; `matriz_criticidade.id_vistas`; `irregularidades.id_vista`, `pos_x_pct`, `pos_y_pct` (1º ponto); `irregularidades_marcacoes`
+- **Dados impactados:** `vistas_veiculo`; `modelos_veiculo` (`nome`, `descricao_detalhada`); `modelo_veiculo_vistas`; `sintomas.exige_marcacao_mapa`; `matriz_criticidade.id_vistas`; `irregularidades.id_vista`, `pos_x_pct`, `pos_y_pct` (1º ponto); `irregularidades_marcacoes`
 - **Rastreabilidade:** Auditoria padrao de modelo, sintoma e irregularidade; marcacao acompanha o historico de status da irregularidade
 - **Criterios de aceite:**
   - [x] Catálogo de vistas/partes; modelo escolhe o item e anexa JPEG (sem descrição livre)
@@ -718,6 +732,14 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-10-27: RN-VIS-003 — filtro Tempo na etapa nas 4 telas do fluxo (presets + personalizar); critério sempre `ENTRADA_STATUS`; query `tempoEtapaHorasMin|Max` na listagem e no Resumo PDF.
+- 2026-10-27: Cadastro Modelo de Veículo — campo `descricao_detalhada` (opcional); migration copia `nome` existente para o novo campo; `nome` permanece identificador único curto.
+- 2026-10-27: RN-VIS-006 — reprovar final → `RETRABALHO_GARANTIA` também limpa `idEmpresaManutencao` (igual NAO_PROCEDE); empresa preservada só no histórico do evento.
+- 2026-10-27: RN-VIS-003 / RN-VIS-006 — Resumo por Veículo/Empresa em Tratamento, Manutenção, Validação e Gestão OS; permissões `*:print_resumo` (concessão manual); modal Analítica/Sintética; `origemTela` + `tipoImpressao`; limite 3000.
+- 2026-10-23: RN-VIS-006 — reprovar limpa `status_brt_*`; card so mostra Status BRT com OS ativa (`num_os_externo_atual`); evita residual «Disponivel» em Retrabalho.
+- 2026-10-23: RN-VIS-003 — filtro padrão Tratamento passa a incluir `RETRABALHO_GARANTIA` junto com `REGISTRADA` e `NAO_PROCEDE`; Cancelada continua só no combo.
+- 2026-10-21: RN-VIS-006 — reenvio BRT apos `RETRABALHO_GARANTIA` envia `reg_pai` = `numOs` da OS BRT do grupo original (Opcao A: historico `irregularidades_os_externas`); 1º envio nao envia `reg_pai`.
+- 2026-10-19: RN-VIS-003 — Validacao Mobile: permissoes `irregularidade_validacao_final_mobile:read|update` no grupo «Vistoria Mobile»; `GET /irregularidades` com `idVeiculo` (sem empresa) no escopo uniao das empresas do usuario; home/menu «Iniciar Validação»; mesmas regras de validar/reprovar (RN-VIS-006).
 - 2026-10-16: RN-VIS-008 / US4.6 — busca de conclusao ERP: config (ativo, intervalo, empresas NENHUMA, modo SOMENTE_CONCLUIR|CONCLUIR_E_VALIDAR); job `ErpOsPollService` + botao Manutencao; `GET .../resultado`; off = zero GET.
 - 2026-10-15: RN-VIS-006 / US4.5 — UI Manutencao: exibe ultimo status BRT no card; vermelho so Paralisada/Retido/erro; demais situacoes neutras; snapshot `status_brt_comentario` na irreg.
 - 2026-10-14: RN-VIS-006 / US4.5 — job `BrtOsPollService` (tick 1 min) so processa empresa com `brt_busca_info_ativo`; respeita intervalo e `ultimo_poll_em`; consulta `GET /registro/:numOs`; sync timeline/insumos; `Disponivel`→`CONCLUIDA`, `Cancelado`→`REGISTRADA`.

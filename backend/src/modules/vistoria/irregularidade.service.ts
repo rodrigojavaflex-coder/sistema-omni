@@ -58,6 +58,7 @@ import { Configuracao } from '../configuracao/entities/configuracao.entity';
 import { Veiculo } from '../veiculo/entities/veiculo.entity';
 import { IniciarManutencaoLoteDto } from './dto/iniciar-manutencao-lote.dto';
 import { RelatorioIrregularidadesLoteDto } from './dto/relatorio-irregularidades-lote.dto';
+import { RelatorioResumoGestaoOsDto } from './dto/relatorio-resumo-gestao-os.dto';
 import {
   RelatorioManutencaoExecucaoDto,
   RelatorioManutencaoPreviewDto,
@@ -120,6 +121,9 @@ type MapaPdfIrregularidadeLocal = {
 @Injectable()
 export class IrregularidadeService {
   private readonly logger = new Logger(IrregularidadeService.name);
+
+  /** Limite de OS no PDF resumido da Gestão OS (evita PDF/memória excessivos). */
+  static readonly RELATORIO_RESUMO_GESTAO_OS_MAX = 3000;
 
   constructor(
     @InjectRepository(Irregularidade)
@@ -857,6 +861,11 @@ export class IrregularidadeService {
     context: {
       idsEmpresasManutencao?: string[];
       scopeByEmpresa?: boolean;
+      /**
+       * Mobile validação (Opção A): com `idVeiculo`, aplica escopo pela união
+       * das empresas do usuário sem exigir `idEmpresaManutencao` na query.
+       */
+      scopeByEmpresaViaVeiculo?: boolean;
     },
     filters?: {
       idVeiculo?: string;
@@ -875,6 +884,11 @@ export class IrregularidadeService {
       numeroVistoria?: string;
       /** Alinha o filtro de datas à coluna "Registrado" por etapa (front: getDataRegistradoFluxo). */
       referenciaPeriodo?: 'CRIADO_EM' | 'ENTRADA_STATUS';
+      /**
+       * Tempo na etapa atual (sempre ENTRADA_STATUS): horas mínimas/máximas decorridas.
+       */
+      tempoEtapaHorasMin?: number;
+      tempoEtapaHorasMax?: number;
       /** Filtra por origem do registro (`SOS_WEB` ou `MOBILE` para null). */
       origemRegistro?: 'SOS_WEB' | 'MOBILE';
       idArea?: string;
@@ -882,10 +896,20 @@ export class IrregularidadeService {
       idSintoma?: string;
       page?: number;
       limit?: number;
+      /**
+       * Relatório resumido Gestão OS: até RELATORIO_RESUMO_GESTAO_OS_MAX linhas,
+       * sem mídias/marcações (somente campos do grid).
+       */
+      modoRelatorioResumo?: boolean;
     },
   ): Promise<PaginatedResponseDto<IrregularidadeResumoDto>> {
-    const page = Math.max(1, Number(filters?.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(filters?.limit) || 20));
+    const modoRelatorioResumo = !!filters?.modoRelatorioResumo;
+    const page = modoRelatorioResumo
+      ? 1
+      : Math.max(1, Number(filters?.page) || 1);
+    const limit = modoRelatorioResumo
+      ? IrregularidadeService.RELATORIO_RESUMO_GESTAO_OS_MAX
+      : Math.min(100, Math.max(1, Number(filters?.limit) || 20));
     // NÃO fazer leftJoinAndSelect em i.marcacoes aqui.
     // Join OneToMany multiplica linhas e o TypeORM mistura veículo/OS entre
     // irregularidades da mesma página (ex.: item com 3 marcações contamina os demais).
@@ -924,20 +948,31 @@ export class IrregularidadeService {
           'Usuário sem empresa de manutenção vinculada. Não há registros para exibir.',
         );
       }
-      const idFiltro = filters?.idEmpresaManutencao?.trim();
-      if (!idFiltro) {
-        throw new BadRequestException(
-          'Informe a empresa de manutenção (idEmpresaManutencao) para filtrar a fila',
-        );
+      if (context.scopeByEmpresaViaVeiculo) {
+        if (!filters?.idVeiculo?.trim()) {
+          throw new BadRequestException(
+            'Informe o veículo (idVeiculo) para listar a validação no mobile',
+          );
+        }
+        qb = qb.andWhere('i.idEmpresaManutencao IN (:...idsEmpresasManutencao)', {
+          idsEmpresasManutencao: idsPermitidos,
+        });
+      } else {
+        const idFiltro = filters?.idEmpresaManutencao?.trim();
+        if (!idFiltro) {
+          throw new BadRequestException(
+            'Informe a empresa de manutenção (idEmpresaManutencao) para filtrar a fila',
+          );
+        }
+        if (!idsPermitidos.includes(idFiltro)) {
+          throw new ForbiddenException(
+            'Empresa de manutenção fora do escopo do usuário',
+          );
+        }
+        qb = qb.andWhere('i.idEmpresaManutencao = :idEmpresaManutencao', {
+          idEmpresaManutencao: idFiltro,
+        });
       }
-      if (!idsPermitidos.includes(idFiltro)) {
-        throw new ForbiddenException(
-          'Empresa de manutenção fora do escopo do usuário',
-        );
-      }
-      qb = qb.andWhere('i.idEmpresaManutencao = :idEmpresaManutencao', {
-        idEmpresaManutencao: idFiltro,
-      });
     } else if (filters?.idEmpresaManutencao?.trim()) {
       qb = qb.andWhere('i.idEmpresaManutencao = :idEmpresaManutencao', {
         idEmpresaManutencao: filters.idEmpresaManutencao.trim(),
@@ -1015,15 +1050,14 @@ export class IrregularidadeService {
      * Fallback em criadoEm (igual ao cálculo de entradaStatusEm no retorno desta lista).
      * CRIADO_EM: data de criação do registro (fila de tratamento).
      */
-    const dataRefSql = useEntradaStatus
-      ? `COALESCE((
+    const entradaStatusSql = `COALESCE((
           SELECT MAX(hist."dataEvento")
           FROM "irregularidade_historico" hist
           WHERE hist."idIrregularidade" = "i"."id"
             AND hist."statusDestino" = "i"."status_atual"
             AND (hist."statusOrigem" IS NULL OR hist."statusOrigem" <> hist."statusDestino")
-        ), "i"."criadoEm")`
-      : '"i"."criadoEm"';
+        ), "i"."criadoEm")`;
+    const dataRefSql = useEntradaStatus ? entradaStatusSql : '"i"."criadoEm"';
 
     if (filters?.dataInicio || filters?.dataFim) {
       if (filters.dataInicio) {
@@ -1036,6 +1070,22 @@ export class IrregularidadeService {
       }
     }
 
+    const horasMin = this.parseHorasNaoNegativas(filters?.tempoEtapaHorasMin);
+    const horasMax = this.parseHorasNaoNegativas(filters?.tempoEtapaHorasMax);
+    if (horasMin != null || horasMax != null) {
+      const tempoHorasSql = `(EXTRACT(EPOCH FROM (NOW() - (${entradaStatusSql}))) / 3600.0)`;
+      if (horasMin != null) {
+        qb = qb.andWhere(`${tempoHorasSql} >= :tempoEtapaHorasMin`, {
+          tempoEtapaHorasMin: horasMin,
+        });
+      }
+      if (horasMax != null) {
+        qb = qb.andWhere(`${tempoHorasSql} <= :tempoEtapaHorasMax`, {
+          tempoEtapaHorasMax: horasMax,
+        });
+      }
+    }
+
     qb = qb.setParameter(
       'sosOrigemOrdem',
       OrigemRegistroIrregularidade.SOS_WEB,
@@ -1043,6 +1093,15 @@ export class IrregularidadeService {
 
     // Contagem sem ORDER BY (evita conflito com paginação).
     const total = await qb.clone().orderBy().getCount();
+
+    if (
+      modoRelatorioResumo &&
+      total > IrregularidadeService.RELATORIO_RESUMO_GESTAO_OS_MAX
+    ) {
+      throw new BadRequestException(
+        `O filtro retornou ${total} OS. Refine os filtros para no máximo ${IrregularidadeService.RELATORIO_RESUMO_GESTAO_OS_MAX} registros antes de gerar o relatório resumido.`,
+      );
+    }
 
     // Paginação por IDs: skip/take + ORDER BY CASE quebra no TypeORM (alias inválido).
     const idRows = await qb
@@ -1054,7 +1113,7 @@ export class IrregularidadeService {
       )
       .addOrderBy(dataRefSql, 'ASC')
       .addOrderBy('i.id', 'ASC')
-      .offset((page - 1) * limit)
+      .offset(modoRelatorioResumo ? 0 : (page - 1) * limit)
       .limit(limit)
       .getRawMany<{ id: string }>();
 
@@ -1084,7 +1143,7 @@ export class IrregularidadeService {
       .filter((item): item is Irregularidade => !!item);
 
     // Marcações em query separada (evita produto cartesiano na listagem).
-    if (ids.length > 0) {
+    if (ids.length > 0 && !modoRelatorioResumo) {
       const marcacoes = await this.marcacaoRepository.find({
         where: { idIrregularidade: In(ids) },
         order: { ordem: 'ASC' },
@@ -1142,7 +1201,7 @@ export class IrregularidadeService {
         }>;
       }
     >();
-    if (ids.length > 0) {
+    if (ids.length > 0 && !modoRelatorioResumo) {
       const rows = await this.midiaRepository
         .createQueryBuilder('m')
         .select('m.idIrregularidade', 'idIrregularidade')
@@ -1303,6 +1362,51 @@ export class IrregularidadeService {
       }
     }
 
+    const conclusaoById = new Map<string, string>();
+    if (ids.length > 0 && !modoRelatorioResumo) {
+      const conclusoes = await this.irregularidadeHistoricoRepository
+        .createQueryBuilder('hist')
+        .select('hist.idIrregularidade', 'idIrregularidade')
+        .addSelect('hist.observacao', 'observacao')
+        .addSelect('hist.acao', 'acao')
+        .addSelect('hist.dataEvento', 'dataEvento')
+        .where('hist.idIrregularidade IN (:...ids)', { ids })
+        .andWhere('hist.acao IN (:...acoesConclusao)', {
+          acoesConclusao: [
+            'concluir_manutencao',
+            'concluir_manutencao_integracao',
+            'concluir_manutencao_integracao_erp',
+          ],
+        })
+        .orderBy('hist.dataEvento', 'DESC')
+        .getRawMany<{
+          idIrregularidade: string;
+          observacao?: string | null;
+          acao: string;
+          dataEvento: string;
+        }>();
+
+      for (const row of conclusoes) {
+        if (!row.idIrregularidade || conclusaoById.has(row.idIrregularidade)) {
+          continue;
+        }
+        const obs = row.observacao?.trim();
+        if (obs) {
+          conclusaoById.set(row.idIrregularidade, obs);
+        } else if ((row.acao || '').includes('integracao')) {
+          conclusaoById.set(
+            row.idIrregularidade,
+            'Concluída via integração (sem texto de conclusão).',
+          );
+        } else {
+          conclusaoById.set(
+            row.idIrregularidade,
+            'Conclusão registrada sem observação.',
+          );
+        }
+      }
+    }
+
     const data = entities.map((item) => {
       const counts = countsByIrregularidade.get(item.id);
       const midias = midiasByIrregularidade.get(item.id);
@@ -1325,6 +1429,10 @@ export class IrregularidadeService {
         undefined,
         entradaStatusEm,
       );
+      const observacaoConclusao = conclusaoById.get(item.id);
+      if (observacaoConclusao) {
+        resumo.observacaoConclusao = observacaoConclusao;
+      }
       if (item.idEmpresaManutencao) {
         resumo.idEmpresaManutencao = item.idEmpresaManutencao;
         resumo.empresaManutencaoDescricao =
@@ -1359,7 +1467,9 @@ export class IrregularidadeService {
       return resumo;
     });
 
-    await this.preencherStatusBrtComentarioFallback(data);
+    if (!modoRelatorioResumo) {
+      await this.preencherStatusBrtComentarioFallback(data);
+    }
 
     return new PaginatedResponseDto(
       data,
@@ -1661,6 +1771,200 @@ export class IrregularidadeService {
     return this.buildPdfRelatorioManutencao(resumo, irregularidades, config);
   }
 
+  /**
+   * PDF resumido da Gestão OS: todas as OS do filtro (sem paginação/seleção),
+   * agrupadas por veículo, com tempo na etapa e totais por empresa/veículo/status.
+   */
+  async gerarRelatorioResumoGestaoOsPdf(
+    dto: RelatorioResumoGestaoOsDto,
+    actor?: {
+      nome?: string;
+      idsEmpresasManutencao?: string[];
+    },
+  ): Promise<Buffer> {
+    const origemTela = dto.origemTela ?? 'gestao-os';
+    const statusesPadraoPorTela: Record<
+      'tratamento' | 'manutencao' | 'validacao-final' | 'gestao-os',
+      StatusIrregularidade[]
+    > = {
+      tratamento: [
+        StatusIrregularidade.REGISTRADA,
+        StatusIrregularidade.NAO_PROCEDE,
+        StatusIrregularidade.RETRABALHO_GARANTIA,
+      ],
+      manutencao: [StatusIrregularidade.EM_MANUTENCAO],
+      'validacao-final': [StatusIrregularidade.CONCLUIDA],
+      'gestao-os': Object.values(StatusIrregularidade),
+    };
+    const statuses =
+      dto.status && dto.status.length > 0
+        ? dto.status
+        : statusesPadraoPorTela[origemTela];
+
+    const scopeByEmpresa =
+      origemTela === 'manutencao' || origemTela === 'validacao-final';
+    if (scopeByEmpresa && !dto.idEmpresaManutencao?.trim()) {
+      throw new BadRequestException(
+        origemTela === 'validacao-final'
+          ? 'Informe a empresa de manutenção para gerar o resumo na tela Validação.'
+          : 'Informe a empresa de manutenção para gerar o resumo na tela Manutenção.',
+      );
+    }
+
+    const listagem = await this.listByStatus(
+      statuses,
+      {
+        scopeByEmpresa,
+        idsEmpresasManutencao: actor?.idsEmpresasManutencao,
+      },
+      {
+        idVeiculo: dto.idVeiculo,
+        idEmpresaManutencao: dto.idEmpresaManutencao,
+        gravidade: dto.gravidade,
+        dataInicio: dto.dataInicio,
+        dataFim: dto.dataFim,
+        referenciaPeriodo: dto.referenciaPeriodo ?? 'CRIADO_EM',
+        tempoEtapaHorasMin: dto.tempoEtapaHorasMin,
+        tempoEtapaHorasMax: dto.tempoEtapaHorasMax,
+        ordemServico: dto.ordemServico,
+        erpCodigoPedido: dto.erpCodigoPedido,
+        numOsExterno: dto.numOsExterno,
+        numeroVistoria: dto.numeroVistoria,
+        origemRegistro: dto.origemRegistro,
+        idArea: dto.idArea,
+        idComponente: dto.idComponente,
+        idSintoma: dto.idSintoma,
+        modoRelatorioResumo: true,
+      },
+    );
+
+    if (!listagem.data.length) {
+      throw new BadRequestException(
+        'Nenhuma irregularidade encontrada com os filtros informados.',
+      );
+    }
+
+    const filtrosAplicados = await this.buildFiltrosTextoRelatorioResumo(
+      dto,
+      statuses,
+    );
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    const tipoImpressao =
+      dto.tipoImpressao === 'SINTETICA' ? 'SINTETICA' : 'ANALITICA';
+    return this.buildPdfRelatorioResumoGestaoOs(
+      listagem.data,
+      new Date(),
+      actor?.nome,
+      config,
+      filtrosAplicados,
+      tipoImpressao,
+    );
+  }
+
+  private async buildFiltrosTextoRelatorioResumo(
+    dto: RelatorioResumoGestaoOsDto,
+    statusesEfetivos: StatusIrregularidade[],
+  ): Promise<string> {
+    const partes: string[] = [];
+
+    const todosStatus =
+      !dto.status?.length ||
+      dto.status.length >= Object.values(StatusIrregularidade).length;
+    if (todosStatus) {
+      partes.push('Status: Todos');
+    } else {
+      partes.push(
+        `Status: ${statusesEfetivos
+          .map((s) => this.labelStatusIrregularidade(s))
+          .join(', ')}`,
+      );
+    }
+
+    if (dto.idEmpresaManutencao) {
+      const emp = await this.empresaTerceiraRepository.findOne({
+        where: { id: dto.idEmpresaManutencao },
+        select: ['id', 'descricao'],
+      });
+      partes.push(`Empresa: ${emp?.descricao?.trim() || dto.idEmpresaManutencao}`);
+    } else {
+      partes.push('Empresa: Todas');
+    }
+
+    if (dto.idVeiculo) {
+      const vei = await this.veiculoRepository.findOne({
+        where: { id: dto.idVeiculo },
+        select: ['id', 'descricao', 'placa'],
+      });
+      const label = vei
+        ? `${vei.descricao}${vei.placa ? ` (${vei.placa})` : ''}`
+        : dto.idVeiculo;
+      partes.push(`Veículo: ${label}`);
+    } else {
+      partes.push('Veículo: Todos');
+    }
+
+    if (dto.dataInicio || dto.dataFim) {
+      const ref =
+        dto.referenciaPeriodo === 'ENTRADA_STATUS'
+          ? 'entrada na etapa'
+          : 'criação';
+      const de = dto.dataInicio || '…';
+      const ate = dto.dataFim || '…';
+      partes.push(`Período (${ref}): ${de} a ${ate}`);
+    }
+
+    const horasMinTxt = this.parseHorasNaoNegativas(dto.tempoEtapaHorasMin);
+    const horasMaxTxt = this.parseHorasNaoNegativas(dto.tempoEtapaHorasMax);
+    if (horasMinTxt != null || horasMaxTxt != null) {
+      partes.push(
+        this.formatFiltroTempoEtapaTexto(horasMinTxt, horasMaxTxt),
+      );
+    }
+
+    if (dto.ordemServico) partes.push(`OS: ${dto.ordemServico}`);
+    if (dto.erpCodigoPedido) partes.push(`OS OMNI: ${dto.erpCodigoPedido}`);
+    if (dto.numOsExterno) partes.push(`OS BRT: ${dto.numOsExterno}`);
+    if (dto.numeroVistoria) partes.push(`Vistoria: ${dto.numeroVistoria}`);
+
+    if (dto.idArea) {
+      const area = await this.areaRepository.findOne({
+        where: { id: dto.idArea },
+        select: ['id', 'nome'],
+      });
+      partes.push(`Área: ${area?.nome?.trim() || dto.idArea}`);
+    }
+    if (dto.idComponente) {
+      const comp = await this.componenteRepository.findOne({
+        where: { id: dto.idComponente },
+        select: ['id', 'nome'],
+      });
+      partes.push(`Componente: ${comp?.nome?.trim() || dto.idComponente}`);
+    }
+    if (dto.idSintoma) {
+      const sint = await this.sintomaRepository.findOne({
+        where: { id: dto.idSintoma },
+        select: ['id', 'descricao'],
+      });
+      partes.push(`Sintoma: ${sint?.descricao?.trim() || dto.idSintoma}`);
+    }
+
+    if (dto.gravidade?.length) {
+      partes.push(
+        `Gravidade: ${dto.gravidade
+          .map((g) => this.labelGravidadeIrregularidade(g))
+          .join(', ')}`,
+      );
+    }
+
+    if (dto.origemRegistro === 'SOS_WEB') {
+      partes.push('Origem: SOS');
+    } else if (dto.origemRegistro === 'MOBILE') {
+      partes.push('Origem: Mobile');
+    }
+
+    return partes.join(' · ');
+  }
+
   async iniciarManutencaoLote(
     dto: IniciarManutencaoLoteDto,
     actor?: { id?: string; idEmpresa?: string; nome?: string },
@@ -1751,6 +2055,9 @@ export class IrregularidadeService {
         irregularidade.numOsExternoAtual = null;
         irregularidade.ultimoErroIntegracao = null;
         irregularidade.ultimoErroIntegracaoEm = null;
+        irregularidade.statusBrtAtual = null;
+        irregularidade.statusBrtAtualizadoEm = null;
+        irregularidade.statusBrtComentario = null;
         irregularidade.erpCodigoPedido = null;
         irregularidade.erpEnviadoEm = null;
         irregularidade.erpUltimoErro = null;
@@ -1836,13 +2143,21 @@ export class IrregularidadeService {
     return this.irregularidadeRepository.manager.transaction(
       async (manager) => {
         const origem = irregularidade.statusAtual;
+        const empresaAnterior = irregularidade.idEmpresaManutencao;
         irregularidade.statusAtual = StatusIrregularidade.RETRABALHO_GARANTIA;
         irregularidade.resolvido = false;
+        // Volta ao Tratamento sem vínculo de empresa (igual NAO_PROCEDE); reenvio escolhe de novo.
+        (irregularidade as { idEmpresaManutencao: string | null }).idEmpresaManutencao =
+          null;
         irregularidade.controleIntegracaoApi = false;
         irregularidade.osOrigAtual = null;
         irregularidade.numOsExternoAtual = null;
         irregularidade.ultimoErroIntegracao = null;
         irregularidade.ultimoErroIntegracaoEm = null;
+        // Snapshot da OS anterior (ex.: Disponivel na Validacao) nao deve aparecer no Retrabalho.
+        irregularidade.statusBrtAtual = null;
+        irregularidade.statusBrtAtualizadoEm = null;
+        irregularidade.statusBrtComentario = null;
         irregularidade.erpCodigoPedido = null;
         irregularidade.erpEnviadoEm = null;
         irregularidade.erpUltimoErro = null;
@@ -1858,7 +2173,7 @@ export class IrregularidadeService {
             statusDestino: StatusIrregularidade.RETRABALHO_GARANTIA,
             acao: 'reprovar_validacao_final',
             idUsuario: actor?.id,
-            idEmpresaEvento: actor?.idEmpresa,
+            idEmpresaEvento: empresaAnterior ?? actor?.idEmpresa,
             observacao: dto.observacao,
           },
         );
@@ -3684,6 +3999,671 @@ export class IrregularidadeService {
     return mapas;
   }
 
+  private labelStatusIrregularidade(status: StatusIrregularidade): string {
+    switch (status) {
+      case StatusIrregularidade.REGISTRADA:
+        return 'Registrada';
+      case StatusIrregularidade.RETRABALHO_GARANTIA:
+        return 'Retrabalho';
+      case StatusIrregularidade.CANCELADA:
+        return 'Cancelada';
+      case StatusIrregularidade.EM_MANUTENCAO:
+        return 'Em manutenção';
+      case StatusIrregularidade.NAO_PROCEDE:
+        return 'Não procede';
+      case StatusIrregularidade.CONCLUIDA:
+        return 'Concluída';
+      case StatusIrregularidade.VALIDADA:
+        return 'Validada';
+      default:
+        return status;
+    }
+  }
+
+  private labelGravidadeIrregularidade(
+    gravidade?: GravidadeCriticidade | null,
+  ): string {
+    switch (gravidade) {
+      case GravidadeCriticidade.VERDE:
+        return 'Baixa';
+      case GravidadeCriticidade.AMARELO:
+        return 'Média';
+      case GravidadeCriticidade.VERMELHO:
+        return 'Alta';
+      default:
+        return gravidade ? String(gravidade) : '-';
+    }
+  }
+
+  private formatTempoDesde(isoDate?: string | null): string {
+    if (!isoDate) {
+      return '-';
+    }
+    const registro = new Date(isoDate).getTime();
+    if (Number.isNaN(registro)) {
+      return '-';
+    }
+    const diffMs = Date.now() - registro;
+    if (diffMs <= 0) {
+      return 'agora';
+    }
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const dias = Math.floor(totalMinutes / (60 * 24));
+    const horas = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutos = totalMinutes % 60;
+    if (dias > 0) {
+      return `${dias}d ${horas}h`;
+    }
+    if (horas > 0) {
+      return `${horas}h ${minutos}min`;
+    }
+    if (minutos > 0) {
+      return `${minutos}min`;
+    }
+    return 'agora';
+  }
+
+  private buildPdfRelatorioResumoGestaoOs(
+    itens: IrregularidadeResumoDto[],
+    emitidoEm: Date,
+    emitidoPor: string | undefined,
+    configuracao: Configuracao | null,
+    filtrosAplicados: string,
+    tipoImpressao: 'ANALITICA' | 'SINTETICA' = 'ANALITICA',
+  ): Promise<Buffer> {
+    const dataEmissao = this.formatDateTimeBr(emitidoEm);
+    const logoBuffer = this.resolveLogoBuffer(configuracao);
+    const tituloRelatorio =
+      tipoImpressao === 'SINTETICA'
+        ? 'Relatório Resumo por Veículo/Empresa (Sintético)'
+        : 'Relatório Resumo por Veículo (Analítico)';
+    const somenteSintetico = tipoImpressao === 'SINTETICA';
+    const marginX = 24;
+    const footerBandPt = 44;
+    const boxPadX = 8;
+    const boxPadY = 6;
+    const boxGap = 10;
+
+    type LinhaResumo = {
+      empresa: string;
+      veiculo: string;
+      modelo: string;
+      veiculoKey: string;
+      os: string;
+      classificacao: string;
+      descricao: string;
+      status: string;
+      gravidade: string;
+      tempoEtapa: string;
+    };
+
+    type GrupoVeiculo = {
+      key: string;
+      veiculo: string;
+      modelo: string;
+      rows: LinhaResumo[];
+      porStatus: Map<string, number>;
+    };
+
+    const linhas: LinhaResumo[] = itens.map((item) => {
+      const empresa = item.empresaManutencaoDescricao?.trim() || 'Sem Empresa';
+      const veiculo = item.veiculoDescricao?.trim() || 'Veículo não informado';
+      const placa = item.veiculoPlaca?.trim() || '';
+      const veiculoLabel = placa ? `${veiculo} (${placa})` : veiculo;
+      const modelo = item.veiculoModelo?.trim() || '-';
+      const osParts = [`OS: ${item.numeroIrregularidade}`];
+      if (item.erpCodigoPedido?.trim()) {
+        osParts.push(`OMNI: ${item.erpCodigoPedido.trim()}`);
+      }
+      if (item.numOsExternoAtual != null) {
+        osParts.push(`BRT: ${item.numOsExternoAtual}`);
+      }
+      const classificacao = [
+        item.nomeArea?.trim() || '-',
+        item.nomeComponente?.trim() || '-',
+        item.descricaoSintoma?.trim() || '-',
+      ].join(' / ');
+      const entrada = item.entradaStatusEm ?? item.criadoEm;
+      return {
+        empresa,
+        veiculo: veiculoLabel,
+        modelo,
+        veiculoKey: String(item.idVeiculo ?? veiculoLabel),
+        os: osParts.join('\n'),
+        classificacao,
+        descricao: item.observacao?.trim() || '-',
+        status: this.labelStatusIrregularidade(item.statusAtual),
+        gravidade: this.labelGravidadeIrregularidade(item.gravidade),
+        tempoEtapa: this.formatTempoDesde(entrada),
+      };
+    });
+
+    linhas.sort((a, b) => {
+      const vei = a.veiculo.localeCompare(b.veiculo, 'pt-BR');
+      if (vei !== 0) return vei;
+      const st = a.status.localeCompare(b.status, 'pt-BR');
+      if (st !== 0) return st;
+      const emp = a.empresa.localeCompare(b.empresa, 'pt-BR');
+      if (emp !== 0) return emp;
+      return a.os.localeCompare(b.os, 'pt-BR');
+    });
+
+    const grupos: GrupoVeiculo[] = [];
+    for (const row of linhas) {
+      let grupo = grupos.find((g) => g.key === row.veiculoKey);
+      if (!grupo) {
+        grupo = {
+          key: row.veiculoKey,
+          veiculo: row.veiculo,
+          modelo: row.modelo,
+          rows: [],
+          porStatus: new Map(),
+        };
+        grupos.push(grupo);
+      }
+      grupo.rows.push(row);
+      grupo.porStatus.set(
+        row.status,
+        (grupo.porStatus.get(row.status) ?? 0) + 1,
+      );
+    }
+
+    /** Matriz empresa × status para o resumo final em tabela. */
+    const matrizEmpresaStatus = new Map<string, Map<string, number>>();
+    const statusNoResumo = new Set<string>();
+    for (const row of linhas) {
+      statusNoResumo.add(row.status);
+      let porStatus = matrizEmpresaStatus.get(row.empresa);
+      if (!porStatus) {
+        porStatus = new Map();
+        matrizEmpresaStatus.set(row.empresa, porStatus);
+      }
+      porStatus.set(row.status, (porStatus.get(row.status) ?? 0) + 1);
+    }
+    /** Ordem do fluxo: Cancelada → Registrada → Não procede → Retrabalho → Manutenção → Concluída → Validada. */
+    const ordemStatusFluxo = [
+      this.labelStatusIrregularidade(StatusIrregularidade.CANCELADA),
+      this.labelStatusIrregularidade(StatusIrregularidade.REGISTRADA),
+      this.labelStatusIrregularidade(StatusIrregularidade.NAO_PROCEDE),
+      this.labelStatusIrregularidade(StatusIrregularidade.RETRABALHO_GARANTIA),
+      this.labelStatusIrregularidade(StatusIrregularidade.EM_MANUTENCAO),
+      this.labelStatusIrregularidade(StatusIrregularidade.CONCLUIDA),
+      this.labelStatusIrregularidade(StatusIrregularidade.VALIDADA),
+    ];
+    const statusColunas = ordemStatusFluxo.filter((st) => statusNoResumo.has(st));
+    const empresasLinhas = Array.from(matrizEmpresaStatus.keys()).sort((a, b) =>
+      a.localeCompare(b, 'pt-BR'),
+    );
+
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        layout: 'portrait',
+        bufferPages: true,
+        autoFirstPage: false,
+        margins: {
+          top: marginX,
+          left: marginX,
+          right: marginX,
+          bottom: footerBandPt,
+        },
+      });
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk as Buffer));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const maxContentY = () => Math.floor(doc.page.maxY());
+      let innerW = 0;
+      let contentW = 0;
+      let contentX = 0;
+
+      const drawPageChrome = () => {
+        innerW = doc.page.width - marginX * 2;
+        contentX = marginX + boxPadX;
+        contentW = innerW - boxPadX * 2;
+        const headerTop = 18;
+        if (logoBuffer) {
+          try {
+            doc.image(logoBuffer, marginX, headerTop, { fit: [100, 32] });
+          } catch {
+            // ignora logo inválido
+          }
+        }
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(12)
+          .fillColor('#0f172a')
+          .text(tituloRelatorio, marginX, headerTop + 2, {
+            width: innerW,
+            align: 'center',
+          });
+        const subtitulo = `(${filtrosAplicados || 'Nenhum filtro adicional'})`;
+        const filtrosY = Math.max(headerTop + 22, doc.y + 2);
+        doc
+          .font('Helvetica')
+          .fontSize(7.5)
+          .fillColor('#475569')
+          .text(subtitulo, marginX, filtrosY, {
+            width: innerW,
+            align: 'center',
+            height: 32,
+            ellipsis: true,
+          });
+        doc.x = marginX;
+        doc.y = Math.max(filtrosY + 34, headerTop + 52);
+      };
+
+      let boxTopY = 0;
+      let boxOpen = false;
+
+      const strokeBoxSegment = (bottomY: number) => {
+        if (!boxOpen) return;
+        const h = Math.max(4, bottomY - boxTopY);
+        doc
+          .save()
+          .lineWidth(0.8)
+          .strokeColor('#94a3b8')
+          .roundedRect(marginX, boxTopY, innerW, h, 4)
+          .stroke()
+          .restore();
+      };
+
+      const openBox = () => {
+        boxTopY = doc.y;
+        boxOpen = true;
+        doc.y += boxPadY;
+      };
+
+      const closeBoxSegment = (opts?: { continued?: boolean }) => {
+        if (!boxOpen) return;
+        doc.y += boxPadY;
+        strokeBoxSegment(doc.y);
+        boxOpen = false;
+        if (opts?.continued) {
+          doc.y += 4;
+        } else {
+          doc.y += boxGap;
+        }
+      };
+
+      const breakPage = (continueBox?: {
+        grupo: GrupoVeiculo;
+        continued: boolean;
+      }) => {
+        if (boxOpen) {
+          closeBoxSegment({ continued: true });
+        }
+        doc.addPage();
+        doc.x = marginX;
+        drawPageChrome();
+        if (continueBox) {
+          openBox();
+          drawVeiculoCabecalho(continueBox.grupo, true);
+          drawColHeaders();
+        }
+      };
+
+      const ensureSpace = (h: number, continueBox?: {
+        grupo: GrupoVeiculo;
+        continued: boolean;
+      }) => {
+        if (Math.ceil(doc.y + h) > maxContentY()) {
+          breakPage(continueBox);
+        }
+      };
+
+      /** Larguras A4 retrato; Empresa após Status. */
+      const cols = {
+        os: 58,
+        classificacao: 88,
+        descricao: 100,
+        status: 62,
+        empresa: 58,
+        gravidade: 32,
+        tempo: 52,
+      };
+      const rowPad = 3;
+      const boxFooterH = 20;
+
+      const drawVeiculoCabecalho = (grupo: GrupoVeiculo, cont?: boolean) => {
+        const titulo = cont
+          ? `Veículo: ${grupo.veiculo}  ·  Modelo: ${grupo.modelo}  (cont.)`
+          : `Veículo: ${grupo.veiculo}  ·  Modelo: ${grupo.modelo}`;
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(9)
+          .fillColor('#0f172a')
+          .text(titulo, contentX, doc.y, {
+            width: contentW,
+            height: 14,
+            ellipsis: true,
+          });
+        doc.y += 2;
+      };
+
+      const drawColHeaders = () => {
+        const y = doc.y;
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#334155');
+        let x = contentX;
+        /** NBSP evita quebra "Tempo / etapa" na coluna estreita. */
+        const headers: Array<[string, number]> = [
+          ['OS', cols.os],
+          ['Classificação', cols.classificacao],
+          ['Descrição do problema', cols.descricao],
+          ['Status', cols.status],
+          ['Empresa', cols.empresa],
+          ['Grav.', cols.gravidade],
+          ['Tempo\u00A0etapa', cols.tempo],
+        ];
+        for (const [label, w] of headers) {
+          doc.text(label, x, y, { width: w, lineBreak: false });
+          doc.y = y;
+          doc.x = contentX;
+          x += w + 4;
+        }
+        doc.y = y + 12;
+        doc
+          .moveTo(contentX, doc.y)
+          .lineTo(contentX + contentW, doc.y)
+          .strokeColor('#cbd5e1')
+          .lineWidth(0.5)
+          .stroke();
+        doc.y += 3;
+      };
+
+      const measureRowHeight = (row: LinhaResumo): number => {
+        doc.font('Helvetica').fontSize(7);
+        const hOs = doc.heightOfString(row.os, { width: cols.os });
+        const hCl = doc.heightOfString(row.classificacao, {
+          width: cols.classificacao,
+        });
+        const hDe = doc.heightOfString(row.descricao, { width: cols.descricao });
+        const hSt = doc.heightOfString(row.status, { width: cols.status });
+        const hEmp = doc.heightOfString(row.empresa, { width: cols.empresa });
+        const natural =
+          Math.max(hOs, hCl, hDe, hSt, hEmp, 10) + rowPad * 2;
+        return Math.min(natural, 64);
+      };
+
+      const drawRow = (row: LinhaResumo, grupo: GrupoVeiculo) => {
+        let h = measureRowHeight(row);
+        ensureSpace(h + 4 + boxFooterH, { grupo, continued: true });
+        const avail = Math.max(18, maxContentY() - doc.y - boxFooterH - 4);
+        h = Math.min(h, avail);
+        const y = doc.y;
+        const cellH = Math.max(10, h - rowPad * 2);
+        doc.font('Helvetica').fontSize(7).fillColor('#1e293b');
+        let x = contentX;
+        const cells: Array<[string, number]> = [
+          [row.os, cols.os],
+          [row.classificacao, cols.classificacao],
+          [row.descricao, cols.descricao],
+          [row.status, cols.status],
+          [row.empresa, cols.empresa],
+          [row.gravidade, cols.gravidade],
+          [row.tempoEtapa, cols.tempo],
+        ];
+        for (const [text, w] of cells) {
+          doc.text(text, x, y + rowPad, {
+            width: w,
+            height: cellH,
+            ellipsis: true,
+          });
+          doc.y = y;
+          doc.x = contentX;
+          x += w + 4;
+        }
+        doc.y = y + h;
+        doc
+          .moveTo(contentX, doc.y)
+          .lineTo(contentX + contentW, doc.y)
+          .strokeColor('#e2e8f0')
+          .lineWidth(0.4)
+          .stroke();
+        doc.y += 2;
+      };
+
+      const drawBoxFooterTotais = (grupo: GrupoVeiculo) => {
+        ensureSpace(boxFooterH + 4, { grupo, continued: true });
+        const statusTxt = Array.from(grupo.porStatus.entries())
+          .sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'))
+          .map(([st, q]) => `${st}: ${q}`)
+          .join(' · ');
+        const texto = `Totais do veículo: ${grupo.rows.length} OS${
+          statusTxt ? `  |  ${statusTxt}` : ''
+        }`;
+        doc
+          .moveTo(contentX, doc.y)
+          .lineTo(contentX + contentW, doc.y)
+          .strokeColor('#94a3b8')
+          .lineWidth(0.6)
+          .stroke();
+        doc.y += 3;
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(7.5)
+          .fillColor('#0f172a')
+          .text(texto, contentX, doc.y, {
+            width: contentW,
+            height: 12,
+            ellipsis: true,
+          });
+        doc.y += 2;
+      };
+
+      doc.addPage();
+      drawPageChrome();
+
+      if (!somenteSintetico) {
+        for (const grupo of grupos) {
+          const headerBlockH = 16 + 14 + boxPadY * 2 + boxFooterH;
+          ensureSpace(headerBlockH + 24);
+          openBox();
+          drawVeiculoCabecalho(grupo, false);
+          drawColHeaders();
+          for (const row of grupo.rows) {
+            drawRow(row, grupo);
+          }
+          drawBoxFooterTotais(grupo);
+          closeBoxSegment();
+        }
+      }
+
+      // Resumo: mesma formatação das caixas de veículo (borda arredondada, sem fundo)
+      const resumoColEmpresaW = Math.min(110, Math.floor(contentW * 0.22));
+      const resumoColTotalW = 42;
+      const resumoStatusCols = Math.max(1, statusColunas.length);
+      const resumoStatusColW = Math.max(
+        36,
+        Math.floor(
+          (contentW - resumoColEmpresaW - resumoColTotalW - 4) /
+            resumoStatusCols,
+        ),
+      );
+      const resumoRowH = 14;
+      const resumoHeaderH = 22;
+
+      const drawResumoCell = (
+        text: string,
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        opts?: {
+          bold?: boolean;
+          align?: 'left' | 'center' | 'right';
+          wrap?: boolean;
+        },
+      ) => {
+        doc
+          .font(opts?.bold ? 'Helvetica-Bold' : 'Helvetica')
+          .fontSize(7)
+          .fillColor('#0f172a')
+          .text(text, x + 2, y + (opts?.wrap ? 2 : 3), {
+            width: w - 4,
+            height: h - 4,
+            align: opts?.align ?? 'left',
+            ellipsis: true,
+            lineBreak: !!opts?.wrap,
+          });
+        doc.x = contentX;
+        doc.y = y;
+      };
+
+      const drawResumoDivider = () => {
+        doc
+          .moveTo(contentX, doc.y)
+          .lineTo(contentX + contentW, doc.y)
+          .strokeColor('#e2e8f0')
+          .lineWidth(0.4)
+          .stroke();
+        doc.y += 2;
+      };
+
+      const drawResumoColHeaders = () => {
+        const y = doc.y;
+        drawResumoCell('Empresa', contentX, y, resumoColEmpresaW, resumoHeaderH, {
+          bold: true,
+        });
+        let x = contentX + resumoColEmpresaW;
+        for (const st of statusColunas) {
+          drawResumoCell(st, x, y, resumoStatusColW, resumoHeaderH, {
+            bold: true,
+            align: 'center',
+            wrap: true,
+          });
+          x += resumoStatusColW;
+        }
+        drawResumoCell('Total', x, y, resumoColTotalW, resumoHeaderH, {
+          bold: true,
+          align: 'center',
+        });
+        doc.y = y + resumoHeaderH;
+        doc
+          .moveTo(contentX, doc.y)
+          .lineTo(contentX + contentW, doc.y)
+          .strokeColor('#cbd5e1')
+          .lineWidth(0.5)
+          .stroke();
+        doc.y += 3;
+      };
+
+      const drawResumoLinha = (
+        empresaLabel: string,
+        valores: Map<string, number> | null,
+        totalLinha: number,
+        bold = false,
+      ) => {
+        ensureSpace(resumoRowH + boxFooterH);
+        if (doc.y + resumoRowH + boxPadY > maxContentY()) {
+          closeBoxSegment({ continued: true });
+          breakPage();
+          openBox();
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(9)
+            .fillColor('#0f172a')
+            .text('Resumo (cont.)', contentX, doc.y, {
+              width: contentW,
+              height: 14,
+              ellipsis: true,
+            });
+          doc.y += 2;
+          drawResumoColHeaders();
+        }
+        const y = doc.y;
+        drawResumoCell(empresaLabel, contentX, y, resumoColEmpresaW, resumoRowH, {
+          bold,
+        });
+        let x = contentX + resumoColEmpresaW;
+        for (const st of statusColunas) {
+          const qtd = valores?.get(st) ?? 0;
+          drawResumoCell(
+            qtd > 0 ? String(qtd) : '—',
+            x,
+            y,
+            resumoStatusColW,
+            resumoRowH,
+            { bold, align: 'center' },
+          );
+          x += resumoStatusColW;
+        }
+        drawResumoCell(String(totalLinha), x, y, resumoColTotalW, resumoRowH, {
+          bold: true,
+          align: 'center',
+        });
+        doc.y = y + resumoRowH;
+        drawResumoDivider();
+      };
+
+      ensureSpace(56);
+      doc.y += 4;
+      openBox();
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(9)
+        .fillColor('#0f172a')
+        .text('Resumo', contentX, doc.y, {
+          width: contentW,
+          height: 14,
+          ellipsis: true,
+        });
+      doc.y += 2;
+      drawResumoColHeaders();
+
+      const totaisPorStatus = new Map<string, number>();
+      for (const st of statusColunas) {
+        totaisPorStatus.set(st, 0);
+      }
+
+      for (const empresa of empresasLinhas) {
+        const porStatus = matrizEmpresaStatus.get(empresa) ?? new Map();
+        let totalLinha = 0;
+        for (const st of statusColunas) {
+          const qtd = porStatus.get(st) ?? 0;
+          totalLinha += qtd;
+          totaisPorStatus.set(st, (totaisPorStatus.get(st) ?? 0) + qtd);
+        }
+        drawResumoLinha(empresa, porStatus, totalLinha, false);
+      }
+
+      doc
+        .moveTo(contentX, doc.y)
+        .lineTo(contentX + contentW, doc.y)
+        .strokeColor('#94a3b8')
+        .lineWidth(0.6)
+        .stroke();
+      doc.y += 2;
+      drawResumoLinha('Total geral', totaisPorStatus, linhas.length, true);
+      closeBoxSegment();
+
+      const range = doc.bufferedPageRange();
+      const totalPages = range.count;
+      for (let i = 0; i < totalPages; i += 1) {
+        doc.switchToPage(range.start + i);
+        const { width, height } = doc.page;
+        const pageStr = `Página ${i + 1} de ${totalPages}`;
+        const emissaoTxt = emitidoPor?.trim()
+          ? `Emissão: ${dataEmissao} · ${emitidoPor.trim()} · ${linhas.length} OS`
+          : `Emissão: ${dataEmissao} · ${linhas.length} OS`;
+        doc.save();
+        doc.font('Helvetica').fontSize(7).fillColor('#64748b');
+        const pageStrW = doc.widthOfString(pageStr);
+        const footerY = height - 28;
+        /** Sem `width`: não dispara quebra de página no rodapé. */
+        doc.text(emissaoTxt, marginX, footerY, { lineBreak: false });
+        doc.text(pageStr, width - marginX - pageStrW, footerY, {
+          lineBreak: false,
+        });
+        doc.restore();
+      }
+
+      doc.flushPages();
+      doc.end();
+    });
+  }
+
   private async buildPdfRelatorioManutencao(
     resumo: RelatorioManutencaoResumoDto,
     irregularidades: Irregularidade[],
@@ -5162,6 +6142,43 @@ export class IrregularidadeService {
       driverError?.code === '23505' &&
       driverError?.constraint === 'UQ_IRREGULARIDADE_NUMERO'
     );
+  }
+
+  private parseHorasNaoNegativas(value?: number | string | null): number | null {
+    if (value === undefined || value === null || value === '') {
+      return null;
+    }
+    const n = typeof value === 'number' ? value : Number(String(value).trim());
+    if (!Number.isFinite(n) || n < 0) {
+      return null;
+    }
+    return Math.floor(n);
+  }
+
+  /**
+   * Texto do filtro Tempo na etapa no subtítulo do PDF.
+   * Personalizado (múltiplo de 24 h, ≥ 24): exibe em dias.
+   * Presets curtos (ex.: 8 h): permanece em horas.
+   */
+  private formatFiltroTempoEtapaTexto(
+    horasMin: number | null,
+    horasMax: number | null,
+  ): string {
+    const formatValor = (horas: number): string => {
+      if (horas >= 24 && horas % 24 === 0) {
+        const dias = horas / 24;
+        return dias === 1 ? '1 dia' : `${dias} dias`;
+      }
+      return horas === 1 ? '1 h' : `${horas} h`;
+    };
+
+    if (horasMin != null && horasMax != null) {
+      return `Tempo na etapa: maior que ${formatValor(horasMin)} e até ${formatValor(horasMax)}`;
+    }
+    if (horasMin != null) {
+      return `Tempo na etapa: maior que ${formatValor(horasMin)}`;
+    }
+    return `Tempo na etapa: até ${formatValor(horasMax!)}`;
   }
 
   private parseLocalDate(dateInput: string, endOfDay: boolean): Date {

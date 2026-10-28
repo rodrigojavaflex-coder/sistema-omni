@@ -102,6 +102,15 @@ export const routes: Routes = [
     data: { permissions: ['vistoria_mobile_lista:read'] },
   },
   {
+    path: 'validacao/inicio',
+    loadComponent: () =>
+      import('./pages/validacao/validacao-inicio.page').then(
+        (m) => m.ValidacaoInicioPage,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: ['irregularidade_validacao_final_mobile:read'] },
+  },
+  {
     path: 'vistoria/historico-veiculo',
     redirectTo: 'vistoria/pendencias-veiculo',
     pathMatch: 'full',
