@@ -50,7 +50,12 @@ export class AreasVistoriadasController {
   @Get()
   @ApiOperation({ summary: 'Listar áreas vistoriadas' })
   @ApiResponse({ status: 200, type: [AreaVistoriada] })
-  @Permissions(Permission.AREAVISTORIADA_READ, Permission.VISTORIA_READ)
+  @Permissions(
+    Permission.AREAVISTORIADA_READ,
+    Permission.VISTORIA_READ,
+    /** Lookup do SOS sem liberar o cadastro de áreas. */
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   findAll(
     @Query('idmodelo') idmodelo?: string,
     @Query('ativo') ativo?: string,
@@ -113,7 +118,12 @@ export class AreasVistoriadasController {
   @Get(':id/componentes')
   @ApiOperation({ summary: 'Listar componentes da área' })
   @ApiResponse({ status: 200, type: [AreaComponente] })
-  @Permissions(Permission.AREAVISTORIADA_READ, Permission.VISTORIA_READ)
+  @Permissions(
+    Permission.AREAVISTORIADA_READ,
+    Permission.VISTORIA_READ,
+    /** Lookup do SOS sem liberar o cadastro de áreas/componentes. */
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   listComponentes(
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<AreaComponente[]> {

@@ -618,6 +618,15 @@ export const routes: Routes = [
     data: { permissions: [...RoutePermissions.meta.update] },
   },
   {
+    path: 'controle-escala',
+    loadComponent: () =>
+      import('./components/controle-escala/controle-escala').then(
+        (m) => m.ControleEscalaComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.controleEscala.list] },
+  },
+  {
     path: 'ocorrencia/painel',
     loadComponent: () =>
       import('./components/painel-ocorrencias/painel-ocorrencias').then(

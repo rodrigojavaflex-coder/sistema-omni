@@ -130,6 +130,7 @@ export enum Permission {
   IRREGULARIDADE_TRATAMENTO_READ = 'irregularidade_tratamento:read',
   IRREGULARIDADE_TRATAMENTO_UPDATE = 'irregularidade_tratamento:update',
   IRREGULARIDADE_TRATAMENTO_CREATE_SOS = 'irregularidade_tratamento:create_sos',
+  IRREGULARIDADE_TRATAMENTO_START_MANUTENCAO_SOS = 'irregularidade_tratamento:start_manutencao_sos',
   IRREGULARIDADE_TRATAMENTO_PRINT = 'irregularidade_tratamento:print',
   IRREGULARIDADE_TRATAMENTO_PRINT_RESUMO = 'irregularidade_tratamento:print_resumo',
   IRREGULARIDADE_MANUTENCAO_READ = 'irregularidade_manutencao:read',
@@ -187,6 +188,10 @@ export enum Permission {
   DOCUMENTO_DELETE = 'documento:delete',
   DOCUMENTO_AUDIT = 'documento:audit',
   DOCUMENTO_COMPARTILHAR = 'documento:compartilhar',
+
+  // Controle de Escala e Liberação
+  CONTROLE_ESCALA_READ = 'controle_escala:read',
+  CONTROLE_ESCALA_SYNC = 'controle_escala:sync',
 }
 
 export const PERMISSION_GROUPS = {
@@ -432,6 +437,11 @@ export const PERMISSION_GROUPS = {
       label: 'Tratamento: enviar para manutenção (individual ou em lote)',
     },
     {
+      key: Permission.IRREGULARIDADE_TRATAMENTO_START_MANUTENCAO_SOS,
+      label:
+        'Tratamento: enviar somente SOS para manutenção (fila restrita a SOS)',
+    },
+    {
       key: Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
       label: 'Tratamento: registrar irregularidade SOS (web)',
     },
@@ -583,6 +593,16 @@ export const PERMISSION_GROUPS = {
     {
       key: Permission.DOCUMENTO_COMPARTILHAR,
       label: 'Gerenciar link público de documentos',
+    },
+  ],
+  'Controle de Escala': [
+    {
+      key: Permission.CONTROLE_ESCALA_READ,
+      label: 'Acessar controle de escala e liberação',
+    },
+    {
+      key: Permission.CONTROLE_ESCALA_SYNC,
+      label: 'Sincronizar escala INFOBUS e telemetria BRT',
     },
   ],
 };

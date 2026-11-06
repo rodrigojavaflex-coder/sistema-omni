@@ -3,6 +3,10 @@ export interface ModeloVeiculo {
   nome: string;
   descricaoDetalhada?: string | null;
   ativo: boolean;
+  /** Km por 1% (GNV/Elétrico) */
+  kmPorPercentual?: number | null;
+  /** Km por litro (Diesel) */
+  kmPorLitro?: number | null;
   vistas?: ModeloVeiculoVista[];
   criadoEm?: string;
   atualizadoEm?: string;
@@ -24,6 +28,8 @@ export interface CreateModeloVeiculoDto {
   nome: string;
   descricaoDetalhada?: string | null;
   ativo?: boolean;
+  kmPorPercentual?: number | null;
+  kmPorLitro?: number | null;
 }
 
 export interface UpdateModeloVeiculoDto extends Partial<CreateModeloVeiculoDto> {}

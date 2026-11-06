@@ -53,6 +53,12 @@ export class ConfiguracaoService {
     );
   }
 
+  getEscalaInfobusApiKey(): Observable<{ configurada: boolean; apiKey: string }> {
+    return this.http.get<{ configurada: boolean; apiKey: string }>(
+      `${this.apiUrl}/escala-infobus-api-key`,
+    );
+  }
+
   getTempoFluxoConfig(): Observable<TempoFluxoConfig> {
     return this.http.get<TempoFluxoConfig>(`${this.apiUrl}/tempo-fluxo`);
   }

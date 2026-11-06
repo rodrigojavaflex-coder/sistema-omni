@@ -31,6 +31,7 @@ import { EmpresaTerceiraModule } from './modules/empresa-terceira/empresa-tercei
 import { BiAcessoModule } from './modules/bi-acesso/bi-acesso.module';
 import { TipoDocumentoModule } from './modules/tipo-documento/tipo-documento.module';
 import { DocumentoModule } from './modules/documento/documento.module';
+import { EscalaModule } from './modules/escala/escala.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { DocumentoModule } from './modules/documento/documento.module';
     BiAcessoModule,
     TipoDocumentoModule,
     DocumentoModule,
+    EscalaModule,
     TypeOrmModule.forFeature([Configuracao]),
   ],
   controllers: [AppController],

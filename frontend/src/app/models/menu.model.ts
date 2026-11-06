@@ -428,6 +428,13 @@ export const MENU_CONFIGURATION: MenuConfig = {
           icon: 'feather-bar-chart-2',
           requiredPermissions: [Permission.OCORRENCIA_PAINEL_VIEW],
           parentMenu: 'Gestão'
+        },
+        {
+          label: 'Controle de Escala',
+          route: '/controle-escala',
+          icon: 'feather-activity',
+          requiredPermissions: [Permission.CONTROLE_ESCALA_READ],
+          parentMenu: 'Gestão'
         }
       ]
     },

@@ -72,7 +72,7 @@ export class VistoriaService {
 
   async listarHistoricoIrregularidadesNaoResolvidas(
     idVeiculo: string,
-    filtros?: { areaId?: string; componenteId?: string },
+    filtros?: { areaId?: string; componenteId?: string; sintomaId?: string },
   ): Promise<IrregularidadeHistoricoVeiculo> {
     const params: Record<string, string> = {};
     if (filtros?.areaId) {
@@ -80,6 +80,9 @@ export class VistoriaService {
     }
     if (filtros?.componenteId) {
       params['componenteId'] = filtros.componenteId;
+    }
+    if (filtros?.sintomaId) {
+      params['sintomaId'] = filtros.sintomaId;
     }
 
     return firstValueFrom(
@@ -92,7 +95,7 @@ export class VistoriaService {
 
   async baixarPdfPendenciasVeiculo(
     idVeiculo: string,
-    filtros?: { areaId?: string; componenteId?: string },
+    filtros?: { areaId?: string; componenteId?: string; sintomaId?: string },
   ): Promise<Blob> {
     return firstValueFrom(
       this.http.get(this.montarUrlPdfPendenciasVeiculo(idVeiculo, filtros), {
@@ -103,7 +106,7 @@ export class VistoriaService {
 
   montarUrlPdfPendenciasVeiculo(
     idVeiculo: string,
-    filtros?: { areaId?: string; componenteId?: string },
+    filtros?: { areaId?: string; componenteId?: string; sintomaId?: string },
   ): string {
     const params = new URLSearchParams();
     if (filtros?.areaId) {
@@ -111,6 +114,9 @@ export class VistoriaService {
     }
     if (filtros?.componenteId) {
       params.set('componenteId', filtros.componenteId);
+    }
+    if (filtros?.sintomaId) {
+      params.set('sintomaId', filtros.sintomaId);
     }
     const query = params.toString();
     return `${this.apiBaseUrl}/vistoria/veiculo/${idVeiculo}/historico-irregularidades-nao-resolvidas/pdf${

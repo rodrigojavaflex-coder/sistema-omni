@@ -59,6 +59,8 @@ export class VeiculoController {
     Permission.OCORRENCIA_CREATE,
     Permission.RELATORIO_PENDENCIAS_VEICULO_READ,
     Permission.VISTORIA_WEB_HISTORICO_VEICULO_READ,
+    /** Lookup do autocomplete SOS sem liberar o cadastro de veículos. */
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
   )
   @ApiOperation({ summary: 'Listar veículos com paginação e filtros' })
   @ApiResponse({

@@ -43,7 +43,12 @@ export class ComponentesController {
   @Get()
   @ApiOperation({ summary: 'Listar componentes' })
   @ApiResponse({ status: 200, type: [Componente] })
-  @Permissions(Permission.COMPONENTE_READ, Permission.VISTORIA_READ)
+  @Permissions(
+    Permission.COMPONENTE_READ,
+    Permission.VISTORIA_READ,
+    /** Lookup do SOS sem liberar o cadastro de componentes. */
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   findAll(@Query('ativo') ativo?: string): Promise<Componente[]> {
     const ativoParsed =
       ativo === undefined ? undefined : ativo === 'true' || ativo === '1';

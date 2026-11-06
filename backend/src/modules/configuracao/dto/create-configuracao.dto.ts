@@ -13,6 +13,7 @@ import { Type } from 'class-transformer';
 import {
   EmailEnvioConfig,
   ErpVistoriaConfig,
+  EscalaInfobusConfig,
   ImpressaoManutencaoConfig,
 } from '../entities/configuracao.entity';
 
@@ -117,6 +118,13 @@ export class CreateConfiguracaoDto {
   @IsOptional()
   @IsObject()
   impressaoManutencaoConfig?: ImpressaoManutencaoConfig;
+
+  @ApiPropertyOptional({
+    description: 'Configuração da Escala INFOBUS (KM detalhado)',
+  })
+  @IsOptional()
+  @IsObject()
+  escalaInfobusConfig?: EscalaInfobusConfig;
 
   @ApiPropertyOptional({
     description:

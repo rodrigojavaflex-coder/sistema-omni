@@ -65,6 +65,7 @@ import {
   RelatorioManutencaoResumoDto,
 } from './dto/relatorio-manutencao.dto';
 import {
+  assertEnvioManutencaoOrigemPermitida,
   assertUserHasAllPermissions,
   collectUserPermissions,
   getRequiredPrintPermissionsForStatuses,
@@ -497,6 +498,7 @@ export class IrregularidadeService {
     idVeiculo: string,
     areaId?: string,
     componenteId?: string,
+    sintomaId?: string,
   ): Promise<IrregularidadeHistoricoVeiculoDto> {
     const qb = this.irregularidadeRepository
       .createQueryBuilder('i')
@@ -522,6 +524,9 @@ export class IrregularidadeService {
     }
     if (componenteId) {
       qb.andWhere('i.idComponente = :componenteId', { componenteId });
+    }
+    if (sintomaId) {
+      qb.andWhere('i.idSintoma = :sintomaId', { sintomaId });
     }
 
     const itens = await qb.orderBy('i.atualizadoEm', 'DESC').getMany();
@@ -605,6 +610,7 @@ export class IrregularidadeService {
     emitidoPor?: string | null,
     areaId?: string,
     componenteId?: string,
+    sintomaId?: string,
   ): Promise<Buffer> {
     const veiculo = await this.veiculoRepository.findOne({
       where: { id: idVeiculo },
@@ -617,6 +623,7 @@ export class IrregularidadeService {
       idVeiculo,
       areaId,
       componenteId,
+      sintomaId,
     );
 
     let filtroArea: string | undefined;
@@ -630,6 +637,13 @@ export class IrregularidadeService {
         where: { id: componenteId },
       });
       filtroComponente = componente?.nome?.trim() || undefined;
+    }
+    let filtroSintoma: string | undefined;
+    if (sintomaId) {
+      const sintoma = await this.sintomaRepository.findOne({
+        where: { id: sintomaId },
+      });
+      filtroSintoma = sintoma?.descricao?.trim() || undefined;
     }
 
     const configuracao = await this.configuracaoRepository.findOne({
@@ -651,6 +665,7 @@ export class IrregularidadeService {
       veiculoPlaca: veiculo.placa,
       filtroArea,
       filtroComponente,
+      filtroSintoma,
       itens: historico.itens.map((item) => ({
         ...item,
         imagens: imagensPorIrregularidade.get(item.id) ?? [],
@@ -1641,7 +1656,12 @@ export class IrregularidadeService {
   async iniciarManutencao(
     id: string,
     dto: IniciarManutencaoIrregularidadeDto,
-    actor?: { id?: string; idEmpresa?: string; nome?: string },
+    actor?: {
+      id?: string;
+      idEmpresa?: string;
+      nome?: string;
+      perfis?: Array<{ permissoes?: string[] }>;
+    },
   ): Promise<Irregularidade> {
     const irregularidade = await this.irregularidadeRepository.findOne({
       where: { id },
@@ -1665,6 +1685,10 @@ export class IrregularidadeService {
       STATUS_ENVIO_MANUTENCAO,
       'Somente irregularidades registradas, em retrabalho/garantia ou não procede podem ser enviadas para manutenção',
     );
+    assertEnvioManutencaoOrigemPermitida(
+      collectUserPermissions(actor?.perfis),
+      [irregularidade],
+    );
     const config = await this.configuracaoRepository.findOne({ where: {} });
     return this.manutencaoEnvioService.executarEnvioUnitario(
       irregularidade,
@@ -1676,10 +1700,13 @@ export class IrregularidadeService {
 
   async previewIniciarManutencaoLote(
     dto: IniciarManutencaoLoteDto,
-    actor?: { nome?: string },
+    actor?: {
+      nome?: string;
+      perfis?: Array<{ permissoes?: string[] }>;
+    },
   ): Promise<RelatorioManutencaoPreviewDto> {
     const { empresa, irregularidades } =
-      await this.loadIrregularidadesLoteParaManutencao(dto);
+      await this.loadIrregularidadesLoteParaManutencao(dto, actor);
     const emitidoEm = new Date();
     const resumo = this.buildResumoRelatorioManutencao(
       empresa,
@@ -1693,10 +1720,13 @@ export class IrregularidadeService {
 
   async previewPdfIniciarManutencaoLote(
     dto: IniciarManutencaoLoteDto,
-    actor?: { nome?: string },
+    actor?: {
+      nome?: string;
+      perfis?: Array<{ permissoes?: string[] }>;
+    },
   ): Promise<Buffer> {
     const { empresa, irregularidades } =
-      await this.loadIrregularidadesLoteParaManutencao(dto);
+      await this.loadIrregularidadesLoteParaManutencao(dto, actor);
     const emitidoEm = new Date();
     const resumo = this.buildResumoRelatorioManutencao(
       empresa,
@@ -1967,10 +1997,15 @@ export class IrregularidadeService {
 
   async iniciarManutencaoLote(
     dto: IniciarManutencaoLoteDto,
-    actor?: { id?: string; idEmpresa?: string; nome?: string },
+    actor?: {
+      id?: string;
+      idEmpresa?: string;
+      nome?: string;
+      perfis?: Array<{ permissoes?: string[] }>;
+    },
   ): Promise<RelatorioManutencaoExecucaoDto> {
     const { empresa, irregularidades } =
-      await this.loadIrregularidadesLoteParaManutencao(dto);
+      await this.loadIrregularidadesLoteParaManutencao(dto, actor);
     const config = await this.configuracaoRepository.findOne({ where: {} });
     return this.manutencaoEnvioService.executarEnvioLote(
       empresa,
@@ -2434,6 +2469,7 @@ export class IrregularidadeService {
 
   private async loadIrregularidadesLoteParaManutencao(
     dto: IniciarManutencaoLoteDto,
+    actor?: { perfis?: Array<{ permissoes?: string[] }> },
   ): Promise<{
     empresa: EmpresaTerceira;
     irregularidades: Irregularidade[];
@@ -2483,6 +2519,11 @@ export class IrregularidadeService {
         'Somente irregularidades registradas, em retrabalho/garantia ou não procede podem ser enviadas para manutenção.',
       );
     }
+
+    assertEnvioManutencaoOrigemPermitida(
+      collectUserPermissions(actor?.perfis),
+      irregularidades,
+    );
 
     this.manutencaoEnvioService.assertEscopoEmpresa(empresa, irregularidades);
 
@@ -2912,6 +2953,7 @@ export class IrregularidadeService {
     veiculoPlaca: string;
     filtroArea?: string;
     filtroComponente?: string;
+    filtroSintoma?: string;
     itens: Array<
       IrregularidadeHistoricoVeiculoItemDto & { imagens: Buffer[] }
     >;
@@ -3051,6 +3093,9 @@ export class IrregularidadeService {
       }
       if (params.filtroComponente) {
         filtros.push(`Componente: ${params.filtroComponente}`);
+      }
+      if (params.filtroSintoma) {
+        filtros.push(`Sintoma: ${params.filtroSintoma}`);
       }
       if (filtros.length > 0) {
         ensureTextBlock(28);
@@ -4109,7 +4154,7 @@ export class IrregularidadeService {
       const empresa = item.empresaManutencaoDescricao?.trim() || 'Sem Empresa';
       const veiculo = item.veiculoDescricao?.trim() || 'Veículo não informado';
       const placa = item.veiculoPlaca?.trim() || '';
-      const veiculoLabel = placa ? `${veiculo} (${placa})` : veiculo;
+      const veiculoLabel = placa ? `${veiculo} - ${placa}` : veiculo;
       const modelo = item.veiculoModelo?.trim() || '-';
       const osParts = [`OS: ${item.numeroIrregularidade}`];
       if (item.erpCodigoPedido?.trim()) {
@@ -4223,35 +4268,49 @@ export class IrregularidadeService {
         contentX = marginX + boxPadX;
         contentW = innerW - boxPadX * 2;
         const headerTop = 18;
-        if (logoBuffer) {
+        const logoBoxW = 100;
+        const logoBoxH = 32;
+        const temLogo = !!(logoBuffer && logoBuffer.length > 0);
+        if (temLogo) {
           try {
-            doc.image(logoBuffer, marginX, headerTop, { fit: [100, 32] });
+            doc.image(logoBuffer!, marginX, headerTop, {
+              fit: [logoBoxW, logoBoxH],
+            });
           } catch {
             // ignora logo inválido
           }
         }
+        // Título centralizado na largura útil da página (mesmo com logo à esquerda).
         doc
           .font('Helvetica-Bold')
           .fontSize(12)
           .fillColor('#0f172a')
-          .text(tituloRelatorio, marginX, headerTop + 2, {
+          .text(tituloRelatorio, marginX, headerTop + 8, {
             width: innerW,
             align: 'center',
+            lineBreak: false,
           });
+        // Filtros abaixo da faixa logo+título para não sobrepor a logo.
         const subtitulo = `(${filtrosAplicados || 'Nenhum filtro adicional'})`;
-        const filtrosY = Math.max(headerTop + 22, doc.y + 2);
-        doc
-          .font('Helvetica')
-          .fontSize(7.5)
-          .fillColor('#475569')
-          .text(subtitulo, marginX, filtrosY, {
-            width: innerW,
-            align: 'center',
-            height: 32,
-            ellipsis: true,
-          });
+        const filtrosY = headerTop + (temLogo ? logoBoxH : 18) + 6;
+        doc.font('Helvetica').fontSize(7.5).fillColor('#475569');
+        const filtrosH = Math.min(
+          48,
+          Math.ceil(
+            doc.heightOfString(subtitulo, {
+              width: innerW,
+              align: 'center',
+            }),
+          ),
+        );
+        doc.text(subtitulo, marginX, filtrosY, {
+          width: innerW,
+          align: 'center',
+          height: filtrosH,
+          ellipsis: true,
+        });
         doc.x = marginX;
-        doc.y = Math.max(filtrosY + 34, headerTop + 52);
+        doc.y = filtrosY + filtrosH + 8;
       };
 
       let boxTopY = 0;

@@ -245,9 +245,15 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   canTratamentoUpdate = this.authService.hasPermission(
     Permission.IRREGULARIDADE_TRATAMENTO_UPDATE,
   );
-  canManutencaoStart = this.authService.hasPermission(
+  canManutencaoStartFull = this.authService.hasPermission(
     Permission.IRREGULARIDADE_MANUTENCAO_START,
   );
+  canManutencaoStartSos = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_TRATAMENTO_START_MANUTENCAO_SOS,
+  );
+  /** Enviar para manutenção: permissão completa ou restrita a SOS. */
+  canManutencaoStart =
+    this.canManutencaoStartFull || this.canManutencaoStartSos;
   canManutencaoFinish = this.authService.hasPermission(
     Permission.IRREGULARIDADE_MANUTENCAO_FINISH,
   );
@@ -360,6 +366,15 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       .sort((a, b) => (a.minHoras ?? 0) - (b.minHoras ?? 0));
   }
 
+  /** Fila Tratamento restrita a SOS (sem `manutencao:start` completo). */
+  get isEscopoTratamentoSosOnly(): boolean {
+    return (
+      this.modo === 'tratamento' &&
+      this.canManutencaoStartSos &&
+      !this.canManutencaoStartFull
+    );
+  }
+
   private configureModo(): void {
     if (this.modo === 'tratamento') {
       this.titulo = 'Tratamento';
@@ -367,6 +382,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       this.statusFiltro = this.statusPadraoTratamento();
       this.statusOptions = this.buildTratamentoStatusOptions();
       this.filtroStatus = [...this.statusPadraoTratamento()];
+      if (this.isEscopoTratamentoSosOnly) {
+        this.filtroOrigemRegistro = 'SOS_WEB';
+      }
       return;
     }
     if (this.modo === 'manutencao') {
@@ -525,7 +543,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         referenciaPeriodo: this.referenciaPeriodoParaListagem(),
         tempoEtapaHorasMin: this.filtroTempoEtapaHorasMin ?? undefined,
         tempoEtapaHorasMax: this.filtroTempoEtapaHorasMax ?? undefined,
-        origemRegistro: this.filtroOrigemRegistro || undefined,
+        origemRegistro: this.resolveOrigemRegistroFiltro(),
         page: this.currentPage,
         limit: this.pageSize,
       })
@@ -714,7 +732,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     this.filtroTempoEtapaHorasMin = null;
     this.filtroTempoEtapaHorasMax = null;
     this.filtroGravidade = '';
-    this.filtroOrigemRegistro = '';
+    this.filtroOrigemRegistro = this.isEscopoTratamentoSosOnly ? 'SOS_WEB' : '';
     this.filtroIdArea = '';
     this.filtroIdComponente = '';
     this.filtroIdSintoma = '';
@@ -2005,7 +2023,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
         referenciaPeriodo: this.referenciaPeriodoParaListagem(),
         tempoEtapaHorasMin: this.filtroTempoEtapaHorasMin ?? undefined,
         tempoEtapaHorasMax: this.filtroTempoEtapaHorasMax ?? undefined,
-        origemRegistro: this.filtroOrigemRegistro || undefined,
+        origemRegistro: this.resolveOrigemRegistroFiltro(),
       })
       .subscribe({
         next: async (blob) => {
@@ -2954,6 +2972,13 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
 
   readonly labelStatusFiltro = (value: string): string =>
     this.getStatusLabel(value as StatusIrregularidade);
+
+  private resolveOrigemRegistroFiltro(): FiltroOrigemRegistro | undefined {
+    if (this.isEscopoTratamentoSosOnly) {
+      return 'SOS_WEB';
+    }
+    return this.filtroOrigemRegistro || undefined;
+  }
 
   private resolveStatusFiltro(): StatusIrregularidade[] {
     const selecionados = (this.filtroStatus ?? []).filter(Boolean);

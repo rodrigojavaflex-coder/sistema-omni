@@ -27,6 +27,48 @@ export class ModeloVeiculo extends BaseEntity {
   @Column({ name: 'ativo', type: 'boolean', default: true })
   ativo: boolean;
 
+  @ApiProperty({
+    description: 'Km por 1% de bateria/GNV (elétrico e GNV)',
+    required: false,
+    nullable: true,
+  })
+  @Column({
+    name: 'km_por_percentual',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value?: number | null) => value,
+      from: (value?: string | null) =>
+        value === null || value === undefined || value === ''
+          ? null
+          : Number(value),
+    },
+  })
+  kmPorPercentual?: number | null;
+
+  @ApiProperty({
+    description: 'Km por litro (Diesel)',
+    required: false,
+    nullable: true,
+  })
+  @Column({
+    name: 'km_por_litro',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value?: number | null) => value,
+      from: (value?: string | null) =>
+        value === null || value === undefined || value === ''
+          ? null
+          : Number(value),
+    },
+  })
+  kmPorLitro?: number | null;
+
   @OneToMany(() => Veiculo, (veiculo) => veiculo.modeloVeiculo)
   veiculos?: Veiculo[];
 

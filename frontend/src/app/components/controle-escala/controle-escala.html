@@ -1,0 +1,172 @@
+<div class="controle-escala-page">
+  <header class="page-header">
+    <div>
+      <h2 class="page-title">Controle de Escala e Liberação</h2>
+      <p class="page-subtitle">
+        Cruza escala INFOBUS do dia, telemetria BRT e OS graves (Manutenção/Validação).
+      </p>
+    </div>
+  </header>
+
+  <section class="filters-bar">
+    <div class="filter-group">
+      <label class="form-label" for="escala-data">Data da escala</label>
+      <input
+        id="escala-data"
+        type="date"
+        class="form-input"
+        [(ngModel)]="data"
+        [disabled]="loading() || syncing()"
+      />
+    </div>
+
+    <label class="checkbox-inline">
+      <input
+        type="checkbox"
+        [ngModel]="somenteAlertas()"
+        (ngModelChange)="onSomenteAlertasChange($event)"
+        [disabled]="loading()"
+      />
+      Somente alertas
+    </label>
+
+    <div class="actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="carregar()"
+        [disabled]="loading() || syncing() || !data"
+      >
+        {{ loading() ? 'Carregando...' : 'Atualizar' }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="sincronizarEscala()"
+        [disabled]="!canSync || loading() || syncing() || !data"
+        [attr.title]="!canSync ? 'Sem permissão de sincronização' : null"
+      >
+        Sync escala
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="sincronizarTelemetria()"
+        [disabled]="!canSync || loading() || syncing()"
+        [attr.title]="!canSync ? 'Sem permissão de sincronização' : null"
+      >
+        Sync telemetria
+      </button>
+    </div>
+  </section>
+
+  @if (success()) {
+    <div class="alert alert-success" role="status">{{ success() }}</div>
+  }
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">{{ error() }}</div>
+  }
+
+  @if (painel(); as p) {
+    <section class="resumo-cards" aria-label="Resumo do dia">
+      <article class="resumo-card">
+        <span class="resumo-label">Na escala</span>
+        <strong class="resumo-value">{{ p.total }}</strong>
+      </article>
+      <article class="resumo-card resumo-card--warn">
+        <span class="resumo-label">Retidos</span>
+        <strong class="resumo-value">{{ p.resumo.retidosNaEscala }}</strong>
+      </article>
+      <article class="resumo-card resumo-card--warn">
+        <span class="resumo-label">Autonomia</span>
+        <strong class="resumo-value">{{ p.resumo.alertaAutonomia }}</strong>
+      </article>
+      <article class="resumo-card">
+        <span class="resumo-label">Sem vínculo</span>
+        <strong class="resumo-value">{{ p.resumo.semVinculoVeiculo }}</strong>
+      </article>
+    </section>
+  }
+
+  @if (loading()) {
+    <p class="state-msg">Carregando painel...</p>
+  } @else if (!painel()?.itens?.length) {
+    <p class="state-msg">
+      Nenhuma escala gravada para {{ data }}. Use «Sync escala» após configurar a aba Escala INFOBUS.
+    </p>
+  } @else if (!itensFiltrados().length) {
+    <p class="state-msg">Nenhum veículo com alerta para o filtro atual.</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="escala-table">
+        <thead>
+          <tr>
+            <th>Veículo</th>
+            <th>KM escala</th>
+            <th>Linhas</th>
+            <th>% / modelo</th>
+            <th>Autonomia (duas fontes)</th>
+            <th>Alertas</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of itensFiltrados(); track item.prefixo) {
+            <tr
+              [class.row-alerta]="item.alertaRetidoNaEscala || item.alertaAutonomia"
+            >
+              <td>
+                <div class="veiculo-cell">
+                  <strong>{{ item.descricao || item.prefixo }}</strong>
+                  <span class="muted">{{ item.placa || 'sem placa' }} · {{ item.combustivel || '—' }}</span>
+                </div>
+              </td>
+              <td>{{ fmtKm(item.kmEscala) }}</td>
+              <td class="linhas-cell">{{ linhasResumo(item) }}</td>
+              <td>
+                {{ item.bateriaPct != null ? item.bateriaPct + '%' : '—' }}
+                <span class="muted" *ngIf="item.kmPorPercentualModelo != null">
+                  · {{ item.kmPorPercentualModelo }} km/%
+                </span>
+              </td>
+              <td>
+                <div class="fontes">
+                  <div>
+                    <span class="fonte-label">Telemetria</span>
+                    {{ fmtKm(item.telemetria.autonomiaKm) }}
+                    <span class="muted" *ngIf="item.telemetria.autonomia100Km != null">
+                      (100%: {{ fmtKm(item.telemetria.autonomia100Km) }})
+                    </span>
+                  </div>
+                  <div>
+                    <span class="fonte-label">OMNI</span>
+                    {{ fmtKm(item.calculoOmni.autonomiaKm) }}
+                    <span class="muted" *ngIf="item.calculoOmni.autonomia100Km != null">
+                      (100%: {{ fmtKm(item.calculoOmni.autonomia100Km) }})
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="alertas">
+                  @if (item.alertaRetidoNaEscala) {
+                    <span class="badge badge-retido" title="OS vermelha em Manutenção ou Validação">
+                      RETIDO ({{ item.qtdOsVermelhas }})
+                    </span>
+                  }
+                  @if (item.alertaAutonomia) {
+                    <span class="badge badge-autonomia" title="Carregar antes de largar">
+                      Carregar antes de largar
+                    </span>
+                  }
+                  @if (!item.alertaRetidoNaEscala && !item.alertaAutonomia) {
+                    <span class="muted">OK</span>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

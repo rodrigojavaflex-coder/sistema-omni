@@ -49,6 +49,14 @@
     >
       App
     </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab === 'escalaInfobus'"
+      (click)="activeTab = 'escalaInfobus'"
+    >
+      Escala INFOBUS
+    </button>
   </div>
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="form-group" *ngIf="activeTab === 'sistema'">
@@ -510,6 +518,94 @@
           </ul>
         }
       </div>
+    </div>
+
+    <div class="audit-section" *ngIf="activeTab === 'escalaInfobus'">
+      <h3 class="section-title">Escala INFOBUS</h3>
+      <p class="section-description">
+        Credenciais para consultar a previsão de KM da escala do dia
+        (<code>GET /api/v1/veiculos/km/detalhado</code>). A API Key não é exibida após salvar.
+        A telemetria em tempo real continua na API BRT (credenciais da empresa com Integração OS BRT).
+      </p>
+
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="escalaInfobusAtivo" class="checkbox-input" />
+          <span class="checkbox-text">Habilitar integração Escala INFOBUS</span>
+        </label>
+      </div>
+
+      <div class="audit-grid">
+        <div class="form-group">
+          <label class="form-label" for="escalaInfobusUrl">URL base</label>
+          <input
+            id="escalaInfobusUrl"
+            type="text"
+            class="form-input"
+            formControlName="escalaInfobusUrl"
+            placeholder="http://10.6.48.138:8000"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="escalaInfobusTenant">Tenant (X-Tenant)</label>
+          <input
+            id="escalaInfobusTenant"
+            type="text"
+            class="form-input"
+            formControlName="escalaInfobusTenant"
+            placeholder="SEU_TENANT"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="escalaInfobusApiKey">API Key (X-API-Key)</label>
+          <div class="input-eye-wrapper">
+            <input
+              id="escalaInfobusApiKey"
+              [type]="showEscalaApiKey ? 'text' : 'password'"
+              class="form-input"
+              formControlName="escalaInfobusApiKey"
+              [placeholder]="escalaApiKeyConfigured ? '********' : 'Informe a API Key'"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="btn-eye"
+              (click)="toggleEscalaApiKeyVisibility()"
+              [disabled]="loading || escalaApiKeyLoading"
+              [attr.aria-label]="showEscalaApiKey ? 'Ocultar API Key' : 'Mostrar API Key'"
+              [attr.aria-pressed]="showEscalaApiKey"
+            >
+              <i
+                class="fas"
+                [class.fa-eye-slash]="showEscalaApiKey"
+                [class.fa-eye]="!showEscalaApiKey"
+                aria-hidden="true"
+              ></i>
+            </button>
+          </div>
+          <small class="field-description field-description--flush">
+            Deixe em branco para manter a chave já salva. Use o olho para ver a chave gravada.
+          </small>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="escalaInfobusTimeoutMs">Timeout (ms)</label>
+          <input
+            id="escalaInfobusTimeoutMs"
+            type="number"
+            class="form-input"
+            formControlName="escalaInfobusTimeoutMs"
+            min="1000"
+            step="1000"
+          />
+        </div>
+      </div>
+
+      @if (configuracao?.escalaInfobusConfig?.ultimoSyncEscalaEm; as syncEscala) {
+        <p class="section-description">Último sync escala: {{ syncEscala }}</p>
+      }
+      @if (configuracao?.escalaInfobusConfig?.ultimoSyncTelemetriaEm; as syncTel) {
+        <p class="section-description">Último sync telemetria: {{ syncTel }}</p>
+      }
     </div>
 
     <button type="submit" class="btn-primary" [disabled]="loading || form.invalid">

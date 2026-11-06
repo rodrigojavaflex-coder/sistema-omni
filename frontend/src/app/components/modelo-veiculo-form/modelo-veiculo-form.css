@@ -4,6 +4,12 @@
   font-size: 0.9rem;
 }
 
+.form-row-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
 .vista-add {
   display: flex;
   flex-wrap: wrap;

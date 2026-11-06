@@ -49,11 +49,27 @@
         id="pendencias-componente-filtro"
         class="filter-select"
         [(ngModel)]="componenteFiltro"
+        (ngModelChange)="onComponenteChange()"
         [disabled]="!veiculoId || loading"
       >
         <option value="">Todos</option>
         @for (componente of componenteOptions; track componente.id) {
           <option [value]="componente.id">{{ componente.nome }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-field">
+      <label for="pendencias-sintoma-filtro">Sintoma</label>
+      <select
+        id="pendencias-sintoma-filtro"
+        class="filter-select"
+        [(ngModel)]="sintomaFiltro"
+        [disabled]="!veiculoId || loading"
+      >
+        <option value="">Todos</option>
+        @for (sintoma of sintomaOptions; track sintoma.id) {
+          <option [value]="sintoma.id">{{ sintoma.nome }}</option>
         }
       </select>
     </div>
@@ -78,7 +94,7 @@
       </p>
       <p>
         <strong>Total de pendências:</strong> {{ total }}
-        @if (areaFiltro || componenteFiltro) {
+        @if (areaFiltro || componenteFiltro || sintomaFiltro) {
           <span class="resumo-filtrado">
             (exibindo {{ itensFiltrados.length }} filtrada{{ itensFiltrados.length === 1 ? '' : 's' }})
           </span>

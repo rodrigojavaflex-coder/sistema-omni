@@ -43,7 +43,12 @@ export class MatrizCriticidadeController {
   @Get()
   @ApiOperation({ summary: 'Listar matriz de criticidade' })
   @ApiResponse({ status: 200, type: [MatrizCriticidade] })
-  @Permissions(Permission.MATRIZCRITICIDADE_READ, Permission.VISTORIA_READ)
+  @Permissions(
+    Permission.MATRIZCRITICIDADE_READ,
+    Permission.VISTORIA_READ,
+    /** Lookup de sintomas (via matriz) no SOS sem liberar o cadastro. */
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   findAll(
     @Query('idcomponente') idcomponente?: string,
   ): Promise<MatrizCriticidade[]> {

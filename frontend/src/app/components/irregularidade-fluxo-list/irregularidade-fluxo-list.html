@@ -111,22 +111,13 @@
           class="form-select"
           [(ngModel)]="filtroOrigemRegistro"
           (ngModelChange)="onComboFilterChange()"
+          [disabled]="isEscopoTratamentoSosOnly"
           aria-label="Filtrar por origem"
         >
-          <option value="">Origem (todas)</option>
+          <option *ngIf="!isEscopoTratamentoSosOnly" value="">Origem (todas)</option>
           <option value="SOS_WEB">Somente SOS</option>
-          <option value="MOBILE">Somente mobile</option>
+          <option *ngIf="!isEscopoTratamentoSosOnly" value="MOBILE">Somente mobile</option>
         </select>
-        <ng-container *ngIf="mostraFiltroStatus">
-          <app-multi-select
-            class="filter-status"
-            [options]="statusOptions"
-            [optionLabelFn]="labelStatusFiltro"
-            [(ngModel)]="filtroStatus"
-            (ngModelChange)="onComboFilterChange()"
-            placeholder="Status..."
-          ></app-multi-select>
-        </ng-container>
         <app-periodo-fluxo-filter
           class="filter-periodo filter-periodo--compact"
           [clearSeq]="filtroPeriodoClearSeq"
@@ -137,6 +128,16 @@
           [clearSeq]="filtroTempoEtapaClearSeq"
           (tempoAplicado)="onTempoEtapaAplicado($event)"
         ></app-tempo-etapa-fluxo-filter>
+        <ng-container *ngIf="mostraFiltroStatus">
+          <app-multi-select
+            class="filter-status"
+            [options]="statusOptions"
+            [optionLabelFn]="labelStatusFiltro"
+            [(ngModel)]="filtroStatus"
+            (ngModelChange)="onComboFilterChange()"
+            placeholder="Status..."
+          ></app-multi-select>
+        </ng-container>
         <button class="btn btn-secondary" (click)="clearFilters()">Limpar</button>
       </div>
     </div>
@@ -271,7 +272,7 @@
             <line x1="16" y1="17" x2="8" y2="17"></line>
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
-          {{ isPrintingRelatorioResumo ? 'Gerando resumo…' : 'Resumo por Veículo/Empresa' }}
+          {{ isPrintingRelatorioResumo ? 'Gerando resumo…' : 'Resumo Veículo/Empresa' }}
         </button>
         <span class="buttons-row-summary">
           {{ totalItems }} OS | {{ getSelectedIds().length }} OS selecionada(s)
@@ -1149,7 +1150,7 @@
 <div *ngIf="showTipoResumoModal" class="modal-overlay" (click)="closeTipoResumoModal()">
   <div class="modal-container modal-container-sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="tipo-resumo-titulo">
     <div class="modal-header">
-      <h3 id="tipo-resumo-titulo">Resumo por Veículo/Empresa</h3>
+      <h3 id="tipo-resumo-titulo">Resumo Veículo/Empresa</h3>
       <button type="button" class="btn-close" (click)="closeTipoResumoModal()" aria-label="Fechar">×</button>
     </div>
     <div class="modal-body">

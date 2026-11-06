@@ -335,12 +335,15 @@ export class VistoriaController {
     @Query('areaId', new ParseUUIDPipe({ optional: true })) areaId?: string,
     @Query('componenteId', new ParseUUIDPipe({ optional: true }))
     componenteId?: string,
+    @Query('sintomaId', new ParseUUIDPipe({ optional: true }))
+    sintomaId?: string,
   ): Promise<StreamableFile> {
     const pdf = await this.irregularidadeService.gerarPdfPendenciasVeiculo(
       id,
       req.user?.nome,
       areaId?.trim() || undefined,
       componenteId?.trim() || undefined,
+      sintomaId?.trim() || undefined,
     );
     return new StreamableFile(pdf, {
       type: 'application/pdf',
@@ -366,11 +369,13 @@ export class VistoriaController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Query('areaId') areaId?: string,
     @Query('componenteId') componenteId?: string,
+    @Query('sintomaId') sintomaId?: string,
   ): Promise<IrregularidadeHistoricoVeiculoDto> {
     return this.irregularidadeService.listNaoResolvidasByVeiculo(
       id,
       areaId,
       componenteId,
+      sintomaId,
     );
   }
 
@@ -427,6 +432,8 @@ export class VistoriaController {
     Permission.VISTORIA_READ,
     Permission.VISTORIA_WEB_READ,
     Permission.VISTORIA_MOBILE_LISTA_READ,
+    /** SOS precisa checar vistoria mobile em andamento do veículo sem liberar a tela Vistorias. */
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
   )
   @ApiOperation({ summary: 'Listar vistorias (com filtro de status)' })
   @ApiResponse({

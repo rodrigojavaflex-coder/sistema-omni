@@ -17,6 +17,7 @@ import { AuditAction } from '../../common/enums/auditoria.enum';
 import {
   EmailEnvioConfig,
   ErpVistoriaConfig,
+  EscalaInfobusConfig,
   ImpressaoManutencaoConfig,
   TempoFaixaConfig,
   TempoFluxoConfig,
@@ -296,6 +297,63 @@ export class ConfiguracaoService {
     };
   }
 
+  private normalizeEscalaInfobusConfig(
+    input: unknown,
+    anterior?: EscalaInfobusConfig,
+  ): EscalaInfobusConfig | undefined {
+    if (!input) {
+      return undefined;
+    }
+    const source = input as Partial<EscalaInfobusConfig>;
+    const ativo = !!source.ativo;
+    const url = (source.url ?? '').toString().trim().replace(/\/+$/, '');
+    const tenant = (source.tenant ?? '').toString().trim();
+    const apiKeyInformada = this.chaveErpValida(
+      (source.apiKey ?? '').toString(),
+    );
+    const apiKeyAnterior = this.chaveErpValida(anterior?.apiKey);
+    const apiKey = apiKeyInformada || apiKeyAnterior;
+    const timeoutRaw = Number(source.timeoutMs);
+    const timeoutMs =
+      Number.isFinite(timeoutRaw) && timeoutRaw > 0
+        ? Math.trunc(timeoutRaw)
+        : 30000;
+
+    if (ativo) {
+      if (!url) {
+        throw new BadRequestException(
+          'URL da Escala INFOBUS é obrigatória quando a integração está ativa.',
+        );
+      }
+      if (!tenant) {
+        throw new BadRequestException(
+          'Tenant da Escala INFOBUS é obrigatório quando a integração está ativa.',
+        );
+      }
+      if (!apiKey) {
+        throw new BadRequestException(
+          'API Key da Escala INFOBUS é obrigatória quando a integração está ativa.',
+        );
+      }
+    }
+
+    return {
+      ativo,
+      url,
+      tenant,
+      apiKey: apiKey || undefined,
+      timeoutMs,
+      ultimoSyncEscalaEm:
+        source.ultimoSyncEscalaEm !== undefined
+          ? source.ultimoSyncEscalaEm
+          : (anterior?.ultimoSyncEscalaEm ?? null),
+      ultimoSyncTelemetriaEm:
+        source.ultimoSyncTelemetriaEm !== undefined
+          ? source.ultimoSyncTelemetriaEm
+          : (anterior?.ultimoSyncTelemetriaEm ?? null),
+    };
+  }
+
   private normalizeErpVistoriaConfig(
     input: unknown,
     anterior?: ErpVistoriaConfig,
@@ -404,18 +462,30 @@ export class ConfiguracaoService {
       logoRelatorioBytes: undefined,
       logoRelatorioMime: undefined,
     };
-    if (!config.erpVistoriaConfig) {
-      return base;
+    let result = base;
+    if (config.erpVistoriaConfig) {
+      const apiKey = this.chaveErpValida(config.erpVistoriaConfig.apiKey);
+      result = {
+        ...result,
+        erpVistoriaConfig: {
+          ...config.erpVistoriaConfig,
+          apiKey: '',
+          apiKeyConfigured: !!apiKey,
+        },
+      };
     }
-    const apiKey = this.chaveErpValida(config.erpVistoriaConfig.apiKey);
-    return {
-      ...base,
-      erpVistoriaConfig: {
-        ...config.erpVistoriaConfig,
-        apiKey: '',
-        apiKeyConfigured: !!apiKey,
-      },
-    };
+    if (config.escalaInfobusConfig) {
+      const apiKey = this.chaveErpValida(config.escalaInfobusConfig.apiKey);
+      result = {
+        ...result,
+        escalaInfobusConfig: {
+          ...config.escalaInfobusConfig,
+          apiKey: '',
+          apiKeyConfigured: !!apiKey,
+        },
+      };
+    }
+    return result;
   }
 
   private aplicarLogoArquivo(
@@ -463,6 +533,9 @@ export class ConfiguracaoService {
     if (dto.impressaoManutencaoConfig === undefined) {
       delete normalizedDto.impressaoManutencaoConfig;
     }
+    if (dto.escalaInfobusConfig === undefined) {
+      delete normalizedDto.escalaInfobusConfig;
+    }
 
     // Busca se já existe configuração (só pode haver uma)
     let config = await this.configuracaoRepository.findOne({ where: {} });
@@ -476,6 +549,12 @@ export class ConfiguracaoService {
       if (dto.impressaoManutencaoConfig !== undefined) {
         normalizedDto.impressaoManutencaoConfig =
           this.normalizeImpressaoManutencaoConfig(dto.impressaoManutencaoConfig);
+      }
+      if (dto.escalaInfobusConfig !== undefined) {
+        normalizedDto.escalaInfobusConfig = this.normalizeEscalaInfobusConfig(
+          dto.escalaInfobusConfig,
+          config.escalaInfobusConfig,
+        );
       }
       const dadosAnteriores = this.mascararConfig({ ...config });
       Object.assign(config, normalizedDto);
@@ -508,6 +587,11 @@ export class ConfiguracaoService {
       if (dto.impressaoManutencaoConfig !== undefined) {
         normalizedDto.impressaoManutencaoConfig =
           this.normalizeImpressaoManutencaoConfig(dto.impressaoManutencaoConfig);
+      }
+      if (dto.escalaInfobusConfig !== undefined) {
+        normalizedDto.escalaInfobusConfig = this.normalizeEscalaInfobusConfig(
+          dto.escalaInfobusConfig,
+        );
       }
       config = this.configuracaoRepository.create(normalizedDto);
       this.aplicarLogoArquivo(config, logoFile);
@@ -649,6 +733,55 @@ export class ConfiguracaoService {
     };
   }
 
+  async findEscalaInfobusApiKey(): Promise<{
+    configurada: boolean;
+    apiKey: string;
+  }> {
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    const apiKey = this.chaveErpValida(config?.escalaInfobusConfig?.apiKey);
+    return {
+      configurada: !!apiKey,
+      apiKey,
+    };
+  }
+
+  /** Uso interno (sync): retorna config com API Key em claro. */
+  async getEscalaInfobusConfigInterna(): Promise<EscalaInfobusConfig | null> {
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    if (!config?.escalaInfobusConfig) {
+      return null;
+    }
+    return {
+      ...config.escalaInfobusConfig,
+      apiKey: this.chaveErpValida(config.escalaInfobusConfig.apiKey) || undefined,
+    };
+  }
+
+  async marcarSyncEscalaInfobus(campos: {
+    ultimoSyncEscalaEm?: string | null;
+    ultimoSyncTelemetriaEm?: string | null;
+  }): Promise<void> {
+    const config = await this.configuracaoRepository.findOne({ where: {} });
+    if (!config) {
+      return;
+    }
+    const atual = config.escalaInfobusConfig ?? {
+      ativo: false,
+      url: '',
+      tenant: '',
+    };
+    config.escalaInfobusConfig = {
+      ...atual,
+      ...(campos.ultimoSyncEscalaEm !== undefined
+        ? { ultimoSyncEscalaEm: campos.ultimoSyncEscalaEm }
+        : {}),
+      ...(campos.ultimoSyncTelemetriaEm !== undefined
+        ? { ultimoSyncTelemetriaEm: campos.ultimoSyncTelemetriaEm }
+        : {}),
+    };
+    await this.configuracaoRepository.save(config);
+  }
+
   async findTempoFluxoConfig(): Promise<TempoFluxoConfig> {
     let config = await this.configuracaoRepository.findOne({ where: {} });
     if (!config) {
@@ -744,6 +877,13 @@ export class ConfiguracaoService {
           ? undefined
           : this.normalizeImpressaoManutencaoConfig(
               dto.impressaoManutencaoConfig,
+            ),
+      escalaInfobusConfig:
+        dto.escalaInfobusConfig === undefined
+          ? undefined
+          : this.normalizeEscalaInfobusConfig(
+              dto.escalaInfobusConfig,
+              config.escalaInfobusConfig,
             ),
       ...(odometroDiffMaxKm !== undefined
         ? { odometroDiffMaxKm }

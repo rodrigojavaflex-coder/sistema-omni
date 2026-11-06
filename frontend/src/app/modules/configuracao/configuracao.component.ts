@@ -29,11 +29,20 @@ export class ConfiguracaoComponent implements OnInit {
   error: string | null = null;
   success: string | null = null;
   logoPreview: string | null = null;
-  activeTab: 'sistema' | 'email' | 'erp' | 'impressao' | 'vistoria' | 'app' =
-    'sistema';
+  activeTab:
+    | 'sistema'
+    | 'email'
+    | 'erp'
+    | 'impressao'
+    | 'vistoria'
+    | 'app'
+    | 'escalaInfobus' = 'sistema';
   showErpApiKey = false;
   erpApiKeyConfigured = false;
   erpApiKeyLoading = false;
+  showEscalaApiKey = false;
+  escalaApiKeyConfigured = false;
+  escalaApiKeyLoading = false;
   removingMobileVersion: string | null = null;
   readonly odometroDiffMaxKmPadrao = 500;
   mobileVersoesCatalogo: MobileAppVersionCatalogItem[] = [];
@@ -80,6 +89,11 @@ export class ConfiguracaoComponent implements OnInit {
       impressoraIp: [''],
       impressoraPorta: [9100],
       impressaoTimeoutMs: [10000],
+      escalaInfobusAtivo: [false],
+      escalaInfobusUrl: [''],
+      escalaInfobusTenant: [''],
+      escalaInfobusApiKey: [''],
+      escalaInfobusTimeoutMs: [30000],
       odometroDiffMaxKm: [500],
       mobileVersaoMinima: [''],
     });
@@ -201,12 +215,19 @@ export class ConfiguracaoComponent implements OnInit {
           impressoraIp: config.impressaoManutencaoConfig?.impressoraIp ?? '',
           impressoraPorta: config.impressaoManutencaoConfig?.impressoraPorta ?? 9100,
           impressaoTimeoutMs: config.impressaoManutencaoConfig?.timeoutMs ?? 10000,
+          escalaInfobusAtivo: config.escalaInfobusConfig?.ativo ?? false,
+          escalaInfobusUrl: config.escalaInfobusConfig?.url ?? '',
+          escalaInfobusTenant: config.escalaInfobusConfig?.tenant ?? '',
+          escalaInfobusApiKey: '',
+          escalaInfobusTimeoutMs: config.escalaInfobusConfig?.timeoutMs ?? 30000,
           odometroDiffMaxKm:
             config.odometroDiffMaxKm ?? this.odometroDiffMaxKmPadrao,
           mobileVersaoMinima: config.mobileVersaoMinima ?? '',
         });
         this.showErpApiKey = false;
         this.erpApiKeyConfigured = !!config.erpVistoriaConfig?.apiKeyConfigured;
+        this.showEscalaApiKey = false;
+        this.escalaApiKeyConfigured = !!config.escalaInfobusConfig?.apiKeyConfigured;
         this.aplicarLogoPreview(config.logoRelatorio);
         this.loading = false;
       },
@@ -305,6 +326,20 @@ export class ConfiguracaoComponent implements OnInit {
         return;
       }
     }
+    const escalaAtivo = !!this.form.value.escalaInfobusAtivo;
+    const escalaUrl = (this.form.value.escalaInfobusUrl ?? '').trim();
+    const escalaTenant = (this.form.value.escalaInfobusTenant ?? '').trim();
+    const escalaApiKey = this.chaveErpInformada(
+      this.form.value.escalaInfobusApiKey,
+    );
+    if (
+      escalaAtivo &&
+      (!escalaUrl || !escalaTenant || (!escalaApiKey && !this.escalaApiKeyConfigured))
+    ) {
+      this.error =
+        'Com Escala INFOBUS ativa, preencha URL, tenant e API Key.';
+      return;
+    }
     this.loading = true;
     const formData = new FormData();
     formData.append('nomeCliente', this.form.value.nomeCliente);
@@ -361,6 +396,16 @@ export class ConfiguracaoComponent implements OnInit {
         timeoutMs: Number(this.form.value.impressaoTimeoutMs ?? 10000),
       }),
     );
+    formData.append(
+      'escalaInfobusConfig',
+      JSON.stringify({
+        ativo: escalaAtivo,
+        url: escalaUrl,
+        tenant: escalaTenant,
+        apiKey: escalaApiKey || undefined,
+        timeoutMs: Number(this.form.value.escalaInfobusTimeoutMs ?? 30000),
+      }),
+    );
     const odometroDiffRaw = this.form.value.odometroDiffMaxKm;
     if (
       odometroDiffRaw === null ||
@@ -387,12 +432,15 @@ export class ConfiguracaoComponent implements OnInit {
       }
       this.form.patchValue({
         erpApiKey: '',
+        escalaInfobusApiKey: '',
         mobileVersaoMinima: config.mobileVersaoMinima ?? '',
         odometroDiffMaxKm:
           config.odometroDiffMaxKm ?? this.odometroDiffMaxKmPadrao,
       });
       this.showErpApiKey = false;
       this.erpApiKeyConfigured = !!config.erpVistoriaConfig?.apiKeyConfigured;
+      this.showEscalaApiKey = false;
+      this.escalaApiKeyConfigured = !!config.escalaInfobusConfig?.apiKeyConfigured;
       this.aplicarLogoPreview(config.logoRelatorio);
       this.loading = false;
       this.error = null;
@@ -439,6 +487,38 @@ export class ConfiguracaoComponent implements OnInit {
         this.erpApiKeyLoading = false;
         this.error = 'Não foi possível carregar a API Key salva.';
         this.showErpApiKey = true;
+      },
+    });
+  }
+
+  toggleEscalaApiKeyVisibility(): void {
+    if (this.showEscalaApiKey) {
+      this.showEscalaApiKey = false;
+      return;
+    }
+    const atual = this.chaveErpInformada(this.form.value.escalaInfobusApiKey);
+    if (atual) {
+      this.showEscalaApiKey = true;
+      return;
+    }
+    if (!this.escalaApiKeyConfigured) {
+      this.showEscalaApiKey = true;
+      return;
+    }
+    this.escalaApiKeyLoading = true;
+    this.configuracaoService.getEscalaInfobusApiKey().subscribe({
+      next: (resposta) => {
+        this.escalaApiKeyConfigured = !!resposta.configurada;
+        if (resposta.apiKey) {
+          this.form.patchValue({ escalaInfobusApiKey: resposta.apiKey });
+        }
+        this.showEscalaApiKey = true;
+        this.escalaApiKeyLoading = false;
+      },
+      error: () => {
+        this.escalaApiKeyLoading = false;
+        this.error = 'Não foi possível carregar a API Key da Escala INFOBUS.';
+        this.showEscalaApiKey = true;
       },
     });
   }

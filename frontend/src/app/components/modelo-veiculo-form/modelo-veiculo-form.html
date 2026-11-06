@@ -47,6 +47,35 @@
           <option [value]="false">Inativo</option>
         </select>
       </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label" for="modelo-km-pct">Km por 1% (GNV / Elétrico)</label>
+          <input
+            id="modelo-km-pct"
+            type="number"
+            formControlName="kmPorPercentual"
+            class="form-input"
+            min="0.01"
+            step="0.01"
+            placeholder="Ex.: 3"
+          />
+          <p class="field-hint">Usado no cálculo de autonomia OMNI (ex.: 66% × 3 = 198 km).</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modelo-km-litro">Km por litro (Diesel)</label>
+          <input
+            id="modelo-km-litro"
+            type="number"
+            formControlName="kmPorLitro"
+            class="form-input"
+            min="0.01"
+            step="0.01"
+            placeholder="Ex.: 2.5"
+          />
+          <p class="field-hint">Cadastro do fator; alerta de autonomia v1 cobre GNV/Elétrico.</p>
+        </div>
+      </div>
     </div>
 
     <div class="form-section">

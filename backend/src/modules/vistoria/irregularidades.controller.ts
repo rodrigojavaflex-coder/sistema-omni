@@ -60,6 +60,7 @@ import {
   IRREGULARIDADE_FLUXO_PRINT_RESUMO_PERMISSIONS,
   IRREGULARIDADE_FLUXO_READ_PERMISSIONS,
   isOnlyValidacaoFinalEmpresaScope,
+  shouldForceOrigemRegistroSosWeb,
   STATUS_ESCOPO_EMPRESA,
   userHasPermission,
 } from '../../common/utils/irregularidade-permissions.util';
@@ -210,7 +211,7 @@ export class IrregularidadesController {
     const erpCodigoPedidoFiltro = this.parseTextoParcialQuery(erpCodigoPedido);
     const numOsExternoDigits = this.parseOrdemServicoQuery(numOsExterno);
     const numeroVistoriaDigits = this.parseOrdemServicoQuery(numeroVistoria);
-    const origemFiltro =
+    let origemFiltro =
       origemRegistro === 'SOS_WEB'
         ? ('SOS_WEB' as const)
         : origemRegistro === 'MOBILE'
@@ -230,6 +231,21 @@ export class IrregularidadesController {
 
     const idEmpresaFiltro = idEmpresaManutencao?.trim() || undefined;
     const idVeiculoFiltro = idVeiculo?.trim() || undefined;
+
+    const statusesConsulta =
+      statuses.length > 0
+        ? statuses
+        : isGestaoOs
+          ? Object.values(StatusIrregularidade)
+          : [StatusIrregularidade.REGISTRADA];
+
+    if (
+      shouldForceOrigemRegistroSosWeb(userPermissions, statusesConsulta, {
+        isGestaoOs,
+      })
+    ) {
+      origemFiltro = 'SOS_WEB';
+    }
 
     const filtrosLista = {
       idVeiculo: idVeiculoFiltro,
@@ -251,13 +267,6 @@ export class IrregularidadesController {
       page: pageNum,
       limit: limitNum,
     };
-
-    const statusesConsulta =
-      statuses.length > 0
-        ? statuses
-        : isGestaoOs
-          ? Object.values(StatusIrregularidade)
-          : [StatusIrregularidade.REGISTRADA];
 
     const requiresScope =
       !isGestaoOs &&
@@ -436,6 +445,14 @@ export class IrregularidadesController {
       dto.numeroVistoria,
     );
 
+    const statusesResumo =
+      dto.status && dto.status.length > 0 ? dto.status : [];
+    const forceSosResumo =
+      origemTela === 'tratamento' &&
+      shouldForceOrigemRegistroSosWeb(userPermissions, statusesResumo, {
+        isGestaoOs: false,
+      });
+
     const pdf = await this.irregularidadeService.gerarRelatorioResumoGestaoOsPdf(
       {
         ...dto,
@@ -444,6 +461,7 @@ export class IrregularidadesController {
         erpCodigoPedido: erpCodigoPedidoFiltro,
         numOsExterno: numOsExternoDigits,
         numeroVistoria: numeroVistoriaDigits,
+        origemRegistro: forceSosResumo ? 'SOS_WEB' : dto.origemRegistro,
       },
       req.user,
     );
@@ -458,14 +476,17 @@ export class IrregularidadesController {
     summary: 'Gerar preview do relatório de envio para manutenção',
   })
   @ApiResponse({ status: 200, type: RelatorioManutencaoPreviewDto })
-  @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_START)
+  @Permissions(
+    Permission.IRREGULARIDADE_MANUTENCAO_START,
+    Permission.IRREGULARIDADE_TRATAMENTO_START_MANUTENCAO_SOS,
+  )
   previewIniciarManutencaoLote(
     @Body() dto: IniciarManutencaoLoteDto,
-    @Req() req: Request & { user?: { nome?: string } },
+    @Req() req: Request & { user?: Usuario },
   ): Promise<RelatorioManutencaoPreviewDto> {
     return this.irregularidadeService.previewIniciarManutencaoLote(
       dto,
-      req.user,
+      mapFluxoActor(req.user),
     );
   }
 
@@ -474,15 +495,18 @@ export class IrregularidadesController {
     summary: 'Gerar preview em PDF do relatório de envio para manutenção',
   })
   @ApiResponse({ status: 200, description: 'Arquivo PDF' })
-  @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_START)
+  @Permissions(
+    Permission.IRREGULARIDADE_MANUTENCAO_START,
+    Permission.IRREGULARIDADE_TRATAMENTO_START_MANUTENCAO_SOS,
+  )
   async previewPdfIniciarManutencaoLote(
     @Body() dto: IniciarManutencaoLoteDto,
-    @Req() req: Request & { user?: { nome?: string } },
+    @Req() req: Request & { user?: Usuario },
   ): Promise<StreamableFile> {
     const pdf =
       await this.irregularidadeService.previewPdfIniciarManutencaoLote(
         dto,
-        req.user,
+        mapFluxoActor(req.user),
       );
     return new StreamableFile(pdf, {
       type: 'application/pdf',
@@ -496,7 +520,10 @@ export class IrregularidadesController {
       'Enviar irregularidades para manutenção em lote, com envio de e-mail e relatório anexo',
   })
   @ApiResponse({ status: 200, type: RelatorioManutencaoExecucaoDto })
-  @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_START)
+  @Permissions(
+    Permission.IRREGULARIDADE_MANUTENCAO_START,
+    Permission.IRREGULARIDADE_TRATAMENTO_START_MANUTENCAO_SOS,
+  )
   iniciarManutencaoLote(
     @Body() dto: IniciarManutencaoLoteDto,
     @Req()
@@ -566,7 +593,10 @@ export class IrregularidadesController {
   @Post(':id/iniciar-manutencao')
   @ApiOperation({ summary: 'Enviar irregularidade para manutenção' })
   @ApiResponse({ status: 200, type: Irregularidade })
-  @Permissions(Permission.IRREGULARIDADE_MANUTENCAO_START)
+  @Permissions(
+    Permission.IRREGULARIDADE_MANUTENCAO_START,
+    Permission.IRREGULARIDADE_TRATAMENTO_START_MANUTENCAO_SOS,
+  )
   iniciarManutencao(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: IniciarManutencaoIrregularidadeDto,
@@ -729,6 +759,7 @@ function mapFluxoActor(
       idEmpresa?: string;
       idsEmpresasManutencao?: string[];
       nome?: string;
+      perfis?: Array<{ permissoes?: string[] }>;
     }
   | undefined {
   if (!user) {
@@ -745,5 +776,6 @@ function mapFluxoActor(
     idEmpresa: user.idEmpresa ?? idsEmpresas[0] ?? undefined,
     idsEmpresasManutencao: idsEmpresas,
     nome: user.nome,
+    perfis: user.perfis,
   };
 }

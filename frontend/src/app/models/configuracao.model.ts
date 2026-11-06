@@ -47,6 +47,17 @@ export interface ImpressaoManutencaoConfig {
   timeoutMs?: number;
 }
 
+export interface EscalaInfobusConfig {
+  ativo: boolean;
+  url: string;
+  tenant: string;
+  apiKey?: string;
+  apiKeyConfigured?: boolean;
+  timeoutMs?: number;
+  ultimoSyncEscalaEm?: string | null;
+  ultimoSyncTelemetriaEm?: string | null;
+}
+
 export interface Configuracao {
   id: string;
   nomeCliente?: string;
@@ -63,6 +74,7 @@ export interface Configuracao {
   emailEnvioConfig?: EmailEnvioConfig;
   erpVistoriaConfig?: ErpVistoriaConfig;
   impressaoManutencaoConfig?: ImpressaoManutencaoConfig;
+  escalaInfobusConfig?: EscalaInfobusConfig;
   /** Null = usar padrão 500 km no backend */
   odometroDiffMaxKm?: number | null;
   /** Null/vazio = não bloqueia apps abaixo desta versão */
@@ -110,6 +122,7 @@ export interface CreateConfiguracaoDto {
   emailEnvioConfig?: EmailEnvioConfig;
   erpVistoriaConfig?: ErpVistoriaConfig;
   impressaoManutencaoConfig?: ImpressaoManutencaoConfig;
+  escalaInfobusConfig?: EscalaInfobusConfig;
   odometroDiffMaxKm?: number | null;
   mobileVersaoMinima?: string | null;
 }

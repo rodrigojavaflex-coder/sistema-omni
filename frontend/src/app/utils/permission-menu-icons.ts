@@ -23,6 +23,7 @@ export const PERMISSION_GROUP_ICON_KEYS: Record<string, string> = {
   'BI - Administração': 'feather-pie-chart',
   Motoristas: 'feather-user',
   Veículos: 'feather-truck',
+  'Controle de Escala': 'feather-activity',
   'Modelos de Veículo': 'feather-layers',
   'Empresa Terceira': 'feather-briefcase',
   'Tipos de Documento': 'feather-file-text',

@@ -30,6 +30,7 @@ import { IrregularidadeResumo, SosSessaoAberta, TipoVistoria, TIPO_VISTORIA_OPCO
 import { compressImageForUpload } from '../../utils/compress-image.util';
 import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal';
 import { MapaAvariaComponent } from '../mapa-avaria/mapa-avaria';
+import { ErrorModalService } from '../../services/error-modal.service';
 
 type SosEtapa = 1 | 2 | 3;
 type SosModoAbertura = 'verificando' | 'escolher_sessao' | 'formulario';
@@ -90,6 +91,7 @@ export class IrregularidadeSosModalComponent implements OnChanges {
   private readonly motoristaService = inject(MotoristaService);
   private readonly areaService = inject(AreaVistoriadaService);
   private readonly matrizService = inject(MatrizCriticidadeService);
+  private readonly errorModalService = inject(ErrorModalService);
 
   readonly cancelSosConfirmMessage =
     'Cancelar remove a vistoria SOS e todas as irregularidades registradas nesta sessão. Esta ação não pode ser desfeita.';
@@ -449,6 +451,21 @@ export class IrregularidadeSosModalComponent implements OnChanges {
     this.irregularidadeFormError = '';
     this.validacaoEtapa2 = false;
     this.showIrregularidadeFormModal = true;
+    if (this.selectedVeiculo?.id && this.areas.length === 0) {
+      void this.recarregarAreasDoVeiculo();
+    }
+  }
+
+  private async recarregarAreasDoVeiculo(): Promise<void> {
+    if (!this.selectedVeiculo?.id) return;
+    try {
+      const idModelo = this.selectedVeiculo.idModelo ?? undefined;
+      this.areas = await firstValueFrom(
+        this.areaService.getAll(idModelo, true),
+      );
+    } catch {
+      this.areas = [];
+    }
   }
 
   fecharFormIrregularidade(): void {
@@ -472,27 +489,43 @@ export class IrregularidadeSosModalComponent implements OnChanges {
 
   async onVeiculoChange(): Promise<void> {
     if (!this.selectedVeiculo?.id) return;
+    const veiculoId = this.selectedVeiculo.id;
+    const idModelo = this.selectedVeiculo.idModelo ?? undefined;
+
     try {
       const ultimo = await firstValueFrom(
-        this.vistoriaService.getUltimoOdometro(this.selectedVeiculo.id),
+        this.vistoriaService.getUltimoOdometro(veiculoId),
       );
       this.ultimoOdometro = ultimo?.odometro ?? null;
+    } catch {
+      this.ultimoOdometro = null;
+    }
+
+    try {
       const vistorias = await firstValueFrom(
         this.vistoriaService.listar({ status: 'EM_ANDAMENTO' }),
       );
       this.vistoriaMobileEmAndamento = (vistorias ?? []).some(
         (v) =>
-          v.idVeiculo === this.selectedVeiculo?.id &&
+          v.idVeiculo === veiculoId &&
           v.origem !== 'SOS_WEB' &&
           v.status === 'EM_ANDAMENTO',
       );
-      const idModelo = this.selectedVeiculo.idModelo;
+    } catch {
+      this.vistoriaMobileEmAndamento = false;
+    }
+
+    try {
       this.areas = await firstValueFrom(this.areaService.getAll(idModelo, true));
-      this.pendentes = await firstValueFrom(
-        this.vistoriaService.listarIrregularidadesPendentes(this.selectedVeiculo.id),
-      );
     } catch {
       this.areas = [];
+    }
+
+    try {
+      this.pendentes = await firstValueFrom(
+        this.vistoriaService.listarIrregularidadesPendentes(veiculoId),
+      );
+    } catch {
       this.pendentes = [];
     }
   }
@@ -728,19 +761,21 @@ export class IrregularidadeSosModalComponent implements OnChanges {
     this.validacaoEtapa2 = true;
     const observacaoTrim = this.observacao.trim();
     if (!this.modalIdArea || !this.modalIdComponente || !this.modalIdSintoma) {
-      this.irregularidadeFormError = 'Selecione área, componente e sintoma.';
+      this.mostrarErroSalvar('Selecione área, componente e sintoma.');
       return;
     }
     if (!observacaoTrim) {
-      this.irregularidadeFormError = 'A descrição do problema é obrigatória.';
+      this.mostrarErroSalvar('A descrição do problema é obrigatória.');
       return;
     }
     if (this.selectedMatriz?.exigeFoto && this.fotos.length === 0) {
-      this.irregularidadeFormError = 'Foto obrigatória para este sintoma.';
+      this.mostrarErroSalvar('Foto obrigatória para este sintoma.');
       return;
     }
     if (this.exigeMapa && !this.marcaMapa) {
-      this.irregularidadeFormError = 'Marque o local da irregularidade no desenho do veículo.';
+      this.mostrarErroSalvar(
+        'Marque o local da irregularidade no desenho do veículo.',
+      );
       return;
     }
 
@@ -754,6 +789,14 @@ export class IrregularidadeSosModalComponent implements OnChanges {
     }
 
     await this.executarSalvarIrregularidade();
+  }
+
+  private mostrarErroSalvar(
+    message: string,
+    title: string = 'Atenção',
+  ): void {
+    this.irregularidadeFormError = message;
+    this.errorModalService.show(message, title);
   }
 
   private async executarSalvarIrregularidade(): Promise<void> {
@@ -799,6 +842,7 @@ export class IrregularidadeSosModalComponent implements OnChanges {
         }
       } catch {
         this.midiaUploadError = `Irregularidade #${created.numeroIrregularidade ?? created.id} criada, mas falha no envio de mídias. Use "Tentar mídias novamente".`;
+        this.errorModalService.show(this.midiaUploadError, 'Atenção');
         this.pendingMidiaIrregularidadeId = created.id;
         this.pendingMidiaSnapshot = {
           irregularidadeId: created.id,
@@ -823,7 +867,10 @@ export class IrregularidadeSosModalComponent implements OnChanges {
       this.fecharFormIrregularidade();
     } catch (err: unknown) {
       const msg = (err as { error?: { message?: string } })?.error?.message;
-      this.irregularidadeFormError = msg || 'Erro ao salvar irregularidade.';
+      this.mostrarErroSalvar(
+        msg || 'Erro ao salvar irregularidade.',
+        'Erro',
+      );
     } finally {
       this.loading = false;
     }
@@ -862,6 +909,7 @@ export class IrregularidadeSosModalComponent implements OnChanges {
     } catch (err: unknown) {
       const msg = (err as { error?: { message?: string } })?.error?.message;
       this.midiaUploadError = msg || 'Falha ao reenviar mídias.';
+      this.errorModalService.show(this.midiaUploadError, 'Erro');
     } finally {
       this.loading = false;
     }

@@ -44,7 +44,12 @@ export class SintomasController {
   @Get()
   @ApiOperation({ summary: 'Listar sintomas' })
   @ApiResponse({ status: 200, type: [Sintoma] })
-  @Permissions(Permission.SINTOMA_READ, Permission.VISTORIA_READ)
+  @Permissions(
+    Permission.SINTOMA_READ,
+    Permission.VISTORIA_READ,
+    /** Lookup do SOS sem liberar o cadastro de sintomas. */
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
+  )
   findAll(@Query('ativo') ativo?: string): Promise<Sintoma[]> {
     const ativoParsed =
       ativo === undefined ? undefined : ativo === 'true' || ativo === '1';

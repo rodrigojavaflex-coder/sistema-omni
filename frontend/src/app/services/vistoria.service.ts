@@ -117,7 +117,7 @@ export class VistoriaService {
 
   listarHistoricoIrregularidadesNaoResolvidas(
     idVeiculo: string,
-    filtros?: { areaId?: string; componenteId?: string },
+    filtros?: { areaId?: string; componenteId?: string; sintomaId?: string },
   ): Observable<IrregularidadeHistoricoVeiculo> {
     let params = new HttpParams();
     if (filtros?.areaId) {
@@ -125,6 +125,9 @@ export class VistoriaService {
     }
     if (filtros?.componenteId) {
       params = params.set('componenteId', filtros.componenteId);
+    }
+    if (filtros?.sintomaId) {
+      params = params.set('sintomaId', filtros.sintomaId);
     }
     return this.http.get<IrregularidadeHistoricoVeiculo>(
       `${this.apiUrl}/veiculo/${idVeiculo}/historico-irregularidades-nao-resolvidas`,
@@ -134,7 +137,7 @@ export class VistoriaService {
 
   baixarPdfPendenciasVeiculo(
     idVeiculo: string,
-    filtros?: { areaId?: string; componenteId?: string },
+    filtros?: { areaId?: string; componenteId?: string; sintomaId?: string },
   ): Observable<Blob> {
     let params = new HttpParams();
     if (filtros?.areaId) {
@@ -142,6 +145,9 @@ export class VistoriaService {
     }
     if (filtros?.componenteId) {
       params = params.set('componenteId', filtros.componenteId);
+    }
+    if (filtros?.sintomaId) {
+      params = params.set('sintomaId', filtros.sintomaId);
     }
     return this.http.get(
       `${this.apiUrl}/veiculo/${idVeiculo}/historico-irregularidades-nao-resolvidas/pdf`,

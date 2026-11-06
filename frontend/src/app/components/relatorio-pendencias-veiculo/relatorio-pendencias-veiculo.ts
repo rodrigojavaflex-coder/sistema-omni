@@ -35,15 +35,19 @@ export class RelatorioPendenciasVeiculoComponent {
   itens: IrregularidadeHistoricoVeiculoItem[] = [];
   areaOptions: OptionItem[] = [];
   componenteOptions: OptionItem[] = [];
+  sintomaOptions: OptionItem[] = [];
   areaFiltro = '';
   componenteFiltro = '';
+  sintomaFiltro = '';
 
   get itensFiltrados(): IrregularidadeHistoricoVeiculoItem[] {
     return this.itens.filter((item) => {
       const byArea = !this.areaFiltro || item.idarea === this.areaFiltro;
       const byComponente =
         !this.componenteFiltro || item.idcomponente === this.componenteFiltro;
-      return byArea && byComponente;
+      const bySintoma =
+        !this.sintomaFiltro || item.idsintoma === this.sintomaFiltro;
+      return byArea && byComponente && bySintoma;
     });
   }
 
@@ -61,23 +65,23 @@ export class RelatorioPendenciasVeiculoComponent {
   }
 
   onAreaChange(): void {
-    if (!this.areaFiltro) {
-      this.componenteFiltro = '';
-      this.rebuildComponenteOptions();
-      return;
-    }
-    const componentesDaArea = this.itens
-      .filter((item) => item.idarea === this.areaFiltro)
-      .map((item) => ({
-        id: item.idcomponente,
-        nome: item.nomeComponente ?? 'Componente',
-      }));
-    this.componenteOptions = this.deduplicateOptions(componentesDaArea);
+    this.rebuildComponenteOptions();
     if (
       this.componenteFiltro &&
       !this.componenteOptions.some((option) => option.id === this.componenteFiltro)
     ) {
       this.componenteFiltro = '';
+    }
+    this.onComponenteChange();
+  }
+
+  onComponenteChange(): void {
+    this.rebuildSintomaOptions();
+    if (
+      this.sintomaFiltro &&
+      !this.sintomaOptions.some((option) => option.id === this.sintomaFiltro)
+    ) {
+      this.sintomaFiltro = '';
     }
   }
 
@@ -110,6 +114,7 @@ export class RelatorioPendenciasVeiculoComponent {
       .baixarPdfPendenciasVeiculo(this.veiculoId, {
         areaId: this.areaFiltro || undefined,
         componenteId: this.componenteFiltro || undefined,
+        sintomaId: this.sintomaFiltro || undefined,
       })
       .subscribe({
         next: async (blob) => {
@@ -131,6 +136,7 @@ export class RelatorioPendenciasVeiculoComponent {
   private carregar(veiculoId: string): void {
     this.areaFiltro = '';
     this.componenteFiltro = '';
+    this.sintomaFiltro = '';
     this.loading = true;
     this.errorMessage = '';
     this.vistoriaService.listarHistoricoIrregularidadesNaoResolvidas(veiculoId).subscribe({
@@ -145,6 +151,7 @@ export class RelatorioPendenciasVeiculoComponent {
           })),
         );
         this.rebuildComponenteOptions();
+        this.rebuildSintomaOptions();
         this.loading = false;
       },
       error: (err: unknown) => {
@@ -156,6 +163,7 @@ export class RelatorioPendenciasVeiculoComponent {
         this.total = 0;
         this.areaOptions = [];
         this.componenteOptions = [];
+        this.sintomaOptions = [];
         this.loading = false;
       },
     });
@@ -168,8 +176,10 @@ export class RelatorioPendenciasVeiculoComponent {
     this.itens = [];
     this.areaFiltro = '';
     this.componenteFiltro = '';
+    this.sintomaFiltro = '';
     this.areaOptions = [];
     this.componenteOptions = [];
+    this.sintomaOptions = [];
     this.errorMessage = '';
     this.pdfErrorMessage = '';
   }
@@ -182,6 +192,22 @@ export class RelatorioPendenciasVeiculoComponent {
       source.map((item) => ({
         id: item.idcomponente,
         nome: item.nomeComponente ?? 'Componente',
+      })),
+    );
+  }
+
+  private rebuildSintomaOptions(): void {
+    let source = this.itens;
+    if (this.areaFiltro) {
+      source = source.filter((item) => item.idarea === this.areaFiltro);
+    }
+    if (this.componenteFiltro) {
+      source = source.filter((item) => item.idcomponente === this.componenteFiltro);
+    }
+    this.sintomaOptions = this.deduplicateOptions(
+      source.map((item) => ({
+        id: item.idsintoma,
+        nome: item.descricaoSintoma ?? 'Sintoma',
       })),
     );
   }

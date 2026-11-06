@@ -201,6 +201,9 @@ export const RoutePermissions = {
     create: [Permission.DOCUMENTO_CREATE],
     update: [Permission.DOCUMENTO_UPDATE],
   },
+  controleEscala: {
+    list: [Permission.CONTROLE_ESCALA_READ],
+  },
 } as const;
 
 /** Chave de permissão dinâmica para visualização de link de BI (alinhada ao backend). */

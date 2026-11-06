@@ -90,11 +90,15 @@ export class ModeloVeiculoFormComponent
       nome: ['', [Validators.required, Validators.maxLength(80)]],
       descricaoDetalhada: ['', [Validators.maxLength(4000)]],
       ativo: [true],
+      kmPorPercentual: [null as number | null],
+      kmPorLitro: [null as number | null],
     });
     if (!this.canEditModelo) {
       this.form.get('nome')?.disable();
       this.form.get('descricaoDetalhada')?.disable();
       this.form.get('ativo')?.disable();
+      this.form.get('kmPorPercentual')?.disable();
+      this.form.get('kmPorLitro')?.disable();
     }
   }
 
@@ -107,7 +111,20 @@ export class ModeloVeiculoFormComponent
       nome: formValue.nome,
       descricaoDetalhada: descricao.length > 0 ? descricao : null,
       ativo: formValue.ativo,
+      kmPorPercentual: this.normalizeConsumo(formValue.kmPorPercentual),
+      kmPorLitro: this.normalizeConsumo(formValue.kmPorLitro),
     };
+  }
+
+  private normalizeConsumo(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) {
+      return null;
+    }
+    return Math.round(n * 100) / 100;
   }
 
   protected async saveEntity(data: CreateModeloVeiculoDto): Promise<void> {
@@ -131,6 +148,8 @@ export class ModeloVeiculoFormComponent
       nome: modelo.nome,
       descricaoDetalhada: modelo.descricaoDetalhada ?? '',
       ativo: modelo.ativo,
+      kmPorPercentual: modelo.kmPorPercentual ?? null,
+      kmPorLitro: modelo.kmPorLitro ?? null,
     });
     await this.carregarCatalogo();
     await this.carregarVistas(id);

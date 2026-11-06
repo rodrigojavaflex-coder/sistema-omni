@@ -60,6 +60,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
     if (this.isOpen) {
       this.onTouched();
     }
+    this.cdr.markForCheck();
   }
 
   toggleItem(item: string): void {
@@ -69,9 +70,10 @@ export class MultiSelectComponent implements ControlValueAccessor {
     } else {
       this.selectedItems.push(item);
     }
-    
-    this.onChange(this.selectedItems);
-    this.selectionChange.emit(this.selectedItems);
+
+    this.onChange([...this.selectedItems]);
+    this.selectionChange.emit([...this.selectedItems]);
+    this.cdr.markForCheck();
   }
 
   isSelected(item: string): boolean {
@@ -94,12 +96,14 @@ export class MultiSelectComponent implements ControlValueAccessor {
 
   closeDropdown(): void {
     this.isOpen = false;
+    this.cdr.markForCheck();
   }
 
   clearSelection(): void {
     this.selectedItems = [];
     this.onChange(this.selectedItems);
     this.selectionChange.emit(this.selectedItems);
+    this.cdr.markForCheck();
   }
 
   isAllSelected(): boolean {
@@ -109,11 +113,12 @@ export class MultiSelectComponent implements ControlValueAccessor {
   toggleAll(): void {
     if (this.isAllSelected()) {
       this.clearSelection();
-    } else {
-      this.selectedItems = [...this.options];
-      this.onChange(this.selectedItems);
-      this.selectionChange.emit(this.selectedItems);
+      return;
     }
+    this.selectedItems = [...this.options];
+    this.onChange([...this.selectedItems]);
+    this.selectionChange.emit([...this.selectedItems]);
+    this.cdr.markForCheck();
   }
 
   get selectAllLabel(): string {

@@ -17,6 +17,8 @@ export class ModeloVeiculoService {
       nome: dto.nome,
       descricaoDetalhada: this.normalizeDescricaoDetalhada(dto.descricaoDetalhada),
       ativo: dto.ativo ?? true,
+      kmPorPercentual: this.normalizeConsumo(dto.kmPorPercentual),
+      kmPorLitro: this.normalizeConsumo(dto.kmPorLitro),
     });
     return this.modeloRepository.save(modelo);
   }
@@ -64,12 +66,29 @@ export class ModeloVeiculoService {
         dto.descricaoDetalhada,
       );
     }
+    if (dto.kmPorPercentual !== undefined) {
+      updated.kmPorPercentual = this.normalizeConsumo(dto.kmPorPercentual);
+    }
+    if (dto.kmPorLitro !== undefined) {
+      updated.kmPorLitro = this.normalizeConsumo(dto.kmPorLitro);
+    }
     return this.modeloRepository.save(updated);
   }
 
   async remove(id: string): Promise<void> {
     const modelo = await this.findOne(id);
     await this.modeloRepository.remove(modelo);
+  }
+
+  private normalizeConsumo(value?: number | null): number | null {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) {
+      return null;
+    }
+    return Math.round(n * 100) / 100;
   }
 
   private normalizeDescricaoDetalhada(

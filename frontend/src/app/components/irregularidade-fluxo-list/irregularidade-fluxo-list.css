@@ -141,8 +141,8 @@
 }
 
 /**
- * Status fica no fim da barra: abre o painel para a esquerda (right: 0)
- * e em 1 coluna — evita corte na borda da viewport e overlap no período.
+ * Status fica no fim da barra (antes de Limpar): abre à esquerda (right: 0)
+ * em 1 coluna — evita corte na borda da viewport sem cobrir Gravidade/Origem.
  */
 .filters-row .filter-status ::ng-deep .multi-select-dropdown {
   left: auto;

@@ -70,6 +70,18 @@ export interface ImpressaoManutencaoConfig {
   timeoutMs?: number;
 }
 
+/** Integração Escala INFOBUS (KM detalhado / previsão do dia). */
+export interface EscalaInfobusConfig {
+  ativo: boolean;
+  url: string;
+  tenant: string;
+  apiKey?: string;
+  apiKeyConfigured?: boolean;
+  timeoutMs?: number;
+  ultimoSyncEscalaEm?: string | null;
+  ultimoSyncTelemetriaEm?: string | null;
+}
+
 @Entity('configuracoes')
 export class Configuracao extends BaseEntity {
   /**
@@ -122,6 +134,9 @@ export class Configuracao extends BaseEntity {
 
   @Column({ name: 'impressao_manutencao_config', type: 'jsonb', nullable: true })
   impressaoManutencaoConfig?: ImpressaoManutencaoConfig;
+
+  @Column({ name: 'escala_infobus_config', type: 'jsonb', nullable: true })
+  escalaInfobusConfig?: EscalaInfobusConfig;
 
   /**
    * Diferença máxima permitida (km) entre o odômetro informado e o da última

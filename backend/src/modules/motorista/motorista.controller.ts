@@ -38,6 +38,8 @@ export class MotoristaController {
     Permission.VISTORIA_MOBILE_LISTA_READ,
     Permission.OCORRENCIA_READ,
     Permission.OCORRENCIA_CREATE,
+    /** Lookup do autocomplete SOS sem liberar o cadastro de motoristas. */
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
   )
   findAll(
     @Query('page') page?: string,
@@ -64,6 +66,7 @@ export class MotoristaController {
     Permission.MOTORISTA_READ,
     Permission.OCORRENCIA_READ,
     Permission.OCORRENCIA_CREATE,
+    Permission.IRREGULARIDADE_TRATAMENTO_CREATE_SOS,
   )
   findOne(@Param('id') id: string) {
     return this.motoristaService.findOne(id);

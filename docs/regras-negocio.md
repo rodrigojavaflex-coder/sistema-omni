@@ -268,6 +268,7 @@ Copie o bloco abaixo para cada regra nova.
 - **Acoes do sistema:**
   - Cadastro de perfis agrupa permissoes em «Irregularidades – Tratamento», «Irregularidades – Manutenção», «Irregularidades – Validação» e «Irregularidades – Gestão OS»; as chaves mobile de Validacao ficam no grupo «Vistoria Mobile»
   - `irregularidade_manutencao:start` aparece no grupo Tratamento (botao «Enviar para manutenção» nesta tela)
+  - `irregularidade_tratamento:start_manutencao_sos` tambem no grupo Tratamento: permite o mesmo envio, mas restringe a fila e o lote a irregularidades `origem_registro = SOS_WEB` (sem `manutencao:start`, o filtro Origem fica fixo em SOS; com `manutencao:start`, o escopo completo prevalece)
   - API retorna HTTP 403 quando falta `:read` da etapa consultada
   - Filtro padrão na tela Tratamento lista `REGISTRADA` + `NAO_PROCEDE` + `RETRABALHO_GARANTIA`; Cancelada permanece no combo (fora do padrão)
   - Fila Validacao (web e mobile) lista `CONCLUIDA`
@@ -278,7 +279,7 @@ Copie o bloco abaixo para cada regra nova.
   - Telas Tratamento, Manutenção e Validação: botao **Resumo por Veículo/Empresa** com `irregularidade_tratamento:print_resumo` / `irregularidade_manutencao:print_resumo` / `irregularidade_validacao_final:print_resumo`
 - **Mensagens ao usuario:** Guard/rota redireciona para home sem `:read`; API 403 com lista de permissoes faltantes; sem empresa vinculada informa que nao ha registros
 - **Permissoes envolvidas:**
-  - Tratamento: `irregularidade_tratamento:read` (acesso), `irregularidade_tratamento:update` (reclassificar/cancelar), `irregularidade_manutencao:start` (enviar para manutencao; tambem autoriza `GET /empresas-terceiras` so para lookup do combo, sem liberar menu/rota de cadastro de empresas)
+  - Tratamento: `irregularidade_tratamento:read` (acesso), `irregularidade_tratamento:update` (reclassificar/cancelar), `irregularidade_manutencao:start` (enviar qualquer origem para manutencao) **ou** `irregularidade_tratamento:start_manutencao_sos` (enviar somente SOS; forca filtro `origemRegistro=SOS_WEB` na listagem/resumo e bloqueia lote misto); ambas autorizam `GET /empresas-terceiras` so para lookup do combo, sem liberar menu/rota de cadastro de empresas
   - Manutencao: `irregularidade_manutencao:read` (acesso), `irregularidade_manutencao:finish`, `irregularidade_manutencao:mark_not_proceeding`
   - Validacao web: `irregularidade_validacao_final:read` (acesso), `irregularidade_validacao_final:update` (validar/reprovar)
   - Validacao mobile: `irregularidade_validacao_final_mobile:read` (acesso), `irregularidade_validacao_final_mobile:update` (validar/reprovar)
@@ -290,7 +291,8 @@ Copie o bloco abaixo para cada regra nova.
   - [ ] Usuario so com permissoes de acao (sem `:read`) nao ve menu nem rota da tela
   - [ ] Usuario com `:read` ve fila sem botoes de acao nao autorizados
   - [ ] Operador Tratamento com `manutencao:start` (sem `empresaterceira:read`) ve empresas no combo «Enviar para manutenção» e nao ve menu/rota de cadastro de empresas
-  - [ ] Operador Tratamento precisa de `tratamento:read` + acoes desejadas (ex.: `update`, `manutencao:start`)
+  - [ ] Operador com `start_manutencao_sos` (sem `manutencao:start`) ve so SOS na fila Tratamento, envia so SOS e recebe 403 ao tentar item nao-SOS
+  - [ ] Operador Tratamento precisa de `tratamento:read` + acoes desejadas (ex.: `update`, `manutencao:start` ou `start_manutencao_sos`)
   - [ ] `GET /irregularidades` retorna 403 ao consultar status de etapa sem `:read` (exceto Gestao OS)
   - [ ] Cadastro de perfil exibe grupos alinhados as telas, incluindo Gestao OS; Validacao Mobile aparece em «Vistoria Mobile»
   - [ ] Filtro padrão em Tratamento lista `REGISTRADA` + `NAO_PROCEDE` + `RETRABALHO_GARANTIA`
@@ -311,7 +313,8 @@ Copie o bloco abaixo para cada regra nova.
 - **Descricao:** Operador com permissao dedicada abre sessao SOS, registra uma ou mais irregularidades com vistoria pai automatica e conclui ou cancela a sessao. Irregularidades SOS seguem o fluxo normal apos o registro.
 - **Condicoes de entrada:** Usuario autenticado com `irregularidade_tratamento:create_sos` e `irregularidade_tratamento:read`
 - **Validacoes:**
-  - Veiculo e motorista ativos via autocomplete
+  - Veiculo e motorista ativos via autocomplete; `create_sos` autoriza lookup em `GET /veiculo` e `GET /motorista` (e `GET /motorista/:id`) sem exigir `veiculo:read` / `motorista:read` e sem liberar menu/rota de cadastro
+  - Area/componente/sintoma no modal SOS: `create_sos` autoriza lookup em `GET /areas`, `GET /areas/:id/componentes`, `GET /matriz-criticidade` (e listagens `GET /componentes`, `GET /sintomas`) e a checagem de vistoria mobile em andamento via `GET /vistoria?status=EM_ANDAMENTO`, sem exigir `areavistoriada:read` / `componente:read` / `sintoma:read` / `matrizcriticidade:read` / `vistoria:read` e sem liberar menu/rota de cadastro; falhas auxiliares no FE nao devem zerar a lista de areas
   - Odometro validado no frontend e backend (maior que ultimo quando existir); ultimo odometro considera apenas vistorias `FINALIZADA` (exclui `EM_ANDAMENTO` e `CANCELADA`); diferenca em relacao ao ultimo nao pode ultrapassar o parametro `configuracoes.odometro_diff_max_km` (padrao 500 km se nulo/nao configurado; bloqueio, sem confirmacao); odometro e inteiro (ponto/virgula removidos na digitacao e no blur no app e no SOS)
   - Percentual obrigatorio (0–100) quando o combustivel do veiculo for Eletrico (`% Bateria`) ou GNV (Gas Natural) (`% GNV (Gas Natural)`); Diesel permanece opcional/oculto; mesma regra na inclusao da vistoria no aplicativo mobile; listagens e PDF usam o rotulo dinamico conforme o combustivel
   - Descricao da irregularidade obrigatoria (RN-VIS-002); observacao da vistoria opcional
@@ -325,11 +328,11 @@ Copie o bloco abaixo para cada regra nova.
   - Historico `registrar_sos` com observacao «Irregularidade registrada por SOS»
   - Finalizar com tempo em minutos (minimo 1) ou cancelar SOS excluindo vistoria, irregularidades, historico e midias do banco (sem status CANCELADA)
   - Nas filas de Tratamento, Manutencao e Validacao Final, irregularidades SOS (`origem_registro = SOS_WEB`) aparecem antes das demais; dentro de cada grupo, ordenar pela data de referencia da etapa (mais antiga primeiro)
-- **Permissoes envolvidas:** `irregularidade_tratamento:create_sos`, `irregularidade_tratamento:read`; demais acoes do fluxo conforme RN-VIS-003
+- **Permissoes envolvidas:** `irregularidade_tratamento:create_sos`, `irregularidade_tratamento:read`; `create_sos` tambem autoriza lookup de veiculo/motorista, area/componente/sintoma (matriz) e listagem `GET /vistoria` (checagem EM_ANDAMENTO) no modal SOS; envio a manutencao de itens SOS pode usar `irregularidade_tratamento:start_manutencao_sos` (escopo so SOS) ou `irregularidade_manutencao:start` (completo); demais acoes conforme RN-VIS-003
 - **Dados impactados:** `vistorias`, `irregularidades.origem_registro`, `vistorias.origem`, `irregularidades_midias`, `irregularidade_historico`
 - **Rastreabilidade:** Historico com usuario, data e tempo de etapa
-- **Criterios de aceite:** Ver `docs/PLANO_IRREGULARIDADE_SOS_WEB.md`
-- **Origem da regra:** Requisito de produto — irregularidade SOS web, 2026-06-08
+- **Criterios de aceite:** Ver `docs/PLANO_IRREGULARIDADE_SOS_WEB.md`; operador com `create_sos` (sem `veiculo:read`/`motorista:read`/`areavistoriada:read`/`componente:read`/`sintoma:read`/`matrizcriticidade:read`/`vistoria:read`) consegue buscar veiculo, motorista, area, componente e sintoma no modal SOS e nao ve menu/rota desses cadastros
+- **Origem da regra:** Requisito de produto — irregularidade SOS web, 2026-06-08; lookup area/componente/sintoma 2026-11-06
 - **Status:** Implementada
 
 ### RN-VIS-005 - Desistencia da vistoria mobile com exclusao em cascata
@@ -360,7 +363,7 @@ Copie o bloco abaixo para cada regra nova.
 - **Fluxo:** Tratamento (`/irregularidades/tratamento`) → Manutencao → Validacao final; registro mobile e SOS inalterados na origem
 - **Descricao:** Ao enviar irregularidade para manutencao, o operador seleciona empresa de manutencao. Pipeline por veiculo: (1) se «Habilitar envio ao ERP» estiver ativo na Configuracao do Sistema, envia pedido ERP (RN-VIS-008); (2) se a empresa tiver Integracao OS (BRT), cria OS BRT por vistoria; (3) so entao transiciona para `EM_MANUTENCAO`. Apos a transicao, se «Habilitar Impressão» estiver ativo na aba Impressão da Configuracao, o backend gera o PDF do relatorio (com `OS:` / `OS OMNI:` / `OS BRT:` quando existirem) e envia via TCP RAW/JetDirect ao IP/porta configurados; falha de impressao nao reverte a manutencao. Falha em qualquer passo aplicavel (ERP/BRT) mantem o grupo do veiculo no Tratamento; sucesso parcial entre veiculos e permitido. Reenvio e idempotente (nao reenvia ERP/BRT se o vinculo ja existir). Cancelamento OS BRT e reprovacao final limpam vinculos ERP (`erp_*`) para novo ciclo. Empresa sem BRT mantem fluxo legado (PDF/e-mail; subset permitido) apos o passo ERP quando aplicavel.
 - **Condicoes de entrada:**
-  - Envio: status `REGISTRADA` ou `RETRABALHO_GARANTIA`; empresa com `ehEmpresaManutencao`; permissao `irregularidade_manutencao:start` (suficiente para listar empresas no combo via `GET /empresas-terceiras`; nao exige `empresaterceira:read`)
+  - Envio: status `REGISTRADA` ou `RETRABALHO_GARANTIA`; empresa com `ehEmpresaManutencao`; permissao `irregularidade_manutencao:start` **ou** `irregularidade_tratamento:start_manutencao_sos` (esta ultima so para `origem_registro = SOS_WEB`; suficiente para listar empresas no combo via `GET /empresas-terceiras`; nao exige `empresaterceira:read`)
   - Escopo da empresa (cadastro): `combustiveisAtendidos` e `idsAreasAtendidas` (allowlist). Lista **vazia** = sem restricao (compativel com empresas legadas). Lista **preenchida** = so pode receber irregularidades cujo combustivel do veiculo / area estejam na lista
   - Integracao BRT: empresa com tipo de integracao OS configurado e credenciais validas (`ten_emp`, `token`, URL). Certificado SSL: preferir CA no servidor; por empresa marcar `brt_allow_insecure_tls` no cadastro (exige `empresaterceira:integracao_config`); emergencia tambem via `BRT_OS_ALLOW_INSECURE_TLS=true` ou `BRT_OS_ALLOW_INSECURE_TLS_HOMOLOG=true` + empresa Homologacao
   - Empresa BRT: a selecao deve incluir **todas** as irregularidades elegiveis **no escopo da empresa** (`REGISTRADA` / `RETRABALHO_GARANTIA` / `NAO_PROCEDE` + combustivel/area) de cada vistoria tocada; OS fora do escopo podem permanecer no Tratamento para outra empresa; subset incompleto **dentro do escopo** e rejeitado (UI + API)
@@ -404,7 +407,7 @@ Copie o bloco abaixo para cada regra nova.
   - `veiculo_nao_encontrado`: orientar regularizacao da placa no cadastro do consorcio
   - Bloqueio de nao procede manual (trilha API): mensagem indicando aguardo de retorno da integracao
   - Cancelamento OS BRT: avisar que o grupo inteiro da vistoria retorna ao Tratamento
-- **Permissoes envolvidas:** RN-VIS-003; `RETRABALHO_GARANTIA` exige `irregularidade_tratamento:read`; acoes de reenvio exigem `irregularidade_manutencao:start`; cancelamento OS BRT exige `irregularidade_manutencao:cancel_os_brt`; botao Imprimir exige `:print` da tela correspondente (concessao manual em Perfis)
+- **Permissoes envolvidas:** RN-VIS-003; `RETRABALHO_GARANTIA` exige `irregularidade_tratamento:read`; acoes de reenvio exigem `irregularidade_manutencao:start` ou `irregularidade_tratamento:start_manutencao_sos` (SOS); cancelamento OS BRT exige `irregularidade_manutencao:cancel_os_brt`; botao Imprimir exige `:print` da tela correspondente (concessao manual em Perfis)
 - **Dados impactados:** `empresasterceiras` (integracao, e-mail, credenciais BRT), `irregularidades` (status, flags de integracao, OS ativa, `erp_codigo_pedido` / `erp_ultimo_erro`, snapshot `status_brt_*` quando aplicavel), historico de OS externas, timeline de status BRT, insumos da OS BRT, `irregularidade_historico`
 - **Rastreabilidade:** Historico de transicoes; log de integracao (request/response sanitizado); multiplos pares `os_orig`/`numOs` por irregularidade ao longo do tempo; rastreio operacional por `numOs` BRT e pedido ERP na irreg; timeline e insumos sincronizados do poll
 - **Criterios de aceite:**
@@ -459,13 +462,13 @@ Copie o bloco abaixo para cada regra nova.
 ### RN-VIS-007 - Relatorio PDF de pendencias do veiculo
 - **Modulo:** Vistoria
 - **Fluxo:** App mobile (tela Pendencias do Veiculo) e Web (menu Relatórios → Vistoria → Pendências do veículo)
-- **Descricao:** Usuario com permissao adequada gera PDF das irregularidades nao resolvidas do veiculo selecionado, no padrao de relatorio do sistema (logo em `configuracoes.logo_relatorio_bytes`, titulo, fotos das irregularidades, rodape com usuario e data). A primeira pagina mostra as vistas/partes do veiculo (ate 4 por pagina, na ordem do catalogo `vistas_veiculo`): vistas altas lado a lado e silhuetas laterais em largura total, recortando margem em branco. Circulos azuis usam indice global do veiculo por ordem crescente de `numeroIrregularidade` (1ª OS → `1.1`/`1.2`…, 2ª → `2.1`…); a legenda em uma linha agrupa por irregularidade no formato `OS: 1.X:20261, 2.X:20262 e 3.X:20263` (literal `X`, sem listar cada ponto). As paginas seguintes listam as pendencias; quando a irregularidade tiver marcacao, cada card desenha a vista do modelo com o circulo do local (retrato ao lado das fotos; silhueta baixa em largura total), no mesmo padrao da impressao da vistoria na web, usando o mesmo indice global da primeira pagina. O relatorio da vistoria (web Imprimir e app PDF) segue o mesmo padrao visual (logo, capa, fotos 3x200pt, local com circulo quando houver marcacao, rodape); a capa usa cards com label acima e valor abaixo (mesmo layout do overlay de conclusao no app), incluindo Status, Data, Vistoriador, Motorista/Matricula, Odometro/%, Tempo, numero da vistoria, Observacao, Vistoria OMNI e Erro ERP. Na web, a tela lista as pendencias com filtros de area/componente e botao para gerar/abrir o PDF; na personalizacao de atalhos o item aparece em Relatórios / Vistoria. No app, apos finalizar a vistoria, o overlay de resumo exibe botao **PDF** (mesmo modelo visual da tela Pendências) que chama `GET /vistoria/:id/pdf`.
+- **Descricao:** Usuario com permissao adequada gera PDF das irregularidades nao resolvidas do veiculo selecionado, no padrao de relatorio do sistema (logo em `configuracoes.logo_relatorio_bytes`, titulo, fotos das irregularidades, rodape com usuario e data). A primeira pagina mostra as vistas/partes do veiculo (ate 4 por pagina, na ordem do catalogo `vistas_veiculo`): vistas altas lado a lado e silhuetas laterais em largura total, recortando margem em branco. Circulos azuis usam indice global do veiculo por ordem crescente de `numeroIrregularidade` (1ª OS → `1.1`/`1.2`…, 2ª → `2.1`…); a legenda em uma linha agrupa por irregularidade no formato `OS: 1.X:20261, 2.X:20262 e 3.X:20263` (literal `X`, sem listar cada ponto). As paginas seguintes listam as pendencias; quando a irregularidade tiver marcacao, cada card desenha a vista do modelo com o circulo do local (retrato ao lado das fotos; silhueta baixa em largura total), no mesmo padrao da impressao da vistoria na web, usando o mesmo indice global da primeira pagina. O relatorio da vistoria (web Imprimir e app PDF) segue o mesmo padrao visual (logo, capa, fotos 3x200pt, local com circulo quando houver marcacao, rodape); a capa usa cards com label acima e valor abaixo (mesmo layout do overlay de conclusao no app), incluindo Status, Data, Vistoriador, Motorista/Matricula, Odometro/%, Tempo, numero da vistoria, Observacao, Vistoria OMNI e Erro ERP. Na web, a tela lista as pendencias com filtros de area/componente/**sintoma** e botao para gerar/abrir o PDF; na personalizacao de atalhos o item aparece em Relatórios / Vistoria. No app, apos finalizar a vistoria, o overlay de resumo exibe botao **PDF** (mesmo modelo visual da tela Pendências) que chama `GET /vistoria/:id/pdf`.
 - **Condicoes de entrada:** Veiculo selecionado; mobile: permissao `vistoria_web_historico_veiculo:read`; web: permissao `relatorio_pendencias_veiculo:read`. PDF da vistoria: permissao `vistoria:read` ou `vistoria_web:read`.
 - **Validacoes:**
   - Sem veiculo, o botao permanece desabilitado
-  - Se Area e/ou Componente estiverem filtrados, o PDF lista esses filtros aplicados
+  - Se Area, Componente e/ou Sintoma estiverem filtrados, o PDF lista esses filtros aplicados e imprime somente as pendencias correspondentes
   - Sem filtro, o PDF traz todas as pendencias do veiculo
-- **Acoes do sistema:** `GET /vistoria/veiculo/:id/historico-irregularidades-nao-resolvidas` (lista) e `.../pdf` (PDF); `GET /vistoria/:id/pdf` (PDF da vistoria); busca de veiculo via `GET /veiculo` autorizada tambem pelas permissoes do relatorio
+- **Acoes do sistema:** `GET /vistoria/veiculo/:id/historico-irregularidades-nao-resolvidas` (lista) e `.../pdf` (PDF) com query opcional `areaId`, `componenteId`, `sintomaId`; `GET /vistoria/:id/pdf` (PDF da vistoria); busca de veiculo via `GET /veiculo` autorizada tambem pelas permissoes do relatorio
 - **Permissoes envolvidas:**
   - Mobile: `vistoria_web_historico_veiculo:read` (grupo Vistoria Mobile)
   - Web: `relatorio_pendencias_veiculo:read` (grupo Relatórios – Pendências do veículo; concessão manual em Perfis)
@@ -481,9 +484,9 @@ Copie o bloco abaixo para cada regra nova.
   - [x] Web: menu Relatórios → Vistoria → Pendências do veículo com `relatorio_pendencias_veiculo:read`; atalho na home na categoria Relatórios / Vistoria
   - [x] App: botao PDF no overlay de conclusao da vistoria abre `GET /vistoria/:id/pdf`
   - [x] Capa do relatorio de vistoria (web Imprimir e PDF mobile) em cards label/valor no mesmo layout do overlay de conclusao
-  - [ ] Filtros de area/componente visiveis no PDF quando aplicados
+  - [x] Filtros de area/componente/sintoma na lista e no PDF quando aplicados
   - [ ] Impressao da vistoria na web com logo, titulo, grade 3 colunas 200pt e rodape no mesmo padrao; vista do modelo com circulo quando houver local
-- **Origem da regra:** Requisicao de produto — relatorio de pendencias no app, 2026-09-11; disponibilizacao web 2026-09-23; PDF da vistoria no app ao finalizar 2026-09-24; capa em cards alinhada ao overlay 2026-09-24
+- **Origem da regra:** Requisicao de produto — relatorio de pendencias no app, 2026-09-11; disponibilizacao web 2026-09-23; PDF da vistoria no app ao finalizar 2026-09-24; capa em cards alinhada ao overlay 2026-09-24; filtro sintoma 2026-11-06
 - **Status:** Implementada
 
 ### RN-VIS-008 - Integracao ERP no envio para manutencao (por veiculo / irregularidades)
@@ -714,6 +717,62 @@ Copie o bloco abaixo para cada regra nova.
 - **Permissoes envolvidas:** Nenhuma (rota publica)
 - **Status:** Implementada
 
+### RN-ESC-001 - Status RETIDO do veiculo (OS grave)
+- **Modulo:** Escala / Liberacao
+- **Fluxo:** Painel Controle de Escala e Liberacao
+- **Descricao:** Veiculo e **RETIDO** se existir irregularidade com `gravidade = VERMELHO` e `status_atual` em `EM_MANUTENCAO` (tela Manutencao) ou `CONCLUIDA` (tela Validacao). **Nao** entram: status de Tratamento (`REGISTRADA`, `RETRABALHO_GARANTIA`, `NAO_PROCEDE`), `CANCELADA` nem **`VALIDADA`**.
+- **Condicoes de entrada:** Consulta do painel ou sync cruzado com escala do dia
+- **Validacoes:** Comparacao de gravidade e status exatamente nos conjuntos acima
+- **Acoes do sistema:** Campo derivado `retido` / alerta «retido na escala»
+- **Permissoes envolvidas:** `controle_escala:read`
+- **Dados impactados:** somente leitura em `irregularidades`
+- **Criterios de aceite:**
+  - [ ] OS vermelha em Manutencao ou Validacao → RETIDO
+  - [ ] OS vermelha so no Tratamento ou VALIDADA/CANCELADA → nao RETIDO
+- **Status:** Implementada
+- **Origem da regra:** Plano Controle Escala 2026-10-28
+
+### RN-ESC-002 - Escala do dia via INFOBUS (KM detalhado)
+- **Modulo:** Escala / Liberacao
+- **Fluxo:** Configuracao do Sistema (aba Escala INFOBUS) + sync
+- **Descricao:** O KM retornado por veiculo em `GET /api/v1/veiculos/km/detalhado?data=` e a **previsao de escala** daquele dia. Credenciais (URL base, tenant, API Key) ficam em `escala_infobus_config` na Configuracao; API Key mascarada no GET; sync no backend com headers `X-Tenant` / `X-API-Key`. Persistencia upsert por data + prefixo; match OMNI por `veiculos.descricao` ≈ prefixo.
+- **Permissoes envolvidas:** `configuracao:access` (aba); `controle_escala:sync` (sincronizar)
+- **Dados impactados:** `configuracoes.escala_infobus_config`; `veiculo_escala_dia` (+ detalhe linhas/motoristas)
+- **Criterios de aceite:**
+  - [ ] Aba Escala INFOBUS grava URL/tenant/API Key mascarada
+  - [ ] Sync do dia grava/atualiza KM previsto e linhas
+- **Status:** Implementada
+- **Origem da regra:** Plano Controle Escala 2026-10-28; PDF endpoint KM detalhado
+
+### RN-ESC-003 - Telemetria em tempo real (BRT)
+- **Modulo:** Escala / Liberacao
+- **Fluxo:** Sync `GET /v1/tempo_real` com credenciais da empresa `BRT_OS`
+- **Descricao:** Persiste snapshot (bateria %, autonomia, odometro, lat/long, data_hora) por veiculo; match por `veiculo_id` ↔ prefixo/`descricao`. Veiculo sem leitura recente nao entra na resposta BRT (ausencia de dado, nao erro).
+- **Permissoes envolvidas:** `controle_escala:sync`
+- **Dados impactados:** `veiculo_telemetria_atual`
+- **Status:** Implementada
+- **Origem da regra:** Plano Controle Escala 2026-10-28; PDF API OS BRT §9
+
+### RN-ESC-004 - Consumo no modelo de veiculo
+- **Modulo:** Cadastro / Escala
+- **Fluxo:** Cadastro de Modelo de Veiculo
+- **Descricao:** Campos opcionais `km_por_percentual` (GNV/Eletrico: km por 1% de nivel) e `km_por_litro` (Diesel). Usados no calculo OMNI de autonomia no painel.
+- **Permissoes envolvidas:** `modelo_veiculo:create|update|read`
+- **Dados impactados:** `modelos_veiculo`
+- **Status:** Implementada
+- **Origem da regra:** Plano Controle Escala 2026-10-28
+
+### RN-ESC-005 - Alertas de liberacao (retido + autonomia dual-fonte)
+- **Modulo:** Escala / Liberacao
+- **Fluxo:** Tela Controle de Escala e Liberacao
+- **Descricao:** Para veiculos na escala do dia: (1) alerta RETIDO se RN-ESC-001; (2) GNV/Eletrico: autonomia OMNI = `% × kmPorPercentual`; autonomia telemetria = campo `autonomia` do BRT; alerta se **qualquer** das autonomias atuais &lt; KM da escala. UI exibe KM escala, as duas autonomias atuais e projecao a 100% de cada fonte (`autonomia / (pct/100)` e `100 × kmPorPercentual`). Mensagem orienta carregar antes de largar quando aplicavel.
+- **Permissoes envolvidas:** `controle_escala:read` (tela); `controle_escala:sync` (botoes sync)
+- **Criterios de aceite:**
+  - [ ] Exemplo: escala 220, 66%, 3 km/% → OMNI 198 &lt; 220 → alerta com telemetria e OMNI + projecoes 100%
+  - [ ] Tema claro/escuro; estados loading/vazio/erro; hover/focus/disabled
+- **Status:** Implementada
+- **Origem da regra:** Plano Controle Escala 2026-10-28
+
 ## Regras transversais
 
 ### Permissoes e acesso
@@ -732,6 +791,11 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-11-06: RN-VIS-004 — `create_sos` autoriza lookup de área/componente/sintoma (matriz) e `GET /vistoria` (checagem EM_ANDAMENTO) no modal SOS sem `:read` dos cadastros; FE isola falhas para não zerar áreas.
+- 2026-11-06: RN-VIS-007 — filtro Sintoma na web (lista + PDF) em Pendências do veículo; query `sintomaId` nos endpoints de histórico/PDF.
+- 2026-11-06: RN-VIS-004 — `create_sos` autoriza lookup de veículo/motorista no autocomplete SOS sem `veiculo:read` / `motorista:read` (cadastro continua restrito).
+- 2026-11-06: RN-VIS-003 / RN-VIS-004 / RN-VIS-006 — permissão `irregularidade_tratamento:start_manutencao_sos` (envio só SOS; fila/resumo forçados a `origemRegistro=SOS_WEB`; concessão manual em Perfis).
+- 2026-10-28: RN-ESC-001…005 — Controle de Escala e Liberacao (RETIDO sem VALIDADA; INFOBUS KM previsto; telemetria BRT; dual-fonte autonomia); plano em `docs/PLANO_CONTROLE_ESCALA_LIBERACAO.md`.
 - 2026-10-27: RN-VIS-003 — filtro Tempo na etapa nas 4 telas do fluxo (presets + personalizar); critério sempre `ENTRADA_STATUS`; query `tempoEtapaHorasMin|Max` na listagem e no Resumo PDF.
 - 2026-10-27: Cadastro Modelo de Veículo — campo `descricao_detalhada` (opcional); migration copia `nome` existente para o novo campo; `nome` permanece identificador único curto.
 - 2026-10-27: RN-VIS-006 — reprovar final → `RETRABALHO_GARANTIA` também limpa `idEmpresaManutencao` (igual NAO_PROCEDE); empresa preservada só no histórico do evento.

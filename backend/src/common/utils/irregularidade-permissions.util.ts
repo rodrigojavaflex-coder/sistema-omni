@@ -1,5 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { Permission } from '../enums/permission.enum';
+import { OrigemRegistroIrregularidade } from '../enums/origem-vistoria.enum';
 import { StatusIrregularidade } from '../enums/status-irregularidade.enum';
 
 /** Permissões :read de acesso às telas do fluxo de irregularidades. */
@@ -9,6 +10,14 @@ export const IRREGULARIDADE_FLUXO_READ_PERMISSIONS: Permission[] = [
   Permission.IRREGULARIDADE_VALIDACAO_FINAL_READ,
   Permission.IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_READ,
   Permission.IRREGULARIDADE_GESTAO_OS_READ,
+];
+
+/** Status da etapa Tratamento (fila / filtros). */
+export const STATUS_TRATAMENTO: StatusIrregularidade[] = [
+  StatusIrregularidade.REGISTRADA,
+  StatusIrregularidade.RETRABALHO_GARANTIA,
+  StatusIrregularidade.CANCELADA,
+  StatusIrregularidade.NAO_PROCEDE,
 ];
 
 /** Status da etapa Validação Final (web ou mobile). */
@@ -197,4 +206,63 @@ export function isOnlyValidacaoFinalEmpresaScope(
     return false;
   }
   return comEscopo.every((status) => STATUS_VALIDACAO_FINAL.includes(status));
+}
+
+/**
+ * Operador com envio restrito a SOS (sem `irregularidade_manutencao:start`).
+ */
+export function isManutencaoStartSosOnly(
+  userPermissions: Set<string>,
+): boolean {
+  return (
+    userHasPermission(
+      userPermissions,
+      Permission.IRREGULARIDADE_TRATAMENTO_START_MANUTENCAO_SOS,
+    ) &&
+    !userHasPermission(
+      userPermissions,
+      Permission.IRREGULARIDADE_MANUTENCAO_START,
+    )
+  );
+}
+
+/**
+ * Na fila Tratamento, força `origemRegistro=SOS_WEB` quando o usuário só tem
+ * `start_manutencao_sos` (sem `manutencao:start`). Gestão OS não aplica.
+ */
+export function shouldForceOrigemRegistroSosWeb(
+  userPermissions: Set<string>,
+  statuses: StatusIrregularidade[],
+  options?: { isGestaoOs?: boolean },
+): boolean {
+  if (options?.isGestaoOs) {
+    return false;
+  }
+  if (!isManutencaoStartSosOnly(userPermissions)) {
+    return false;
+  }
+  const effective =
+    statuses.length > 0 ? statuses : [StatusIrregularidade.REGISTRADA];
+  return effective.every((status) => STATUS_TRATAMENTO.includes(status));
+}
+
+/**
+ * Com escopo SOS-only, bloqueia envio de irregularidades que não sejam SOS_WEB.
+ */
+export function assertEnvioManutencaoOrigemPermitida(
+  userPermissions: Set<string>,
+  items: Array<{ origemRegistro?: string | null }>,
+): void {
+  if (!isManutencaoStartSosOnly(userPermissions)) {
+    return;
+  }
+  const naoSos = items.filter(
+    (item) => item.origemRegistro !== OrigemRegistroIrregularidade.SOS_WEB,
+  );
+  if (naoSos.length === 0) {
+    return;
+  }
+  throw new ForbiddenException(
+    'Com a permissão restrita de SOS, somente irregularidades de origem SOS podem ser enviadas para manutenção.',
+  );
 }

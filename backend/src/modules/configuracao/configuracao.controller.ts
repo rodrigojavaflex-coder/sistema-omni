@@ -103,6 +103,20 @@ export class ConfiguracaoController {
     return raw;
   }
 
+  private parseEscalaInfobusConfig(raw: unknown) {
+    if (!raw) {
+      return undefined;
+    }
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return undefined;
+      }
+    }
+    return raw;
+  }
+
   private parseOdometroDiffMaxKm(raw: unknown): number | null | undefined {
     if (raw === undefined) {
       return undefined;
@@ -162,6 +176,9 @@ export class ConfiguracaoController {
       impressaoManutencaoConfig: this.parseImpressaoManutencaoConfig(
         req.body.impressaoManutencaoConfig,
       ),
+      escalaInfobusConfig: this.parseEscalaInfobusConfig(
+        req.body.escalaInfobusConfig,
+      ),
       odometroDiffMaxKm: this.parseOdometroDiffMaxKm(
         req.body.odometroDiffMaxKm,
       ),
@@ -219,6 +236,16 @@ export class ConfiguracaoController {
   @ApiResponse({ status: 200, type: ErpApiKeyDto })
   findErpApiKey(): Promise<ErpApiKeyDto> {
     return this.configuracaoService.findErpApiKey();
+  }
+
+  @Get('escala-infobus-api-key')
+  @Permissions(Permission.CONFIGURACAO_ACCESS)
+  @ApiOperation({
+    summary: 'Obter API Key da Escala INFOBUS em claro',
+  })
+  @ApiResponse({ status: 200, type: ErpApiKeyDto })
+  findEscalaInfobusApiKey(): Promise<ErpApiKeyDto> {
+    return this.configuracaoService.findEscalaInfobusApiKey();
   }
 
   @Get('tempo-fluxo')
@@ -283,6 +310,9 @@ export class ConfiguracaoController {
       erpVistoriaConfig: this.parseErpVistoriaConfig(req.body.erpVistoriaConfig),
       impressaoManutencaoConfig: this.parseImpressaoManutencaoConfig(
         req.body.impressaoManutencaoConfig,
+      ),
+      escalaInfobusConfig: this.parseEscalaInfobusConfig(
+        req.body.escalaInfobusConfig,
       ),
       odometroDiffMaxKm: this.parseOdometroDiffMaxKm(
         req.body.odometroDiffMaxKm,
