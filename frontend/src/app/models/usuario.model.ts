@@ -140,6 +140,7 @@ export enum Permission {
   IRREGULARIDADE_VALIDACAO_FINAL_UPDATE = 'irregularidade_validacao_final:update',
   IRREGULARIDADE_VALIDACAO_FINAL_PRINT = 'irregularidade_validacao_final:print',
   IRREGULARIDADE_VALIDACAO_FINAL_PRINT_RESUMO = 'irregularidade_validacao_final:print_resumo',
+  IRREGULARIDADE_VALIDACAO_FINAL_PRINT_CHECKLIST = 'irregularidade_validacao_final:print_checklist',
   IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_READ = 'irregularidade_validacao_final_mobile:read',
   IRREGULARIDADE_VALIDACAO_FINAL_MOBILE_UPDATE = 'irregularidade_validacao_final_mobile:update',
   IRREGULARIDADE_GESTAO_OS_READ = 'irregularidade_gestao_os:read',

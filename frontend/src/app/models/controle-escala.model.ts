@@ -16,6 +16,19 @@ export interface EscalaLinha {
   motoristas?: EscalaLinhaMotorista[];
 }
 
+export interface EscalaTurno {
+  linha: string | null;
+  descricaoLinha: string | null;
+  km: number | null;
+  matricula: string | null;
+  motorista: string | null;
+  nomeTurno: string | null;
+  numeroViagem: string | null;
+  horarioInicio: string | null;
+  horarioFim: string | null;
+  ordem: number;
+}
+
 export interface EscalaPainelItem {
   data: string;
   prefixo: string;
@@ -24,6 +37,8 @@ export interface EscalaPainelItem {
   placa: string | null;
   combustivel: string | null;
   kmEscala: number;
+  turnos: EscalaTurno[];
+  /** Agregado derivado dos turnos (compat). */
   linhas: EscalaLinha[];
   retido: boolean;
   qtdOsVermelhas: number;

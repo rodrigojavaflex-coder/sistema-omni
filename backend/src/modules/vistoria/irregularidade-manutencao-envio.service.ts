@@ -460,11 +460,12 @@ export class IrregularidadeManutencaoEnvioService {
     const result = await this.brtOsIntegrationService.criarOs(empresa, payload);
 
     if (!result.ok) {
+      const mensagemGrade = result.mensagemResumo || result.mensagem;
       for (const item of grupo) {
         await this.registrarFalhaIntegracao(
           item,
           osOrig,
-          result.mensagem,
+          mensagemGrade,
           result.codigoErro,
           result.httpStatus,
         );
@@ -660,11 +661,12 @@ export class IrregularidadeManutencaoEnvioService {
     );
 
     if (!result.ok) {
+      const mensagemGrade = result.mensagemResumo || result.mensagem;
       for (const item of grupo) {
         await this.registrarFalhaIntegracao(
           item,
           osOrig,
-          result.mensagem,
+          mensagemGrade,
           result.codigoErro,
           result.httpStatus,
         );

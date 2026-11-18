@@ -98,7 +98,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 0;
   overflow: visible;
   position: relative;
@@ -125,13 +125,15 @@
   min-width: 10rem;
   max-width: 14rem;
   position: relative;
-  z-index: 40;
+  z-index: 60;
   overflow: visible;
+  align-self: center;
 }
 
 .filters-row .filter-status ::ng-deep .multi-select-container {
   width: 100%;
   overflow: visible;
+  position: relative;
 }
 
 .filters-row .filter-status ::ng-deep .multi-select-button {
@@ -141,20 +143,35 @@
 }
 
 /**
- * Status fica no fim da barra (antes de Limpar): abre à esquerda (right: 0)
- * em 1 coluna — evita corte na borda da viewport sem cobrir Gravidade/Origem.
+ * Status fica ao lado do título: dropdown abre para baixo/direita (left: 0),
+ * fora do fluxo — não empurra o layout nem cobre o título.
  */
 .filters-row .filter-status ::ng-deep .multi-select-dropdown {
-  left: auto;
-  right: 0;
-  min-width: 15rem;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: auto;
+  min-width: 100%;
   width: max-content;
   max-width: min(18rem, calc(100vw - 2rem));
-  z-index: 50;
+  z-index: 80;
 }
 
 .filters-row .filter-status ::ng-deep .dropdown-options {
   grid-template-columns: 1fr;
+}
+
+.filters-row .fluxo-titulo {
+  align-self: center;
+}
+
+.filters-row .form-input,
+.filters-row .form-select,
+.filters-row .filter-veiculo,
+.filters-row .filter-periodo,
+.filters-row .filter-tempo-etapa,
+.filters-row .btn-secondary {
+  align-self: center;
 }
 
 .filters-row .btn-secondary {
@@ -254,6 +271,17 @@
   border-radius: 6px;
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
+}
+
+.info-container p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  user-select: text;
 }
 
 .status {

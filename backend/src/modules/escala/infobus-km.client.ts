@@ -5,18 +5,61 @@ export interface InfobusMotoristaKm {
   matricula?: string | number | null;
   motorista?: string | null;
   km?: number | null;
+  /** Campos opcionais se o INFOBUS expandir o contrato atual. */
+  nome?: string | null;
+  nomeTurno?: string | null;
+  numero?: string | null;
+  numeroViagem?: string | null;
+  horarioInicio?: string | null;
+  horarioFim?: string | null;
+  horario_inicio?: string | null;
+  horario_fim?: string | null;
 }
 
 export interface InfobusLinhaKm {
   linha?: string | null;
+  descricao?: string | null;
+  descricaoLinha?: string | null;
   km?: number | null;
+  quilometragem?: number | null;
   motoristas?: InfobusMotoristaKm[];
+  nome?: string | null;
+  nomeTurno?: string | null;
+  numero?: string | null;
+  numeroViagem?: string | null;
+  horarioInicio?: string | null;
+  horarioFim?: string | null;
+  horario_inicio?: string | null;
+  horario_fim?: string | null;
+}
+
+/** Turno explícito (contrato INFOBUS expandido, opcional). */
+export interface InfobusTurnoKm {
+  nome?: string | null;
+  nomeTurno?: string | null;
+  quilometragem?: number | null;
+  km?: number | null;
+  numero?: string | null;
+  numeroViagem?: string | null;
+  linha?: string | null;
+  descricao?: string | null;
+  descricaoLinha?: string | null;
+  veiculo?: string | number | null;
+  motorista?: string | null;
+  matricula?: string | number | null;
+  horarioInicio?: string | null;
+  horarioFim?: string | null;
+  horario_inicio?: string | null;
+  horario_fim?: string | null;
+  data?: string | null;
 }
 
 export interface InfobusVeiculoKm {
   veiculo?: number | string | null;
   km?: number | null;
+  quilometragem?: number | null;
   linhas?: InfobusLinhaKm[];
+  turnos?: InfobusTurnoKm[];
 }
 
 export interface InfobusKmDetalhadoResponse {

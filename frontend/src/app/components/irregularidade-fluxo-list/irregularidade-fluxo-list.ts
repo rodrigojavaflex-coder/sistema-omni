@@ -299,6 +299,9 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   canPrintResumoValidacao = this.authService.hasPermission(
     Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT_RESUMO,
   );
+  canPrintChecklistValidacao = this.authService.hasPermission(
+    Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT_CHECKLIST,
+  );
   canPrintResumoGestaoOs = this.authService.hasPermission(
     Permission.IRREGULARIDADE_GESTAO_OS_PRINT_RESUMO,
   );
@@ -1933,6 +1936,11 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return false;
   }
 
+  /** Botão Check-list: somente tela Validação + :print_checklist. */
+  get canShowChecklistValidacao(): boolean {
+    return this.modo === 'validacao-final' && this.canPrintChecklistValidacao;
+  }
+
   private origemTelaRelatorioResumo():
     | 'tratamento'
     | 'manutencao'
@@ -1983,15 +1991,29 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Validação: PDF Check-list por veículo (marcação manual + assinaturas).
+   */
+  imprimirChecklistValidacao(): void {
+    if (!this.canShowChecklistValidacao) {
+      return;
+    }
+    this.imprimirRelatorioResumoFiltro('CHECKLIST_VALIDACAO');
+  }
+
+  /**
    * Gestão OS: PDF resumido de todas as OS do filtro atual (não usa seleção/paginação).
    */
   imprimirRelatorioResumoFiltro(
-    tipoImpressao: 'ANALITICA' | 'SINTETICA' = 'ANALITICA',
+    tipoImpressao: 'ANALITICA' | 'SINTETICA' | 'CHECKLIST_VALIDACAO' = 'ANALITICA',
   ): void {
     const origemTela = this.origemTelaRelatorioResumo();
+    const permitido =
+      tipoImpressao === 'CHECKLIST_VALIDACAO'
+        ? this.canShowChecklistValidacao
+        : this.canShowRelatorioResumoFiltro;
     if (
       !origemTela ||
-      !this.canShowRelatorioResumoFiltro ||
+      !permitido ||
       this.isPrintingRelatorioResumo ||
       this.totalItems <= 0
     ) {
@@ -3031,14 +3053,20 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (falhas.length > 0) {
       const detalhes = falhas
         .slice(0, 5)
-        .map(
-          (f) =>
-            `#${f.numeroIrregularidade ?? f.id.slice(0, 8)}: ${f.mensagem}`,
-        )
-        .join(' | ');
-      msg += ` ${falhas.length} não enviada(s): ${detalhes}`;
+        .map((f) => {
+          const ns = f.numeroIrregularidade ?? f.id.slice(0, 8);
+          const codigo =
+            f.codigoErro ||
+            (f.httpStatus != null && f.httpStatus > 0
+              ? `http_${f.httpStatus}`
+              : 'erro');
+          // Linha curta + detalhe completo (HTTP/os_orig/body) para repasse ao BRT.
+          return `#${ns} [${codigo}]: ${f.mensagem}`;
+        })
+        .join('\n');
+      msg += `\n${falhas.length} não enviada(s):\n${detalhes}`;
       if (falhas.length > 5) {
-        msg += '…';
+        msg += '\n…';
       }
     }
     return msg;

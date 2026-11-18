@@ -42,6 +42,10 @@ export const IRREGULARIDADE_FLUXO_PRINT_RESUMO_PERMISSIONS: Permission[] = [
   Permission.IRREGULARIDADE_GESTAO_OS_PRINT_RESUMO,
 ];
 
+/** Permissão do Check-list de Validação (PDF). */
+export const IRREGULARIDADE_VALIDACAO_PRINT_CHECKLIST_PERMISSION =
+  Permission.IRREGULARIDADE_VALIDACAO_FINAL_PRINT_CHECKLIST;
+
 export type OrigemTelaRelatorioResumo =
   | 'tratamento'
   | 'manutencao'

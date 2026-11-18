@@ -16,12 +16,15 @@ import { Irregularidade } from '../vistoria/entities/irregularidade.entity';
 import { MatrizCriticidade } from '../vistoria/entities/matriz-criticidade.entity';
 import { Veiculo } from '../veiculo/entities/veiculo.entity';
 import { BrtTempoRealClient } from './brt-tempo-real.client';
-import {
-  EscalaLinhaJson,
-  VeiculoEscalaDia,
-} from './entities/veiculo-escala-dia.entity';
+import { VeiculoEscalaDia } from './entities/veiculo-escala-dia.entity';
+import { VeiculoEscalaTurno } from './entities/veiculo-escala-turno.entity';
 import { VeiculoTelemetriaAtual } from './entities/veiculo-telemetria-atual.entity';
-import { InfobusKmClient } from './infobus-km.client';
+import {
+  InfobusKmClient,
+  InfobusLinhaKm,
+  InfobusTurnoKm,
+  InfobusVeiculoKm,
+} from './infobus-km.client';
 
 const STATUS_RETIDO: StatusIrregularidade[] = [
   StatusIrregularidade.EM_MANUTENCAO,
@@ -34,6 +37,29 @@ export interface AutonomiaFonteDto {
   disponivel: boolean;
 }
 
+export interface EscalaTurnoDto {
+  linha: string | null;
+  descricaoLinha: string | null;
+  km: number | null;
+  matricula: string | null;
+  motorista: string | null;
+  nomeTurno: string | null;
+  numeroViagem: string | null;
+  horarioInicio: string | null;
+  horarioFim: string | null;
+  ordem: number;
+}
+
+export interface EscalaLinhaAgregadaDto {
+  linha: string | null;
+  km: number | null;
+  motoristas: Array<{
+    matricula: string | null;
+    motorista: string | null;
+    km: number | null;
+  }>;
+}
+
 export interface EscalaPainelItemDto {
   data: string;
   prefixo: string;
@@ -42,7 +68,9 @@ export interface EscalaPainelItemDto {
   placa: string | null;
   combustivel: string | null;
   kmEscala: number;
-  linhas: EscalaLinhaJson[];
+  turnos: EscalaTurnoDto[];
+  /** Agregado derivado dos turnos (compatibilidade com resumo por linha). */
+  linhas: EscalaLinhaAgregadaDto[];
   retido: boolean;
   qtdOsVermelhas: number;
   bateriaPct: number | null;
@@ -140,46 +168,51 @@ export class EscalaService {
     let semVinculo = 0;
     const lista = Array.isArray(resposta.veiculos) ? resposta.veiculos : [];
 
-    for (const item of lista) {
-      const prefixo = this.normalizarPrefixo(item.veiculo);
-      if (!prefixo) {
-        continue;
-      }
-      const veiculo = veiculosMap.get(prefixo) ?? null;
-      if (!veiculo) {
-        semVinculo += 1;
-      }
-      const kmTotal = Number(item.km);
-      const linhas: EscalaLinhaJson[] = Array.isArray(item.linhas)
-        ? item.linhas.map((l) => ({
-            linha: l.linha ?? null,
-            km: l.km == null ? null : Number(l.km),
-            motoristas: Array.isArray(l.motoristas)
-              ? l.motoristas.map((m) => ({
-                  matricula: m.matricula ?? null,
-                  motorista: m.motorista ?? null,
-                  km: m.km == null ? null : Number(m.km),
-                }))
-              : [],
-          }))
-        : [];
+    await this.escalaRepo.manager.transaction(async (manager) => {
+      const escalaTx = manager.getRepository(VeiculoEscalaDia);
+      const turnoTx = manager.getRepository(VeiculoEscalaTurno);
 
-      let row = await this.escalaRepo.findOne({
-        where: { data: dataIso, prefixo },
-      });
-      if (!row) {
-        row = this.escalaRepo.create({
-          data: dataIso,
-          prefixo,
+      for (const item of lista) {
+        const prefixo = this.normalizarPrefixo(item.veiculo);
+        if (!prefixo) {
+          continue;
+        }
+        const veiculo = veiculosMap.get(prefixo) ?? null;
+        if (!veiculo) {
+          semVinculo += 1;
+        }
+        const kmTotalRaw = item.km ?? item.quilometragem;
+        const kmTotal = Number(kmTotalRaw);
+        const turnosNorm = this.normalizarTurnosDoVeiculo(item);
+
+        let row = await escalaTx.findOne({
+          where: { data: dataIso, prefixo },
         });
+        if (!row) {
+          row = escalaTx.create({
+            data: dataIso,
+            prefixo,
+          });
+        }
+        row.idVeiculo = veiculo?.id ?? null;
+        row.kmTotal = Number.isFinite(kmTotal) ? kmTotal : 0;
+        row.sincronizadoEm = agora;
+        row = await escalaTx.save(row);
+
+        await turnoTx.delete({ idEscalaDia: row.id });
+        if (turnosNorm.length > 0) {
+          await turnoTx.save(
+            turnosNorm.map((t) =>
+              turnoTx.create({
+                idEscalaDia: row.id,
+                ...t,
+              }),
+            ),
+          );
+        }
+        upserts += 1;
       }
-      row.idVeiculo = veiculo?.id ?? null;
-      row.kmTotal = Number.isFinite(kmTotal) ? kmTotal : 0;
-      row.linhasJson = linhas;
-      row.sincronizadoEm = agora;
-      await this.escalaRepo.save(row);
-      upserts += 1;
-    }
+    });
 
     await this.configuracaoService.marcarSyncEscalaInfobus({
       ultimoSyncEscalaEm: agora.toISOString(),
@@ -191,6 +224,158 @@ export class EscalaService {
       upserts,
       semVinculo,
     };
+  }
+
+  private toNullableNumber(valor: unknown): number | null {
+    if (valor == null || valor === '') {
+      return null;
+    }
+    const n = Number(valor);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private toNullableText(valor: unknown): string | null {
+    if (valor == null) {
+      return null;
+    }
+    const text = String(valor).trim();
+    return text ? text : null;
+  }
+
+  private pickHorario(
+    obj: {
+      horarioInicio?: string | null;
+      horarioFim?: string | null;
+      horario_inicio?: string | null;
+      horario_fim?: string | null;
+    },
+    qual: 'inicio' | 'fim',
+  ): string | null {
+    if (qual === 'inicio') {
+      return this.toNullableText(obj.horarioInicio ?? obj.horario_inicio);
+    }
+    return this.toNullableText(obj.horarioFim ?? obj.horario_fim);
+  }
+
+  /**
+   * Prefere `turnos[]` se o INFOBUS enviar; senão achata `linhas[].motoristas[]`.
+   * Campos novos (horário, nome, número) entram quando presentes.
+   */
+  private normalizarTurnosDoVeiculo(item: InfobusVeiculoKm): Array<
+    Omit<VeiculoEscalaTurno, 'id' | 'criadoEm' | 'atualizadoEm' | 'idEscalaDia' | 'escalaDia'>
+  > {
+    if (Array.isArray(item.turnos) && item.turnos.length > 0) {
+      return item.turnos.map((t, idx) => this.mapTurnoApi(t, idx));
+    }
+
+    const linhas: InfobusLinhaKm[] = Array.isArray(item.linhas)
+      ? item.linhas
+      : [];
+    const out: Array<
+      Omit<
+        VeiculoEscalaTurno,
+        'id' | 'criadoEm' | 'atualizadoEm' | 'idEscalaDia' | 'escalaDia'
+      >
+    > = [];
+    let ordem = 0;
+    for (const linha of linhas) {
+      const motoristas = Array.isArray(linha.motoristas)
+        ? linha.motoristas
+        : [];
+      if (motoristas.length === 0) {
+        out.push({
+          linha: this.toNullableText(linha.linha),
+          descricaoLinha: this.toNullableText(
+            linha.descricaoLinha ?? linha.descricao,
+          ),
+          km: this.toNullableNumber(linha.km ?? linha.quilometragem),
+          matricula: null,
+          motorista: null,
+          nomeTurno: this.toNullableText(linha.nomeTurno ?? linha.nome),
+          numeroViagem: this.toNullableText(
+            linha.numeroViagem ?? linha.numero,
+          ),
+          horarioInicio: this.pickHorario(linha, 'inicio'),
+          horarioFim: this.pickHorario(linha, 'fim'),
+          ordem: ordem++,
+        });
+        continue;
+      }
+      for (const mot of motoristas) {
+        out.push({
+          linha: this.toNullableText(linha.linha),
+          descricaoLinha: this.toNullableText(
+            linha.descricaoLinha ?? linha.descricao,
+          ),
+          km: this.toNullableNumber(
+            mot.km ?? linha.km ?? linha.quilometragem,
+          ),
+          matricula: this.toNullableText(mot.matricula),
+          motorista: this.toNullableText(mot.motorista),
+          nomeTurno: this.toNullableText(
+            mot.nomeTurno ?? mot.nome ?? linha.nomeTurno ?? linha.nome,
+          ),
+          numeroViagem: this.toNullableText(
+            mot.numeroViagem ??
+              mot.numero ??
+              linha.numeroViagem ??
+              linha.numero,
+          ),
+          horarioInicio:
+            this.pickHorario(mot, 'inicio') ??
+            this.pickHorario(linha, 'inicio'),
+          horarioFim:
+            this.pickHorario(mot, 'fim') ?? this.pickHorario(linha, 'fim'),
+          ordem: ordem++,
+        });
+      }
+    }
+    return out;
+  }
+
+  private mapTurnoApi(
+    t: InfobusTurnoKm,
+    ordem: number,
+  ): Omit<
+    VeiculoEscalaTurno,
+    'id' | 'criadoEm' | 'atualizadoEm' | 'idEscalaDia' | 'escalaDia'
+  > {
+    return {
+      linha: this.toNullableText(t.linha),
+      descricaoLinha: this.toNullableText(t.descricaoLinha ?? t.descricao),
+      km: this.toNullableNumber(t.km ?? t.quilometragem),
+      matricula: this.toNullableText(t.matricula),
+      motorista: this.toNullableText(t.motorista),
+      nomeTurno: this.toNullableText(t.nomeTurno ?? t.nome),
+      numeroViagem: this.toNullableText(t.numeroViagem ?? t.numero),
+      horarioInicio: this.pickHorario(t, 'inicio'),
+      horarioFim: this.pickHorario(t, 'fim'),
+      ordem,
+    };
+  }
+
+  private agregarLinhasDosTurnos(
+    turnos: EscalaTurnoDto[],
+  ): EscalaLinhaAgregadaDto[] {
+    const map = new Map<string, EscalaLinhaAgregadaDto>();
+    for (const t of turnos) {
+      const key = t.linha ?? '';
+      let agg = map.get(key);
+      if (!agg) {
+        agg = { linha: t.linha, km: 0, motoristas: [] };
+        map.set(key, agg);
+      }
+      const km = t.km ?? 0;
+      agg.km = (agg.km ?? 0) + (Number.isFinite(km) ? km : 0);
+      if (t.motorista || t.matricula) {
+        agg.motoristas.push({
+          matricula: t.matricula,
+          motorista: t.motorista,
+          km: t.km,
+        });
+      }
+    }
+    return Array.from(map.values());
   }
 
   async sincronizarTelemetria(idEmpresa?: string): Promise<{
@@ -272,6 +457,7 @@ export class EscalaService {
     const dataIso = this.validarData(data);
     const escalas = await this.escalaRepo.find({
       where: { data: dataIso },
+      relations: ['turnos'],
       order: { prefixo: 'ASC' },
     });
 
@@ -335,6 +521,21 @@ export class EscalaService {
             calculoOmni.autonomiaKm != null &&
             calculoOmni.autonomiaKm < kmEscala));
 
+      const turnos: EscalaTurnoDto[] = [...(esc.turnos ?? [])]
+        .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+        .map((t) => ({
+          linha: t.linha ?? null,
+          descricaoLinha: t.descricaoLinha ?? null,
+          km: t.km ?? null,
+          matricula: t.matricula ?? null,
+          motorista: t.motorista ?? null,
+          nomeTurno: t.nomeTurno ?? null,
+          numeroViagem: t.numeroViagem ?? null,
+          horarioInicio: t.horarioInicio ?? null,
+          horarioFim: t.horarioFim ?? null,
+          ordem: t.ordem ?? 0,
+        }));
+
       return {
         data: dataIso,
         prefixo: esc.prefixo,
@@ -343,7 +544,8 @@ export class EscalaService {
         placa: veiculo?.placa ?? null,
         combustivel: veiculo?.combustivel ?? null,
         kmEscala,
-        linhas: esc.linhasJson ?? [],
+        turnos,
+        linhas: this.agregarLinhasDosTurnos(turnos),
         retido: infoRetido.retido,
         qtdOsVermelhas: infoRetido.qtd,
         bateriaPct,

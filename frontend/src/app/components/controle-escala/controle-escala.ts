@@ -112,6 +112,25 @@ export class ControleEscalaComponent implements OnInit {
   }
 
   linhasResumo(item: EscalaPainelItem): string {
+    if (item.turnos?.length) {
+      return item.turnos
+        .map((t) => {
+          const trecho = [
+            t.nomeTurno,
+            t.linha,
+            t.horarioInicio && t.horarioFim
+              ? `${t.horarioInicio}-${t.horarioFim}`
+              : null,
+            t.motorista,
+          ]
+            .filter(Boolean)
+            .join(' · ');
+          const km =
+            t.km != null && Number.isFinite(t.km) ? ` (${t.km} km)` : '';
+          return `${trecho || 'turno'}${km}`;
+        })
+        .join(', ');
+    }
     if (!item.linhas?.length) {
       return '—';
     }

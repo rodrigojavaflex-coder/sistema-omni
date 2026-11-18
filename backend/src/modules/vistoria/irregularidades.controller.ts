@@ -59,6 +59,7 @@ import {
   IRREGULARIDADE_FLUXO_PRINT_PERMISSIONS,
   IRREGULARIDADE_FLUXO_PRINT_RESUMO_PERMISSIONS,
   IRREGULARIDADE_FLUXO_READ_PERMISSIONS,
+  IRREGULARIDADE_VALIDACAO_PRINT_CHECKLIST_PERMISSION,
   isOnlyValidacaoFinalEmpresaScope,
   shouldForceOrigemRegistroSosWeb,
   STATUS_ESCOPO_EMPRESA,
@@ -411,15 +412,22 @@ export class IrregularidadesController {
   @Post('gestao-os/relatorio-resumo-pdf')
   @ApiOperation({
     summary:
-      'Resumo por Veículo/Empresa (Analítico/Sintético) do filtro — Tratamento, Manutenção, Validação ou Gestão OS',
+      'Resumo por Veículo/Empresa (Analítico/Sintético) ou Check-list de Validação do filtro — Tratamento, Manutenção, Validação ou Gestão OS',
   })
   @ApiResponse({ status: 200, description: 'Arquivo PDF' })
   @ApiResponse({
     status: 400,
     description: 'Filtro vazio ou acima do limite de registros',
   })
-  @ApiResponse({ status: 403, description: 'Sem permissão :print_resumo da tela' })
-  @Permissions(...IRREGULARIDADE_FLUXO_PRINT_RESUMO_PERMISSIONS)
+  @ApiResponse({
+    status: 403,
+    description:
+      'Sem permissão :print_resumo da tela (ou :print_checklist para Check-list)',
+  })
+  @Permissions(
+    ...IRREGULARIDADE_FLUXO_PRINT_RESUMO_PERMISSIONS,
+    IRREGULARIDADE_VALIDACAO_PRINT_CHECKLIST_PERMISSION,
+  )
   async gerarRelatorioResumoGestaoOs(
     @Body() dto: RelatorioResumoGestaoOsDto,
     @Req()
@@ -432,9 +440,15 @@ export class IrregularidadesController {
   ): Promise<StreamableFile> {
     const origemTela = dto.origemTela ?? 'gestao-os';
     const userPermissions = collectUserPermissions(req.user?.perfis);
-    assertUserHasAllPermissions(userPermissions, [
-      getPrintResumoPermissionForOrigemTela(origemTela),
-    ]);
+    if (dto.tipoImpressao === 'CHECKLIST_VALIDACAO') {
+      assertUserHasAllPermissions(userPermissions, [
+        IRREGULARIDADE_VALIDACAO_PRINT_CHECKLIST_PERMISSION,
+      ]);
+    } else {
+      assertUserHasAllPermissions(userPermissions, [
+        getPrintResumoPermissionForOrigemTela(origemTela),
+      ]);
+    }
 
     const ordemServicoDigits = this.parseOrdemServicoQuery(dto.ordemServico);
     const erpCodigoPedidoFiltro = this.parseTextoParcialQuery(
@@ -465,9 +479,13 @@ export class IrregularidadesController {
       },
       req.user,
     );
+    const filename =
+      dto.tipoImpressao === 'CHECKLIST_VALIDACAO'
+        ? 'relatorio-validacao-checklist.pdf'
+        : 'relatorio-resumo-veiculo-empresa.pdf';
     return new StreamableFile(pdf, {
       type: 'application/pdf',
-      disposition: 'inline; filename="relatorio-resumo-veiculo-empresa.pdf"',
+      disposition: `inline; filename="${filename}"`,
     });
   }
 

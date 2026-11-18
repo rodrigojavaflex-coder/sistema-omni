@@ -1880,7 +1880,27 @@ export class IrregularidadeService {
     );
     const config = await this.configuracaoRepository.findOne({ where: {} });
     const tipoImpressao =
-      dto.tipoImpressao === 'SINTETICA' ? 'SINTETICA' : 'ANALITICA';
+      dto.tipoImpressao === 'SINTETICA'
+        ? 'SINTETICA'
+        : dto.tipoImpressao === 'CHECKLIST_VALIDACAO'
+          ? 'CHECKLIST_VALIDACAO'
+          : 'ANALITICA';
+
+    if (tipoImpressao === 'CHECKLIST_VALIDACAO') {
+      if (origemTela !== 'validacao-final') {
+        throw new BadRequestException(
+          'O relatório Check-list de Validação só pode ser gerado na tela Validação.',
+        );
+      }
+      return this.buildPdfRelatorioChecklistValidacao(
+        listagem.data,
+        new Date(),
+        actor?.nome,
+        config,
+        filtrosAplicados,
+      );
+    }
+
     return this.buildPdfRelatorioResumoGestaoOs(
       listagem.data,
       new Date(),
@@ -2196,7 +2216,11 @@ export class IrregularidadeService {
         irregularidade.erpCodigoPedido = null;
         irregularidade.erpEnviadoEm = null;
         irregularidade.erpUltimoErro = null;
-        irregularidade.observacao = dto.observacao;
+        // Reenvio (BRT comenta / ERP) lê observacao: preserva a descrição da OS reprovada.
+        irregularidade.observacao = this.concatenarDescricaoReprovacao(
+          irregularidade.observacao,
+          dto.observacao,
+        );
         const saved = await manager
           .getRepository(Irregularidade)
           .save(irregularidade);
@@ -4723,6 +4747,460 @@ export class IrregularidadeService {
     });
   }
 
+  /**
+   * PDF Check-list de Validação: quebra por veículo, colunas OS/Classificação/Descrição
+   * + APROVADO/REPROVADO/NÃO VERIFICADA (vazias) e assinaturas ao fim de cada veículo.
+   * Sem tabela final Empresa × Status.
+   */
+  private buildPdfRelatorioChecklistValidacao(
+    itens: IrregularidadeResumoDto[],
+    emitidoEm: Date,
+    emitidoPor: string | undefined,
+    configuracao: Configuracao | null,
+    filtrosAplicados: string,
+  ): Promise<Buffer> {
+    const dataEmissao = this.formatDateTimeBr(emitidoEm);
+    const logoBuffer = this.resolveLogoBuffer(configuracao);
+    const tituloRelatorio = 'Relatório de Validação Check-list';
+    const marginX = 24;
+    const footerBandPt = 44;
+    const boxPadX = 8;
+    const boxPadY = 6;
+    const boxGap = 10;
+
+    type LinhaChecklist = {
+      veiculo: string;
+      modelo: string;
+      veiculoKey: string;
+      os: string;
+      classificacao: string;
+      descricao: string;
+    };
+
+    type GrupoVeiculo = {
+      key: string;
+      veiculo: string;
+      modelo: string;
+      rows: LinhaChecklist[];
+    };
+
+    const linhas: LinhaChecklist[] = itens.map((item) => {
+      const veiculo = item.veiculoDescricao?.trim() || 'Veículo não informado';
+      const placa = item.veiculoPlaca?.trim() || '';
+      const veiculoLabel = placa ? `${veiculo} - ${placa}` : veiculo;
+      const modelo = item.veiculoModelo?.trim() || '-';
+      const osParts = [`OS: ${item.numeroIrregularidade}`];
+      if (item.erpCodigoPedido?.trim()) {
+        osParts.push(`OMNI: ${item.erpCodigoPedido.trim()}`);
+      }
+      if (item.numOsExternoAtual != null) {
+        osParts.push(`BRT: ${item.numOsExternoAtual}`);
+      }
+      const classificacao = [
+        item.nomeArea?.trim() || '-',
+        item.nomeComponente?.trim() || '-',
+        item.descricaoSintoma?.trim() || '-',
+      ].join(' / ');
+      return {
+        veiculo: veiculoLabel,
+        modelo,
+        veiculoKey: String(item.idVeiculo ?? veiculoLabel),
+        os: osParts.join('\n'),
+        classificacao,
+        descricao: item.observacao?.trim() || '-',
+      };
+    });
+
+    linhas.sort((a, b) => {
+      const vei = a.veiculo.localeCompare(b.veiculo, 'pt-BR');
+      if (vei !== 0) return vei;
+      return a.os.localeCompare(b.os, 'pt-BR');
+    });
+
+    const grupos: GrupoVeiculo[] = [];
+    for (const row of linhas) {
+      let grupo = grupos.find((g) => g.key === row.veiculoKey);
+      if (!grupo) {
+        grupo = {
+          key: row.veiculoKey,
+          veiculo: row.veiculo,
+          modelo: row.modelo,
+          rows: [],
+        };
+        grupos.push(grupo);
+      }
+      grupo.rows.push(row);
+    }
+
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        layout: 'portrait',
+        bufferPages: true,
+        autoFirstPage: false,
+        margins: {
+          top: marginX,
+          left: marginX,
+          right: marginX,
+          bottom: footerBandPt,
+        },
+      });
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk as Buffer));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const maxContentY = () => Math.floor(doc.page.maxY());
+      let innerW = 0;
+      let contentW = 0;
+      let contentX = 0;
+
+      const drawPageChrome = () => {
+        innerW = doc.page.width - marginX * 2;
+        contentX = marginX + boxPadX;
+        contentW = innerW - boxPadX * 2;
+        const headerTop = 18;
+        const logoBoxW = 100;
+        const logoBoxH = 32;
+        const temLogo = !!(logoBuffer && logoBuffer.length > 0);
+        if (temLogo) {
+          try {
+            doc.image(logoBuffer!, marginX, headerTop, {
+              fit: [logoBoxW, logoBoxH],
+            });
+          } catch {
+            // ignora logo inválido
+          }
+        }
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(12)
+          .fillColor('#0f172a')
+          .text(tituloRelatorio, marginX, headerTop + 8, {
+            width: innerW,
+            align: 'center',
+            lineBreak: false,
+          });
+        const subtitulo = `(${filtrosAplicados || 'Nenhum filtro adicional'})`;
+        const filtrosY = headerTop + (temLogo ? logoBoxH : 18) + 6;
+        doc.font('Helvetica').fontSize(7.5).fillColor('#475569');
+        const filtrosH = Math.min(
+          48,
+          Math.ceil(
+            doc.heightOfString(subtitulo, {
+              width: innerW,
+              align: 'center',
+            }),
+          ),
+        );
+        doc.text(subtitulo, marginX, filtrosY, {
+          width: innerW,
+          align: 'center',
+          height: filtrosH,
+          ellipsis: true,
+        });
+        doc.x = marginX;
+        doc.y = filtrosY + filtrosH + 8;
+      };
+
+      let boxTopY = 0;
+      let boxOpen = false;
+
+      const strokeBoxSegment = (bottomY: number) => {
+        if (!boxOpen) return;
+        const h = Math.max(4, bottomY - boxTopY);
+        doc
+          .save()
+          .lineWidth(0.8)
+          .strokeColor('#94a3b8')
+          .roundedRect(marginX, boxTopY, innerW, h, 4)
+          .stroke()
+          .restore();
+      };
+
+      const openBox = () => {
+        boxTopY = doc.y;
+        boxOpen = true;
+        doc.y += boxPadY;
+      };
+
+      const closeBoxSegment = (opts?: { continued?: boolean }) => {
+        if (!boxOpen) return;
+        doc.y += boxPadY;
+        strokeBoxSegment(doc.y);
+        boxOpen = false;
+        if (opts?.continued) {
+          doc.y += 4;
+        } else {
+          doc.y += boxGap;
+        }
+      };
+
+      const breakPage = (continueBox?: {
+        grupo: GrupoVeiculo;
+        continued: boolean;
+      }) => {
+        if (boxOpen) {
+          closeBoxSegment({ continued: true });
+        }
+        doc.addPage();
+        doc.x = marginX;
+        drawPageChrome();
+        if (continueBox) {
+          openBox();
+          drawVeiculoCabecalho(continueBox.grupo, true);
+          drawColHeaders();
+        }
+      };
+
+      const ensureSpace = (
+        h: number,
+        continueBox?: { grupo: GrupoVeiculo; continued: boolean },
+      ) => {
+        if (Math.ceil(doc.y + h) > maxContentY()) {
+          breakPage(continueBox);
+        }
+      };
+
+      /** Larguras fixas: descrição cresce em altura (quebra de linha), não em largura. */
+      const cols = {
+        os: 72,
+        classificacao: 100,
+        descricao: 195,
+        check: 48,
+      };
+      const colGap = 4;
+      const rowPad = 3;
+      const assinaturasH = 78;
+      const headerH = 18;
+      /** Altura mínima da linha; sem teto artificial — só limita pelo espaço da página. */
+      const rowMinH = 14;
+
+      const drawVeiculoCabecalho = (grupo: GrupoVeiculo, cont?: boolean) => {
+        const titulo = cont
+          ? `Veículo: ${grupo.veiculo}  ·  Modelo: ${grupo.modelo}  (cont.)`
+          : `Veículo: ${grupo.veiculo}  ·  Modelo: ${grupo.modelo}`;
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(9)
+          .fillColor('#0f172a')
+          .text(titulo, contentX, doc.y, {
+            width: contentW,
+            height: 14,
+            ellipsis: true,
+          });
+        doc.y += 2;
+      };
+
+      const drawColHeaders = () => {
+        const y = doc.y;
+        doc.font('Helvetica-Bold').fontSize(7).fillColor('#334155');
+        let x = contentX;
+        const headers: Array<[string, number]> = [
+          ['OS', cols.os],
+          ['Classificação', cols.classificacao],
+          ['Descrição do problema', cols.descricao],
+          ['APROVADO', cols.check],
+          ['REPROVADO', cols.check],
+          ['NÃO VERIFICADA', cols.check],
+        ];
+        for (const [label, w] of headers) {
+          doc.text(label, x, y, {
+            width: w,
+            height: headerH,
+            align: w === cols.check ? 'center' : 'left',
+            lineBreak: true,
+          });
+          doc.y = y;
+          doc.x = contentX;
+          x += w + colGap;
+        }
+        doc.y = y + headerH;
+        doc
+          .moveTo(contentX, doc.y)
+          .lineTo(contentX + contentW, doc.y)
+          .strokeColor('#cbd5e1')
+          .lineWidth(0.5)
+          .stroke();
+        doc.y += 3;
+      };
+
+      const measureRowHeight = (row: LinhaChecklist): number => {
+        doc.font('Helvetica').fontSize(7);
+        const hOs = doc.heightOfString(row.os, { width: cols.os });
+        const hCl = doc.heightOfString(row.classificacao, {
+          width: cols.classificacao,
+        });
+        const hDe = doc.heightOfString(row.descricao, {
+          width: cols.descricao,
+        });
+        return Math.max(hOs, hCl, hDe, rowMinH) + rowPad * 2;
+      };
+
+      const drawEmptyCheck = (x: number, y: number, w: number, h: number) => {
+        const size = 10;
+        const cx = x + (w - size) / 2;
+        const cy = y + Math.max(0, (h - size) / 2);
+        doc
+          .save()
+          .lineWidth(0.8)
+          .strokeColor('#64748b')
+          .rect(cx, cy, size, size)
+          .stroke()
+          .restore();
+      };
+
+      const drawRow = (
+        row: LinhaChecklist,
+        grupo: GrupoVeiculo,
+        rowIndex: number,
+      ) => {
+        const naturalH = measureRowHeight(row);
+        ensureSpace(naturalH + 4 + assinaturasH, { grupo, continued: true });
+        /** Só corta se a descrição for maior que a página útil após o chrome. */
+        const avail = Math.max(
+          rowMinH + rowPad * 2,
+          maxContentY() - doc.y - 4,
+        );
+        const h = Math.min(naturalH, avail);
+        const truncated = h < naturalH;
+        const y = doc.y;
+        const cellH = Math.max(rowMinH, h - rowPad * 2);
+        /** Zebrado: linhas ímpares com fundo cinza bem claro. */
+        if (rowIndex % 2 === 1) {
+          doc
+            .save()
+            .rect(contentX, y, contentW, h)
+            .fill('#f1f5f9')
+            .restore();
+        }
+        doc.font('Helvetica').fontSize(7).fillColor('#1e293b');
+        let x = contentX;
+        const textCells: Array<[string, number]> = [
+          [row.os, cols.os],
+          [row.classificacao, cols.classificacao],
+          [row.descricao, cols.descricao],
+        ];
+        for (const [text, w] of textCells) {
+          doc.text(text, x, y + rowPad, {
+            width: w,
+            height: cellH,
+            /** Sem ellipsis quando a altura acomodou o texto; com ellipsis só se truncou por página. */
+            ellipsis: truncated,
+            lineBreak: true,
+          });
+          doc.y = y;
+          doc.x = contentX;
+          x += w + colGap;
+        }
+        for (let i = 0; i < 3; i += 1) {
+          drawEmptyCheck(x, y + rowPad, cols.check, cellH);
+          x += cols.check + colGap;
+        }
+        doc.y = y + h;
+        doc
+          .moveTo(contentX, doc.y)
+          .lineTo(contentX + contentW, doc.y)
+          .strokeColor('#e2e8f0')
+          .lineWidth(0.4)
+          .stroke();
+        doc.y += 2;
+      };
+
+      const drawAssinaturas = (grupo: GrupoVeiculo) => {
+        ensureSpace(assinaturasH + 4, { grupo, continued: true });
+        doc
+          .moveTo(contentX, doc.y)
+          .lineTo(contentX + contentW, doc.y)
+          .strokeColor('#94a3b8')
+          .lineWidth(0.6)
+          .stroke();
+        doc.y += 8;
+
+        const labels = [
+          'Assinatura do Técnico',
+          'Assinatura do Coordenador',
+          'Assinatura do Supervisor',
+        ];
+        const gap = 10;
+        const boxW = Math.floor((contentW - gap * 2) / 3);
+        const boxH = 56;
+        const startY = doc.y;
+
+        labels.forEach((label, idx) => {
+          const x = contentX + idx * (boxW + gap);
+          doc
+            .save()
+            .lineWidth(0.7)
+            .strokeColor('#94a3b8')
+            .roundedRect(x, startY, boxW, boxH, 3)
+            .stroke()
+            .restore();
+          /** Linha de assinatura acima; descrição abaixo da linha. */
+          const lineY = startY + boxH - 22;
+          doc
+            .moveTo(x + 10, lineY)
+            .lineTo(x + boxW - 10, lineY)
+            .strokeColor('#64748b')
+            .lineWidth(0.6)
+            .stroke();
+          doc
+            .font('Helvetica')
+            .fontSize(7)
+            .fillColor('#334155')
+            .text(label, x + 4, lineY + 4, {
+              width: boxW - 8,
+              align: 'center',
+              lineBreak: false,
+            });
+        });
+
+        doc.y = startY + boxH + 4;
+      };
+
+      /**
+       * Um veículo por página: cada grupo novo inicia em página nova.
+       * Continuação do mesmo veículo (cont.) usa breakPage interno nas linhas.
+       */
+      for (let gi = 0; gi < grupos.length; gi += 1) {
+        const grupo = grupos[gi];
+        doc.addPage();
+        drawPageChrome();
+        openBox();
+        drawVeiculoCabecalho(grupo, false);
+        drawColHeaders();
+        grupo.rows.forEach((row, rowIndex) => {
+          drawRow(row, grupo, rowIndex);
+        });
+        drawAssinaturas(grupo);
+        closeBoxSegment();
+      }
+
+      const range = doc.bufferedPageRange();
+      const totalPages = range.count;
+      for (let i = 0; i < totalPages; i += 1) {
+        doc.switchToPage(range.start + i);
+        const { width, height } = doc.page;
+        const pageStr = `Página ${i + 1} de ${totalPages}`;
+        const emissaoTxt = emitidoPor?.trim()
+          ? `Emissão: ${dataEmissao} · ${emitidoPor.trim()} · ${linhas.length} OS`
+          : `Emissão: ${dataEmissao} · ${linhas.length} OS`;
+        doc.save();
+        doc.font('Helvetica').fontSize(7).fillColor('#64748b');
+        const pageStrW = doc.widthOfString(pageStr);
+        const footerY = height - 28;
+        doc.text(emissaoTxt, marginX, footerY, { lineBreak: false });
+        doc.text(pageStr, width - marginX - pageStrW, footerY, {
+          lineBreak: false,
+        });
+        doc.restore();
+      }
+
+      doc.flushPages();
+      doc.end();
+    });
+  }
+
   private async buildPdfRelatorioManutencao(
     resumo: RelatorioManutencaoResumoDto,
     irregularidades: Irregularidade[],
@@ -6006,6 +6484,22 @@ export class IrregularidadeService {
         posYPct: p.posYPct,
       })),
     };
+  }
+
+  /**
+   * Descrição que segue para o reenvio: texto já gravado na OS reprovada
+   * mais o motivo informado nesta reprovação.
+   */
+  private concatenarDescricaoReprovacao(
+    descricaoAtual: string | null | undefined,
+    motivoReprovacao: string,
+  ): string {
+    const anterior = (descricaoAtual ?? '').trim();
+    const nova = motivoReprovacao.trim();
+    if (!anterior || anterior === nova) {
+      return nova;
+    }
+    return `${anterior}\n${nova}`;
   }
 
   private assinaturaMarcacao(

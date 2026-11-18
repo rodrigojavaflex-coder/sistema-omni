@@ -1,19 +1,8 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Veiculo } from '../../veiculo/entities/veiculo.entity';
-
-export interface EscalaLinhaMotoristaJson {
-  matricula?: string | number | null;
-  motorista?: string | null;
-  km?: number | null;
-}
-
-export interface EscalaLinhaJson {
-  linha?: string | null;
-  km?: number | null;
-  motoristas?: EscalaLinhaMotoristaJson[];
-}
+import { VeiculoEscalaTurno } from './veiculo-escala-turno.entity';
 
 @Entity('veiculo_escala_dia')
 @Index('UQ_veiculo_escala_dia_data_prefixo', ['data', 'prefixo'], {
@@ -57,9 +46,8 @@ export class VeiculoEscalaDia extends BaseEntity {
   })
   kmTotal: number;
 
-  @ApiProperty({ required: false })
-  @Column({ name: 'linhas_json', type: 'jsonb', nullable: true })
-  linhasJson?: EscalaLinhaJson[] | null;
+  @OneToMany(() => VeiculoEscalaTurno, (t) => t.escalaDia)
+  turnos?: VeiculoEscalaTurno[];
 
   @ApiProperty()
   @Column({

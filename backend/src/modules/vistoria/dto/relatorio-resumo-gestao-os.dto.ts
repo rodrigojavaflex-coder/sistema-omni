@@ -17,13 +17,13 @@ import { GravidadeCriticidade } from '../../../common/enums/gravidade-criticidad
 export class RelatorioResumoGestaoOsDto {
   @ApiPropertyOptional({
     description:
-      'ANALITICA = detalhe por veículo + tabela resumo; SINTETICA = somente tabela resumo',
-    enum: ['ANALITICA', 'SINTETICA'],
+      'ANALITICA = detalhe por veículo + tabela resumo; SINTETICA = somente tabela resumo; CHECKLIST_VALIDACAO = check-list por veículo (só Validação, sem tabela final)',
+    enum: ['ANALITICA', 'SINTETICA', 'CHECKLIST_VALIDACAO'],
     default: 'ANALITICA',
   })
   @IsOptional()
-  @IsIn(['ANALITICA', 'SINTETICA'])
-  tipoImpressao?: 'ANALITICA' | 'SINTETICA';
+  @IsIn(['ANALITICA', 'SINTETICA', 'CHECKLIST_VALIDACAO'])
+  tipoImpressao?: 'ANALITICA' | 'SINTETICA' | 'CHECKLIST_VALIDACAO';
 
   @ApiPropertyOptional({
     description:

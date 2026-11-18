@@ -210,12 +210,13 @@ export class IrregularidadeService {
 
   /**
    * Gestão OS: PDF resumido com todas as OS do filtro (sem seleção/paginação).
-   * ANALITICA = detalhe por veículo + tabela; SINTETICA = só a tabela resumo.
+   * ANALITICA = detalhe por veículo + tabela; SINTETICA = só a tabela resumo;
+   * CHECKLIST_VALIDACAO = check-list por veículo (só Validação).
    */
   gerarRelatorioResumoGestaoOs(
     payload: ListarIrregularidadeFiltros & {
       status?: StatusIrregularidade[];
-      tipoImpressao?: 'ANALITICA' | 'SINTETICA';
+      tipoImpressao?: 'ANALITICA' | 'SINTETICA' | 'CHECKLIST_VALIDACAO';
       origemTela?: 'tratamento' | 'manutencao' | 'validacao-final' | 'gestao-os';
     },
   ): Observable<Blob> {

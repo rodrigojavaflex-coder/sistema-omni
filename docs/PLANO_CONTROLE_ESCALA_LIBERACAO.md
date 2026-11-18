@@ -44,7 +44,7 @@ Tela de **Controle de Escala e Liberação** com alertas de:
 
 ### Dentro
 - Campos no modelo: `kmPorPercentual`, `kmPorLitro`
-- Config Escala INFOBUS + sync/persistência da escala do dia
+- Config Escala INFOBUS + sync/persistência da escala do dia (`veiculo_escala_dia` + `veiculo_escala_turno`; sem `linhas_json`)
 - Sync/persistência telemetria `tempo_real`
 - Status operacional RETIDO (derivado)
 - Tela web de controle + alertas dual-fonte

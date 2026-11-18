@@ -10,6 +10,7 @@ import { BrtTempoRealClient } from './brt-tempo-real.client';
 import { EscalaController } from './escala.controller';
 import { EscalaService } from './escala.service';
 import { VeiculoEscalaDia } from './entities/veiculo-escala-dia.entity';
+import { VeiculoEscalaTurno } from './entities/veiculo-escala-turno.entity';
 import { VeiculoTelemetriaAtual } from './entities/veiculo-telemetria-atual.entity';
 import { InfobusKmClient } from './infobus-km.client';
 
@@ -17,6 +18,7 @@ import { InfobusKmClient } from './infobus-km.client';
   imports: [
     TypeOrmModule.forFeature([
       VeiculoEscalaDia,
+      VeiculoEscalaTurno,
       VeiculoTelemetriaAtual,
       Veiculo,
       Irregularidade,

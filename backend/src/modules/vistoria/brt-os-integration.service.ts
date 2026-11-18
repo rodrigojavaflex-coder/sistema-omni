@@ -46,6 +46,13 @@ export interface BrtOsErrorBody {
   campos?: Array<{ campo: string; mensagens: string[] }>;
 }
 
+/** Contexto sanitizado (sem token) anexado à mensagem detalhada de falha BRT. */
+export interface BrtErroContexto {
+  osOrig?: string;
+  plcVcl?: string;
+  tenEmp?: string;
+}
+
 export type BrtCriarOsResult =
   | {
       ok: true;
@@ -58,7 +65,10 @@ export type BrtCriarOsResult =
       ok: false;
       httpStatus: number;
       codigoErro: string;
+      /** Mensagem completa (banner / histórico) com HTTP, os_orig, placa e body. */
       mensagem: string;
+      /** Código/texto curto para a linha da grade (ultimoErroIntegracao). */
+      mensagemResumo: string;
       raw: BrtOsErrorBody;
     };
 
@@ -73,6 +83,7 @@ export type BrtCancelarOsResult =
       httpStatus: number;
       codigoErro: string;
       mensagem: string;
+      mensagemResumo: string;
       raw: BrtOsErrorBody;
     };
 
@@ -330,12 +341,20 @@ export class BrtOsIntegrationService {
     payload: BrtCriarOsPayload,
   ): Promise<BrtCriarOsResult> {
     const token = empresa.brtToken?.trim();
+    const contextoErro: BrtErroContexto = {
+      osOrig: payload.os_orig,
+      plcVcl: payload.plc_vcl,
+      tenEmp: payload.ten_emp,
+    };
+
     if (!token) {
+      const msg = 'Token BRT não configurado na empresa de manutenção';
       return {
         ok: false,
         httpStatus: 0,
         codigoErro: 'configuracao_incompleta',
-        mensagem: 'Token BRT não configurado na empresa de manutenção',
+        mensagem: this.anexarContextoErro(msg, 0, contextoErro),
+        mensagemResumo: msg,
         raw: { erro: 'configuracao_incompleta' },
       };
     }
@@ -379,11 +398,19 @@ export class BrtOsIntegrationService {
       if (err instanceof Error && err.stack) {
         this.logger.debug(err.stack);
       }
+      const mensagemResumo = `Não foi possível comunicar com a API de OS: ${mensagemExibida}`;
       return {
         ok: false,
         httpStatus: 0,
         codigoErro: 'falha_comunicacao',
-        mensagem: `Não foi possível comunicar com a API de OS: ${mensagemExibida}`,
+        mensagem: this.anexarContextoErro(mensagemResumo, 0, contextoErro, {
+          erro: 'falha_comunicacao',
+          mensagem: mensagemExibida,
+          ...(detalheTecnico !== mensagemExibida
+            ? { detalhe: detalheTecnico }
+            : {}),
+        }),
+        mensagemResumo,
         raw: {
           erro: 'falha_comunicacao',
           mensagem: mensagemExibida,
@@ -407,11 +434,18 @@ export class BrtOsIntegrationService {
         this.logger.warn(
           `BRT OS resposta sem numOs http=${response.status} ${contextoLog} body=${this.resumirCorpoLog(body)}`,
         );
+        const mensagemResumo = 'API BRT não retornou numOs';
         return {
           ok: false,
           httpStatus: response.status,
           codigoErro: 'resposta_invalida',
-          mensagem: 'API BRT não retornou numOs',
+          mensagem: this.anexarContextoErro(
+            mensagemResumo,
+            response.status,
+            contextoErro,
+            body,
+          ),
+          mensagemResumo,
           raw: body,
         };
       }
@@ -425,7 +459,13 @@ export class BrtOsIntegrationService {
     }
 
     const codigoErro = body.erro ?? `http_${response.status}`;
-    const mensagem = this.formatarMensagemErro(body, response.status);
+    const mensagemResumo = this.formatarMensagemErro(body, response.status);
+    const mensagem = this.anexarContextoErro(
+      mensagemResumo,
+      response.status,
+      contextoErro,
+      body,
+    );
     this.logger.warn(
       `BRT OS resposta erro http=${response.status} codigo=${codigoErro} ${contextoLog} body=${this.resumirCorpoLog(body)}`,
     );
@@ -434,6 +474,7 @@ export class BrtOsIntegrationService {
       httpStatus: response.status,
       codigoErro,
       mensagem,
+      mensagemResumo,
       raw: body,
     };
   }
@@ -548,13 +589,19 @@ export class BrtOsIntegrationService {
     empresa: EmpresaTerceira,
     payload: BrtCancelarOsPayload,
   ): Promise<BrtCancelarOsResult> {
+    const contextoErro: BrtErroContexto = {
+      osOrig: payload.os_orig,
+      tenEmp: payload.ten_emp,
+    };
     const token = empresa.brtToken?.trim();
     if (!token) {
+      const msg = 'Token BRT não configurado na empresa de manutenção';
       return {
         ok: false,
         httpStatus: 0,
         codigoErro: 'configuracao_incompleta',
-        mensagem: 'Token BRT não configurado na empresa de manutenção',
+        mensagem: this.anexarContextoErro(msg, 0, contextoErro),
+        mensagemResumo: msg,
         raw: { erro: 'configuracao_incompleta' },
       };
     }
@@ -593,11 +640,16 @@ export class BrtOsIntegrationService {
       this.logger.warn(
         `BRT OS cancelamento falha de comunicação ${contextoLog} | ${detalheTecnico}`,
       );
+      const mensagemResumo = `Não foi possível comunicar com a API de OS: ${mensagemExibida}`;
       return {
         ok: false,
         httpStatus: 0,
         codigoErro: 'falha_comunicacao',
-        mensagem: `Não foi possível comunicar com a API de OS: ${mensagemExibida}`,
+        mensagem: this.anexarContextoErro(mensagemResumo, 0, contextoErro, {
+          erro: 'falha_comunicacao',
+          mensagem: mensagemExibida,
+        }),
+        mensagemResumo,
         raw: {
           erro: 'falha_comunicacao',
           mensagem: mensagemExibida,
@@ -624,7 +676,13 @@ export class BrtOsIntegrationService {
     }
 
     const codigoErro = body.erro ?? `http_${response.status}`;
-    const mensagem = this.formatarMensagemErro(body, response.status, true);
+    const mensagemResumo = this.formatarMensagemErro(body, response.status, true);
+    const mensagem = this.anexarContextoErro(
+      mensagemResumo,
+      response.status,
+      contextoErro,
+      body,
+    );
     this.logger.warn(
       `BRT OS cancelamento erro http=${response.status} codigo=${codigoErro} ${contextoLog} body=${this.resumirCorpoLog(body)}`,
     );
@@ -633,10 +691,14 @@ export class BrtOsIntegrationService {
       httpStatus: response.status,
       codigoErro,
       mensagem,
+      mensagemResumo,
       raw: body,
     };
   }
 
+  /**
+   * Mensagem curta (grade). Sem token; códigos conhecidos viram texto funcional.
+   */
   private formatarMensagemErro(
     body: BrtOsErrorBody,
     httpStatus: number,
@@ -670,6 +732,37 @@ export class BrtOsIntegrationService {
       return `Erro BRT (${body.erro})`;
     }
     return `Erro ao criar OS na API BRT (HTTP ${httpStatus})`;
+  }
+
+  /**
+   * Mensagem detalhada para banner/histórico (repassar ao BRT). Sem token.
+   */
+  private anexarContextoErro(
+    mensagemResumo: string,
+    httpStatus: number,
+    contexto: BrtErroContexto,
+    body?: BrtOsErrorBody | Record<string, unknown>,
+  ): string {
+    const partes: string[] = [mensagemResumo.trim()].filter(Boolean);
+    if (httpStatus > 0) {
+      partes.push(`HTTP ${httpStatus}`);
+    }
+    if (contexto.osOrig?.trim()) {
+      partes.push(`os_orig=${contexto.osOrig.trim()}`);
+    }
+    if (contexto.plcVcl?.trim()) {
+      partes.push(`plc_vcl=${contexto.plcVcl.trim()}`);
+    }
+    if (contexto.tenEmp?.trim()) {
+      partes.push(`ten_emp=${contexto.tenEmp.trim()}`);
+    }
+    if (body != null) {
+      const bodyResumo = this.resumirCorpoLog(body, 500);
+      if (bodyResumo && bodyResumo !== '{}') {
+        partes.push(`body=${bodyResumo}`);
+      }
+    }
+    return partes.join(' | ');
   }
 
   /**

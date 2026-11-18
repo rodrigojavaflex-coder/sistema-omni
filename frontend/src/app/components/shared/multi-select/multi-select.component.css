@@ -1,7 +1,14 @@
+:host {
+  display: block;
+  position: relative;
+  max-width: 100%;
+}
+
 .multi-select-container {
   position: relative;
   flex: 0 1 auto;
   min-width: 130px;
+  width: 100%;
 }
 
 .multi-select-button {
