@@ -2551,13 +2551,6 @@ export class IrregularidadeService {
 
     this.manutencaoEnvioService.assertEscopoEmpresa(empresa, irregularidades);
 
-    if (this.manutencaoEnvioService.usesIntegracaoApi(empresa)) {
-      await this.manutencaoEnvioService.assertSelecaoCompletaVistoriasBrt(
-        irregularidades,
-        empresa,
-      );
-    }
-
     return { empresa, irregularidades };
   }
 
@@ -6649,6 +6642,11 @@ export class IrregularidadeService {
     return irregularidade;
   }
 
+  /**
+   * Próximo numeroIrregularidade do ano = max(OS, vistoria) + 1.
+   * Contador separado da vistoria; o cruzamento evita colisão de os_orig BRT
+   * com números já usados como numeroVistoria no período de agrupamento.
+   */
   private async generateNumeroIrregularidade(
     manager: EntityManager,
   ): Promise<number> {
@@ -6659,27 +6657,58 @@ export class IrregularidadeService {
     ]);
 
     const prefixoAno = `${anoAtual}`;
-    const rows = await manager.query(
-      `
-        SELECT
-          MAX(numero_irregularidade) AS max_num
-        FROM irregularidades
-        WHERE numero_irregularidade IS NOT NULL
-          AND numero_irregularidade::text LIKE $1
-      `,
-      [`${prefixoAno}%`],
-    );
+    const likeAno = `${prefixoAno}%`;
+    const [rowsOs, rowsVistoria] = await Promise.all([
+      manager.query(
+        `
+          SELECT
+            MAX(numero_irregularidade) AS max_num
+          FROM irregularidades
+          WHERE numero_irregularidade IS NOT NULL
+            AND numero_irregularidade::text LIKE $1
+        `,
+        [likeAno],
+      ),
+      manager.query(
+        `
+          SELECT
+            MAX(numero_vistoria) AS max_num
+          FROM vistorias
+          WHERE numero_vistoria IS NOT NULL
+            AND numero_vistoria::text LIKE $1
+        `,
+        [likeAno],
+      ),
+    ]);
 
-    const maxNumRaw = rows?.[0]?.max_num;
-    const maxNum =
-      maxNumRaw === null || maxNumRaw === undefined ? 0 : Number(maxNumRaw);
-    const maxNumTexto = maxNum > 0 ? String(maxNum) : '';
-    const maxSeq = maxNumTexto.startsWith(prefixoAno)
-      ? Number(maxNumTexto.slice(prefixoAno.length) || '0')
-      : 0;
-    const proximaSequencia = maxSeq + 1;
+    const maxSeqOs = this.extrairSequenciaAno(
+      rowsOs?.[0]?.max_num,
+      prefixoAno,
+    );
+    const maxSeqVistoria = this.extrairSequenciaAno(
+      rowsVistoria?.[0]?.max_num,
+      prefixoAno,
+    );
+    const proximaSequencia = Math.max(maxSeqOs, maxSeqVistoria) + 1;
 
     return Number(`${prefixoAno}${proximaSequencia}`);
+  }
+
+  /** Extrai o sequencial após o prefixo do ano (ex.: 20262500 → 2500). */
+  private extrairSequenciaAno(
+    maxNumRaw: unknown,
+    prefixoAno: string,
+  ): number {
+    const maxNum =
+      maxNumRaw === null || maxNumRaw === undefined ? 0 : Number(maxNumRaw);
+    if (!Number.isFinite(maxNum) || maxNum <= 0) {
+      return 0;
+    }
+    const maxNumTexto = String(maxNum);
+    if (!maxNumTexto.startsWith(prefixoAno)) {
+      return 0;
+    }
+    return Number(maxNumTexto.slice(prefixoAno.length) || '0');
   }
 
   private isNumeroIrregularidadeUniqueViolation(error: unknown): boolean {

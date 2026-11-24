@@ -32,17 +32,17 @@ Referencia funcional: **RN-VIS-006** (`docs/regras-negocio.md`) — integracao O
 | `REGISTRADA` | Corrigir classificacao | `REGISTRADA` | Destino valido e autorizado | `422` destino invalido |
 | `REGISTRADA` | Cancelar irregularidade | `CANCELADA` | Motivo obrigatorio | `400` motivo obrigatorio |
 | `REGISTRADA` | Enviar para manutencao (sem API) | `EM_MANUTENCAO` | Empresa de manutencao definida; combustivel/area no escopo da empresa (allowlist) | `400` fora do escopo; `422` transicao invalida |
-| `REGISTRADA` | Enviar para manutencao (com API) | `EM_MANUTENCAO` | Escopo combustivel/area OK; selecao completa da vistoria **no escopo da empresa** (OS fora do escopo podem ficar no Tratamento); ERP (se ativo) OK por veiculo; POST OS BRT OK ou duplicada (1 vistoria = 1 OS) | `400` fora do escopo; grupo permanece `REGISTRADA` + erro ERP/BRT; reenvio idempotente |
+| `REGISTRADA` | Enviar para manutencao (com API) | `EM_MANUTENCAO` | Escopo combustivel/area OK; subset permitido; ERP (se ativo) OK por veiculo; POST OS BRT 1:1 OK ou duplicada (`os_orig` = `numeroIrregularidade`) | `400` fora do escopo; veiculo permanece `REGISTRADA` + erro ERP/BRT; reenvio idempotente |
 | `RETRABALHO_GARANTIA` | Corrigir classificacao | `RETRABALHO_GARANTIA` | Destino valido e autorizado | `422` destino invalido |
 | `RETRABALHO_GARANTIA` | Cancelar irregularidade | `CANCELADA` | Motivo obrigatorio | `400` motivo obrigatorio |
-| `RETRABALHO_GARANTIA` | Reenviar para manutencao | `EM_MANUTENCAO` | Grupo completo da vistoria; `os_orig` = `numeroVistoria-N` (N≥2); empresa BRT: `reg_pai` = `numOs` do grupo original; empresa configurada | Erro API: grupo permanece `RETRABALHO_GARANTIA` / `REGISTRADA` |
+| `RETRABALHO_GARANTIA` | Reenviar para manutencao | `EM_MANUTENCAO` | `os_orig` = `numeroIrregularidade-N` (N≥2); empresa BRT: `reg_pai` = `numOs` anterior da irreg; empresa configurada | Erro API: item permanece `RETRABALHO_GARANTIA` / `REGISTRADA` |
 | `EM_MANUTENCAO` | Concluir manutencao (sem controle API) | `CONCLUIDA` | Evidencia minima quando obrigatoria | `422` pendencia |
 | `EM_MANUTENCAO` | Concluir manutencao (controle API) | `CONCLUIDA` | Conclusao manual permitida; nao chama BRT; vinculos OS/ERP permanecem para rastreio | `400` status/empresa |
 | `EM_MANUTENCAO` | Retorno BRT `Disponivel` (poll v2) | `CONCLUIDA` | OS ativa no grupo; match tolerante de `situacao`; 1× por ciclo | Idempotente se ja `CONCLUIDA` |
 | `EM_MANUTENCAO` | Retorno ERP `concluida: true` (busca) | `CONCLUIDA` (+ `VALIDADA` se modo) | Empresa `NENHUMA` na allowlist; busca ativa; `erp_codigo_pedido` | Idempotente; off = zero GET |
 | `EM_MANUTENCAO` | Marcar nao procede (sem controle API) | `NAO_PROCEDE` | Justificativa obrigatoria | `400` justificativa obrigatoria |
 | `EM_MANUTENCAO` | Marcar nao procede (controle API) | — | **Bloqueado** (retorno integrado nao mapeia nao procede) | `400` bloqueio manual |
-| `EM_MANUTENCAO` | Cancelar OS BRT (controle API) | `REGISTRADA` | POST cancelamento BRT OK; permissao `cancel_os_brt`; OS ativa; **grupo** da vistoria | Grupo permanece `EM_MANUTENCAO` + erro BRT |
+| `EM_MANUTENCAO` | Cancelar OS BRT (controle API) | `REGISTRADA` | POST cancelamento BRT OK; permissao `cancel_os_brt`; OS ativa; mesmo `os_orig`/`numOs` | Permanece `EM_MANUTENCAO` + erro BRT |
 | `EM_MANUTENCAO` | Retorno BRT `Cancelado` (poll v2) | `REGISTRADA` | OS ativa no grupo; match tolerante; limpa vinculos BRT ativos + `erp_*` | Idempotente se ja no Tratamento |
 | `NAO_PROCEDE` | Reclassificar / cancelar / reenviar manutencao | `NAO_PROCEDE` / `CANCELADA` / `EM_MANUTENCAO` | Fila Tratamento; sem empresa vinculada | `400` motivo / empresa |
 | `CONCLUIDA` | Validar final | `VALIDADA` | Conferencia aprovada | `422` pendencia |
@@ -361,8 +361,8 @@ Pipeline: ERP (flag global) → BRT (empresa API) → transicao. Atomico **por v
 - Flags: tipo integracao, enviar e-mail relatorio, credenciais BRT (homolog/prod), URL base.
 
 ### US4.2 - Enviar irregularidade/lote com ramificacao API
-- **Entrega 1:** 1 vistoria = 1 OS BRT; `os_orig` = `numeroVistoria` (+ `-N` no reenvio); selecao all-or-nothing das elegiveis **no escopo da empresa** (OS fora do escopo podem ficar no Tratamento / outra empresa); `comenta` multilinha; sucesso/falha atomicos por vistoria; sucesso parcial entre vistorias no lote; erros no Tratamento com detalhe.
-- Plano: `docs/PLANO_BRT_OS_AGRUPAMENTO_VISTORIA.md`.
+- **Atual (v1.8):** 1 irregularidade = 1 OS BRT; `os_orig` = `numeroIrregularidade` (+ `-N` no reenvio); subset permitido; `comenta` da irreg; sucesso/falha atomicos por veiculo; erros no Tratamento com detalhe; numeracao OS com piso `max(OS, vistoria)+1` no ano.
+- **Historico Entrega 1 (superseded):** 1 vistoria = 1 OS BRT — ver `docs/PLANO_BRT_OS_AGRUPAMENTO_VISTORIA.md`.
 
 ### US4.3 - Historico de OS externas
 - Multiplos `os_orig`/`numOs` por irregularidade; OS ativa vs tentativas anteriores.
@@ -384,7 +384,7 @@ Pipeline: ERP (flag global) → BRT (empresa API) → transicao. Atomico **por v
 - Cada item: `situacao`, `historico[]` (crescente), `insumo[]` (somente cresce); sem id de linha proprio.
 - `situacao` oficiais: `Aberto`, `Aceite`, `Execucao`, `Retido`, `Paralisada`, `Finalizada`, `Disponivel`, `Cancelado` — comparacao **tolerante** (case/grafia).
 
-**Gatilhos de transicao OMNI (grupo da vistoria = mesmo `os_orig`/`numOs` ativos)**
+**Gatilhos de transicao OMNI (mesmo `os_orig`/`numOs` ativos; em 1:1 = 1 irreg)**
 
 | Situacao BRT | Status OMNI | Tela | Efeito colateral |
 | --- | --- | --- | --- |

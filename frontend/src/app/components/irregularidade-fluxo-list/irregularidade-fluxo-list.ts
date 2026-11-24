@@ -1268,11 +1268,6 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     let fallbackError = 'Erro ao executar ação.';
 
     if (this.modalAcao === 'iniciar-manutencao') {
-      const erroSelecao = this.validarSelecaoCompletaVistoriasBrtLocal();
-      if (erroSelecao) {
-        this.modalError = erroSelecao;
-        return;
-      }
       const payload: IniciarManutencaoLotePayload = {
         idEmpresaManutencao: this.modalIdEmpresaManutencao,
         idsIrregularidades: itemIds,
@@ -1411,13 +1406,6 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     }
     if (!this.actionTargetIds.length) {
       this.modalError = 'Selecione ao menos uma irregularidade.';
-      return;
-    }
-
-    const erroSelecao = this.validarSelecaoCompletaVistoriasBrtLocal();
-    if (erroSelecao) {
-      this.modalError = erroSelecao;
-      this.manutencaoPreview = null;
       return;
     }
 
@@ -2200,13 +2188,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     if (!this.isEmpresaBrtOs(empresa) || !this.actionTargetIds.length) {
       return null;
     }
-    const selecionadas = this.items.filter((item) =>
-      this.actionTargetIds.includes(item.id),
-    );
-    const vistorias = new Set(
-      selecionadas.map((i) => i.idvistoria).filter((id): id is string => !!id),
-    );
-    return `${vistorias.size} OS (1 por vistoria)`;
+    const n = this.actionTargetIds.length;
+    return `${n} OS BRT (1 por irregularidade)`;
   }
 
   private getEmpresaManutencaoSelecionada(): EmpresaTerceira | undefined {
@@ -2288,61 +2271,6 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return empresa?.integracaoManutencao === 'BRT_OS';
   }
 
-  /**
-   * Validação local (lista carregada). Backend é a fonte da verdade.
-   */
-  private validarSelecaoCompletaVistoriasBrtLocal(): string | null {
-    const empresa = this.getEmpresaManutencaoSelecionada();
-    if (!this.isEmpresaBrtOs(empresa)) {
-      return null;
-    }
-    const selecionadas = this.items.filter((item) =>
-      this.actionTargetIds.includes(item.id),
-    );
-    const porVistoria = new Map<string, IrregularidadeFluxoItem[]>();
-    for (const item of selecionadas) {
-      const key = item.idvistoria ?? '';
-      if (!key) {
-        return 'Há irregularidade sem vistoria vinculada na seleção.';
-      }
-      const lista = porVistoria.get(key) ?? [];
-      lista.push(item);
-      porVistoria.set(key, lista);
-    }
-
-    const elegiveisStatus = new Set([
-      StatusIrregularidade.REGISTRADA,
-      StatusIrregularidade.RETRABALHO_GARANTIA,
-      StatusIrregularidade.NAO_PROCEDE,
-    ]);
-    if (!empresa) {
-      return 'Selecione a empresa de manutenção.';
-    }
-
-    for (const [idVistoria, grupo] of porVistoria) {
-      // Elegíveis BRT = status ok + dentro do escopo da empresa (split por empresa).
-      const elegiveisNaLista = this.items.filter(
-        (item) =>
-          item.idvistoria === idVistoria &&
-          elegiveisStatus.has(item.statusAtual) &&
-          this.itemNoEscopoEmpresa(empresa, item),
-      );
-      const selecionadosIds = new Set(grupo.map((i) => i.id));
-      const faltantes = elegiveisNaLista.filter((i) => !selecionadosIds.has(i.id));
-      if (faltantes.length > 0 || elegiveisNaLista.length !== grupo.length) {
-        const numero =
-          grupo[0]?.numeroVistoria ??
-          elegiveisNaLista[0]?.numeroVistoria ??
-          idVistoria.slice(0, 8);
-        return (
-          `A vistoria ${numero} tem ${elegiveisNaLista.length} irregularidade(s) elegível(is) no escopo de ${empresa.descricao}; ` +
-          `selecione todas para enviar à BRT (${grupo.length} selecionada(s)).`
-        );
-      }
-    }
-    return null;
-  }
-
   private getResumoSelecaoBrtOs(): string {
     const empresa = this.getEmpresaManutencaoSelecionada();
     if (!this.isEmpresaBrtOs(empresa) || !this.actionTargetIds.length) {
@@ -2351,16 +2279,8 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
       }
       return `Aplicando em ${this.actionTargetIds.length} irregularidades selecionadas.`;
     }
-    const selecionadas = this.items.filter((item) =>
-      this.actionTargetIds.includes(item.id),
-    );
-    const vistorias = new Set(
-      selecionadas.map((i) => i.idvistoria).filter((id): id is string => !!id),
-    );
-    return (
-      `${selecionadas.length} irregularidade(s) em ${vistorias.size} vistoria(s) → ` +
-      `${vistorias.size} OS na BRT.`
-    );
+    const n = this.actionTargetIds.length;
+    return `${n} irregularidade(s) → ${n} OS na BRT.`;
   }
 
   private contarGruposOsBrtSelecionados(): number {
@@ -2377,7 +2297,7 @@ export class IrregularidadeFluxoListComponent implements OnInit, OnDestroy {
     return seen.size;
   }
 
-  /** Um representante por OS BRT (backend cancela o grupo inteiro). */
+  /** Um representante por par os_orig/numOs (evita cancelar a mesma OS BRT N vezes). */
   private getIdsRepresentantesCancelamentoOsBrt(itemIds: string[]): string[] {
     const selected = this.items.filter((item) => itemIds.includes(item.id));
     const seen = new Set<string>();

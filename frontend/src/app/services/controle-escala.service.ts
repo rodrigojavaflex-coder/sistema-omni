@@ -4,8 +4,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   EscalaPainelResponse,
+  OsRetencaoResponse,
   SyncEscalaResult,
   SyncTelemetriaResult,
+  TrocarVeiculoEscalaResult,
 } from '../models/controle-escala.model';
 
 @Injectable({ providedIn: 'root' })
@@ -29,15 +31,41 @@ export class ControleEscalaService {
     );
   }
 
-  syncTelemetria(idEmpresa?: string): Observable<SyncTelemetriaResult> {
+  syncTelemetria(opcoes?: {
+    idEmpresa?: string;
+    prefixo?: string;
+    idVeiculo?: string;
+  }): Observable<SyncTelemetriaResult> {
     let params = new HttpParams();
-    if (idEmpresa?.trim()) {
-      params = params.set('idEmpresa', idEmpresa.trim());
+    if (opcoes?.idEmpresa?.trim()) {
+      params = params.set('idEmpresa', opcoes.idEmpresa.trim());
+    }
+    if (opcoes?.prefixo?.trim()) {
+      params = params.set('prefixo', opcoes.prefixo.trim());
+    }
+    if (opcoes?.idVeiculo?.trim()) {
+      params = params.set('idVeiculo', opcoes.idVeiculo.trim());
     }
     return this.http.post<SyncTelemetriaResult>(
       `${this.apiUrl}/sync/telemetria`,
       {},
       { params },
+    );
+  }
+
+  getOsRetencao(idVeiculo: string): Observable<OsRetencaoResponse> {
+    return this.http.get<OsRetencaoResponse>(
+      `${this.apiUrl}/veiculo/${idVeiculo}/os-retencao`,
+    );
+  }
+
+  trocarVeiculo(
+    idEscalaDia: string,
+    idVeiculo: string,
+  ): Observable<TrocarVeiculoEscalaResult> {
+    return this.http.patch<TrocarVeiculoEscalaResult>(
+      `${this.apiUrl}/escala-dia/${idEscalaDia}/veiculo`,
+      { idVeiculo },
     );
   }
 }

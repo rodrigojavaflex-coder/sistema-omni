@@ -21,12 +21,20 @@ export class VeiculoEscalaTurno extends BaseEntity {
   escalaDia?: VeiculoEscalaDia;
 
   @ApiProperty({ required: false, nullable: true })
-  @Column({ name: 'linha', length: 120, nullable: true })
-  linha?: string | null;
+  @Column({ name: 'grupo', type: 'varchar', length: 255, nullable: true })
+  grupo?: string | null;
 
   @ApiProperty({ required: false, nullable: true })
-  @Column({ name: 'descricao_linha', length: 255, nullable: true })
-  descricaoLinha?: string | null;
+  @Column({ name: 'alocacao', type: 'varchar', length: 255, nullable: true })
+  alocacao?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  @Column({ name: 'tarefa', type: 'varchar', length: 80, nullable: true })
+  tarefa?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  @Column({ name: 'tipo_viagem', type: 'varchar', length: 40, nullable: true })
+  tipoViagem?: string | null;
 
   @ApiProperty({ required: false, nullable: true })
   @Column({
@@ -44,27 +52,42 @@ export class VeiculoEscalaTurno extends BaseEntity {
   km?: number | null;
 
   @ApiProperty({ required: false, nullable: true })
-  @Column({ name: 'matricula', length: 40, nullable: true })
+  @Column({ name: 'matricula', type: 'varchar', length: 40, nullable: true })
   matricula?: string | null;
 
   @ApiProperty({ required: false, nullable: true })
-  @Column({ name: 'motorista', length: 255, nullable: true })
+  @Column({ name: 'motorista', type: 'varchar', length: 255, nullable: true })
   motorista?: string | null;
 
   @ApiProperty({ required: false, nullable: true })
-  @Column({ name: 'nome_turno', length: 80, nullable: true })
+  @Column({ name: 'nome_turno', type: 'varchar', length: 80, nullable: true })
   nomeTurno?: string | null;
 
   @ApiProperty({ required: false, nullable: true })
-  @Column({ name: 'numero_viagem', length: 80, nullable: true })
+  @Column({
+    name: 'numero_viagem',
+    type: 'varchar',
+    length: 80,
+    nullable: true,
+  })
   numeroViagem?: string | null;
 
   @ApiProperty({ required: false, nullable: true })
-  @Column({ name: 'horario_inicio', length: 16, nullable: true })
+  @Column({
+    name: 'horario_inicio',
+    type: 'varchar',
+    length: 16,
+    nullable: true,
+  })
   horarioInicio?: string | null;
 
   @ApiProperty({ required: false, nullable: true })
-  @Column({ name: 'horario_fim', length: 16, nullable: true })
+  @Column({
+    name: 'horario_fim',
+    type: 'varchar',
+    length: 16,
+    nullable: true,
+  })
   horarioFim?: string | null;
 
   @ApiProperty()

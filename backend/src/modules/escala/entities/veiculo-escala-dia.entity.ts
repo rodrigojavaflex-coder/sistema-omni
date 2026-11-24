@@ -31,6 +31,17 @@ export class VeiculoEscalaDia extends BaseEntity {
   @JoinColumn({ name: 'id_veiculo' })
   veiculo?: Veiculo | null;
 
+  @ApiProperty({
+    description:
+      'Quando true, o sync INFOBUS atualiza KM/turnos mas não sobrescreve id_veiculo',
+  })
+  @Column({
+    name: 'veiculo_substituido_manual',
+    type: 'boolean',
+    default: false,
+  })
+  veiculoSubstituidoManual: boolean;
+
   @ApiProperty({ description: 'KM previsto da escala' })
   @Column({
     name: 'km_total',

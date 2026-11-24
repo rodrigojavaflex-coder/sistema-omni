@@ -1,62 +1,192 @@
 <div class="controle-escala-page">
-  <header class="page-header">
-    <div>
-      <h2 class="page-title">Controle de Escala e Liberação</h2>
-      <p class="page-subtitle">
-        Cruza escala INFOBUS do dia, telemetria BRT e OS graves (Manutenção/Validação).
-      </p>
-    </div>
-  </header>
+  <section class="filters-panel" aria-label="Filtros da escala">
+    <div class="filters-row">
+      <h2 class="fluxo-titulo">ESCALA</h2>
 
-  <section class="filters-bar">
-    <div class="filter-group">
-      <label class="form-label" for="escala-data">Data da escala</label>
-      <input
-        id="escala-data"
-        type="date"
-        class="form-input"
-        [(ngModel)]="data"
-        [disabled]="loading() || syncing()"
-      />
-    </div>
+      <div class="filter-group">
+        <label class="form-label" for="escala-data">Data da escala</label>
+        <input
+          id="escala-data"
+          type="date"
+          class="form-input"
+          [ngModel]="data"
+          (ngModelChange)="onDataChange($event)"
+          [disabled]="loading() || syncing()"
+        />
+      </div>
 
-    <label class="checkbox-inline">
-      <input
-        type="checkbox"
-        [ngModel]="somenteAlertas()"
-        (ngModelChange)="onSomenteAlertasChange($event)"
-        [disabled]="loading()"
-      />
-      Somente alertas
-    </label>
+      <div class="filter-group">
+        <label class="form-label" for="escala-turno">Turno</label>
+        <select
+          id="escala-turno"
+          class="form-input"
+          [ngModel]="turnoFiltro()"
+          (ngModelChange)="onTurnoFiltroChange($event)"
+          [disabled]="loading() || !opcoesTurno().length"
+          required
+        >
+          <option value="" disabled>Selecione o turno</option>
+          @for (op of opcoesTurno(); track op) {
+            <option [value]="op">{{ rotuloTurno(op) }}</option>
+          }
+        </select>
+      </div>
 
-    <div class="actions">
-      <button
-        type="button"
-        class="btn btn-secondary"
-        (click)="carregar()"
-        [disabled]="loading() || syncing() || !data"
-      >
-        {{ loading() ? 'Carregando...' : 'Atualizar' }}
-      </button>
-      <button
-        type="button"
-        class="btn btn-primary"
-        (click)="sincronizarEscala()"
-        [disabled]="!canSync || loading() || syncing() || !data"
-        [attr.title]="!canSync ? 'Sem permissão de sincronização' : null"
-      >
-        Sync escala
-      </button>
-      <button
-        type="button"
-        class="btn btn-primary"
-        (click)="sincronizarTelemetria()"
-        [disabled]="!canSync || loading() || syncing()"
-        [attr.title]="!canSync ? 'Sem permissão de sincronização' : null"
-      >
-        Sync telemetria
-      </button>
+      <div class="filter-group filter-group--veiculo">
+        <label class="form-label" for="escala-veiculo">Veículo</label>
+        <app-veiculo-autocomplete
+          id="escala-veiculo"
+          class="filter-veiculo"
+          placeholder="Buscar veículo..."
+          [ngModel]="veiculoFiltroId()"
+          (ngModelChange)="onVeiculoFiltroIdChange($event)"
+          (veiculoSelected)="onVeiculoSelected($event)"
+        ></app-veiculo-autocomplete>
+      </div>
+
+      <div class="filter-group">
+        <label class="form-label" for="escala-combustivel">Combustível</label>
+        <select
+          id="escala-combustivel"
+          class="form-input"
+          [ngModel]="combustivelFiltro()"
+          (ngModelChange)="onCombustivelFiltroChange($event)"
+          [disabled]="loading() || !opcoesCombustivel().length"
+        >
+          <option value="">Todos</option>
+          @for (op of opcoesCombustivel(); track op) {
+            <option [value]="op">{{ op }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group filter-group--grupo">
+        <label class="form-label" for="escala-grupo">Grupo</label>
+        <select
+          id="escala-grupo"
+          class="form-input"
+          [ngModel]="grupoFiltro()"
+          (ngModelChange)="onGrupoFiltroChange($event)"
+          [disabled]="loading() || !opcoesGrupo().length"
+        >
+          <option value="">Todos</option>
+          @for (op of opcoesGrupo(); track op) {
+            <option [value]="op">{{ op }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group filter-group--grupo">
+        <label class="form-label" for="escala-alocacao">Alocação</label>
+        <select
+          id="escala-alocacao"
+          class="form-input"
+          [ngModel]="alocacaoFiltro()"
+          (ngModelChange)="onAlocacaoFiltroChange($event)"
+          [disabled]="loading() || !opcoesAlocacao().length"
+        >
+          <option value="">Todas</option>
+          @for (op of opcoesAlocacao(); track op) {
+            <option [value]="op">{{ op }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="form-label" for="escala-tarefa">Tarefa</label>
+        <select
+          id="escala-tarefa"
+          class="form-input"
+          [ngModel]="tarefaFiltro()"
+          (ngModelChange)="onTarefaFiltroChange($event)"
+          [disabled]="loading() || !opcoesTarefa().length"
+        >
+          <option value="">Todas</option>
+          @for (op of opcoesTarefa(); track op) {
+            <option [value]="op">{{ op }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="form-label" for="escala-tipo">Tipo</label>
+        <select
+          id="escala-tipo"
+          class="form-input"
+          [ngModel]="tipoFiltro()"
+          (ngModelChange)="onTipoFiltroChange($event)"
+          [disabled]="loading() || !opcoesTipo().length"
+        >
+          <option value="">Todos</option>
+          @for (op of opcoesTipo(); track op) {
+            <option [value]="op">{{ op }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="form-label" for="escala-alerta">Alerta</label>
+        <select
+          id="escala-alerta"
+          class="form-input"
+          [ngModel]="alertaFiltro()"
+          (ngModelChange)="onAlertaFiltroChange($event)"
+          [disabled]="loading() || !turnoFiltro()"
+        >
+          <option value="">Todos</option>
+          <option value="retido">Retido</option>
+          <option value="carregamento">Carregamento</option>
+          <option value="conflito">Veículo em mais de uma linha</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="carregar()"
+          [disabled]="loading() || syncing() || !data"
+        >
+          {{ loading() ? 'Carregando...' : 'Atualizar' }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-com-icone"
+          (click)="sincronizarEscala()"
+          [disabled]="!canSync || loading() || syncing() || !!refreshingTelemetriaPrefixo() || !data"
+          [attr.title]="!canSync ? 'Sem permissão de sincronização' : 'Buscar escala'"
+        >
+          <i
+            class="fas fa-sync-alt"
+            [class.fa-spin]="syncing()"
+            aria-hidden="true"
+          ></i>
+          Escala
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-com-icone"
+          (click)="sincronizarTelemetria()"
+          [disabled]="!canSync || loading() || syncing() || !!refreshingTelemetriaPrefixo()"
+          [attr.title]="!canSync ? 'Sem permissão de sincronização' : 'Sincronizar telemetria'"
+        >
+          <i
+            class="fas fa-sync-alt"
+            [class.fa-spin]="syncing()"
+            aria-hidden="true"
+          ></i>
+          Telemetria
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="imprimirRelatorioEscala()"
+          [disabled]="loading() || syncing() || !!refreshingTelemetriaPrefixo() || printingEscala() || printingCarregamento() || !linhasTabela().length"
+          title="Gerar relatório da escala filtrada"
+        >
+          {{ printingEscala() ? 'Gerando...' : 'Gerar relatório' }}
+        </button>
+      </div>
     </div>
   </section>
 
@@ -67,98 +197,308 @@
     <div class="alert alert-danger" role="alert">{{ error() }}</div>
   }
 
-  @if (painel(); as p) {
-    <section class="resumo-cards" aria-label="Resumo do dia">
-      <article class="resumo-card">
-        <span class="resumo-label">Na escala</span>
-        <strong class="resumo-value">{{ p.total }}</strong>
-      </article>
-      <article class="resumo-card resumo-card--warn">
-        <span class="resumo-label">Retidos</span>
-        <strong class="resumo-value">{{ p.resumo.retidosNaEscala }}</strong>
-      </article>
-      <article class="resumo-card resumo-card--warn">
-        <span class="resumo-label">Autonomia</span>
-        <strong class="resumo-value">{{ p.resumo.alertaAutonomia }}</strong>
-      </article>
-      <article class="resumo-card">
-        <span class="resumo-label">Sem vínculo</span>
-        <strong class="resumo-value">{{ p.resumo.semVinculoVeiculo }}</strong>
-      </article>
-    </section>
-  }
-
   @if (loading()) {
     <p class="state-msg">Carregando painel...</p>
   } @else if (!painel()?.itens?.length) {
     <p class="state-msg">
-      Nenhuma escala gravada para {{ data }}. Use «Sync escala» após configurar a aba Escala INFOBUS.
+      Nenhuma escala gravada para {{ data }}. Use «Escala» após configurar a aba Escala INFOBUS.
     </p>
-  } @else if (!itensFiltrados().length) {
-    <p class="state-msg">Nenhum veículo com alerta para o filtro atual.</p>
+  } @else if (!turnoFiltro()) {
+    <p class="state-msg">Selecione um turno para exibir a escala.</p>
+  } @else if (!linhasTabela().length) {
+    <p class="state-msg">
+      Nenhum registro para o filtro atual ({{ rotuloTurno(turnoFiltro()) }}).
+    </p>
   } @else {
     <div class="table-wrap">
       <table class="escala-table">
         <thead>
           <tr>
-            <th>Veículo</th>
-            <th>KM escala</th>
-            <th>Turnos</th>
-            <th>% / modelo</th>
-            <th>Autonomia (duas fontes)</th>
-            <th>Alertas</th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('veiculo')" [attr.aria-sort]="ariaSort('veiculo')">
+                Veículo
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'veiculo' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('tarefa')" [attr.aria-sort]="ariaSort('tarefa')">
+                Tarefa
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'tarefa' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('tipo')" [attr.aria-sort]="ariaSort('tipo')">
+                Tipo
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'tipo' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('turno')" [attr.aria-sort]="ariaSort('turno')">
+                Turno
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'turno' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('inicio')" [attr.aria-sort]="ariaSort('inicio')">
+                Início
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'inicio' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('fim')" [attr.aria-sort]="ariaSort('fim')">
+                Fim
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'fim' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('ateLargada')" [attr.aria-sort]="ariaSort('ateLargada')">
+                Até largada
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'ateLargada' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('entreTurnos')" [attr.aria-sort]="ariaSort('entreTurnos')">
+                Entre turnos
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'entreTurnos' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('kmTurno')" [attr.aria-sort]="ariaSort('kmTurno')">
+                KM turno
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'kmTurno' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('kmDia')" [attr.aria-sort]="ariaSort('kmDia')">
+                KM do dia
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'kmDia' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('grupo')" [attr.aria-sort]="ariaSort('grupo')">
+                Grupo
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'grupo' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('alocacao')" [attr.aria-sort]="ariaSort('alocacao')">
+                Alocação
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'alocacao' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('pct')" [attr.aria-sort]="ariaSort('pct')">
+                % Atual
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'pct' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('telemetria')" [attr.aria-sort]="ariaSort('telemetria')">
+                Telemetria
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'telemetria' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('sistema')" [attr.aria-sort]="ariaSort('sistema')">
+                Sistema
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'sistema' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" (click)="ordenarPor('alertas')" [attr.aria-sort]="ariaSort('alertas')">
+                Alertas
+                <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'alertas' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
+              </button>
+            </th>
           </tr>
         </thead>
         <tbody>
-          @for (item of itensFiltrados(); track item.prefixo) {
+          @for (row of linhasTabela(); track row.key) {
             <tr
-              [class.row-alerta]="item.alertaRetidoNaEscala || item.alertaAutonomia"
+              [class.row-alerta]="
+                row.item.alertaRetidoNaEscala || row.alertaAutonomiaTurno
+              "
+              [class.row-alerta-conflito]="row.alertaConflitoVeiculoTurno"
             >
               <td>
                 <div class="veiculo-cell">
-                  <strong>{{ item.descricao || item.prefixo }}</strong>
-                  <span class="muted">{{ item.placa || 'sem placa' }} · {{ item.combustivel || '—' }}</span>
+                  <strong>
+                    {{ row.item.descricao || row.item.prefixo }}
+                    .
+                    {{ row.item.combustivel || '—' }}
+                  </strong>
+                  <div class="telemetria-status-row">
+                    @if (statusTelemetriaVeiculo(row.item); as st) {
+                      <span
+                        class="telemetria-status"
+                        [class.telemetria-status--warn]="st.nivel === 'warn'"
+                        [class.telemetria-status--critico]="st.nivel === 'critico' || st.nivel === 'sem'"
+                      >
+                        {{ st.texto }}
+                      </span>
+                    }
+                    @if (canSync) {
+                      <button
+                        type="button"
+                        class="btn-refresh-telemetria"
+                        title="Atualizar telemetria deste veículo"
+                        (click)="atualizarTelemetriaVeiculo(row.item, $event)"
+                        [disabled]="
+                          syncing() ||
+                          loading() ||
+                          !!refreshingTelemetriaPrefixo()
+                        "
+                        [attr.aria-label]="'Atualizar telemetria de ' + (row.item.descricao || row.item.prefixo)"
+                      >
+                        <i
+                          class="fas fa-sync-alt"
+                          [class.fa-spin]="refreshingTelemetriaPrefixo() === row.item.prefixo"
+                          aria-hidden="true"
+                        ></i>
+                      </button>
+                    }
+                  </div>
+                  @if (row.item.veiculoSubstituidoManual) {
+                    <span class="muted">substituído ({{ row.item.prefixo }})</span>
+                  }
+                  @if (canTrocarVeiculo) {
+                    <button
+                      type="button"
+                      class="btn-link-troca"
+                      title="Trocar veículo desta escala"
+                      (click)="abrirTrocaVeiculo(row.item, $event)"
+                      [disabled]="trocaVeiculoLoading()"
+                    >
+                      Trocar veículo
+                    </button>
+                  }
                 </div>
               </td>
-              <td>{{ fmtKm(item.kmEscala) }}</td>
-              <td class="linhas-cell">{{ linhasResumo(item) }}</td>
+              <td class="grupos-cell">
+                @if (!row.grupos.length) {
+                  <span class="muted">—</span>
+                } @else {
+                  <ul class="turno-grupos">
+                    @for (g of row.grupos; track $index) {
+                      <li>
+                        <span class="turno-grupo-nome">{{ g.tarefa || '—' }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </td>
+              <td class="grupos-cell">
+                @if (!row.grupos.length) {
+                  <span class="muted">—</span>
+                } @else {
+                  <ul class="turno-grupos">
+                    @for (g of row.grupos; track $index) {
+                      <li>
+                        <span class="turno-grupo-nome">{{ g.tipoViagem || '—' }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </td>
               <td>
-                {{ item.bateriaPct != null ? item.bateriaPct + '%' : '—' }}
-                <span class="muted" *ngIf="item.kmPorPercentualModelo != null">
-                  · {{ item.kmPorPercentualModelo }} km/%
+                <span class="turno-badge">{{ row.turnoRotulo }}</span>
+              </td>
+              <td class="hora-cell">{{ fmtHora(row.horarioInicio) }}</td>
+              <td class="hora-cell">{{ fmtHora(row.horarioFim) }}</td>
+              <td class="hora-cell" [attr.title]="row.horarioInicio ? 'Tempo até o início do turno' : null">
+                {{ row.tempoAteLargada || '—' }}
+              </td>
+              <td
+                class="hora-cell"
+                [attr.title]="
+                  row.tempoEntreTurnos
+                    ? 'Intervalo do fim deste turno até o início do próximo'
+                    : 'Sem turno seguinte neste dia'
+                "
+              >
+                {{ row.tempoEntreTurnos || '—' }}
+              </td>
+              <td>{{ fmtKm(row.kmTurno) }}</td>
+              <td>{{ fmtKm(row.item.kmEscala) }}</td>
+              <td class="grupos-cell">
+                @if (!row.grupos.length) {
+                  <span class="muted">—</span>
+                } @else {
+                  <ul class="turno-grupos">
+                    @for (g of row.grupos; track $index) {
+                      <li>
+                        <span class="turno-grupo-nome">{{ g.grupo }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </td>
+              <td class="grupos-cell">
+                @if (!row.grupos.length) {
+                  <span class="muted">—</span>
+                } @else {
+                  <ul class="turno-grupos">
+                    @for (g of row.grupos; track $index) {
+                      <li>
+                        <span class="turno-grupo-nome">{{ g.alocacao || '—' }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </td>
+              <td>
+                {{ row.item.bateriaPct != null ? row.item.bateriaPct + '%' : '—' }}
+              </td>
+              <td class="autonomia-cell">
+                {{ fmtKm(row.item.telemetria.autonomiaKm) }}
+                <span class="muted" *ngIf="row.item.telemetria.autonomia100Km != null">
+                  (100%: {{ fmtKm(row.item.telemetria.autonomia100Km) }})
+                </span>
+              </td>
+              <td class="autonomia-cell">
+                {{ fmtKm(row.item.calculoOmni.autonomiaKm) }}
+                <span class="muted" *ngIf="row.item.calculoOmni.autonomia100Km != null">
+                  (100%: {{ fmtKm(row.item.calculoOmni.autonomia100Km) }})
                 </span>
               </td>
               <td>
-                <div class="fontes">
-                  <div>
-                    <span class="fonte-label">Telemetria</span>
-                    {{ fmtKm(item.telemetria.autonomiaKm) }}
-                    <span class="muted" *ngIf="item.telemetria.autonomia100Km != null">
-                      (100%: {{ fmtKm(item.telemetria.autonomia100Km) }})
-                    </span>
-                  </div>
-                  <div>
-                    <span class="fonte-label">OMNI</span>
-                    {{ fmtKm(item.calculoOmni.autonomiaKm) }}
-                    <span class="muted" *ngIf="item.calculoOmni.autonomia100Km != null">
-                      (100%: {{ fmtKm(item.calculoOmni.autonomia100Km) }})
-                    </span>
-                  </div>
-                </div>
-              </td>
-              <td>
                 <div class="alertas">
-                  @if (item.alertaRetidoNaEscala) {
-                    <span class="badge badge-retido" title="OS vermelha em Manutenção ou Validação">
-                      RETIDO ({{ item.qtdOsVermelhas }})
-                    </span>
+                  @if (row.item.alertaRetidoNaEscala) {
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-retido"
+                      title="Ver OS vermelhas que retêm o veículo"
+                      (click)="abrirOsRetencao(row.item, $event)"
+                      [disabled]="!row.item.idVeiculo || loadingRetencao()"
+                    >
+                      RETIDO ({{ row.item.qtdOsVermelhas }})
+                    </button>
                   }
-                  @if (item.alertaAutonomia) {
-                    <span class="badge badge-autonomia" title="Carregar antes de largar">
+                  @if (row.alertaAutonomiaTurno) {
+                    <button
+                      type="button"
+                      class="btn btn-autonomia"
+                      title="Ver resumo dos motivos para carregar antes de largar"
+                      (click)="abrirAutonomiaResumo(row, $event)"
+                    >
                       Carregar antes de largar
-                    </span>
+                    </button>
                   }
-                  @if (!item.alertaRetidoNaEscala && !item.alertaAutonomia) {
+                  @if (row.alertaConflitoVeiculoTurno) {
+                    <button
+                      type="button"
+                      class="btn alerta-conflito"
+                      title="Ver detalhes do conflito de veículo neste turno"
+                      (click)="abrirConflitoVeiculo(row, $event)"
+                    >
+                      Veículo em mais de uma linha
+                    </button>
+                  }
+                  @if (
+                    !row.item.alertaRetidoNaEscala &&
+                    !row.alertaAutonomiaTurno &&
+                    !row.alertaConflitoVeiculoTurno
+                  ) {
                     <span class="muted">OK</span>
                   }
                 </div>
@@ -167,6 +507,421 @@
           }
         </tbody>
       </table>
+    </div>
+  }
+
+  @if (showRetencaoModal()) {
+    <div class="retencao-backdrop" role="presentation">
+      <div
+        class="retencao-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="retencao-titulo"
+      >
+        <div class="retencao-header">
+          <div>
+            <h3 id="retencao-titulo" class="retencao-titulo">OS retendo o veículo</h3>
+            @if (retencao(); as r) {
+              <p class="retencao-subtitulo">
+                {{ r.descricao || 'Veículo' }}
+                @if (r.placa) {
+                  · {{ r.placa }}
+                }
+                · {{ r.total }} OS
+              </p>
+            }
+          </div>
+          <button
+            type="button"
+            class="retencao-close"
+            (click)="fecharOsRetencao()"
+            aria-label="Fechar"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="retencao-body">
+          @if (loadingRetencao()) {
+            <p class="muted">Carregando OS...</p>
+          } @else if (!retencao()?.itens?.length) {
+            <p class="muted">Nenhuma OS vermelha em Manutenção/Validação para este veículo.</p>
+          } @else {
+            <div class="retencao-table-wrap">
+              <table class="retencao-table">
+                <thead>
+                  <tr>
+                    <th>Números</th>
+                    <th>Status</th>
+                    <th>Empresa</th>
+                    <th>Área / Componente / Sintoma</th>
+                    <th>Descrição</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (os of retencao()!.itens; track os.id) {
+                    <tr>
+                      <td class="retencao-numeros">
+                        <div>OS OMNI: #{{ os.numeroIrregularidade }}</div>
+                        @if (os.erpCodigoPedido) {
+                          <div class="muted">Pedido ERP: {{ os.erpCodigoPedido }}</div>
+                        }
+                        <div>OS BRT: {{ os.numOsExternoAtual ?? '—' }}</div>
+                        @if (os.statusBrtAtual) {
+                          <div class="muted">Status BRT: {{ os.statusBrtAtual }}</div>
+                        }
+                        @if (os.osOrigAtual) {
+                          <div class="muted">os_orig: {{ os.osOrigAtual }}</div>
+                        }
+                        <div>Vistoria: {{ os.numeroVistoria ?? '—' }}</div>
+                      </td>
+                      <td>
+                        <span class="retencao-status">{{ rotuloStatusRetencao(os.statusAtual) }}</span>
+                      </td>
+                      <td>{{ os.nomeEmpresa || '—' }}</td>
+                      <td class="retencao-area">
+                        {{ os.nomeArea || '—' }}
+                        › {{ os.nomeComponente || '—' }}
+                        › {{ os.descricaoSintoma || '—' }}
+                      </td>
+                      <td class="retencao-obs">{{ os.observacao || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+
+        <div class="retencao-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="imprimirOsRetencao()"
+            [disabled]="
+              loadingRetencao() ||
+              printingRetencao() ||
+              !retencao()?.itens?.length
+            "
+          >
+            {{ printingRetencao() ? 'Abrindo...' : 'Imprimir' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="fecharOsRetencao()"
+            [disabled]="printingRetencao()"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showTrocaVeiculoModal()) {
+    <div class="retencao-backdrop" role="presentation">
+      <div
+        class="retencao-modal troca-veiculo-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="troca-veiculo-titulo"
+      >
+        <div class="retencao-header">
+          <div>
+            <h3 id="troca-veiculo-titulo" class="retencao-titulo">
+              Trocar veículo da escala
+            </h3>
+            @if (trocaVeiculoItem(); as item) {
+              <p class="retencao-subtitulo">
+                Prefixo INFOBUS: {{ item.prefixo }}
+                @if (item.descricao || item.placa) {
+                  · atual: {{ item.descricao || '—' }}
+                  @if (item.placa) {
+                    ({{ item.placa }})
+                  }
+                }
+              </p>
+            }
+          </div>
+          <button
+            type="button"
+            class="retencao-close"
+            (click)="fecharTrocaVeiculo()"
+            [disabled]="trocaVeiculoLoading()"
+            aria-label="Fechar"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="retencao-body">
+          <p class="muted troca-veiculo-ajuda">
+            A troca vale para todos os turnos desta escala no dia. O sync atualizará KM e turnos, mas manterá o veículo. Se ele já estiver em outra linha no mesmo turno, a grade exibirá o conflito (sem bloquear).
+          </p>
+          <label class="form-label" for="troca-veiculo-busca">Novo veículo</label>
+          <app-veiculo-autocomplete
+            id="troca-veiculo-busca"
+            class="filter-veiculo"
+            placeholder="Buscar veículo OMNI..."
+            [ngModel]="trocaVeiculoIdSelecionado()"
+            (ngModelChange)="onTrocaVeiculoIdChange($event)"
+            (veiculoSelected)="onTrocaVeiculoSelected($event)"
+          ></app-veiculo-autocomplete>
+        </div>
+
+        <div class="retencao-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="fecharTrocaVeiculo()"
+            [disabled]="trocaVeiculoLoading()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="confirmarTrocaVeiculo()"
+            [disabled]="
+              trocaVeiculoLoading() || !trocaVeiculoIdSelecionado()
+            "
+          >
+            {{ trocaVeiculoLoading() ? 'Salvando...' : 'Confirmar troca' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showAutonomiaModal()) {
+    <div class="retencao-backdrop" role="presentation">
+      <div
+        class="retencao-modal autonomia-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="autonomia-titulo"
+      >
+        <div class="retencao-header">
+          <div>
+            <h3 id="autonomia-titulo" class="retencao-titulo">
+              Carregar antes de largar
+            </h3>
+            @if (autonomiaResumo(); as a) {
+              <p class="retencao-subtitulo">
+                {{ a.veiculo }}
+                @if (a.placa) {
+                  · {{ a.placa }}
+                }
+                · {{ a.turnoRotulo }}
+              </p>
+            }
+          </div>
+          <button
+            type="button"
+            class="retencao-close"
+            (click)="fecharAutonomiaResumo()"
+            aria-label="Fechar"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="retencao-body">
+          @if (autonomiaResumo(); as a) {
+            <section class="autonomia-contexto" aria-label="Dados do turno">
+              <div class="autonomia-chip">
+                <span class="autonomia-chip-label">Combustível</span>
+                <strong>{{ a.combustivel || '—' }}</strong>
+              </div>
+              <div class="autonomia-chip">
+                <span class="autonomia-chip-label">% Atual</span>
+                <strong>{{ a.bateriaPct != null ? a.bateriaPct + '%' : '—' }}</strong>
+              </div>
+              <div class="autonomia-chip">
+                <span class="autonomia-chip-label">KM do turno</span>
+                <strong>{{ fmtKm(a.kmTurno) }}</strong>
+              </div>
+              <div class="autonomia-chip">
+                <span class="autonomia-chip-label">KM do dia</span>
+                <strong>{{ fmtKm(a.kmDia) }}</strong>
+              </div>
+              <div class="autonomia-chip">
+                <span class="autonomia-chip-label">Até largada</span>
+                <strong>{{ a.tempoAteLargada || '—' }}</strong>
+              </div>
+              <div class="autonomia-chip">
+                <span class="autonomia-chip-label">Entre turnos</span>
+                <strong>{{ a.tempoEntreTurnos || '—' }}</strong>
+              </div>
+              @if (a.kmPorPercentualModelo != null) {
+                <div class="autonomia-chip">
+                  <span class="autonomia-chip-label">Fator do modelo</span>
+                  <strong>{{ a.kmPorPercentualModelo }} km/%</strong>
+                </div>
+              }
+            </section>
+
+            <section class="autonomia-fontes" aria-label="Autonomias">
+              <article class="autonomia-fonte-card">
+                <h4 class="autonomia-fonte-titulo">Autonomia Telemetria</h4>
+                <div class="autonomia-fonte-valores">
+                  <div>
+                    <span class="autonomia-fonte-label">
+                      Com % atual
+                      @if (a.bateriaPct != null) {
+                        ({{ a.bateriaPct }}%)
+                      }
+                    </span>
+                    <strong>{{ fmtKm(a.telemetriaKm) }}</strong>
+                  </div>
+                  <div>
+                    <span class="autonomia-fonte-label">Com 100%</span>
+                    <strong>{{ fmtKm(a.telemetria100Km) }}</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article class="autonomia-fonte-card">
+                <h4 class="autonomia-fonte-titulo">Autonomia Sistema</h4>
+                <div class="autonomia-fonte-valores">
+                  <div>
+                    <span class="autonomia-fonte-label">
+                      Com % atual
+                      @if (a.bateriaPct != null) {
+                        ({{ a.bateriaPct }}%)
+                      }
+                    </span>
+                    <strong>{{ fmtKm(a.sistemaKm) }}</strong>
+                  </div>
+                  <div>
+                    <span class="autonomia-fonte-label">Com 100%</span>
+                    <strong>{{ fmtKm(a.sistema100Km) }}</strong>
+                  </div>
+                </div>
+              </article>
+            </section>
+
+            <section class="autonomia-motivos-box" aria-label="Motivos">
+              <h4 class="autonomia-motivos-titulo">Motivos</h4>
+              <ul class="autonomia-motivos">
+                @for (motivo of a.motivos; track $index) {
+                  <li>{{ motivo }}</li>
+                }
+              </ul>
+            </section>
+          }
+        </div>
+
+        <div class="retencao-footer">
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="fecharAutonomiaResumo()"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showConflitoModal()) {
+    <div class="retencao-backdrop" role="presentation">
+      <div
+        class="retencao-modal conflito-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="conflito-titulo"
+      >
+        <div class="retencao-header">
+          <div>
+            <h3 id="conflito-titulo" class="retencao-titulo">
+              Veículo em mais de uma linha
+            </h3>
+            @if (conflitoResumo(); as c) {
+              <p class="retencao-subtitulo">
+                {{ c.veiculo }}
+                @if (c.placa) {
+                  · {{ c.placa }}
+                }
+                @if (c.combustivel) {
+                  · {{ c.combustivel }}
+                }
+                · {{ c.turnoRotulo }}
+              </p>
+            }
+          </div>
+          <button
+            type="button"
+            class="retencao-close"
+            (click)="fecharConflitoVeiculo()"
+            aria-label="Fechar"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="retencao-body">
+          @if (conflitoResumo(); as c) {
+            <p class="muted conflito-ajuda">
+              O mesmo veículo OMNI está vinculado a {{ c.linhas.length }} linhas INFOBUS neste turno. A troca não é bloqueada; revise a escala e corrija se necessário.
+            </p>
+            <div class="retencao-table-wrap">
+              <table class="retencao-table">
+                <thead>
+                  <tr>
+                    <th>Prefixo</th>
+                    <th>Descrição</th>
+                    <th>Início</th>
+                    <th>Fim</th>
+                    <th>Grupo</th>
+                    <th>Alocação</th>
+                    <th>Tarefa</th>
+                    <th>Obs.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (linha of c.linhas; track linha.prefixo) {
+                    <tr>
+                      <td>{{ linha.prefixo }}</td>
+                      <td>
+                        {{ linha.descricao }}
+                        @if (linha.placa) {
+                          <div class="muted">{{ linha.placa }}</div>
+                        }
+                        <div class="muted">{{ linha.combustivel }}</div>
+                      </td>
+                      <td>{{ fmtHora(linha.horarioInicio) }}</td>
+                      <td>{{ fmtHora(linha.horarioFim) }}</td>
+                      <td>{{ linha.grupos }}</td>
+                      <td>{{ linha.alocacoes }}</td>
+                      <td>{{ linha.tarefas }}</td>
+                      <td>
+                        @if (linha.substituido) {
+                          substituído
+                        } @else {
+                          —
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+
+        <div class="retencao-footer">
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="fecharConflitoVeiculo()"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
     </div>
   }
 </div>

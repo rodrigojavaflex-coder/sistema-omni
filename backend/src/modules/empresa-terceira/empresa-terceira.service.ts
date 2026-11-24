@@ -169,6 +169,8 @@ export class EmpresaTerceiraService {
     brtNomSol?: string;
     brtBuscaInfoAtivo?: boolean;
     brtBuscaInfoIntervaloMinutos?: number | null;
+    brtBuscaTelemetriaAtivo?: boolean;
+    brtBuscaTelemetriaIntervaloMinutos?: number | null;
   }): void {
     if (dto.integracaoManutencao !== IntegracaoManutencaoEmpresa.BRT_OS) {
       return;
@@ -199,6 +201,20 @@ export class EmpresaTerceiraService {
       ) {
         throw new BadRequestException(
           'Com a busca de informações ativa, informe o intervalo em minutos (1 a 1440)',
+        );
+      }
+    }
+    if (dto.brtBuscaTelemetriaAtivo) {
+      const intervalo = dto.brtBuscaTelemetriaIntervaloMinutos;
+      if (
+        intervalo === undefined ||
+        intervalo === null ||
+        !Number.isInteger(Number(intervalo)) ||
+        Number(intervalo) < 1 ||
+        Number(intervalo) > 1440
+      ) {
+        throw new BadRequestException(
+          'Com a busca de telemetria ativa, informe o intervalo em minutos (1 a 1440)',
         );
       }
     }
@@ -238,6 +254,40 @@ export class EmpresaTerceiraService {
     };
   }
 
+  private resolveBuscaTelemetriaConfig(dto: {
+    integracaoManutencao?: IntegracaoManutencaoEmpresa;
+    brtBuscaTelemetriaAtivo?: boolean;
+    brtBuscaTelemetriaIntervaloMinutos?: number | null;
+  }): {
+    brtBuscaTelemetriaAtivo: boolean;
+    brtBuscaTelemetriaIntervaloMinutos: number | null;
+  } {
+    const isBrt =
+      dto.integracaoManutencao === IntegracaoManutencaoEmpresa.BRT_OS;
+    if (!isBrt) {
+      return {
+        brtBuscaTelemetriaAtivo: false,
+        brtBuscaTelemetriaIntervaloMinutos:
+          dto.brtBuscaTelemetriaIntervaloMinutos !== undefined &&
+          dto.brtBuscaTelemetriaIntervaloMinutos !== null
+            ? Math.trunc(Number(dto.brtBuscaTelemetriaIntervaloMinutos))
+            : 10,
+      };
+    }
+    const ativo = !!dto.brtBuscaTelemetriaAtivo;
+    const intervaloRaw = dto.brtBuscaTelemetriaIntervaloMinutos;
+    const intervalo =
+      intervaloRaw === undefined || intervaloRaw === null
+        ? 10
+        : Math.trunc(Number(intervaloRaw));
+    return {
+      brtBuscaTelemetriaAtivo: ativo,
+      brtBuscaTelemetriaIntervaloMinutos: Number.isFinite(intervalo)
+        ? intervalo
+        : 10,
+    };
+  }
+
   async create(
     dto: CreateEmpresaTerceiraDto,
     options?: EmpresaTerceiraAccessOptions,
@@ -260,6 +310,12 @@ export class EmpresaTerceiraService {
       brtBuscaInfoAtivo: effectiveDto.brtBuscaInfoAtivo,
       brtBuscaInfoIntervaloMinutos: effectiveDto.brtBuscaInfoIntervaloMinutos,
     });
+    const buscaTelemetria = this.resolveBuscaTelemetriaConfig({
+      integracaoManutencao: effectiveDto.integracaoManutencao,
+      brtBuscaTelemetriaAtivo: effectiveDto.brtBuscaTelemetriaAtivo,
+      brtBuscaTelemetriaIntervaloMinutos:
+        effectiveDto.brtBuscaTelemetriaIntervaloMinutos,
+    });
     this.assertIntegracaoBrt({
       integracaoManutencao: effectiveDto.integracaoManutencao,
       ehEmpresaManutencao: effectiveDto.ehEmpresaManutencao,
@@ -268,6 +324,9 @@ export class EmpresaTerceiraService {
       brtNomSol: effectiveDto.brtNomSol,
       brtBuscaInfoAtivo: buscaInfo.brtBuscaInfoAtivo,
       brtBuscaInfoIntervaloMinutos: buscaInfo.brtBuscaInfoIntervaloMinutos,
+      brtBuscaTelemetriaAtivo: buscaTelemetria.brtBuscaTelemetriaAtivo,
+      brtBuscaTelemetriaIntervaloMinutos:
+        buscaTelemetria.brtBuscaTelemetriaIntervaloMinutos,
     });
     if (
       effectiveDto.integracaoManutencao === IntegracaoManutencaoEmpresa.BRT_OS &&
@@ -306,6 +365,9 @@ export class EmpresaTerceiraService {
       brtLocAtd: effectiveDto.brtLocAtd?.trim() || undefined,
       brtBuscaInfoAtivo: buscaInfo.brtBuscaInfoAtivo,
       brtBuscaInfoIntervaloMinutos: buscaInfo.brtBuscaInfoIntervaloMinutos,
+      brtBuscaTelemetriaAtivo: buscaTelemetria.brtBuscaTelemetriaAtivo,
+      brtBuscaTelemetriaIntervaloMinutos:
+        buscaTelemetria.brtBuscaTelemetriaIntervaloMinutos,
     });
     const saved = await this.repository.save(entidade);
     return toEmpresaTerceiraResponse(saved, {
@@ -388,6 +450,32 @@ export class EmpresaTerceiraService {
     await this.repository.update(
       { id },
       { brtBuscaInfoUltimoPollEm: quando },
+    );
+  }
+
+  /**
+   * Empresas elegíveis ao poll de telemetria BRT: manutenção + integração BRT + busca telemetria ativa.
+   */
+  async findEmpresasBrtBuscaTelemetriaAtiva(): Promise<EmpresaTerceira[]> {
+    return this.repository
+      .createQueryBuilder('e')
+      .addSelect('e.brtToken')
+      .where('e.ehEmpresaManutencao = true')
+      .andWhere('e.integracaoManutencao = :integracao', {
+        integracao: IntegracaoManutencaoEmpresa.BRT_OS,
+      })
+      .andWhere('e.brtBuscaTelemetriaAtivo = true')
+      .orderBy('e.descricao', 'ASC')
+      .getMany();
+  }
+
+  async marcarUltimoPollBuscaTelemetria(
+    id: string,
+    quando: Date,
+  ): Promise<void> {
+    await this.repository.update(
+      { id },
+      { brtBuscaTelemetriaUltimoPollEm: quando },
     );
   }
 
@@ -490,6 +578,26 @@ export class EmpresaTerceiraService {
       entidade.brtBuscaInfoIntervaloMinutos =
         buscaInfo.brtBuscaInfoIntervaloMinutos;
     }
+    if (
+      effectiveDto.brtBuscaTelemetriaAtivo !== undefined ||
+      effectiveDto.brtBuscaTelemetriaIntervaloMinutos !== undefined ||
+      effectiveDto.integracaoManutencao !== undefined
+    ) {
+      const buscaTelemetria = this.resolveBuscaTelemetriaConfig({
+        integracaoManutencao: entidade.integracaoManutencao,
+        brtBuscaTelemetriaAtivo:
+          effectiveDto.brtBuscaTelemetriaAtivo !== undefined
+            ? effectiveDto.brtBuscaTelemetriaAtivo
+            : entidade.brtBuscaTelemetriaAtivo,
+        brtBuscaTelemetriaIntervaloMinutos:
+          effectiveDto.brtBuscaTelemetriaIntervaloMinutos !== undefined
+            ? effectiveDto.brtBuscaTelemetriaIntervaloMinutos
+            : entidade.brtBuscaTelemetriaIntervaloMinutos,
+      });
+      entidade.brtBuscaTelemetriaAtivo = buscaTelemetria.brtBuscaTelemetriaAtivo;
+      entidade.brtBuscaTelemetriaIntervaloMinutos =
+        buscaTelemetria.brtBuscaTelemetriaIntervaloMinutos;
+    }
     this.assertIntegracaoBrt({
       integracaoManutencao: entidade.integracaoManutencao,
       ehEmpresaManutencao: entidade.ehEmpresaManutencao,
@@ -498,6 +606,9 @@ export class EmpresaTerceiraService {
       brtNomSol: entidade.brtNomSol,
       brtBuscaInfoAtivo: entidade.brtBuscaInfoAtivo,
       brtBuscaInfoIntervaloMinutos: entidade.brtBuscaInfoIntervaloMinutos,
+      brtBuscaTelemetriaAtivo: entidade.brtBuscaTelemetriaAtivo,
+      brtBuscaTelemetriaIntervaloMinutos:
+        entidade.brtBuscaTelemetriaIntervaloMinutos,
     });
     if (
       entidade.integracaoManutencao === IntegracaoManutencaoEmpresa.BRT_OS &&

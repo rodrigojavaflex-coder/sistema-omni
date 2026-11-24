@@ -117,6 +117,11 @@ export class EmpresaTerceiraFormComponent
         10,
         [Validators.min(1), Validators.max(1440)],
       ],
+      brtBuscaTelemetriaAtivo: [false],
+      brtBuscaTelemetriaIntervaloMinutos: [
+        10,
+        [Validators.min(1), Validators.max(1440)],
+      ],
     });
     this.form
       .get('brtBuscaInfoAtivo')
@@ -124,20 +129,45 @@ export class EmpresaTerceiraFormComponent
         this.syncBuscaInfoIntervaloValidators(!!ativo);
       });
     this.form
+      .get('brtBuscaTelemetriaAtivo')
+      ?.valueChanges.subscribe((ativo: boolean) => {
+        this.syncBuscaTelemetriaIntervaloValidators(!!ativo);
+      });
+    this.form
       .get('integracaoManutencao')
       ?.valueChanges.subscribe((tipo: string) => {
         if (tipo !== 'BRT_OS') {
           this.form.patchValue(
-            { brtBuscaInfoAtivo: false },
+            { brtBuscaInfoAtivo: false, brtBuscaTelemetriaAtivo: false },
             { emitEvent: true },
           );
         }
       });
     this.syncBuscaInfoIntervaloValidators(false);
+    this.syncBuscaTelemetriaIntervaloValidators(false);
   }
 
   private syncBuscaInfoIntervaloValidators(ativo: boolean): void {
     const ctrl = this.form.get('brtBuscaInfoIntervaloMinutos');
+    if (!ctrl) {
+      return;
+    }
+    if (ativo) {
+      ctrl.enable({ emitEvent: false });
+      ctrl.setValidators([
+        Validators.required,
+        Validators.min(1),
+        Validators.max(1440),
+      ]);
+    } else {
+      ctrl.setValidators([Validators.min(1), Validators.max(1440)]);
+      ctrl.disable({ emitEvent: false });
+    }
+    ctrl.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private syncBuscaTelemetriaIntervaloValidators(ativo: boolean): void {
+    const ctrl = this.form.get('brtBuscaTelemetriaIntervaloMinutos');
     if (!ctrl) {
       return;
     }
@@ -160,9 +190,18 @@ export class EmpresaTerceiraFormComponent
     return !!this.form.value.brtBuscaInfoAtivo && !!ctrl && ctrl.invalid;
   }
 
+  get buscaTelemetriaIntervaloInvalido(): boolean {
+    const ctrl = this.form.get('brtBuscaTelemetriaIntervaloMinutos');
+    return !!this.form.value.brtBuscaTelemetriaAtivo && !!ctrl && ctrl.invalid;
+  }
+
   /** Exposto para template: control do intervalo. */
   get buscaInfoIntervaloControl(): AbstractControl | null {
     return this.form.get('brtBuscaInfoIntervaloMinutos');
+  }
+
+  get buscaTelemetriaIntervaloControl(): AbstractControl | null {
+    return this.form.get('brtBuscaTelemetriaIntervaloMinutos');
   }
 
   protected buildFormData(): CreateEmpresaTerceiraDto | UpdateEmpresaTerceiraDto {
@@ -193,6 +232,12 @@ export class EmpresaTerceiraFormComponent
       const intervalo = Number(raw.brtBuscaInfoIntervaloMinutos);
       payload.brtBuscaInfoIntervaloMinutos = Number.isFinite(intervalo)
         ? Math.trunc(intervalo)
+        : 10;
+      payload.brtBuscaTelemetriaAtivo =
+        raw.integracaoManutencao === 'BRT_OS' && !!raw.brtBuscaTelemetriaAtivo;
+      const intervaloTel = Number(raw.brtBuscaTelemetriaIntervaloMinutos);
+      payload.brtBuscaTelemetriaIntervaloMinutos = Number.isFinite(intervaloTel)
+        ? Math.trunc(intervaloTel)
         : 10;
       if (raw.brtToken?.trim()) {
         payload.brtToken = raw.brtToken.trim();
@@ -241,8 +286,14 @@ export class EmpresaTerceiraFormComponent
           item.brtBuscaInfoIntervaloMinutos != null
             ? Number(item.brtBuscaInfoIntervaloMinutos)
             : 10,
+        brtBuscaTelemetriaAtivo: !!item.brtBuscaTelemetriaAtivo,
+        brtBuscaTelemetriaIntervaloMinutos:
+          item.brtBuscaTelemetriaIntervaloMinutos != null
+            ? Number(item.brtBuscaTelemetriaIntervaloMinutos)
+            : 10,
       });
       this.syncBuscaInfoIntervaloValidators(!!item.brtBuscaInfoAtivo);
+      this.syncBuscaTelemetriaIntervaloValidators(!!item.brtBuscaTelemetriaAtivo);
       this.showBrtToken = false;
     }
   }

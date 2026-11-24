@@ -148,6 +148,44 @@ export class EmpresaTerceira extends BaseEntity {
   })
   brtBuscaInfoUltimoPollEm?: Date | null;
 
+  @ApiProperty({
+    description:
+      'Ativa busca periódica de telemetria (tempo_real) na API BRT',
+    default: false,
+  })
+  @Column({
+    name: 'brt_busca_telemetria_ativo',
+    type: 'boolean',
+    nullable: false,
+    default: false,
+  })
+  brtBuscaTelemetriaAtivo: boolean;
+
+  @ApiProperty({
+    description:
+      'Intervalo em minutos entre buscas de telemetria BRT (quando ativo)',
+    required: false,
+    example: 10,
+  })
+  @Column({
+    name: 'brt_busca_telemetria_intervalo_minutos',
+    type: 'integer',
+    nullable: true,
+    default: 10,
+  })
+  brtBuscaTelemetriaIntervaloMinutos?: number | null;
+
+  @ApiProperty({
+    description: 'Data/hora do último poll de telemetria BRT',
+    required: false,
+  })
+  @Column({
+    name: 'brt_busca_telemetria_ultimo_poll_em',
+    type: 'timestamp',
+    nullable: true,
+  })
+  brtBuscaTelemetriaUltimoPollEm?: Date | null;
+
   static get nomeAmigavel(): string {
     return 'Empresa Terceira';
   }

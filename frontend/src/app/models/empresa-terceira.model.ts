@@ -20,6 +20,10 @@ export interface EmpresaTerceira {
   brtBuscaInfoAtivo?: boolean;
   /** Intervalo em minutos da busca (1–1440). */
   brtBuscaInfoIntervaloMinutos?: number | null;
+  /** Busca periódica de telemetria (tempo_real) na BRT. */
+  brtBuscaTelemetriaAtivo?: boolean;
+  /** Intervalo em minutos da busca de telemetria (1–1440). */
+  brtBuscaTelemetriaIntervaloMinutos?: number | null;
   brtToken?: string;
   brtTokenConfigured?: boolean;
   criadoEm: string;
@@ -44,6 +48,8 @@ export interface CreateEmpresaTerceiraDto {
   brtLocAtd?: string;
   brtBuscaInfoAtivo?: boolean;
   brtBuscaInfoIntervaloMinutos?: number;
+  brtBuscaTelemetriaAtivo?: boolean;
+  brtBuscaTelemetriaIntervaloMinutos?: number;
 }
 
 export interface UpdateEmpresaTerceiraDto

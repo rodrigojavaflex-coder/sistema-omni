@@ -262,6 +262,48 @@
               </small>
             </div>
           </div>
+
+          <div
+            class="integracao-subblock"
+            aria-labelledby="brt-busca-telemetria-title"
+          >
+            <h4 id="brt-busca-telemetria-title">Busca de telemetria</h4>
+            <p class="section-description">
+              Consulta periódica de telemetria em tempo real na API BRT
+              (<code>tempo_real</code>). Só empresas com busca ativa entram no job
+              automático do Controle de Escala.
+            </p>
+            <div class="form-group">
+              <label class="form-label checkbox-inline">
+                <input type="checkbox" formControlName="brtBuscaTelemetriaAtivo" />
+                Ativar busca de telemetria
+              </label>
+            </div>
+            <div class="form-group form-group--intervalo">
+              <label class="form-label" for="brtBuscaTelemetriaIntervaloMinutos">
+                Intervalo da busca (minutos) *
+              </label>
+              <input
+                id="brtBuscaTelemetriaIntervaloMinutos"
+                type="number"
+                formControlName="brtBuscaTelemetriaIntervaloMinutos"
+                class="form-input"
+                min="1"
+                max="1440"
+                step="1"
+                [attr.aria-invalid]="buscaTelemetriaIntervaloInvalido"
+              />
+              <small class="form-hint">
+                De 1 a 1440 minutos (24h). Sugestão: 10 minutos.
+              </small>
+              <small
+                class="form-error"
+                *ngIf="buscaTelemetriaIntervaloInvalido && buscaTelemetriaIntervaloControl?.touched"
+              >
+                Informe um intervalo válido entre 1 e 1440 minutos.
+              </small>
+            </div>
+          </div>
         </ng-container>
       </ng-container>
     </div>

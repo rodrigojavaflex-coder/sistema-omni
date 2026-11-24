@@ -178,6 +178,7 @@ export enum Permission {
 
   CONTROLE_ESCALA_READ = 'controle_escala:read',
   CONTROLE_ESCALA_SYNC = 'controle_escala:sync',
+  CONTROLE_ESCALA_TROCAR_VEICULO = 'controle_escala:trocar_veiculo',
 }
 
 export interface PermissionGroup {

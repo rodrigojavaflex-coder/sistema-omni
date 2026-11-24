@@ -193,6 +193,7 @@ export enum Permission {
   // Controle de Escala e Liberação
   CONTROLE_ESCALA_READ = 'controle_escala:read',
   CONTROLE_ESCALA_SYNC = 'controle_escala:sync',
+  CONTROLE_ESCALA_TROCAR_VEICULO = 'controle_escala:trocar_veiculo',
 }
 
 export const PERMISSION_GROUPS = {
@@ -609,6 +610,10 @@ export const PERMISSION_GROUPS = {
     {
       key: Permission.CONTROLE_ESCALA_SYNC,
       label: 'Sincronizar escala INFOBUS e telemetria BRT',
+    },
+    {
+      key: Permission.CONTROLE_ESCALA_TROCAR_VEICULO,
+      label: 'Trocar veículo vinculado na escala do dia',
     },
   ],
 };

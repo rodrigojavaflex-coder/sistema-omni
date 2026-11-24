@@ -109,4 +109,23 @@ export class CreateEmpresaTerceiraDto {
     message: 'Intervalo da busca deve ser no máximo 1440 minutos (24h)',
   })
   brtBuscaInfoIntervaloMinutos?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  brtBuscaTelemetriaAtivo?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({
+    message:
+      'Intervalo da busca de telemetria deve ser um número inteiro em minutos',
+  })
+  @Min(1, {
+    message: 'Intervalo da busca de telemetria deve ser no mínimo 1 minuto',
+  })
+  @Max(1440, {
+    message:
+      'Intervalo da busca de telemetria deve ser no máximo 1440 minutos (24h)',
+  })
+  brtBuscaTelemetriaIntervaloMinutos?: number;
 }

@@ -3,9 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { ConfiguracaoModule } from '../configuracao/configuracao.module';
+import { EmpresaTerceiraModule } from '../empresa-terceira/empresa-terceira.module';
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
 import { Irregularidade } from '../vistoria/entities/irregularidade.entity';
 import { Veiculo } from '../veiculo/entities/veiculo.entity';
+import { BrtTelemetriaPollService } from './brt-telemetria-poll.service';
 import { BrtTempoRealClient } from './brt-tempo-real.client';
 import { EscalaController } from './escala.controller';
 import { EscalaService } from './escala.service';
@@ -25,11 +27,17 @@ import { InfobusKmClient } from './infobus-km.client';
       EmpresaTerceira,
     ]),
     ConfiguracaoModule,
+    EmpresaTerceiraModule,
     JwtModule,
     ConfigModule,
   ],
   controllers: [EscalaController],
-  providers: [EscalaService, InfobusKmClient, BrtTempoRealClient],
+  providers: [
+    EscalaService,
+    InfobusKmClient,
+    BrtTempoRealClient,
+    BrtTelemetriaPollService,
+  ],
   exports: [EscalaService],
 })
 export class EscalaModule {}

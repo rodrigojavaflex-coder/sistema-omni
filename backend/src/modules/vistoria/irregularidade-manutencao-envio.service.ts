@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { StatusIrregularidade } from '../../common/enums/status-irregularidade.enum';
 import { EmpresaTerceiraService } from '../empresa-terceira/empresa-terceira.service';
 import { EmpresaTerceira } from '../empresa-terceira/entities/empresa-terceira.entity';
@@ -97,40 +97,6 @@ export class IrregularidadeManutencaoEnvioService {
     );
   }
 
-  /**
-   * Empresa BRT: a seleção deve incluir todas as elegíveis **no escopo da empresa**
-   * de cada vistoria tocada (OS fora do escopo ficam para outra empresa).
-   */
-  async assertSelecaoCompletaVistoriasBrt(
-    selecionadas: Irregularidade[],
-    empresa: EmpresaTerceira,
-  ): Promise<void> {
-    const porVistoria = this.agruparPorVistoria(selecionadas);
-    for (const [idVistoria, grupo] of porVistoria) {
-      const candidatas = await this.irregularidadeRepository.find({
-        where: {
-          idVistoria,
-          statusAtual: In(STATUS_ENVIO_MANUTENCAO),
-        },
-        relations: ['area', 'vistoria', 'vistoria.veiculo'],
-      });
-      const elegiveis = candidatas.filter((item) =>
-        this.empresaTerceiraService.irregularidadeNoEscopo(empresa, item),
-      );
-      const selecionadosIds = new Set(grupo.map((item) => item.id));
-      const faltantes = elegiveis.filter((item) => !selecionadosIds.has(item.id));
-      if (faltantes.length > 0 || elegiveis.length !== grupo.length) {
-        const numeroVistoria =
-          grupo[0]?.vistoria?.numeroVistoria ??
-          (await this.resolverNumeroVistoria(idVistoria));
-        throw new BadRequestException(
-          `A vistoria ${numeroVistoria} tem ${elegiveis.length} irregularidade(s) elegível(is) no escopo de ${empresa.descricao} para envio à BRT; ` +
-            `selecione todas (${grupo.length} selecionada(s), faltam ${faltantes.length || elegiveis.length - grupo.length}).`,
-        );
-      }
-    }
-  }
-
   async executarEnvioLote(
     empresa: EmpresaTerceira,
     irregularidades: Irregularidade[],
@@ -147,9 +113,6 @@ export class IrregularidadeManutencaoEnvioService {
     );
 
     const usaBrt = this.usesIntegracaoApi(empresa);
-    if (usaBrt) {
-      await this.assertSelecaoCompletaVistoriasBrt(irregularidades, empresa);
-    }
 
     const erpHabilitado =
       await this.erpVistoriaIntegrationService.isEnvioHabilitado();
@@ -317,9 +280,9 @@ export class IrregularidadeManutencaoEnvioService {
   }
 
   /**
-   * Pipeline por veículo: ERP (se ativo) → BRT por vistoria (se empresa API).
+   * Pipeline por veículo: ERP (se ativo) → BRT 1:1 por irregularidade (se empresa API).
    * Não transiciona status — o lote faz e-mail (legado) e depois a transição.
-   * Sucesso/falha atômicos por veículo.
+   * Sucesso/falha atômicos por veículo (transição).
    */
   private async prepararGrupoVeiculo(
     empresa: EmpresaTerceira,
@@ -349,9 +312,12 @@ export class IrregularidadeManutencaoEnvioService {
     }
 
     if (usaBrt) {
-      const porVistoria = [...this.agruparPorVistoria(grupoVeiculo).values()];
-      for (const grupoVistoria of porVistoria) {
-        const brt = await this.garantirOsBrtGrupo(empresa, grupoVistoria, ctx);
+      const ordenadas = [...grupoVeiculo].sort(
+        (a, b) =>
+          (a.numeroIrregularidade ?? 0) - (b.numeroIrregularidade ?? 0),
+      );
+      for (const item of ordenadas) {
+        const brt = await this.garantirOsBrtItem(empresa, item, ctx);
         if (!brt.ok) {
           return { ok: false, falhas: brt.falhas };
         }
@@ -362,98 +328,80 @@ export class IrregularidadeManutencaoEnvioService {
   }
 
   /**
-   * Cria OS BRT (ou reaproveita) sem alterar status — transição fica no pipeline.
+   * Cria OS BRT 1:1 (ou reaproveita) sem alterar status — transição fica no pipeline.
    */
-  private async garantirOsBrtGrupo(
+  private async garantirOsBrtItem(
     empresa: EmpresaTerceira,
-    irregularidades: Irregularidade[],
+    irregularidade: Irregularidade,
     ctx: ManutencaoEnvioContext,
   ): Promise<
     | { ok: true }
     | { ok: false; falhas: EnvioManutencaoFalhaItemDto[] }
   > {
-    const grupo = [...irregularidades].sort(
-      (a, b) =>
-        (a.numeroIrregularidade ?? 0) - (b.numeroIrregularidade ?? 0),
-    );
-
-    const nums = new Set(
-      grupo
-        .map((item) => item.numOsExternoAtual)
-        .filter((item): item is number => item != null),
-    );
-    const origs = new Set(
-      grupo
-        .map((item) => item.osOrigAtual?.trim())
-        .filter((item): item is string => !!item),
-    );
     if (
-      nums.size === 1 &&
-      origs.size === 1 &&
-      grupo.every(
-        (item) =>
-          item.numOsExternoAtual != null && !!item.osOrigAtual?.trim(),
-      )
+      irregularidade.numOsExternoAtual != null &&
+      !!irregularidade.osOrigAtual?.trim()
     ) {
       return { ok: true };
     }
 
-    const numeroVistoria = grupo[0]?.vistoria?.numeroVistoria;
+    const numeroIrregularidade = irregularidade.numeroIrregularidade;
 
     let osOrig: string;
     let payload;
     let regPai: number | undefined;
     try {
-      if (numeroVistoria === undefined || numeroVistoria === null) {
-        throw new Error('Número da vistoria não informado para os_orig');
+      if (
+        numeroIrregularidade === undefined ||
+        numeroIrregularidade === null ||
+        Number.isNaN(Number(numeroIrregularidade))
+      ) {
+        throw new Error('Número da irregularidade não informado para os_orig');
       }
       const sucessosAnteriores =
-        await this.contarSucessosOsOrigVistoria(numeroVistoria);
-      const forcarSufixo = grupo.some(
-        (item) =>
-          item.statusAtual === StatusIrregularidade.RETRABALHO_GARANTIA,
-      );
+        await this.contarSucessosOsOrigIrregularidade(numeroIrregularidade);
+      const forcarSufixo =
+        irregularidade.statusAtual === StatusIrregularidade.RETRABALHO_GARANTIA;
       osOrig = this.brtOsIntegrationService.buildOsOrig(
-        numeroVistoria,
+        numeroIrregularidade,
         sucessosAnteriores,
         forcarSufixo,
       );
-      // Retrabalho/garantia: vincula a nova OS BRT à OS do grupo que gerou o ciclo (reg_pai).
-      // Opção A: resolve pelo último numOs com sucesso em irregularidades_os_externas.
+      // Retrabalho/garantia: vincula a nova OS BRT à OS anterior desta irregularidade.
       if (forcarSufixo) {
-        regPai = await this.resolverNumOsPaiBrt(grupo);
+        regPai = await this.resolverNumOsPaiBrt([irregularidade]);
         if (regPai == null) {
           throw new Error(
             'Não foi possível determinar a OS BRT pai (reg_pai) para o reenvio de retrabalho/garantia',
           );
         }
       }
-      payload = this.brtOsIntegrationService.buildPayloadGrupo(
+      payload = this.brtOsIntegrationService.buildPayloadIrregularidade(
         empresa,
-        grupo,
+        irregularidade,
         osOrig,
         regPai,
       );
     } catch (err) {
       const mensagem = err instanceof Error ? err.message : String(err);
-      const osOrigFallback = String(numeroVistoria ?? '');
-      for (const item of grupo) {
-        await this.registrarFalhaIntegracao(
-          item,
-          osOrigFallback,
-          mensagem,
-          'validacao_local',
-          undefined,
-        );
-      }
+      const osOrigFallback = String(numeroIrregularidade ?? '');
+      await this.registrarFalhaIntegracao(
+        irregularidade,
+        osOrigFallback,
+        mensagem,
+        'validacao_local',
+        undefined,
+      );
       return {
         ok: false,
-        falhas: grupo.map((item) => ({
-          id: item.id,
-          numeroIrregularidade: item.numeroIrregularidade,
-          codigoErro: 'validacao_local',
-          mensagem,
-        })),
+        falhas: [
+          {
+            id: irregularidade.id,
+            numeroIrregularidade: irregularidade.numeroIrregularidade,
+            codigoErro: 'validacao_local',
+            mensagem,
+          },
+        ],
       };
     }
 
@@ -461,36 +409,36 @@ export class IrregularidadeManutencaoEnvioService {
 
     if (!result.ok) {
       const mensagemGrade = result.mensagemResumo || result.mensagem;
-      for (const item of grupo) {
-        await this.registrarFalhaIntegracao(
-          item,
+      await this.registrarFalhaIntegracao(
+        irregularidade,
+        osOrig,
+        mensagemGrade,
+        result.codigoErro,
+        result.httpStatus,
+      );
+      await this.osExternaRepository.save(
+        this.osExternaRepository.create({
+          idIrregularidade: irregularidade.id,
           osOrig,
-          mensagemGrade,
-          result.codigoErro,
-          result.httpStatus,
-        );
-        await this.osExternaRepository.save(
-          this.osExternaRepository.create({
-            idIrregularidade: item.id,
-            osOrig,
-            numOsExterno: null,
-            integrador: 'BRT',
-            sucesso: false,
-            codigoErro: result.codigoErro,
-            mensagemErro: result.mensagem,
-            httpStatus: result.httpStatus,
-          }),
-        );
-      }
+          numOsExterno: null,
+          integrador: 'BRT',
+          sucesso: false,
+          codigoErro: result.codigoErro,
+          mensagemErro: result.mensagem,
+          httpStatus: result.httpStatus,
+        }),
+      );
       return {
         ok: false,
-        falhas: grupo.map((item) => ({
-          id: item.id,
-          numeroIrregularidade: item.numeroIrregularidade,
-          codigoErro: result.codigoErro,
-          mensagem: result.mensagem,
-          httpStatus: result.httpStatus,
-        })),
+        falhas: [
+          {
+            id: irregularidade.id,
+            numeroIrregularidade: irregularidade.numeroIrregularidade,
+            codigoErro: result.codigoErro,
+            mensagem: result.mensagem,
+            httpStatus: result.httpStatus,
+          },
+        ],
       };
     }
 
@@ -498,46 +446,42 @@ export class IrregularidadeManutencaoEnvioService {
       const repo = manager.getRepository(Irregularidade);
       const osRepo = manager.getRepository(IrregularidadeOsExterna);
 
-      for (const item of grupo) {
-        const entity = await repo.findOne({ where: { id: item.id } });
-        if (!entity) {
-          throw new NotFoundException('Irregularidade não encontrada');
-        }
-        entity.osOrigAtual = osOrig;
-        entity.numOsExternoAtual = result.numOs;
-        entity.ultimoErroIntegracao = null;
-        entity.ultimoErroIntegracaoEm = null;
-        const savedItem = await repo.save(entity);
-        item.osOrigAtual = savedItem.osOrigAtual;
-        item.numOsExternoAtual = savedItem.numOsExternoAtual;
-        item.ultimoErroIntegracao = null;
-        item.ultimoErroIntegracaoEm = null;
-
-        await osRepo.save(
-          osRepo.create({
-            idIrregularidade: savedItem.id,
-            osOrig,
-            numOsExterno: result.numOs,
-            integrador: 'BRT',
-            sucesso: true,
-            httpStatus: result.httpStatus,
-          }),
-        );
-
-        await ctx.registrarHistorico(manager, {
-          idIrregularidade: savedItem.id,
-          statusOrigem: item.statusAtual,
-          statusDestino: item.statusAtual,
-          acao: result.duplicada
-            ? 'enviar_api_os_duplicada'
-            : 'enviar_api_os',
-          idUsuario: ctx.actor?.id,
-          idEmpresaEvento: empresa.id,
-          observacao: `os_orig=${osOrig}; numOs=${result.numOs}${
-            regPai != null ? `; reg_pai=${regPai}` : ''
-          }; vistoria=${numeroVistoria}; grupo=${grupo.length}; pendente_transicao=true`,
-        });
+      const entity = await repo.findOne({ where: { id: irregularidade.id } });
+      if (!entity) {
+        throw new NotFoundException('Irregularidade não encontrada');
       }
+      entity.osOrigAtual = osOrig;
+      entity.numOsExternoAtual = result.numOs;
+      entity.ultimoErroIntegracao = null;
+      entity.ultimoErroIntegracaoEm = null;
+      const savedItem = await repo.save(entity);
+      irregularidade.osOrigAtual = savedItem.osOrigAtual;
+      irregularidade.numOsExternoAtual = savedItem.numOsExternoAtual;
+      irregularidade.ultimoErroIntegracao = null;
+      irregularidade.ultimoErroIntegracaoEm = null;
+
+      await osRepo.save(
+        osRepo.create({
+          idIrregularidade: savedItem.id,
+          osOrig,
+          numOsExterno: result.numOs,
+          integrador: 'BRT',
+          sucesso: true,
+          httpStatus: result.httpStatus,
+        }),
+      );
+
+      await ctx.registrarHistorico(manager, {
+        idIrregularidade: savedItem.id,
+        statusOrigem: irregularidade.statusAtual,
+        statusDestino: irregularidade.statusAtual,
+        acao: result.duplicada ? 'enviar_api_os_duplicada' : 'enviar_api_os',
+        idUsuario: ctx.actor?.id,
+        idEmpresaEvento: empresa.id,
+        observacao: `os_orig=${osOrig}; numOs=${result.numOs}${
+          regPai != null ? `; reg_pai=${regPai}` : ''
+        }; pendente_transicao=true`,
+      });
     });
 
     return { ok: true };
@@ -748,40 +692,10 @@ export class IrregularidadeManutencaoEnvioService {
     return map;
   }
 
-  private agruparPorVistoria(
-    irregularidades: Irregularidade[],
-  ): Map<string, Irregularidade[]> {
-    const map = new Map<string, Irregularidade[]>();
-    for (const item of irregularidades) {
-      const key = item.idVistoria;
-      if (!key) {
-        throw new BadRequestException(
-          'Irregularidade sem vistoria vinculada não pode ser enviada à BRT',
-        );
-      }
-      const lista = map.get(key) ?? [];
-      lista.push(item);
-      map.set(key, lista);
-    }
-    return map;
-  }
-
-  private async resolverNumeroVistoria(idVistoria: string): Promise<string> {
-    const row = await this.irregularidadeRepository.manager
-      .getRepository(Irregularidade)
-      .createQueryBuilder('i')
-      .innerJoin('i.vistoria', 'v')
-      .select('v.numeroVistoria', 'numero')
-      .where('i.idVistoria = :idVistoria', { idVistoria })
-      .limit(1)
-      .getRawOne<{ numero?: number }>();
-    return row?.numero != null ? String(row.numero) : idVistoria.slice(0, 8);
-  }
-
-  private async contarSucessosOsOrigVistoria(
-    numeroVistoria: number,
+  private async contarSucessosOsOrigIrregularidade(
+    numeroIrregularidade: number,
   ): Promise<number> {
-    const base = String(numeroVistoria);
+    const base = String(numeroIrregularidade);
     const raw = await this.osExternaRepository
       .createQueryBuilder('e')
       .select('COUNT(DISTINCT e.osOrig)', 'cnt')
@@ -797,9 +711,8 @@ export class IrregularidadeManutencaoEnvioService {
   }
 
   /**
-   * Opção A: numOs BRT pai para `reg_pai` no reenvio de retrabalho.
-   * Usa o último vínculo BRT com sucesso das irregularidades do grupo
-   * (mesmo numOs do grupo original, inclusive em reprovação parcial).
+   * numOs BRT pai para `reg_pai` no reenvio de retrabalho (1:1).
+   * Usa o último vínculo BRT com sucesso da(s) irregularidade(s).
    */
   private async resolverNumOsPaiBrt(
     grupo: Irregularidade[],

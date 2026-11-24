@@ -13,6 +13,8 @@ const INTEGRACAO_DTO_KEYS = [
   'brtLocAtd',
   'brtBuscaInfoAtivo',
   'brtBuscaInfoIntervaloMinutos',
+  'brtBuscaTelemetriaAtivo',
+  'brtBuscaTelemetriaIntervaloMinutos',
 ] as const;
 
 export function stripIntegracaoFromCreateDto(

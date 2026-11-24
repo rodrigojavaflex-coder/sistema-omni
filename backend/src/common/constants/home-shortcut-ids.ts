@@ -29,6 +29,7 @@ export const HOME_SHORTCUT_IDS = [
   'gestao-os',
   'painel-metas',
   'painel-ocorrencias',
+  'controle-escala',
   'relatorios',
 ] as const;
 

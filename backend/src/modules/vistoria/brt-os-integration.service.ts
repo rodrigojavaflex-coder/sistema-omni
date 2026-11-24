@@ -184,23 +184,23 @@ export class BrtOsIntegrationService {
   }
 
   /**
-   * os_orig na API BRT: NS da vistoria OMNI (1 vistoria = 1 OS).
-   * - 1º envio (sem OS BRT do grupo com sucesso): só numeroVistoria.
-   * - RETRABALHO_GARANTIA no grupo ou reenvio após OS cancelada: numeroVistoria-N (N>=2).
+   * os_orig na API BRT: NS da irregularidade OMNI (1 irregularidade = 1 OS BRT).
+   * - 1º envio (sem OS BRT com sucesso): só numeroIrregularidade.
+   * - RETRABALHO_GARANTIA ou reenvio após OS cancelada: numeroIrregularidade-N (N>=2).
    */
   buildOsOrig(
-    numeroVistoria: number,
+    numeroIrregularidade: number,
     integracoesSucessoAnteriores: number,
     forcarSufixo = false,
   ): string {
     if (
-      numeroVistoria === undefined ||
-      numeroVistoria === null ||
-      Number.isNaN(Number(numeroVistoria))
+      numeroIrregularidade === undefined ||
+      numeroIrregularidade === null ||
+      Number.isNaN(Number(numeroIrregularidade))
     ) {
-      throw new Error('Número da vistoria não informado para os_orig');
+      throw new Error('Número da irregularidade não informado para os_orig');
     }
-    const base = String(numeroVistoria);
+    const base = String(numeroIrregularidade);
     const precisaSufixo = forcarSufixo || integracoesSucessoAnteriores > 0;
     if (precisaSufixo) {
       const ciclo = Math.max(2, integracoesSucessoAnteriores + 1);
@@ -230,8 +230,8 @@ export class BrtOsIntegrationService {
     };
   }
 
-  /** Comentário de uma irregularidade no formato de grupo. */
-  buildBlocoComentarioIrregularidade(irregularidade: Irregularidade): string {
+  /** Comentário de uma irregularidade (1 OS BRT); máx. 4000. */
+  buildComentarioIrregularidade(irregularidade: Irregularidade): string {
     const linhaClassificacao = [
       irregularidade.area?.nome,
       irregularidade.componente?.nome,
@@ -240,38 +240,24 @@ export class BrtOsIntegrationService {
       .filter((parte) => parte?.trim())
       .join('->');
     const obs = irregularidade.observacao?.trim();
-    if (obs) {
-      return `${linhaClassificacao}\nObs: ${obs}`.trim();
-    }
-    return linhaClassificacao;
-  }
-
-  /**
-   * comenta do grupo (vistoria): blocos por irregularidade ordenados por NS; máx. 4000.
-   */
-  buildComentarioGrupo(irregularidades: Irregularidade[]): string {
-    const ordenadas = [...irregularidades].sort(
-      (a, b) =>
-        (a.numeroIrregularidade ?? 0) - (b.numeroIrregularidade ?? 0),
-    );
-    const texto = ordenadas
-      .map((item) => this.buildBlocoComentarioIrregularidade(item))
-      .filter(Boolean)
-      .join('\n\n');
+    const texto = obs
+      ? `${linhaClassificacao}\nObs: ${obs}`.trim()
+      : linhaClassificacao;
     return texto.slice(0, 4000);
   }
 
-  buildPayloadGrupo(
+  /** @deprecated Preferir buildComentarioIrregularidade (1:1). */
+  buildBlocoComentarioIrregularidade(irregularidade: Irregularidade): string {
+    return this.buildComentarioIrregularidade(irregularidade);
+  }
+
+  buildPayloadIrregularidade(
     empresa: EmpresaTerceira,
-    irregularidades: Irregularidade[],
+    irregularidade: Irregularidade,
     osOrig: string,
     regPai?: number,
   ): BrtCriarOsPayload {
-    if (!irregularidades.length) {
-      throw new Error('Grupo de irregularidades vazio para OS BRT');
-    }
-    const representativa = irregularidades[0];
-    const placa = representativa.vistoria?.veiculo?.placa?.trim();
+    const placa = irregularidade.vistoria?.veiculo?.placa?.trim();
     if (!placa) {
       throw new Error('Placa do veículo não informada');
     }
@@ -285,8 +271,8 @@ export class BrtOsIntegrationService {
         'Solicitante não configurado na empresa de manutenção',
       );
     }
-    const tpoSrv = this.resolveTpoSrv(irregularidades);
-    const odom = representativa.vistoria?.odometro;
+    const tpoSrv = this.resolveTpoSrv(irregularidade);
+    const odom = irregularidade.vistoria?.odometro;
     const payload: BrtCriarOsPayload = {
       ten_emp: tenEmp,
       tpo_reg: 1,
@@ -294,7 +280,7 @@ export class BrtOsIntegrationService {
       os_orig: osOrig,
       plc_vcl: placa,
       nom_sol: nomSol.slice(0, 200),
-      comenta: this.buildComentarioGrupo(irregularidades),
+      comenta: this.buildComentarioIrregularidade(irregularidade),
     };
     const telCtt = empresa.brtTelCtt?.trim();
     if (telCtt) {
@@ -313,23 +299,37 @@ export class BrtOsIntegrationService {
     return payload;
   }
 
+  /** Compat: payload 1:1 a partir de lista (usa o 1º item). */
+  buildPayloadGrupo(
+    empresa: EmpresaTerceira,
+    irregularidades: Irregularidade[],
+    osOrig: string,
+    regPai?: number,
+  ): BrtCriarOsPayload {
+    if (!irregularidades.length) {
+      throw new Error('Grupo de irregularidades vazio para OS BRT');
+    }
+    return this.buildPayloadIrregularidade(
+      empresa,
+      irregularidades[0],
+      osOrig,
+      regPai,
+    );
+  }
+
   /**
    * BRT tpo_srv: 1 corretiva, 2 preventiva, 3 SOS/socorro, 4 sinistro.
    * Tipo na capa (SINISTRO / PREVENTIVA) tem precedência sobre origem SOS.
    */
-  private resolveTpoSrv(irregularidades: Irregularidade[]): number {
-    const representativa = irregularidades[0];
-    if (representativa.vistoria?.tipo === TipoVistoria.SINISTRO) {
+  private resolveTpoSrv(irregularidade: Irregularidade): number {
+    if (irregularidade.vistoria?.tipo === TipoVistoria.SINISTRO) {
       return 4;
     }
-    if (representativa.vistoria?.tipo === TipoVistoria.PREVENTIVA) {
+    if (irregularidade.vistoria?.tipo === TipoVistoria.PREVENTIVA) {
       return 2;
     }
     if (
-      irregularidades.some(
-        (item) =>
-          item.origemRegistro === OrigemRegistroIrregularidade.SOS_WEB,
-      )
+      irregularidade.origemRegistro === OrigemRegistroIrregularidade.SOS_WEB
     ) {
       return 3;
     }

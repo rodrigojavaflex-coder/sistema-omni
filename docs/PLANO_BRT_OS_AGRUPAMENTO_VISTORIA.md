@@ -1,8 +1,10 @@
 # Plano: Entrega 1 — OS BRT agrupada por vistoria
 
 **Data:** 29/09/2026  
-**Status:** Implementada (Entrega 1)  
-**Objetivo:** No envio para manutenção com empresa configurada para Integração OS Consórcio BRT, gerar **1 OS na BRT por vistoria OMNI**, agregando todas as irregularidades elegíveis daquela vistoria no mesmo `os_orig` / `numOs`.
+**Status:** Superseded (rollback 1:1 em 2026-11-19 — RN-VIS-006 v1.8)  
+**Objetivo (histórico):** No envio para manutenção com empresa configurada para Integração OS Consórcio BRT, gerar **1 OS na BRT por vistoria OMNI**, agregando todas as irregularidades elegíveis daquela vistoria no mesmo `os_orig` / `numOs`.
+
+> **Nota:** Em 2026-11-19 o envio voltou ao modelo **1 irregularidade = 1 OS BRT** (`os_orig` = `numeroIrregularidade`), com subset permitido e gerador de OS usando piso `max(OS, vistoria)+1` no ano. Este plano permanece como registro da Entrega 1.
 
 **Regra de negócio:** atualizar **RN-VIS-006** (`docs/regras-negocio.md`) e Épico 4 / US4.2 (`docs/BACKLOG_FLUXO_IRREGULARIDADES.md`).
 

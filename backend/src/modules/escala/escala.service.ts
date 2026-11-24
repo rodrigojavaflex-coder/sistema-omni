@@ -20,8 +20,8 @@ import { VeiculoEscalaDia } from './entities/veiculo-escala-dia.entity';
 import { VeiculoEscalaTurno } from './entities/veiculo-escala-turno.entity';
 import { VeiculoTelemetriaAtual } from './entities/veiculo-telemetria-atual.entity';
 import {
+  InfobusGrupoKm,
   InfobusKmClient,
-  InfobusLinhaKm,
   InfobusTurnoKm,
   InfobusVeiculoKm,
 } from './infobus-km.client';
@@ -38,8 +38,10 @@ export interface AutonomiaFonteDto {
 }
 
 export interface EscalaTurnoDto {
-  linha: string | null;
-  descricaoLinha: string | null;
+  grupo: string | null;
+  alocacao: string | null;
+  tarefa: string | null;
+  tipoViagem: string | null;
   km: number | null;
   matricula: string | null;
   motorista: string | null;
@@ -50,27 +52,35 @@ export interface EscalaTurnoDto {
   ordem: number;
 }
 
-export interface EscalaLinhaAgregadaDto {
-  linha: string | null;
+export interface EscalaGrupoAgregadoDto {
+  grupo: string | null;
   km: number | null;
+  alocacoes: string[];
+  tarefas: string[];
+  tiposViagem: string[];
   motoristas: Array<{
     matricula: string | null;
     motorista: string | null;
     km: number | null;
+    alocacao: string | null;
+    tarefa: string | null;
+    tipoViagem: string | null;
   }>;
 }
 
 export interface EscalaPainelItemDto {
+  idEscalaDia: string;
   data: string;
   prefixo: string;
   idVeiculo: string | null;
   descricao: string | null;
   placa: string | null;
   combustivel: string | null;
+  veiculoSubstituidoManual: boolean;
   kmEscala: number;
   turnos: EscalaTurnoDto[];
-  /** Agregado derivado dos turnos (compatibilidade com resumo por linha). */
-  linhas: EscalaLinhaAgregadaDto[];
+  /** Agregado derivado dos turnos por grupo INFOBUS. */
+  grupos: EscalaGrupoAgregadoDto[];
   retido: boolean;
   qtdOsVermelhas: number;
   bateriaPct: number | null;
@@ -93,6 +103,10 @@ export interface EscalaPainelResponseDto {
     alertaAutonomia: number;
     semVinculoVeiculo: number;
   };
+  /** Última sync INFOBUS (configuração global). */
+  ultimoSyncEscalaEm: string | null;
+  /** Última sync telemetria BRT (configuração global / job). */
+  ultimoSyncTelemetriaEm: string | null;
 }
 
 @Injectable()
@@ -192,9 +206,13 @@ export class EscalaService {
           row = escalaTx.create({
             data: dataIso,
             prefixo,
+            veiculoSubstituidoManual: false,
           });
         }
-        row.idVeiculo = veiculo?.id ?? null;
+        // Substituição manual: preserva id_veiculo; sync só atualiza KM/turnos.
+        if (!row.veiculoSubstituidoManual) {
+          row.idVeiculo = veiculo?.id ?? null;
+        }
         row.kmTotal = Number.isFinite(kmTotal) ? kmTotal : 0;
         row.sincronizadoEm = agora;
         row = await escalaTx.save(row);
@@ -248,18 +266,31 @@ export class EscalaService {
       horarioFim?: string | null;
       horario_inicio?: string | null;
       horario_fim?: string | null;
+      horario_inicial?: string | null;
+      horario_final?: string | null;
     },
     qual: 'inicio' | 'fim',
   ): string | null {
     if (qual === 'inicio') {
-      return this.toNullableText(obj.horarioInicio ?? obj.horario_inicio);
+      return this.toNullableText(
+        obj.horario_inicial ?? obj.horarioInicio ?? obj.horario_inicio,
+      );
     }
-    return this.toNullableText(obj.horarioFim ?? obj.horario_fim);
+    return this.toNullableText(
+      obj.horario_final ?? obj.horarioFim ?? obj.horario_fim,
+    );
+  }
+
+  private pickNomeTurno(obj: {
+    turno?: string | number | null;
+    nomeTurno?: string | null;
+    nome?: string | null;
+  }): string | null {
+    return this.toNullableText(obj.turno ?? obj.nomeTurno ?? obj.nome);
   }
 
   /**
-   * Prefere `turnos[]` se o INFOBUS enviar; senão achata `linhas[].motoristas[]`.
-   * Campos novos (horário, nome, número) entram quando presentes.
+   * Prefere `turnos[]` se o INFOBUS enviar; senão achata `grupos[].motoristas[]`.
    */
   private normalizarTurnosDoVeiculo(item: InfobusVeiculoKm): Array<
     Omit<VeiculoEscalaTurno, 'id' | 'criadoEm' | 'atualizadoEm' | 'idEscalaDia' | 'escalaDia'>
@@ -268,8 +299,8 @@ export class EscalaService {
       return item.turnos.map((t, idx) => this.mapTurnoApi(t, idx));
     }
 
-    const linhas: InfobusLinhaKm[] = Array.isArray(item.linhas)
-      ? item.linhas
+    const grupos: InfobusGrupoKm[] = Array.isArray(item.grupos)
+      ? item.grupos
       : [];
     const out: Array<
       Omit<
@@ -278,54 +309,59 @@ export class EscalaService {
       >
     > = [];
     let ordem = 0;
-    for (const linha of linhas) {
-      const motoristas = Array.isArray(linha.motoristas)
-        ? linha.motoristas
+    for (const grupo of grupos) {
+      const motoristas = Array.isArray(grupo.motoristas)
+        ? grupo.motoristas
         : [];
       if (motoristas.length === 0) {
         out.push({
-          linha: this.toNullableText(linha.linha),
-          descricaoLinha: this.toNullableText(
-            linha.descricaoLinha ?? linha.descricao,
+          grupo: this.toNullableText(grupo.grupo),
+          alocacao: this.toNullableText(grupo.alocacao),
+          tarefa: this.toNullableText(grupo.tarefa),
+          tipoViagem: this.toNullableText(
+            grupo.tipo_viagem ?? grupo.tipoViagem,
           ),
-          km: this.toNullableNumber(linha.km ?? linha.quilometragem),
+          km: this.toNullableNumber(grupo.km ?? grupo.quilometragem),
           matricula: null,
           motorista: null,
-          nomeTurno: this.toNullableText(linha.nomeTurno ?? linha.nome),
+          nomeTurno: this.pickNomeTurno(grupo),
           numeroViagem: this.toNullableText(
-            linha.numeroViagem ?? linha.numero,
+            grupo.numeroViagem ?? grupo.numero,
           ),
-          horarioInicio: this.pickHorario(linha, 'inicio'),
-          horarioFim: this.pickHorario(linha, 'fim'),
+          horarioInicio: this.pickHorario(grupo, 'inicio'),
+          horarioFim: this.pickHorario(grupo, 'fim'),
           ordem: ordem++,
         });
         continue;
       }
       for (const mot of motoristas) {
         out.push({
-          linha: this.toNullableText(linha.linha),
-          descricaoLinha: this.toNullableText(
-            linha.descricaoLinha ?? linha.descricao,
+          grupo: this.toNullableText(grupo.grupo),
+          alocacao: this.toNullableText(mot.alocacao ?? grupo.alocacao),
+          tarefa: this.toNullableText(mot.tarefa ?? grupo.tarefa),
+          tipoViagem: this.toNullableText(
+            mot.tipo_viagem ??
+              mot.tipoViagem ??
+              grupo.tipo_viagem ??
+              grupo.tipoViagem,
           ),
           km: this.toNullableNumber(
-            mot.km ?? linha.km ?? linha.quilometragem,
+            mot.km ?? grupo.km ?? grupo.quilometragem,
           ),
           matricula: this.toNullableText(mot.matricula),
           motorista: this.toNullableText(mot.motorista),
-          nomeTurno: this.toNullableText(
-            mot.nomeTurno ?? mot.nome ?? linha.nomeTurno ?? linha.nome,
-          ),
+          nomeTurno: this.pickNomeTurno(mot) ?? this.pickNomeTurno(grupo),
           numeroViagem: this.toNullableText(
             mot.numeroViagem ??
               mot.numero ??
-              linha.numeroViagem ??
-              linha.numero,
+              grupo.numeroViagem ??
+              grupo.numero,
           ),
           horarioInicio:
             this.pickHorario(mot, 'inicio') ??
-            this.pickHorario(linha, 'inicio'),
+            this.pickHorario(grupo, 'inicio'),
           horarioFim:
-            this.pickHorario(mot, 'fim') ?? this.pickHorario(linha, 'fim'),
+            this.pickHorario(mot, 'fim') ?? this.pickHorario(grupo, 'fim'),
           ordem: ordem++,
         });
       }
@@ -341,12 +377,14 @@ export class EscalaService {
     'id' | 'criadoEm' | 'atualizadoEm' | 'idEscalaDia' | 'escalaDia'
   > {
     return {
-      linha: this.toNullableText(t.linha),
-      descricaoLinha: this.toNullableText(t.descricaoLinha ?? t.descricao),
+      grupo: this.toNullableText(t.grupo ?? t.descricao),
+      alocacao: this.toNullableText(t.alocacao),
+      tarefa: this.toNullableText(t.tarefa),
+      tipoViagem: this.toNullableText(t.tipo_viagem ?? t.tipoViagem),
       km: this.toNullableNumber(t.km ?? t.quilometragem),
       matricula: this.toNullableText(t.matricula),
       motorista: this.toNullableText(t.motorista),
-      nomeTurno: this.toNullableText(t.nomeTurno ?? t.nome),
+      nomeTurno: this.pickNomeTurno(t),
       numeroViagem: this.toNullableText(t.numeroViagem ?? t.numero),
       horarioInicio: this.pickHorario(t, 'inicio'),
       horarioFim: this.pickHorario(t, 'fim'),
@@ -354,35 +392,62 @@ export class EscalaService {
     };
   }
 
-  private agregarLinhasDosTurnos(
+  private agregarGruposDosTurnos(
     turnos: EscalaTurnoDto[],
-  ): EscalaLinhaAgregadaDto[] {
-    const map = new Map<string, EscalaLinhaAgregadaDto>();
+  ): EscalaGrupoAgregadoDto[] {
+    const map = new Map<string, EscalaGrupoAgregadoDto>();
     for (const t of turnos) {
-      const key = t.linha ?? '';
+      const key = t.grupo ?? '';
       let agg = map.get(key);
       if (!agg) {
-        agg = { linha: t.linha, km: 0, motoristas: [] };
+        agg = {
+          grupo: t.grupo,
+          km: 0,
+          alocacoes: [],
+          tarefas: [],
+          tiposViagem: [],
+          motoristas: [],
+        };
         map.set(key, agg);
       }
       const km = t.km ?? 0;
       agg.km = (agg.km ?? 0) + (Number.isFinite(km) ? km : 0);
+      const aloc = (t.alocacao ?? '').trim();
+      if (aloc && !agg.alocacoes.includes(aloc)) {
+        agg.alocacoes.push(aloc);
+      }
+      const tar = (t.tarefa ?? '').trim();
+      if (tar && !agg.tarefas.includes(tar)) {
+        agg.tarefas.push(tar);
+      }
+      const tipo = (t.tipoViagem ?? '').trim();
+      if (tipo && !agg.tiposViagem.includes(tipo)) {
+        agg.tiposViagem.push(tipo);
+      }
       if (t.motorista || t.matricula) {
         agg.motoristas.push({
           matricula: t.matricula,
           motorista: t.motorista,
           km: t.km,
+          alocacao: t.alocacao,
+          tarefa: t.tarefa,
+          tipoViagem: t.tipoViagem,
         });
       }
     }
     return Array.from(map.values());
   }
 
-  async sincronizarTelemetria(idEmpresa?: string): Promise<{
+  async sincronizarTelemetria(
+    idEmpresa?: string,
+    filtro?: { prefixo?: string; idVeiculo?: string },
+  ): Promise<{
     totalRecebidos: number;
     upserts: number;
     semVinculo: number;
     idEmpresaUsada: string;
+    prefixoFiltro: string | null;
+    encontrado: boolean;
   }> {
     const inicioMs = Date.now();
     const empresa = await this.resolverEmpresaBrt(idEmpresa);
@@ -392,8 +457,25 @@ export class EscalaService {
       );
     }
 
+    let prefixoFiltro = this.normalizarPrefixo(filtro?.prefixo ?? '');
+    const idVeiculoFiltro = (filtro?.idVeiculo ?? '').trim() || null;
+
+    // Com idVeiculo (ex.: após troca manual), o filtro BRT deve ser o prefixo do
+    // veículo OMNI atual (descricao), não o prefixo INFOBUS da linha de escala.
+    if (idVeiculoFiltro) {
+      const veiculoFiltro = await this.veiculoRepo.findOne({
+        where: { id: idVeiculoFiltro },
+      });
+      const prefixoOmni = this.normalizarPrefixo(veiculoFiltro?.descricao);
+      if (prefixoOmni) {
+        prefixoFiltro = prefixoOmni;
+      }
+    }
+
     this.logger.log(
-      `Sync telemetria: empresa=${empresa.descricao} id=${empresa.id} ten_emp=${empresa.brtTenEmp.trim()} urlBase=${empresa.brtUrlBase ?? '(default)'}`,
+      `Sync telemetria: empresa=${empresa.descricao} id=${empresa.id} ten_emp=${empresa.brtTenEmp.trim()} urlBase=${empresa.brtUrlBase ?? '(default)'}${
+        prefixoFiltro ? ` filtroPrefixo=${prefixoFiltro}` : ''
+      }${idVeiculoFiltro ? ` idVeiculo=${idVeiculoFiltro}` : ''}`,
     );
 
     const resposta = await this.brtTempoRealClient.buscarTempoReal({
@@ -407,7 +489,23 @@ export class EscalaService {
     const agora = new Date();
     let upserts = 0;
     let semVinculo = 0;
-    const lista = Array.isArray(resposta.data) ? resposta.data : [];
+    const listaRaw = Array.isArray(resposta.data) ? resposta.data : [];
+    const lista = prefixoFiltro
+      ? listaRaw.filter(
+          (item) => this.normalizarPrefixo(item.veiculo_id) === prefixoFiltro,
+        )
+      : listaRaw;
+
+    // Evita telemetria do prefixo INFOBUS antigo ficar vinculada ao veículo novo.
+    if (idVeiculoFiltro && prefixoFiltro) {
+      await this.telemetriaRepo
+        .createQueryBuilder()
+        .update()
+        .set({ idVeiculo: null })
+        .where('id_veiculo = :idVeiculo', { idVeiculo: idVeiculoFiltro })
+        .andWhere('prefixo != :prefixo', { prefixo: prefixoFiltro })
+        .execute();
+    }
 
     for (const item of lista) {
       const prefixo = this.normalizarPrefixo(item.veiculo_id);
@@ -415,14 +513,18 @@ export class EscalaService {
         continue;
       }
       const veiculo = veiculosMap.get(prefixo) ?? null;
-      if (!veiculo) {
+      if (!veiculo && !idVeiculoFiltro) {
         semVinculo += 1;
       }
       let row = await this.telemetriaRepo.findOne({ where: { prefixo } });
       if (!row) {
         row = this.telemetriaRepo.create({ prefixo });
       }
-      row.idVeiculo = veiculo?.id ?? null;
+      // Refresh pontual: vincula ao veículo OMNI informado (ex.: substituição).
+      row.idVeiculo = idVeiculoFiltro ?? veiculo?.id ?? null;
+      if (!row.idVeiculo) {
+        semVinculo += 1;
+      }
       row.veiculoIdBrt =
         item.veiculo_id == null ? null : Number(item.veiculo_id);
       row.dataHora = item.data_hora ? new Date(item.data_hora) : null;
@@ -436,20 +538,24 @@ export class EscalaService {
       upserts += 1;
     }
 
-    await this.configuracaoService.marcarSyncEscalaInfobus({
-      ultimoSyncTelemetriaEm: agora.toISOString(),
-    });
+    if (!prefixoFiltro) {
+      await this.configuracaoService.marcarSyncEscalaInfobus({
+        ultimoSyncTelemetriaEm: agora.toISOString(),
+      });
+    }
 
     const elapsedMs = Date.now() - inicioMs;
     this.logger.log(
-      `Sync telemetria: concluído em ${elapsedMs}ms recebidos=${lista.length} upserts=${upserts} semVinculo=${semVinculo} empresaId=${empresa.id}`,
+      `Sync telemetria: concluído em ${elapsedMs}ms recebidos=${listaRaw.length} filtrados=${lista.length} upserts=${upserts} semVinculo=${semVinculo} empresaId=${empresa.id}`,
     );
 
     return {
-      totalRecebidos: lista.length,
+      totalRecebidos: listaRaw.length,
       upserts,
       semVinculo,
       idEmpresaUsada: empresa.id,
+      prefixoFiltro: prefixoFiltro || null,
+      encontrado: !prefixoFiltro || upserts > 0,
     };
   }
 
@@ -489,10 +595,17 @@ export class EscalaService {
       const veiculo = esc.idVeiculo
         ? veiculoById.get(esc.idVeiculo) ?? null
         : null;
-      const tele =
-        (esc.idVeiculo ? teleByVeiculo.get(esc.idVeiculo) : undefined) ??
-        teleByPrefixo.get(this.normalizarPrefixo(esc.prefixo)) ??
-        null;
+      // Após troca manual, telemetria vem do veículo OMNI (descricao), nunca do
+      // prefixo INFOBUS antigo da linha.
+      const tele = esc.veiculoSubstituidoManual
+        ? (veiculo
+            ? teleByPrefixo.get(this.normalizarPrefixo(veiculo.descricao))
+            : undefined) ??
+          (esc.idVeiculo ? teleByVeiculo.get(esc.idVeiculo) : undefined) ??
+          null
+        : (esc.idVeiculo ? teleByVeiculo.get(esc.idVeiculo) : undefined) ??
+          teleByPrefixo.get(this.normalizarPrefixo(esc.prefixo)) ??
+          null;
 
       const infoRetido = esc.idVeiculo
         ? retidos.get(esc.idVeiculo) ?? { retido: false, qtd: 0 }
@@ -511,21 +624,14 @@ export class EscalaService {
         veiculo?.combustivel as Combustivel | undefined,
       );
       const kmEscala = Number(esc.kmTotal) || 0;
-      const alertaAutonomia =
-        exigeAutonomia &&
-        kmEscala > 0 &&
-        ((telemetria.disponivel &&
-          telemetria.autonomiaKm != null &&
-          telemetria.autonomiaKm < kmEscala) ||
-          (calculoOmni.disponivel &&
-            calculoOmni.autonomiaKm != null &&
-            calculoOmni.autonomiaKm < kmEscala));
 
       const turnos: EscalaTurnoDto[] = [...(esc.turnos ?? [])]
         .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
         .map((t) => ({
-          linha: t.linha ?? null,
-          descricaoLinha: t.descricaoLinha ?? null,
+          grupo: t.grupo ?? null,
+          alocacao: t.alocacao ?? null,
+          tarefa: t.tarefa ?? null,
+          tipoViagem: t.tipoViagem ?? null,
           km: t.km ?? null,
           matricula: t.matricula ?? null,
           motorista: t.motorista ?? null,
@@ -536,16 +642,41 @@ export class EscalaService {
           ordem: t.ordem ?? 0,
         }));
 
+      /** Alerta se algum turno (soma KM do turno) superar qualquer fonte de autonomia. */
+      const kmPorTurno = new Map<string, number>();
+      for (const t of turnos) {
+        const chave = (t.nomeTurno ?? '').trim() || 'Sem turno';
+        const km = t.km != null && Number.isFinite(Number(t.km)) ? Number(t.km) : 0;
+        kmPorTurno.set(chave, (kmPorTurno.get(chave) ?? 0) + km);
+      }
+      const kmsTurno = Array.from(kmPorTurno.values());
+      const referenciaKm =
+        kmsTurno.length > 0 ? kmsTurno : kmEscala > 0 ? [kmEscala] : [];
+      const alertaAutonomia =
+        exigeAutonomia &&
+        referenciaKm.some(
+          (kmTurno) =>
+            kmTurno > 0 &&
+            ((telemetria.disponivel &&
+              telemetria.autonomiaKm != null &&
+              telemetria.autonomiaKm < kmTurno) ||
+              (calculoOmni.disponivel &&
+                calculoOmni.autonomiaKm != null &&
+                calculoOmni.autonomiaKm < kmTurno)),
+        );
+
       return {
+        idEscalaDia: esc.id,
         data: dataIso,
         prefixo: esc.prefixo,
         idVeiculo: esc.idVeiculo ?? null,
         descricao: veiculo?.descricao ?? null,
         placa: veiculo?.placa ?? null,
         combustivel: veiculo?.combustivel ?? null,
+        veiculoSubstituidoManual: !!esc.veiculoSubstituidoManual,
         kmEscala,
         turnos,
-        linhas: this.agregarLinhasDosTurnos(turnos),
+        grupos: this.agregarGruposDosTurnos(turnos),
         retido: infoRetido.retido,
         qtdOsVermelhas: infoRetido.qtd,
         bateriaPct,
@@ -566,6 +697,9 @@ export class EscalaService {
       };
     });
 
+    const cfgEscala =
+      await this.configuracaoService.getEscalaInfobusConfigInterna();
+
     return {
       data: dataIso,
       total: itens.length,
@@ -575,6 +709,9 @@ export class EscalaService {
         alertaAutonomia: itens.filter((i) => i.alertaAutonomia).length,
         semVinculoVeiculo: itens.filter((i) => !i.idVeiculo).length,
       },
+      ultimoSyncEscalaEm: cfgEscala?.ultimoSyncEscalaEm?.trim() || null,
+      ultimoSyncTelemetriaEm:
+        cfgEscala?.ultimoSyncTelemetriaEm?.trim() || null,
     };
   }
 
@@ -620,6 +757,145 @@ export class EscalaService {
       autonomiaKm,
       autonomia100Km,
       disponivel: true,
+    };
+  }
+
+  async trocarVeiculoEscala(
+    idEscalaDia: string,
+    idVeiculoNovo: string,
+  ): Promise<{
+    idEscalaDia: string;
+    data: string;
+    prefixo: string;
+    idVeiculo: string;
+    descricao: string | null;
+    placa: string | null;
+    veiculoSubstituidoManual: boolean;
+  }> {
+    const idEscala = (idEscalaDia ?? '').trim();
+    const idVeiculo = (idVeiculoNovo ?? '').trim();
+    if (!idEscala) {
+      throw new BadRequestException('Informe a escala do dia.');
+    }
+    if (!idVeiculo) {
+      throw new BadRequestException('Informe o veículo de substituição.');
+    }
+
+    const escala = await this.escalaRepo.findOne({ where: { id: idEscala } });
+    if (!escala) {
+      throw new NotFoundException('Escala do dia não encontrada.');
+    }
+
+    const veiculo = await this.veiculoRepo.findOne({ where: { id: idVeiculo } });
+    if (!veiculo) {
+      throw new NotFoundException('Veículo não encontrado.');
+    }
+
+    escala.idVeiculo = veiculo.id;
+    escala.veiculoSubstituidoManual = true;
+    await this.escalaRepo.save(escala);
+
+    return {
+      idEscalaDia: escala.id,
+      data: escala.data,
+      prefixo: escala.prefixo,
+      idVeiculo: veiculo.id,
+      descricao: veiculo.descricao ?? null,
+      placa: veiculo.placa ?? null,
+      veiculoSubstituidoManual: true,
+    };
+  }
+
+  async listarOsRetencao(idVeiculo: string): Promise<{
+    idVeiculo: string;
+    descricao: string | null;
+    placa: string | null;
+    total: number;
+    itens: Array<{
+      id: string;
+      numeroIrregularidade: number;
+      numeroVistoria: number | null;
+      statusAtual: StatusIrregularidade;
+      nomeArea: string | null;
+      nomeComponente: string | null;
+      descricaoSintoma: string | null;
+      observacao: string | null;
+      criadoEm: string | null;
+      erpCodigoPedido: string | null;
+      numOsExternoAtual: number | null;
+      statusBrtAtual: string | null;
+      osOrigAtual: string | null;
+      idEmpresaManutencao: string | null;
+      nomeEmpresa: string | null;
+    }>;
+  }> {
+    const id = (idVeiculo ?? '').trim();
+    if (!id) {
+      throw new BadRequestException('Informe o veículo.');
+    }
+
+    const veiculo = await this.veiculoRepo.findOne({ where: { id } });
+    if (!veiculo) {
+      throw new NotFoundException('Veículo não encontrado.');
+    }
+
+    const rows = await this.irregularidadeRepo
+      .createQueryBuilder('i')
+      .innerJoinAndSelect('i.vistoria', 'v')
+      .leftJoinAndSelect('i.area', 'area')
+      .leftJoinAndSelect('i.componente', 'componente')
+      .leftJoinAndSelect('i.sintoma', 'sintoma')
+      .innerJoin(
+        MatrizCriticidade,
+        'matriz',
+        'matriz.idComponente = i.idComponente AND matriz.idSintoma = i.idSintoma',
+      )
+      .where('v.idVeiculo = :idVeiculo', { idVeiculo: id })
+      .andWhere('i.statusAtual IN (:...status)', { status: STATUS_RETIDO })
+      .andWhere('matriz.gravidade = :gravidade', {
+        gravidade: GravidadeCriticidade.VERMELHO,
+      })
+      .orderBy('i.numeroIrregularidade', 'ASC')
+      .getMany();
+
+    const idsEmpresa = Array.from(
+      new Set(
+        rows
+          .map((i) => i.idEmpresaManutencao)
+          .filter((eid): eid is string => !!eid),
+      ),
+    );
+    const empresas =
+      idsEmpresa.length > 0
+        ? await this.empresaRepo.find({ where: { id: In(idsEmpresa) } })
+        : [];
+    const empresaById = new Map(empresas.map((e) => [e.id, e.descricao ?? null]));
+
+    return {
+      idVeiculo: id,
+      descricao: veiculo.descricao ?? null,
+      placa: veiculo.placa ?? null,
+      total: rows.length,
+      itens: rows.map((i) => ({
+        id: i.id,
+        numeroIrregularidade: i.numeroIrregularidade,
+        numeroVistoria: i.vistoria?.numeroVistoria ?? null,
+        statusAtual: i.statusAtual,
+        nomeArea: i.area?.nome ?? null,
+        nomeComponente: i.componente?.nome ?? null,
+        descricaoSintoma: i.sintoma?.descricao ?? null,
+        observacao: i.observacao ?? null,
+        criadoEm: i.criadoEm ? i.criadoEm.toISOString() : null,
+        erpCodigoPedido: i.erpCodigoPedido ?? null,
+        numOsExternoAtual:
+          i.numOsExternoAtual == null ? null : Number(i.numOsExternoAtual),
+        statusBrtAtual: i.statusBrtAtual ?? null,
+        osOrigAtual: i.osOrigAtual ?? null,
+        idEmpresaManutencao: i.idEmpresaManutencao ?? null,
+        nomeEmpresa: i.idEmpresaManutencao
+          ? empresaById.get(i.idEmpresaManutencao) ?? null
+          : null,
+      })),
     };
   }
 
