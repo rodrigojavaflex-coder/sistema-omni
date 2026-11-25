@@ -63,6 +63,11 @@ export const PERMISSION_MODULE_CONFIG: PermissionModuleConfig[] = [
     groupKeys: ['Metas'],
   },
   {
+    key: 'indicadores',
+    label: 'Indicadores',
+    groupKeys: ['Indicadores', 'Indicadores – Lançamentos'],
+  },
+  {
     key: 'mobile',
     label: 'Mobile',
     groupKeys: ['Vistoria Mobile'],

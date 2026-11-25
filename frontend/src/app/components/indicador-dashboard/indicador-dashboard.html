@@ -1,0 +1,304 @@
+<div class="dashboard-wrapper" (document:click)="onDocumentClick($event)">
+  <section class="cards-panel">
+    <div class="panel-header">
+      <div>
+        <h2>Painel de Indicadores</h2>
+        <p>Acompanhe o resumo e lance os valores mensais dos indicadores.</p>
+        <div class="active-filters" *ngIf="hasAppliedFilters">
+          <span class="filter-chip" *ngFor="let chip of appliedFiltersChips">
+            {{ chip.label }}: <strong>{{ chip.value }}</strong>
+          </span>
+        </div>
+      </div>
+      <button class="btn btn-secondary" (click)="toggleFilters()" [disabled]="cardsLoading">
+        {{ showFilters ? 'Ocultar filtros' : 'Filtros' }}
+      </button>
+    </div>
+
+    <form *ngIf="showFilters" class="filters-card" [formGroup]="filtersForm">
+      <div class="filters-grid">
+        <label class="filter-field">
+          <span>Exercício</span>
+          <select formControlName="anoExercicio" class="form-select">
+            <option value="">Ano Atual</option>
+            <option *ngFor="let ano of availableYears" [value]="ano">{{ ano }}</option>
+          </select>
+        </label>
+        <label class="filter-field">
+          <span>Departamento</span>
+          <select formControlName="departamentoId" class="form-select">
+            <option value="">Todos os departamentos</option>
+            <option *ngFor="let dep of departamentos" [value]="dep.id">
+              {{ dep.nomeDepartamento }}
+            </option>
+          </select>
+        </label>
+        <label class="filter-field">
+          <span>Status</span>
+          <select formControlName="somenteAtivos" class="form-select">
+            <option [ngValue]="true">Somente ativos</option>
+            <option [ngValue]="false">Todos</option>
+          </select>
+        </label>
+      </div>
+      <div class="filter-actions">
+        <button type="button" class="btn btn-secondary" (click)="onClearFilters()">Limpar</button>
+        <button
+          type="button"
+          class="btn btn-link"
+          (click)="refreshCardsOnly()"
+          [disabled]="cardsLoading"
+        >
+          {{ cardsLoading ? 'Atualizando...' : 'Atualizar dados' }}
+        </button>
+      </div>
+    </form>
+
+    <div *ngIf="cardsLoading" class="loading-state">Carregando indicadores...</div>
+    <div *ngIf="!cardsLoading && cards.length === 0" class="empty-state">
+      Nenhum indicador disponível para os filtros/departamentos do usuário.
+    </div>
+
+    <div *ngIf="!cardsLoading && cards.length" class="cards-grid">
+      <button
+        type="button"
+        class="meta-card"
+        *ngFor="let card of cards"
+        [class.active]="selectedIndicador?.id === card.id"
+        (click)="openIndicadorModal(card)"
+      >
+        <div class="card-content">
+          <div class="card-title-row">
+            <h3>{{ card.codigoIndicador }} - {{ card.nomeIndicador }}</h3>
+            <span class="polaridade-pill">{{ card.ativo ? 'Ativo' : 'Inativo' }}</span>
+          </div>
+          <p class="card-departamento">{{ card.departamentoNome | uppercase }}</p>
+
+          <div class="card-stats">
+            <div>
+              <span>Último valor</span>
+              <strong>{{ formatValor(card.ultimoValor, card.unidadeMedida) }}</strong>
+            </div>
+            <div>
+              <span>Meses no ano</span>
+              <strong>{{ card.totalMesesAno }}</strong>
+            </div>
+            <div>
+              <span>Soma no ano</span>
+              <strong>{{ formatValor(card.somaAno, card.unidadeMedida) }}</strong>
+            </div>
+            <div>
+              <span>Média no ano</span>
+              <strong>{{ formatValor(card.mediaAno, card.unidadeMedida) }}</strong>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <div class="deadline">
+              <span>{{ card.tipoIndicador }} · {{ card.unidadeMedida }}</span>
+            </div>
+            <div class="exec-count">{{ card.totalExecucoes }} lançamentos</div>
+          </div>
+        </div>
+      </button>
+    </div>
+  </section>
+
+  <div
+    class="exec-modal-overlay"
+    *ngIf="execModalVisible && selectedIndicador as ind"
+    (click)="closeExecModal()"
+  >
+    <div class="exec-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal-header compact-header">
+        <div class="header-info">
+          <h2>{{ ind.codigoIndicador }} - {{ ind.nomeIndicador }}</h2>
+          <div class="header-meta">
+            <span>{{ ind.departamentoNome }}</span>
+            <span>• {{ ind.tipoIndicador }}</span>
+            <span>• {{ ind.unidadeMedida }}</span>
+            <span>• {{ ind.ativo ? 'Ativo' : 'Inativo' }}</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button
+            *ngIf="canCreateExecucao && ind.ativo"
+            class="btn btn-primary"
+            (click)="openCreateExecucao()"
+          >
+            Novo Lançamento
+          </button>
+          <button type="button" class="icon-button" aria-label="Fechar" (click)="closeExecModal()">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div class="details-summary wide">
+        <div>
+          <span>Último valor</span>
+          <strong>{{ formatValor(ind.ultimoValor, ind.unidadeMedida) }}</strong>
+        </div>
+        <div>
+          <span>Último período</span>
+          <strong>{{ ind.ultimoPeriodo ? formatDataMesAno(ind.ultimoPeriodo) : '-' }}</strong>
+        </div>
+        <div>
+          <span>Meses no ano</span>
+          <strong>{{ ind.totalMesesAno }}</strong>
+        </div>
+        <div>
+          <span>Soma no ano</span>
+          <strong>{{ formatValor(ind.somaAno, ind.unidadeMedida) }}</strong>
+        </div>
+        <div>
+          <span>Média no ano</span>
+          <strong>{{ formatValor(ind.mediaAno, ind.unidadeMedida) }}</strong>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div *ngIf="execLoading" class="loading-state">Carregando lançamentos...</div>
+        <div *ngIf="!execLoading && execucoes.length === 0" class="empty-state">
+          Nenhum lançamento registrado para este indicador ainda.
+        </div>
+
+        <table *ngIf="!execLoading && execucoes.length" class="data-table exec-table">
+          <thead>
+            <tr>
+              <th>Período</th>
+              <th>Valor</th>
+              <th>Justificativa</th>
+              <th class="actions-col">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let execucao of execucoes"
+              (contextmenu)="openExecucaoMenu($event, execucao)"
+            >
+              <td>{{ formatDataMesAno(execucao.dataReferencia) }}</td>
+              <td>{{ formatValor(execucao.valor, ind.unidadeMedida) }}</td>
+              <td>{{ execucao.justificativa || '-' }}</td>
+              <td class="actions-col">
+                <button
+                  class="link-button action-menu-trigger"
+                  (click)="openExecucaoMenu($event, execucao)"
+                >
+                  Opções
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div
+        class="execucao-menu"
+        *ngIf="execucaoMenuVisible && contextExecucao"
+        #execucaoMenuRef
+        [style.top.px]="execucaoMenuPosition.y"
+        [style.left.px]="execucaoMenuPosition.x"
+        (click)="$event.stopPropagation()"
+        (contextmenu)="$event.stopPropagation()"
+      >
+        <div class="menu-header">
+          <span>Opções</span>
+          <button class="menu-close" (click)="closeExecucaoMenu()">✕</button>
+        </div>
+        <button class="menu-item" *ngIf="canUpdateExecucao" (click)="onMenuEdit()">Editar</button>
+        <button class="menu-item" *ngIf="canAudit" (click)="onMenuAudit()">Auditoria</button>
+        <button class="menu-item danger" *ngIf="canDeleteExecucao" (click)="onMenuDelete()">
+          Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="execucao-form-overlay"
+    *ngIf="formVisible && selectedIndicador as indForm"
+    (click)="closeExecucaoForm()"
+  >
+    <div class="execucao-form-card" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="form-header">
+        <div>
+          <h3>{{ editingExecucaoId ? 'Editar lançamento' : 'Novo lançamento' }}</h3>
+          <p>{{ indForm.codigoIndicador }} - {{ indForm.nomeIndicador }}</p>
+        </div>
+        <button type="button" class="icon-button" aria-label="Fechar" (click)="closeExecucaoForm()">
+          ✕
+        </button>
+      </div>
+
+      <form [formGroup]="execucaoForm" (ngSubmit)="saveExecucao()">
+        <div class="form-group">
+          <label>Mês/Ano *</label>
+          <select formControlName="mesAno" class="form-select">
+            <option value="">Selecione o mês/ano</option>
+            <option *ngFor="let m of mesesAnoDisponiveis" [value]="m.value">
+              {{ m.label }}
+            </option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('mesAno')">
+            Selecione um mês/ano válido.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Valor *</label>
+          <input type="text" inputmode="decimal" formControlName="valor" class="form-input" />
+          <div class="form-error" *ngIf="isFieldInvalid('valor')">
+            Informe um número com até quatro casas decimais.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Justificativa</label>
+          <textarea
+            rows="3"
+            formControlName="justificativa"
+            class="form-input"
+            placeholder="Observação do lançamento (opcional)"
+          ></textarea>
+          <div class="form-error" *ngIf="isFieldInvalid('justificativa')">
+            Justificativa pode ter no máximo 1000 caracteres.
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="execucaoForm.invalid">
+            {{ editingExecucaoId ? 'Salvar alterações' : 'Registrar lançamento' }}
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="closeExecucaoForm()">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <app-confirmation-modal
+    [isVisible]="showDeleteModal"
+    title="Confirmação de Exclusão"
+    [message]="deleteModalMessage"
+    confirmText="Excluir"
+    cancelText="Cancelar"
+    (confirmed)="onDeleteConfirmed()"
+    (cancelled)="onDeleteCancelled()"
+  ></app-confirmation-modal>
+
+  <app-historico-auditoria
+    *ngIf="execucaoParaAuditoria"
+    [entidade]="'indicador_execucoes'"
+    [entidadeId]="execucaoParaAuditoria.id"
+    [entityDisplayName]="'Lançamento de Indicador'"
+    [fieldLabels]="{
+      dataReferencia: 'Período',
+      valor: 'Valor',
+      justificativa: 'Justificativa'
+    }"
+    [showModal]="showAuditModal"
+    (modalClosed)="closeAudit()"
+  ></app-historico-auditoria>
+</div>

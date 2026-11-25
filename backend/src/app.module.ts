@@ -23,6 +23,7 @@ import brtOsConfig from './config/brt-os.config';
 import { Configuracao } from './modules/configuracao/entities/configuracao.entity';
 import { DepartamentoModule } from './modules/departamento/departamento.module';
 import { MetaModule } from './modules/meta/meta.module';
+import { IndicadorModule } from './modules/indicador/indicador.module';
 import { VistoriaModule } from './modules/vistoria/vistoria.module';
 import { SystemModule } from './modules/system/system.module';
 import { OrigemOcorrenciaModule } from './modules/origem-ocorrencia/origem-ocorrencia.module';
@@ -66,6 +67,7 @@ import { EscalaModule } from './modules/escala/escala.module';
     PerfilModule,
     DepartamentoModule,
     MetaModule,
+    IndicadorModule,
     VistoriaModule,
     SystemModule,
     OrigemOcorrenciaModule,

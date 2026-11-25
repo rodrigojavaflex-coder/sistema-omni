@@ -1,0 +1,107 @@
+<div class="form-container">
+  <h2>{{ getFormTitle() }} Indicador</h2>
+
+  <div class="form-actions form-actions-top">
+    <button type="submit" class="btn btn-primary" [disabled]="loading" (click)="onSubmit()">
+      <span *ngIf="loading" class="spinner"></span>
+      {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-section">
+      <h3>Informações do Indicador</h3>
+
+      <div class="form-inline">
+        <div class="form-group" *ngIf="editMode">
+          <label class="form-label">Código</label>
+          <input type="text" class="form-input" [value]="codigoIndicador ?? ''" disabled />
+        </div>
+        <div class="form-group" style="flex: 2;">
+          <label class="form-label">Nome *</label>
+          <input type="text" formControlName="nomeIndicador" class="form-input" maxlength="200" />
+          <div class="form-error" *ngIf="isFieldInvalid('nomeIndicador')">
+            {{ getFieldError('nomeIndicador') }}
+          </div>
+        </div>
+        <div class="form-group" style="flex: 2;">
+          <label class="form-label">Departamento *</label>
+          <select formControlName="departamentoId" class="form-select">
+            <option value="">Selecione</option>
+            <option *ngFor="let dep of departamentos" [value]="dep.id">
+              {{ dep.nomeDepartamento }}
+            </option>
+          </select>
+          <div class="form-error" *ngIf="isFieldInvalid('departamentoId')">
+            {{ getFieldError('departamentoId') }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-inline">
+        <div class="form-group">
+          <label class="form-label">Unidade de medida *</label>
+          <input
+            type="text"
+            formControlName="unidadeMedida"
+            class="form-input"
+            list="unidade-sugestoes"
+            maxlength="50"
+            autocomplete="off"
+          />
+          <datalist id="unidade-sugestoes">
+            <option *ngFor="let u of unidadeSugestoes" [value]="u"></option>
+          </datalist>
+          <div class="form-error" *ngIf="isFieldInvalid('unidadeMedida')">
+            {{ getFieldError('unidadeMedida') }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo *</label>
+          <input
+            type="text"
+            formControlName="tipoIndicador"
+            class="form-input"
+            list="tipo-sugestoes"
+            maxlength="30"
+            autocomplete="off"
+          />
+          <datalist id="tipo-sugestoes">
+            <option *ngFor="let t of tipoSugestoes" [value]="t"></option>
+          </datalist>
+          <div class="form-error" *ngIf="isFieldInvalid('tipoIndicador')">
+            {{ getFieldError('tipoIndicador') }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ordem de exibição</label>
+          <input type="number" formControlName="ordemExibicao" class="form-input" min="0" />
+          <div class="form-error" *ngIf="isFieldInvalid('ordemExibicao')">
+            {{ getFieldError('ordemExibicao') }}
+          </div>
+        </div>
+        <div class="form-group" *ngIf="editMode">
+          <label class="form-label">Ativo *</label>
+          <select formControlName="ativo" class="form-select">
+            <option [ngValue]="true">Sim</option>
+            <option [ngValue]="false">Não</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Detalhe (definição, fonte, regra, observações)</label>
+        <textarea formControlName="detalheIndicador" class="form-input" rows="4"></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ loading ? 'Salvando...' : getSubmitButtonText() }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancelar</button>
+    </div>
+  </form>
+</div>

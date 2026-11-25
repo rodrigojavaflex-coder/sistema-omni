@@ -800,6 +800,236 @@ Copie o bloco abaixo para cada regra nova.
 - **Status:** Implementada
 - **Origem da regra:** Plano Controle Escala 2026-10-28; autonomia por turno 2026-11-18; tempos de largada/intervalo 2026-11-18; sync info + relatório 2026-11-19; refresh telemetria por veiculo 2026-11-19; UI filtros/modal/conflito/sort 2026-11-19; previsão carregamento 2026-11-19
 
+### Metas
+
+### RN-META-001 - Escopo por departamentos do usuario
+- **Modulo:** Metas
+- **Fluxo:** Listagem, cadastro, edicao, exclusao e painel de metas/execucoes
+- **Descricao:** O usuario so visualiza e manipula metas (e execucoes) dos departamentos aos quais esta vinculado (`DepartamentoUsuario`). Dashboard exige leitura de meta e de execucao.
+- **Condicoes de entrada:** Usuario autenticado com vinculo em ao menos um departamento (senao listagem/painel vazios)
+- **Validacoes:** `departamentoId` informado no create/update deve pertencer aos departamentos do usuario; acesso a meta/execucao fora do escopo retorna 403
+- **Acoes do sistema:** Filtrar `GET /metas` e `GET /metas/dashboard` pelos departamentos do usuario; validar acesso em findOne/update/delete e em todas as operacoes de execucao
+- **Mensagens ao usuario:** "Usuario nao tem acesso a este departamento"; "Usuario nao tem acesso a esta meta"
+- **Permissoes envolvidas:** `meta:create|read|update|delete|audit`; `meta_execucao:create|read|update|delete|audit` (dashboard: `meta:read` + `meta_execucao:read`)
+- **Dados impactados:** `metas`, `meta_execucoes`, `departamento_usuario`
+- **Rastreabilidade:** Auditoria corporativa nas execucoes (CUD)
+- **Criterios de aceite:**
+  - [ ] Usuario sem departamento nao ve metas
+  - [ ] Create/update com departamento fora do vinculo retorna 403
+  - [ ] Execucao de meta de outro departamento retorna 403
+- **Cenarios de excecao:** Meta inexistente → 404
+- **Origem da regra:** Implementacao atual do modulo Metas; formalizacao 2026-11-24
+- **Status:** Implementada
+
+### RN-META-002 - Cadastro e edicao de meta
+- **Modulo:** Metas
+- **Fluxo:** Formulario de meta (`/meta/new`, `/meta/edit/:id`)
+- **Descricao:** Meta pertence a um departamento e possui titulo, descricao, polaridade, periodo (inicio/prazo), valor de referencia, unidade, tipo de unidade (opcional, texto livre) e tipo de calculo (`indicador`).
+- **Condicoes de entrada:** Permissao `meta:create` ou `meta:update`; departamento no escopo do usuario
+- **Validacoes:** Campos obrigatorios: `tituloDaMeta`, `departamentoId`, `descricaoDetalhada`, `polaridade`, `inicioDaMeta`, `prazoFinal`, `valorMeta`, `unidade`, `indicador`; `tipoDaUnidade` opcional (trim; vazio → null, max 30)
+- **Acoes do sistema:** Persistir em `metas`; listagem com filtros client-side (busca, ano do prazo, departamento, polaridade, indicador)
+- **Mensagens ao usuario:** Mensagens de validacao de DTO (class-validator)
+- **Permissoes envolvidas:** `meta:create`, `meta:update`, `meta:read`
+- **Dados impactados:** `metas`
+- **Rastreabilidade:** Auditoria padrao da entidade quando habilitada na UI (`meta:audit`)
+- **Criterios de aceite:**
+  - [ ] Nao salva sem campos obrigatorios
+  - [ ] Polaridade restrita a `MAIOR_MELHOR` / `MENOR_MELHOR`
+  - [ ] Unidade e indicador restritos aos enums do backend
+- **Cenarios de excecao:** Departamento invalido ou sem acesso
+- **Origem da regra:** Formalizacao do modulo Metas, 2026-11-24
+- **Status:** Implementada
+
+### RN-META-003 - Tipo de calculo do indicador da meta (painel)
+- **Modulo:** Metas
+- **Fluxo:** Painel de Metas (`/meta/dashboard`)
+- **Descricao:** O campo `indicador` da meta define como o status e o progresso sao calculados a partir das execucoes. Nao confundir com o modulo transacional de Indicadores (RN-IND-*).
+- **Condicoes de entrada:** Meta com `valorMeta` e conjunto de execucoes (pode ser vazio)
+- **Validacoes:** Valores permitidos: `RESULTADO_ACUMULADO`, `POR_MEDIA`, `PROGRESSO`, `INDICE_ACUMULADO`
+- **Acoes do sistema:**
+  - `RESULTADO_ACUMULADO`: status = soma dos valores realizados; progresso = status / valorMeta
+  - `POR_MEDIA`: status = media no intervalo de meses da meta; com `MENOR_MELHOR` projeta meses sem execucao; progresso conforme polaridade
+  - `PROGRESSO` / `INDICE_ACUMULADO`: status (e total no indice) = ultimo valor realizado
+- **Mensagens ao usuario:** N/A (calculo exibido nos cards)
+- **Permissoes envolvidas:** `meta:read` + `meta_execucao:read`
+- **Dados impactados:** Leitura de `metas` + `meta_execucoes` (nao altera persistencia)
+- **Rastreabilidade:** N/A
+- **Criterios de aceite:**
+  - [ ] Card reflete o tipo de indicador escolhido na meta
+  - [ ] Polaridade `MENOR_MELHOR` inverte a interpretacao de progresso quando aplicavel
+- **Cenarios de excecao:** Sem execucoes → status/progresso zerados ou conforme regra do tipo
+- **Origem da regra:** Formalizacao do calculo existente em `MetaService.getDashboard`, 2026-11-24
+- **Status:** Implementada
+
+### RN-META-004 - Lancamento de execucao da meta
+- **Modulo:** Metas
+- **Fluxo:** CRUD de execucoes no painel / endpoints aninhados
+- **Descricao:** Cada execucao registra `dataRealizado`, `valorRealizado` e `justificativa` opcional (max 1000). A data deve estar entre `inicioDaMeta` e `prazoFinal` (se houver prazo).
+- **Condicoes de entrada:** Meta existente e no escopo do usuario; permissao de execucao correspondente
+- **Validacoes:** Data obrigatoria no intervalo da meta; valor numerico; justificativa opcional
+- **Acoes do sistema:** `GET/POST/PATCH/DELETE /metas/:metaId/execucoes[/:execucaoId]`
+- **Mensagens ao usuario:** "Data da execucao deve estar entre o inicio da meta: … e o prazo final: …"; "Execucao nao encontrada para esta meta"
+- **Permissoes envolvidas:** `meta_execucao:create|read|update|delete`
+- **Dados impactados:** `meta_execucoes`
+- **Rastreabilidade:** AuditLog no CUD de execucao
+- **Criterios de aceite:**
+  - [ ] Data fora do periodo da meta e rejeitada
+  - [ ] Create/update/delete exigem permissao e acesso ao departamento da meta
+- **Cenarios de excecao:** Meta/execucao inexistente → 404
+- **Origem da regra:** Formalizacao `MetaExecucaoService`, 2026-11-24
+- **Status:** Implementada
+
+### RN-META-005 - Exclusao de meta
+- **Modulo:** Metas
+- **Fluxo:** Excluir meta na listagem
+- **Descricao:** Exclusao fisica da meta. Execucoes vinculadas sao removidas em cascata (`onDelete: CASCADE` em `meta_execucoes`).
+- **Condicoes de entrada:** Permissao `meta:delete`; meta no escopo do usuario
+- **Validacoes:** Acesso ao departamento da meta
+- **Acoes do sistema:** `DELETE /metas/:id` remove a meta e suas execucoes
+- **Mensagens ao usuario:** Confirmacao na UI antes de excluir
+- **Permissoes envolvidas:** `meta:delete`
+- **Dados impactados:** `metas`, `meta_execucoes`
+- **Rastreabilidade:** Auditoria de exclusao quando habilitada
+- **Criterios de aceite:**
+  - [ ] Apos excluir, meta e execucoes nao retornam na API
+- **Cenarios de excecao:** Meta inexistente → 404; sem acesso → 403
+- **Origem da regra:** Comportamento atual do modulo; formalizacao 2026-11-24
+- **Status:** Implementada
+
+### Indicadores (transacional)
+
+> Camada de entrada/manutencao de indicadores por departamento e lancamentos mensais, para consumo posterior em DW/Power BI. Padrao de telas semelhante a Metas (cadastro + painel). Conceito distinto do campo `indicador` de Metas (RN-META-003).
+
+### RN-IND-001 - Escopo por departamentos do usuario
+- **Modulo:** Indicadores
+- **Fluxo:** Cadastro de indicadores e lancamentos mensais
+- **Descricao:** Usuario so visualiza e manipula indicadores/execucoes dos departamentos aos quais esta vinculado (mesmo padrao de Metas).
+- **Condicoes de entrada:** Usuario autenticado vinculado a departamento(s)
+- **Validacoes:** `departamentoId` no escopo do usuario; 403 fora do escopo
+- **Acoes do sistema:** Filtrar listagens e validar acesso em CUD de indicador e execucao
+- **Mensagens ao usuario:** Mensagem clara de falta de acesso ao departamento/indicador
+- **Permissoes envolvidas:** catalogo separado por tela — grupo `Indicadores` (`indicador:*`) e grupo `Indicadores – Lançamentos` (`indicador_execucao:*`); concessao manual em Perfis
+- **Dados impactados:** `indicadores`, `indicador_execucoes`, `departamento_usuario`
+- **Rastreabilidade:** Auditoria corporativa (sem tabela propria de historico)
+- **Criterios de aceite:**
+  - [ ] Sem vinculo de departamento → listas vazias
+  - [ ] Operacao fora do escopo → 403
+- **Cenarios de excecao:** Indicador inexistente → 404
+- **Origem da regra:** Doc Sistema Indicadores v3 + alinhamento Metas; decisoes 2026-11-24
+- **Status:** Implementada
+
+### RN-IND-002 - Cadastro de indicador e codigo sequencial
+- **Modulo:** Indicadores
+- **Fluxo:** CRUD de indicador
+- **Descricao:** Cada indicador tem `codigoIndicador` inteiro unico gerado pelo sistema (SEQUENCE PostgreSQL), imutavel apos criacao e nao reutilizavel. Demais campos: `nomeIndicador`, `departamentoId`, `unidadeMedida`, `tipoIndicador`, `detalheIndicador` (opcional), `ativo`, `ordemExibicao` (opcional).
+- **Condicoes de entrada:** Permissao de create/update; departamento no escopo
+- **Validacoes:** Nome, departamento, unidadeMedida e tipoIndicador obrigatorios; codigo nao editavel no update; unicidade de `codigoIndicador`
+- **Acoes do sistema:** No create, obter proximo valor da SEQUENCE de forma concorrente-segura; persistir em `indicadores`
+- **Mensagens ao usuario:** Erros de validacao de DTO; conflito de codigo unico
+- **Permissoes envolvidas:** `indicador:create|read|update|delete|audit`
+- **Dados impactados:** `indicadores`, SEQUENCE `indicadores_codigo_seq` (nome final na migration)
+- **Rastreabilidade:** Auditoria corporativa
+- **Criterios de aceite:**
+  - [ ] Dois creates simultaneos nao geram o mesmo codigo
+  - [ ] Update nao altera `codigoIndicador`
+  - [ ] Codigo de indicador desativado/excluido nao e reatribuido
+- **Cenarios de excecao:** Falha de SEQUENCE / violacao UNIQUE
+- **Origem da regra:** Documentacao Desenvolvedor Sistema Indicadores v3; 2026-11-24
+- **Status:** Implementada
+
+### RN-IND-003 - Unidade de medida e tipo como texto livre
+- **Modulo:** Indicadores
+- **Fluxo:** Cadastro/edicao de indicador
+- **Descricao:** `unidadeMedida` e `tipoIndicador` sao texto livre (sem enum fechado no backend). A UI pode oferecer sugestoes (ex.: PASSAGEIROS, KM, R$; QUANTIDADE, VALOR, PERCENTUAL), sem impor lista exclusiva.
+- **Condicoes de entrada:** Create/update de indicador
+- **Validacoes:** Campos obrigatorios; tamanho maximo coerente com colunas (`varchar(50)` / `varchar(30)`); trim
+- **Acoes do sistema:** Persistir o texto informado (sem normalizacao para maiusculas obrigatoria)
+- **Mensagens ao usuario:** Validacao de obrigatoriedade/tamanho
+- **Permissoes envolvidas:** `indicador:create|update`
+- **Dados impactados:** `indicadores.unidadeMedida`, `indicadores.tipoIndicador`
+- **Rastreabilidade:** N/A alem da auditoria do registro
+- **Criterios de aceite:**
+  - [ ] Aceita valores fora das sugestoes da UI
+  - [ ] Nao rejeita por "enum invalido"
+- **Cenarios de excecao:** String vazia apos trim → invalido
+- **Origem da regra:** Decisao de produto 2026-11-24 (texto livre; sem forcar maiusculas)
+- **Status:** Implementada
+
+### RN-IND-004 - Exclusao fisica ou desativacao
+- **Modulo:** Indicadores
+- **Fluxo:** Excluir / desativar indicador
+- **Descricao:** Se o indicador **nao** possui execucoes, permite exclusao fisica. Se **possui** execucoes, nao exclui: deve desativar (`ativo=false`), preservando historico e o `codigoIndicador`.
+- **Condicoes de entrada:** Permissao `indicador:delete` (exclusao) ou `indicador:update` (desativacao); indicador no escopo
+- **Validacoes:** Contagem de `indicador_execucoes` do indicador; bloquear DELETE fisico quando houver execucao
+- **Acoes do sistema:** DELETE fisico sem filhos; com filhos → `PATCH`/`POST` de desativacao (`ativo=false`) ou rejeitar DELETE com orientacao a desativar
+- **Mensagens ao usuario:** Sucesso na exclusao; "Indicador possui lancamentos e nao pode ser excluido. Desative-o para retira-lo do uso."
+- **Permissoes envolvidas:** `indicador:delete`, `indicador:update`
+- **Dados impactados:** `indicadores`, `indicador_execucoes`
+- **Rastreabilidade:** Auditoria de exclusao/desativacao
+- **Criterios de aceite:**
+  - [ ] Sem execucao → DELETE remove o registro
+  - [ ] Com execucao → DELETE bloqueado; desativacao grava `ativo=false`
+  - [ ] Indicador inativo nao aparece como disponivel para novos lancamentos (filtro operacional)
+- **Cenarios de excecao:** Tentativa de lancar em indicador inativo → bloqueio
+- **Origem da regra:** Decisao de produto 2026-11-24
+- **Status:** Implementada
+
+### RN-IND-005 - Lancamento mensal unico por periodo
+- **Modulo:** Indicadores
+- **Fluxo:** Painel / CRUD de `indicador_execucoes`
+- **Descricao:** Registra o valor do indicador em um periodo. Padrao mensal: `dataReferencia` = primeiro dia do mes (ex.: 2026-01-01 = janeiro/2026). Combinacao `indicadorId + dataReferencia` e unica.
+- **Condicoes de entrada:** Indicador ativo (para novo lancamento), no escopo do usuario
+- **Validacoes:** `valor` numeric(18,4) obrigatorio; `justificativa` opcional; UNIQUE(`indicadorId`,`dataReferencia`); normalizar data para dia 1 do mes
+- **Acoes do sistema:** Create/update/delete de execucao; rejeitar duplicidade de periodo
+- **Mensagens ao usuario:** "Ja existe lancamento para este indicador neste periodo"
+- **Permissoes envolvidas:** `indicador_execucao:create|read|update|delete`
+- **Dados impactados:** `indicador_execucoes`
+- **Rastreabilidade:** Auditoria corporativa no CUD (sem tabela `INDICADOR_EXECUCAO_HISTORICO`)
+- **Criterios de aceite:**
+  - [ ] Dois lancamentos no mesmo mes/indicador sao rejeitados
+  - [ ] Update do valor/justificativa do mesmo periodo e permitido
+  - [ ] UI grava sempre dia 1 do mes selecionado
+- **Cenarios de excecao:** Indicador inativo → nao permite novo create
+- **Origem da regra:** Doc Indicadores v3; 2026-11-24
+- **Status:** Implementada
+
+### RN-IND-006 - Painel com cards de resumo
+- **Modulo:** Indicadores
+- **Fluxo:** Tela de gestao / lancamentos (`Gestao`)
+- **Descricao:** Painel exibe **cards com resumo** por indicador (ex.: ultimo valor, quantidade de meses lancados no ano, media/soma no filtro), alem do fluxo de lancamento mensal. Tema claro/escuro e estados de loading/vazio/erro.
+- **Condicoes de entrada:** Permissoes de leitura de indicador e execucao; filtros de ano/departamento
+- **Validacoes:** Respeitar escopo de departamento e indicador ativo (conforme filtro)
+- **Acoes do sistema:** Agregar execucoes do periodo filtrado; permitir criar/editar lancamento mensal a partir do card/painel
+- **Mensagens ao usuario:** Estados vazios e erros de carga claros
+- **Permissoes envolvidas:** `indicador:read` + `indicador_execucao:read` (+ create/update para lancar)
+- **Dados impactados:** Leitura `indicadores` + `indicador_execucoes`
+- **Rastreabilidade:** CUD de lancamento audita conforme RN-IND-005
+- **Criterios de aceite:**
+  - [ ] Cards de resumo visiveis com filtros aplicados
+  - [ ] Funciona em tema claro e escuro
+  - [ ] Hover/focus/disabled nos controles de lancamento
+- **Cenarios de excecao:** Sem indicadores no escopo → estado vazio
+- **Origem da regra:** Decisao de produto 2026-11-24 (cards com resumo)
+- **Status:** Implementada
+
+### RN-IND-007 - Mudança conceitual do indicador
+- **Modulo:** Indicadores
+- **Fluxo:** Evolucao do significado de um indicador
+- **Descricao:** Se o conceito do indicador mudar de forma substancial, deve-se **criar novo indicador** (novo `codigoIndicador`), em vez de reaproveitar o codigo antigo, para preservar a serie historica no DW/BI.
+- **Condicoes de entrada:** Necessidade de mudanca conceitual com historico ja lancado
+- **Validacoes:** Orientacao operacional (nao ha bloqueio automatico de edicao de nome/detalhe)
+- **Acoes do sistema:** Permitir desativar o antigo (`ativo=false`) e cadastrar o novo
+- **Mensagens ao usuario:** Orientacao na UI/documentacao de operacao
+- **Permissoes envolvidas:** `indicador:create`, `indicador:update`
+- **Dados impactados:** `indicadores`
+- **Rastreabilidade:** Codigos distintos no DW
+- **Criterios de aceite:**
+  - [ ] Codigo antigo permanece estavel nos lancamentos historicos
+  - [ ] Novo conceito recebe novo codigo sequencial
+- **Cenarios de excecao:** Ajuste cosmetico de nome/detalhe no mesmo codigo e permitido
+- **Origem da regra:** Doc Indicadores v3; 2026-11-24
+- **Status:** Implementada
+
 ## Regras transversais
 
 ### Permissoes e acesso
@@ -818,6 +1048,10 @@ Copie o bloco abaixo para cada regra nova.
 - Nao apagar regras antigas sem marcar como "Deprecada".
 
 ## Historico de alteracoes
+- 2026-11-24: RN-META-001 a RN-META-005 — formalizacao do modulo Metas (escopo dept, cadastro, calculo do painel, execucoes, exclusao em cascata).
+- 2026-11-25: RN-AUTH-002 — atalhos home passam a aceitar `indicadores` e `painel-indicadores` (catalogo backend + mapa de rotas frontend).
+- 2026-11-24: Permissoes de Indicadores separadas por tela no catalogo: `Indicadores` (cadastro) e `Indicadores – Lançamentos` (painel).
+- 2026-11-24: RN-IND-001 a RN-IND-007 — modulo Indicadores implementado (padrao Metas): tabelas `indicadores`/`indicador_execucoes`, SEQUENCE, texto livre unidade/tipo, exclusao vs desativacao, lancamento mensal unico, painel com cards; permissoes no catalogo (concessao manual).
 - 2026-11-24: RN-ESC-003/006 — após troca manual, refresh/painel de telemetria usam veículo OMNI atual (não prefixo INFOBUS).
 - 2026-11-23: RN-ESC-002/005 — sync grava `tipo_viagem` em `veiculo_escala_turno`; filtro e coluna Tipo na grade.
 - 2026-11-19: RN-VIS-006 — rollback BRT 1:1 (`os_orig` = `numeroIrregularidade`, subset permitido); gerador OS com piso `max(OS, vistoria)+1` no ano; v1.1 agrupamento superseded.

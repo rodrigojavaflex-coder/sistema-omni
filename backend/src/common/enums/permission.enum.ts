@@ -116,6 +116,18 @@ export enum Permission {
   META_EXECUCAO_DELETE = 'meta_execucao:delete',
   META_EXECUCAO_AUDIT = 'meta_execucao:audit',
 
+  // Indicadores
+  INDICADOR_CREATE = 'indicador:create',
+  INDICADOR_READ = 'indicador:read',
+  INDICADOR_UPDATE = 'indicador:update',
+  INDICADOR_DELETE = 'indicador:delete',
+  INDICADOR_AUDIT = 'indicador:audit',
+  INDICADOR_EXECUCAO_CREATE = 'indicador_execucao:create',
+  INDICADOR_EXECUCAO_READ = 'indicador_execucao:read',
+  INDICADOR_EXECUCAO_UPDATE = 'indicador_execucao:update',
+  INDICADOR_EXECUCAO_DELETE = 'indicador_execucao:delete',
+  INDICADOR_EXECUCAO_AUDIT = 'indicador_execucao:audit',
+
   // Vistoria Mobile
   VISTORIA_CREATE = 'vistoria_mobile:create',
   VISTORIA_READ = 'vistoria_mobile:read',
@@ -388,6 +400,35 @@ export const PERMISSION_GROUPS = {
     {
       key: Permission.META_EXECUCAO_AUDIT,
       label: 'Auditar execuções de metas',
+    },
+  ],
+  Indicadores: [
+    { key: Permission.INDICADOR_CREATE, label: 'Criar indicadores' },
+    { key: Permission.INDICADOR_READ, label: 'Visualizar indicadores' },
+    { key: Permission.INDICADOR_UPDATE, label: 'Editar indicadores' },
+    { key: Permission.INDICADOR_DELETE, label: 'Excluir indicadores' },
+    { key: Permission.INDICADOR_AUDIT, label: 'Auditar indicadores' },
+  ],
+  'Indicadores – Lançamentos': [
+    {
+      key: Permission.INDICADOR_EXECUCAO_CREATE,
+      label: 'Registrar lançamentos de indicadores',
+    },
+    {
+      key: Permission.INDICADOR_EXECUCAO_READ,
+      label: 'Visualizar lançamentos de indicadores',
+    },
+    {
+      key: Permission.INDICADOR_EXECUCAO_UPDATE,
+      label: 'Editar lançamentos de indicadores',
+    },
+    {
+      key: Permission.INDICADOR_EXECUCAO_DELETE,
+      label: 'Excluir lançamentos de indicadores',
+    },
+    {
+      key: Permission.INDICADOR_EXECUCAO_AUDIT,
+      label: 'Auditar lançamentos de indicadores',
     },
   ],
   'Vistoria Mobile': [

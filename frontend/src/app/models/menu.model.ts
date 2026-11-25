@@ -352,6 +352,27 @@ export const MENU_CONFIGURATION: MenuConfig = {
             },
           ]
         },
+        {
+          label: 'Indicadores',
+          icon: 'tabler-report-analytics',
+          requiredPermissions: [],
+          isSubmenu: true,
+          parentMenu: 'Cadastros',
+          submenuItems: [
+            {
+              label: 'Indicadores',
+              route: '/indicador',
+              icon: 'tabler-report-analytics',
+              requiredPermissions: [
+                Permission.INDICADOR_CREATE,
+                Permission.INDICADOR_READ,
+                Permission.INDICADOR_UPDATE,
+                Permission.INDICADOR_DELETE,
+              ],
+              parentMenu: 'Cadastros'
+            },
+          ]
+        },
       ]
     },
     {
@@ -420,6 +441,13 @@ export const MENU_CONFIGURATION: MenuConfig = {
           route: '/meta/dashboard',
           icon: 'feather-activity',
           requiredPermissions: [Permission.META_EXECUCAO_READ],
+          parentMenu: 'Gestão'
+        },
+        {
+          label: 'Painel de Indicadores',
+          route: '/indicador/dashboard',
+          icon: 'tabler-report-analytics',
+          requiredPermissions: [Permission.INDICADOR_EXECUCAO_READ],
           parentMenu: 'Gestão'
         },
         {

@@ -111,6 +111,16 @@ export enum Permission {
   META_EXECUCAO_UPDATE = 'meta_execucao:update',
   META_EXECUCAO_DELETE = 'meta_execucao:delete',
   META_EXECUCAO_AUDIT = 'meta_execucao:audit',
+  INDICADOR_CREATE = 'indicador:create',
+  INDICADOR_READ = 'indicador:read',
+  INDICADOR_UPDATE = 'indicador:update',
+  INDICADOR_DELETE = 'indicador:delete',
+  INDICADOR_AUDIT = 'indicador:audit',
+  INDICADOR_EXECUCAO_CREATE = 'indicador_execucao:create',
+  INDICADOR_EXECUCAO_READ = 'indicador_execucao:read',
+  INDICADOR_EXECUCAO_UPDATE = 'indicador_execucao:update',
+  INDICADOR_EXECUCAO_DELETE = 'indicador_execucao:delete',
+  INDICADOR_EXECUCAO_AUDIT = 'indicador_execucao:audit',
 
   // Vistoria Mobile
   VISTORIA_CREATE = 'vistoria_mobile:create',

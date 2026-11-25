@@ -618,6 +618,42 @@ export const routes: Routes = [
     data: { permissions: [...RoutePermissions.meta.update] },
   },
   {
+    path: 'indicador',
+    loadComponent: () =>
+      import('./components/indicador-list/indicador-list').then(
+        (m) => m.IndicadorListComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.indicador.list] },
+  },
+  {
+    path: 'indicador/dashboard',
+    loadComponent: () =>
+      import('./components/indicador-dashboard/indicador-dashboard').then(
+        (m) => m.IndicadorDashboardComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [Permission.INDICADOR_EXECUCAO_READ] },
+  },
+  {
+    path: 'indicador/new',
+    loadComponent: () =>
+      import('./components/indicador-form/indicador-form').then(
+        (m) => m.IndicadorFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.indicador.create] },
+  },
+  {
+    path: 'indicador/edit/:id',
+    loadComponent: () =>
+      import('./components/indicador-form/indicador-form').then(
+        (m) => m.IndicadorFormComponent,
+      ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permissions: [...RoutePermissions.indicador.update] },
+  },
+  {
     path: 'controle-escala',
     loadComponent: () =>
       import('./components/controle-escala/controle-escala').then(

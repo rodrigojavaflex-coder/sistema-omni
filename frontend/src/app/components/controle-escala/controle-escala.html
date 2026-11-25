@@ -92,7 +92,7 @@
         </select>
       </div>
 
-      <div class="filter-group">
+      <div class="filter-group filter-group--tarefa">
         <label class="form-label" for="escala-tarefa">Tarefa</label>
         <select
           id="escala-tarefa"
@@ -108,7 +108,7 @@
         </select>
       </div>
 
-      <div class="filter-group">
+      <div class="filter-group filter-group--tipo">
         <label class="form-label" for="escala-tipo">Tipo</label>
         <select
           id="escala-tipo"
@@ -124,7 +124,7 @@
         </select>
       </div>
 
-      <div class="filter-group">
+      <div class="filter-group filter-group--alerta">
         <label class="form-label" for="escala-alerta">Alerta</label>
         <select
           id="escala-alerta"
@@ -220,13 +220,13 @@
                 <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'veiculo' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
               </button>
             </th>
-            <th>
+            <th class="col-tarefa">
               <button type="button" class="th-sort" (click)="ordenarPor('tarefa')" [attr.aria-sort]="ariaSort('tarefa')">
                 Tarefa
                 <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'tarefa' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
               </button>
             </th>
-            <th>
+            <th class="col-tipo">
               <button type="button" class="th-sort" (click)="ordenarPor('tipo')" [attr.aria-sort]="ariaSort('tipo')">
                 Tipo
                 <span class="th-sort-ind" aria-hidden="true">{{ sortColumn() === 'tipo' ? (sortDir() === 'asc' ? '▲' : '▼') : '' }}</span>
@@ -374,7 +374,7 @@
                   }
                 </div>
               </td>
-              <td class="grupos-cell">
+              <td class="col-tarefa">
                 @if (!row.grupos.length) {
                   <span class="muted">—</span>
                 } @else {
@@ -387,7 +387,7 @@
                   </ul>
                 }
               </td>
-              <td class="grupos-cell">
+              <td class="col-tipo">
                 @if (!row.grupos.length) {
                   <span class="muted">—</span>
                 } @else {

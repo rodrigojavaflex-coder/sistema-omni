@@ -173,6 +173,16 @@ export const RoutePermissions = {
     create: [Permission.META_CREATE],
     update: [Permission.META_UPDATE],
   },
+  indicador: {
+    list: [
+      Permission.INDICADOR_CREATE,
+      Permission.INDICADOR_READ,
+      Permission.INDICADOR_UPDATE,
+      Permission.INDICADOR_DELETE,
+    ],
+    create: [Permission.INDICADOR_CREATE],
+    update: [Permission.INDICADOR_UPDATE],
+  },
   biAcessoLinks: {
     list: [
       Permission.BI_ACESSO_LINK_READ,
